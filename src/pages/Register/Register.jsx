@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import LoadingModal from "../../components/LoadingModal/LoadingModal";
 import { API_URL } from "../../config/api";
+import BackgroundLayout from "../../layouts/BackgroundLayout";
 
 
 
@@ -104,10 +105,7 @@ export default function Register() {
             className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden"
             
         >
-
-            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-[#106A2E]/[0.06]" />
-            <div className="absolute -bottom-24 -left-16 w-56 h-56 rounded-full bg-[#F4D35E]/[0.15]" />
-
+            
             <div className="bg-white rounded-3xl p-9 w-full max-w-md shadow-xl shadow-[#106A2E]/10 border border-[#106A2E]/[0.06] relative z-10">
 
                 <div className="w-14 h-14 rounded-2xl bg-[#106A2E] flex items-center justify-center mx-auto mb-4">
