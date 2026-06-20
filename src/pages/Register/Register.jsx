@@ -101,6 +101,8 @@ export default function Register() {
             />
         )
     }
+
+    <BackgroundLayout>
         <div
             className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden"
             
@@ -281,6 +283,8 @@ export default function Register() {
             </div>
 
         </div>
+
+        </BackgroundLayout>
     </>
     );
 }
