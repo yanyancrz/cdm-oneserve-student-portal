@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import LoadingModal from "../../components/LoadingModal/LoadingModal";
+import { API_URL } from "../../config/api";
+import BackgroundLayout from "../../layouts/BackgroundLayout";
 
 export default function ForgotPassword() {
 
@@ -22,7 +24,7 @@ export default function ForgotPassword() {
         try {
 
             const response = await fetch(
-                "http://localhost:5212/api/auth/forgot-password",
+                `${API_URL}/auth/forgot-password`,
                 {
                     method: "POST",
                     headers: {
@@ -74,9 +76,11 @@ export default function ForgotPassword() {
                 )
             }
 
+            <BackgroundLayout>
+            
+
             <div
                 className="min-h-screen flex items-center justify-center p-6"
-                style={{ background: "#F1F1F1" }}
             >
 
                 <div className="bg-white rounded-3xl p-9 w-full max-w-md shadow-xl">
@@ -133,6 +137,8 @@ export default function ForgotPassword() {
                 </div>
 
             </div>
+
+            </BackgroundLayout>
         </>
     );
 }

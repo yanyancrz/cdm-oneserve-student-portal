@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import LoadingModal from "../../components/LoadingModal/LoadingModal";
+import { API_URL } from "../../config/api";
 
 export default function ResetPassword() {
 
@@ -51,7 +52,7 @@ export default function ResetPassword() {
         try {
 
             const response = await fetch(
-                "http://localhost:5212/api/auth/reset-password",
+                `${API_URL}/auth/reset-password`,
                 {
                     method: "POST",
                     headers: {
@@ -108,9 +109,11 @@ export default function ResetPassword() {
                 )
             }
 
+            <BackgroundLayout>
+            
+
             <div
-                className="min-h-screen flex items-center justify-center p-6"
-                style={{ background: "#F1F1F1" }}
+                className="min-h-screen flex items-center justify-center p-6"              
             >
 
                 <div className="bg-white rounded-3xl p-9 w-full max-w-md shadow-xl">
@@ -194,6 +197,9 @@ export default function ResetPassword() {
                 </div>
 
             </div>
+
+        </BackgroundLayout>
+        
         </>
     );
 }
