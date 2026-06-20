@@ -29,6 +29,12 @@ function App() {
 
                     <Route path="/otp" element={<OTPVerification />} />
 
+                    <Route path="/setup-profile" element={<SetupProfile />}  />
+
+                    <Route  path="/forgot-password"  element={<ForgotPassword />}  />
+
+                    <Route  path="/reset-password"  element={<ResetPassword />} />                  
+
                     {/* Student Pages */}
 
                     <Route element={<StudentLayout />}>
@@ -77,15 +83,7 @@ function App() {
                             }
                         />
 
-                        <Route
-                            path="/forgot-password"
-                            element={<ForgotPassword />}
-                        />
-
-                        <Route
-                            path="/reset-password"
-                            element={<ResetPassword />}
-/>
+                      
 
                     </Route>
 
