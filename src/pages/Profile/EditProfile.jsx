@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
+import BackgroundLayout from "../../layouts/BackgroundLayout";
 
 export default function EditProfile() {
 
@@ -174,11 +175,11 @@ if (!student) {
 
     return (
 
-        <div
-            className="min-h-screen p-6"
-            style={{
-                background: "#F1F1F1"
-            }}
+        <BackgroundLayout>
+
+            <div
+                className="min-h-screen p-6"
+            
         >
 
             <div className="max-w-md mx-auto">
@@ -441,6 +442,9 @@ if (!student) {
             </div>
 
         </div>
+
+    </BackgroundLayout>
+
 
     );
 }

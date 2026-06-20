@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
+import BackgroundLayout from "../../layouts/BackgroundLayout";
 
 export default function SetupProfile() {
 
@@ -121,9 +122,11 @@ export default function SetupProfile() {
 
     return (
 
-        <div
-            className="min-h-screen flex items-center justify-center p-6"          
-        >
+        <BackgroundLayout>
+
+            <div
+                className="min-h-screen flex items-center justify-center p-6"          
+            >
 
             <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-xl shadow-[#106A2E]/10">
 
@@ -345,6 +348,8 @@ export default function SetupProfile() {
             </div>
 
         </div>
+
+        </BackgroundLayout>
 
     );
 }

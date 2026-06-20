@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from "../../config/api";
+import BackgroundLayout from "../../layouts/BackgroundLayout";
 
 export default function VerifyEmailChange() {
 
@@ -158,10 +159,12 @@ const handleVerify =
 
 return (
 
-    <div
-        className="
-            min-h-screen
-            flex
+    <BackgroundLayout>
+
+        <div
+            className="
+                min-h-screen
+                flex
             items-center
             justify-center
             px-4
@@ -286,6 +289,8 @@ return (
         </div>
 
     </div>
+
+    </BackgroundLayout>
 
 );
 
