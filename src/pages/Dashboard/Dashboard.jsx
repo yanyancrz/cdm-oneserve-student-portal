@@ -148,6 +148,10 @@ export default function Dashboard() {
         setAnnouncementIndex((prev) => (prev + 1) % announcements.length);
     };
 
+    const goToPreviousAnnouncement = () => {
+        setAnnouncementIndex((prev) => (prev - 1 + announcements.length) % announcements.length);
+    };
+
     return (
 
         <div
@@ -457,6 +461,31 @@ export default function Dashboard() {
 
                     <div className="flex items-center gap-3 relative z-10">
 
+                        {/* SIDE BUTTON — goes back to the previous announcement */}
+
+                        <button
+                            onClick={goToPreviousAnnouncement}
+                            aria-label="Previous announcement"
+                            className="
+                                w-9
+                                h-9
+                                rounded-full
+                                bg-white/15
+                                text-[#1F1F1F]
+                                flex
+                                items-center
+                                justify-center
+                                flex-shrink-0
+                                active:scale-95
+                                hover:bg-white/25
+                                transition-all
+                            "
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="m15 18-6-6 6-6" />
+                            </svg>
+                        </button>
+
                         <div className="w-10 h-10 rounded-xl bg-white/40 text-[#1F1F1F] flex items-center justify-center flex-shrink-0">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
@@ -482,14 +511,14 @@ export default function Dashboard() {
                                 w-9
                                 h-9
                                 rounded-full
-                                bg-[#1F1F1F]
-                                text-white
+                                bg-white/15
+                                text-[#1F1F1F]
                                 flex
                                 items-center
                                 justify-center
                                 flex-shrink-0
                                 active:scale-95
-                                hover:opacity-90
+                                hover:bg-white/25
                                 transition-all
                             "
                         >
