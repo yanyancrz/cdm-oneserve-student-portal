@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { API_URL } from "../../config/api";
 
 export default function Dashboard() {
 
@@ -16,7 +17,7 @@ export default function Dashboard() {
             );
 
         fetch(
-            `http://localhost:5212/api/profile/${email}`
+            `${API_URL}/api/profile/${email}`
         )
             .then(res => res.json())
             .then(data => setUser(data))
@@ -24,7 +25,8 @@ export default function Dashboard() {
 
     }, []);
 
-    const hasDigitalId = true; // Replace with actual logic to check if the user has a digital ID
+    const hasDigitalId =
+    user?.hasDigitalId ?? false; // Replace with actual logic to check if the user has a digital ID
 
     const initials =
     user?.fullName
@@ -36,7 +38,7 @@ export default function Dashboard() {
 
     const profilePicture =
         user?.profilePicture
-            ? `http://localhost:5212${user.profilePicture}`
+            ? `${API_URL}${user.profilePicture}`
             : null;
 
     // SERVICES DATA — easier to filter, map, and maintain than separate JSX blocks

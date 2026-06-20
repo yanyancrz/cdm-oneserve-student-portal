@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from "../../config/api";
 
 export default function VerifyEmailChange() {
 
@@ -81,7 +82,7 @@ const handleVerify =
 
             const response =
                 await fetch(
-                    "http://localhost:5212/api/profile/verify-email-change",
+                    `${API_URL}/api/profile/verify-email-change`,
                     {
                         method: "POST",
                         headers: {

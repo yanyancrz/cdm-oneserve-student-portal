@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import LoadingModal from "../../components/LoadingModal/LoadingModal";
+import { API_URL } from "../../config/api";
+
 
 
 export default function Register() {
@@ -38,7 +40,7 @@ export default function Register() {
     try {
 
         const response = await fetch(
-            "http://localhost:5212/api/auth/register",
+            `${API_URL}/api/auth/register`,
             {
                 method: "POST",
                 headers: {

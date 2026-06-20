@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { API_URL } from "../../config/api";
 
 export default function EditProfile() {
 
@@ -27,7 +28,7 @@ export default function EditProfile() {
 
                 const response =
                     await fetch(
-                        `http://localhost:5212/api/profile/${userEmail}`
+                        `${API_URL}/api/profile/${userEmail}`
                     );
 
                 const data =
@@ -75,7 +76,7 @@ export default function EditProfile() {
             );
 
             await fetch(
-                "http://localhost:5212/api/profile/upload-photo",
+                `${API_URL}/api/profile/upload-photo`,
                 {
                     method: "POST",
                     body: formData
@@ -87,7 +88,7 @@ export default function EditProfile() {
         // Update contact number only
 
         await fetch(
-            "http://localhost:5212/api/profile/update",
+            `${API_URL}/api/profile/update`,
             {
                 method: "PUT",
                 headers: {
@@ -107,7 +108,7 @@ export default function EditProfile() {
         if (email !== student.email) {
 
             const response = await fetch(
-                "http://localhost:5212/api/profile/request-email-change",
+                `${API_URL}/api/profile/request-email-change`,
                 {
                     method: "POST",
                     headers: {
@@ -228,7 +229,7 @@ if (!student) {
                                         )
                                         : (
                                             student.profilePicture
-                                                ? `http://localhost:5212${student.profilePicture}`
+                                                ? `${API_URL}${student.profilePicture}`
                                                 : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
                                         )
                                 }

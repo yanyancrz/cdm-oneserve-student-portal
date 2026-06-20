@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { API_URL } from "../../config/api";
 
 export default function SetupProfile() {
 
@@ -38,7 +39,7 @@ export default function SetupProfile() {
 
             const uploadResponse =
                 await fetch(
-                    "http://localhost:5212/api/profile/upload-photo",
+                    `${API_URL}/api/profile/upload-photo`,
                     {
                         method: "POST",
                         body: formData
@@ -66,7 +67,7 @@ export default function SetupProfile() {
 
         // Save profile information
         const response = await fetch(
-            "http://localhost:5212/api/profile/setup",
+            `${API_URL}/api/profile/setup`,
             {
                 method: "PUT",
                 headers: {

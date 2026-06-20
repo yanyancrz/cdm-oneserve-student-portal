@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { API_URL } from "../../config/api";
 
 export default function Profile() {
 
@@ -21,7 +22,7 @@ export default function Profile() {
 
                 const response =
                     await fetch(
-                        `http://localhost:5212/api/profile/${email}`
+                        `${API_URL}/api/profile/${email}`
                     );
 
                 if (!response.ok) {
@@ -109,7 +110,7 @@ if (!student) {
                         <img
                             src={
                                 student.profilePicture
-                                    ? `http://localhost:5212${student.profilePicture}`
+                                    ? `${API_URL}${student.profilePicture}`
                                     : "https://cdn-icons-png.flaticon.com/512/149/149071.png"
                             }
                             alt={student.fullName}

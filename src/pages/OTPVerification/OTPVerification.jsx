@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { API_URL } from "../../config/api";
 
 export default function OTPVerification() {
 
@@ -66,8 +67,8 @@ export default function OTPVerification() {
         const email =
             localStorage.getItem("otpEmail");
 
-        const response = await fetch(
-            "http://localhost:5212/api/auth/verify-otp",
+       const response = await fetch(
+        `${API_URL}/api/auth/verify-otp`,
             {
                 method: "POST",
                 headers: {

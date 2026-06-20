@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DigitalIDCard from "../../components/DigitalIDCard/DigitalIDCard";
+import { API_URL } from "../../config/api";
 
 export default function ViewDigitalID() {
 
@@ -15,7 +16,7 @@ export default function ViewDigitalID() {
             localStorage.getItem("userEmail");
 
         fetch(
-            `http://localhost:5212/api/digitalid/${email}`
+            `${API_URL}/api/digitalid/${email}`
         )
             .then(res => res.json())
             .then(data => {

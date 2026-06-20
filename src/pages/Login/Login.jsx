@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import LoadingModal from "../../components/LoadingModal/LoadingModal";
 import toast from "react-hot-toast";
 import BackgroundLayout from "../../layouts/BackgroundLayout";
+import { API_URL } from "../../config/api";
 
 export default function Login() {
 
@@ -18,7 +19,7 @@ export default function Login() {
     try {
 
         const response = await fetch(
-            "http://localhost:5212/api/auth/login",
+            `${API_URL}/api/auth/login`,
             {
                 method: "POST",
                 headers: {
