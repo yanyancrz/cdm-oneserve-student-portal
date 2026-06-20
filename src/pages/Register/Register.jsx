@@ -100,7 +100,7 @@ export default function Register() {
     }
         <div
             className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden"
-            style={{ background: "#F1F1F1" }}
+            
         >
 
             <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-[#106A2E]/[0.06]" />
