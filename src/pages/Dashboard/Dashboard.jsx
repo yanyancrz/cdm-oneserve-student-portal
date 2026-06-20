@@ -8,6 +8,7 @@ export default function Dashboard() {
 
     const [user, setUser] = useState(null);
     const [search, setSearch] = useState("");
+    const [announcementIndex, setAnnouncementIndex] = useState(0);
 
     useEffect(() => {
 
@@ -118,6 +119,35 @@ export default function Dashboard() {
         service.title.toLowerCase().includes(search.toLowerCase())
     );
 
+    // ANNOUNCEMENTS DATA — multiple banners, cycled via the side "next" button
+
+    const announcements = [
+        {
+            key: "library-hours",
+            title: "Library hours extended",
+            message: "this week for finals prep.",
+            isNew: true,
+        },
+        {
+            key: "clinic-checkup",
+            title: "Free health checkups",
+            message: "available at the clinic until Friday.",
+            isNew: true,
+        },
+        {
+            key: "business-hub-pitch",
+            title: "Pitch Day registration open",
+            message: "submit your student venture by next Monday.",
+            isNew: false,
+        },
+    ];
+
+    const currentAnnouncement = announcements[announcementIndex];
+
+    const goToNextAnnouncement = () => {
+        setAnnouncementIndex((prev) => (prev + 1) % announcements.length);
+    };
+
     return (
 
         <div
@@ -189,42 +219,6 @@ export default function Dashboard() {
                 }
 
                 </div>
-
-                {/* NOTIFICATION / ANNOUNCEMENT BANNER */}
-
-                <button
-                    onClick={() => navigate("/notifications")}
-                    className="
-                        w-full
-                        bg-white/85
-                        border border-[#106A2E]/10
-                        rounded-2xl
-                        px-3.5
-                        py-3
-                        mb-4
-                        flex
-                        items-center
-                        gap-2.5
-                        text-left
-                        hover:bg-white
-                        transition-colors
-                    "
-                >
-
-                    <div className="w-8 h-8 rounded-lg bg-[#F4D35E] text-[#1F1F1F] flex items-center justify-center flex-shrink-0">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
-                            <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-                        </svg>
-                    </div>
-
-                    <p className="text-xs text-[#1F1F1F] leading-snug flex-1">
-                        <span className="font-semibold">Library hours extended</span> this week for finals prep.
-                    </p>
-
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-600 flex-shrink-0" />
-
-                </button>
 
                 {/* SEARCH BAR */}
 
@@ -365,6 +359,7 @@ export default function Dashboard() {
                         snap-x
                         snap-mandatory
                         scrollbar-hide
+                        mb-6
                     "
                     style={{ scrollbarWidth: "none" }}
                 >
@@ -423,6 +418,87 @@ export default function Dashboard() {
                             </div>
                         )
                     }
+
+                </div>
+
+                {/* ANNOUNCEMENTS — rectangle card style, matching Digital ID card, with a side button to cycle through multiple announcements */}
+
+                <div className="bg-[#F4D35E] rounded-2xl p-5 relative overflow-hidden">
+
+                    {/* decorative circle, mirroring the Digital ID card's style */}
+                    <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/10" />
+
+                    <div className="flex items-center justify-between mb-1.5 relative z-10">
+
+                        <span className="text-[11px] uppercase tracking-widest text-[#1F1F1F]/60">
+                            Announcements
+                        </span>
+
+                        <div className="flex items-center gap-1.5">
+
+                            {
+                                announcements.map((item, index) => (
+                                    <span
+                                        key={item.key}
+                                        className={`
+                                            w-1.5
+                                            h-1.5
+                                            rounded-full
+                                            transition-colors
+                                            ${index === announcementIndex ? "bg-[#1F1F1F]" : "bg-[#1F1F1F]/25"}
+                                        `}
+                                    />
+                                ))
+                            }
+
+                        </div>
+
+                    </div>
+
+                    <div className="flex items-center gap-3 relative z-10">
+
+                        <div className="w-10 h-10 rounded-xl bg-white/40 text-[#1F1F1F] flex items-center justify-center flex-shrink-0">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                            </svg>
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                            <h2 className="text-[#1F1F1F] text-base font-semibold leading-snug">
+                                {currentAnnouncement.title}
+                            </h2>
+                            <p className="text-[#1F1F1F]/70 text-xs leading-relaxed mt-0.5">
+                                {currentAnnouncement.message}
+                            </p>
+                        </div>
+
+                        {/* SIDE BUTTON — advances to the next announcement */}
+
+                        <button
+                            onClick={goToNextAnnouncement}
+                            aria-label="Next announcement"
+                            className="
+                                w-9
+                                h-9
+                                rounded-full
+                                bg-[#1F1F1F]
+                                text-white
+                                flex
+                                items-center
+                                justify-center
+                                flex-shrink-0
+                                active:scale-95
+                                hover:opacity-90
+                                transition-all
+                            "
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="m9 18 6-6-6-6" />
+                            </svg>
+                        </button>
+
+                    </div>
 
                 </div>
 
