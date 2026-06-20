@@ -1,14 +1,19 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-
+import LoadingModal from "../../components/LoadingModal/LoadingModal";
+import toast from "react-hot-toast";
+import BackgroundLayout from "../../layouts/BackgroundLayout";
 
 export default function Login() {
 
     const [email, setEmail] = useState("");
     const navigate = useNavigate();
-    const [password, setPassword] = useState("");
+    const [password, setPassword] = useState("");   
+    const [loading, setLoading] = useState(false);
 
    const handleLogin = async () => {
+
+    setLoading(true);
 
     try {
 
@@ -28,75 +33,68 @@ export default function Login() {
 
         const data = await response.json();
 
-        if (response.ok) {
+if (response.ok) {
 
-            localStorage.setItem(
-                "userId",
-                data.id
-            );
+    localStorage.setItem("userId", data.id);
+    localStorage.setItem("studentNumber", data.studentNumber);
+    localStorage.setItem("userName", data.fullName);
+    localStorage.setItem("userEmail", data.email);
+    localStorage.setItem("course", data.course || "");
+    localStorage.setItem("yearLevel", data.yearLevel || "");
+    localStorage.setItem("contactNumber", data.contactNumber || "");
 
-            localStorage.setItem(
-                "studentNumber",
-                data.studentNumber
-            );
+    if (!data.isProfileComplete) {
 
-            localStorage.setItem(
-                "userName",
-                data.fullName
-            );
+        toast.success(
+            "Login successful. Please complete your profile."
+        );
 
-            localStorage.setItem(
-                "userEmail",
-                data.email
-            );
-
-            localStorage.setItem(
-                "course",
-                data.course || ""
-            );
-
-            localStorage.setItem(
-                "yearLevel",
-                data.yearLevel || ""
-            );
-
-            localStorage.setItem(
-                "contactNumber",
-                data.contactNumber || ""
-            );
-
-            alert(data.message);
-
-            if (!data.isProfileComplete) {
-
-                navigate("/setup-profile");
-
-            }
-            navigate(
-                "/dashboard",
-                {
-                    replace: true
-                }
-            );
-        }
-        else {
-
-            alert(data.message);
-
-        }
-
+        navigate("/setup-profile");
+        return;
     }
-   catch (error) {
 
-    console.error(error);
+    toast.success("Welcome back!");
 
-    alert(error.message);
+    navigate("/dashboard", {
+        replace: true
+    });
 
 }
+else {
+
+    toast.error(
+        data.message
+    );
+
+}
+    }
+    catch (error) {
+
+        console.error(error);
+
+        toast.error("Unable to connect to API");
+
+    }
+    finally {
+
+        setLoading(false);
+
+    }
 
 };
 
     return (
+        <>
+    {
+        loading && (
+            <LoadingModal
+                message="Signing In..."
+            />
+        )
+    }
+
+    <BackgroundLayout>
+
         <div
             className="
                 min-h-screen
@@ -107,14 +105,8 @@ export default function Login() {
                 relative
                 overflow-hidden
             "
-            style={{
-                background: "#F1F1F1"
-            }}
         >
 
-            {/* decorative blobs */}
-            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-[#106A2E]/[0.06]" />
-            <div className="absolute -bottom-24 -left-16 w-56 h-56 rounded-full bg-[#F4D35E]/[0.10]" />
 
             <div className="bg-white rounded-3xl p-9 w-full max-w-sm shadow-xl shadow-[#106A2E]/10 border border-[#106A2E]/[0.06] relative z-10">
 
@@ -198,17 +190,19 @@ export default function Login() {
                         />
                     </div>
                 </div>
-
-                <div className="flex justify-end mb-5">
-                    <span className="text-xs font-medium text-[#106A2E] cursor-pointer hover:underline">
-                        Forgot password?
-                    </span>
-                </div>
+                
+                <Link
+                    to="/forgot-password"
+                    className="text-xs font-medium text-[#106A2E] hover:underline"
+                >
+                    Forgot password?
+                </Link>
 
                 {/* LOGIN BUTTON */}
 
                 <button
                     onClick={handleLogin}
+                    disabled={loading}
                     className="
                         w-full
                         bg-[#106A2E]
@@ -226,13 +220,44 @@ export default function Login() {
                         gap-2
                         shadow-lg
                         shadow-[#106A2E]/25
+                        disabled:opacity-70
                     "
                 >
-                    <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                        <path d="M10 17l5-5-5-5M15 12H3" />
-                    </svg>
-                    Sign In
+                    {
+                        loading ? (
+                            <>
+                                <div
+                                    className="
+                                        w-4
+                                        h-4
+                                        border-2
+                                        border-white/30
+                                        border-t-white
+                                        rounded-full
+                                        animate-spin
+                                    "
+                                />
+                                Signing In...
+                            </>
+                        ) : (
+                            <>
+                                <svg
+                                    width="17"
+                                    height="17"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                >
+                                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                                    <path d="M10 17l5-5-5-5M15 12H3" />
+                                </svg>
+                                Sign In
+                            </>
+                        )
+                    }
                 </button>
 
                 {/* DIVIDER */}
@@ -260,5 +285,8 @@ export default function Login() {
             </div>
 
         </div>
+
+        </BackgroundLayout>
+    </>
     );
 }

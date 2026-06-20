@@ -110,7 +110,6 @@ export default function OTPVerification() {
     return (
         <div
             className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden"
-            style={{ background: "#F1F1F1" }}
         >
 
             {/* decorative blobs */}

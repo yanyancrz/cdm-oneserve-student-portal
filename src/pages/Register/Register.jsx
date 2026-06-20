@@ -1,5 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import LoadingModal from "../../components/LoadingModal/LoadingModal";
+
 
 export default function Register() {
 
@@ -7,58 +10,94 @@ export default function Register() {
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [loading, setLoading] = useState(false);
+    const isFormValid =
+    studentNumber.trim() &&
+    fullName.trim() &&
+    email.trim() &&
+    password.trim();
 
     const navigate = useNavigate();
 
     const handleRegister = async () => {
 
-        try {
+    if (
+        !studentNumber.trim() ||
+        !fullName.trim() ||
+        !email.trim() ||
+        !password.trim()
+    ) {
+        toast.error(
+            "Please complete all required fields."
+        );
+        return;
+    }
 
-            const response = await fetch(
-                "http://localhost:5212/api/auth/register",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        studentNumber,
-                        fullName,
-                        email,
-                        password
-                    })
-                }
+    setLoading(true);
+
+    try {
+
+        const response = await fetch(
+            "http://localhost:5212/api/auth/register",
+            {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    studentNumber,
+                    fullName,
+                    email,
+                    password
+                })
+            }
+        );
+
+        const data = await response.text();
+
+        if (response.ok) {
+
+            toast.success("OTP Sent!");
+
+            localStorage.setItem(
+                "otpEmail",
+                email
             );
 
-            const data = await response.text();
-
-            console.log("STATUS:", response.status);
-            console.log("DATA:", data);
-
-            alert(`Status: ${response.status}\n${data}`);
-
-           if (response.ok) {
-
-                localStorage.setItem(
-                    "otpEmail",
-                    email
-                );
+            setTimeout(() => {
 
                 navigate("/otp");
 
-            }
+            }, 1000);
+
+
+        } else {
+
+            toast.error(data);
+
         }
-        catch (error) {
 
-            console.error(error);
+    } catch (error) {
 
-            alert(error.message);
+        toast.error(error.message);
 
-        }
+    } finally {
 
-    };
+        setLoading(false);
+
+    }
+};
 
     return (
+
+        <>
+    {
+        loading && (
+           <LoadingModal
+                message="Sending OTP to your email..."
+            />
+        )
+    }
         <div
             className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden"
             style={{ background: "#F1F1F1" }}
@@ -200,6 +239,7 @@ export default function Register() {
 
                 <button
                     onClick={handleRegister}
+                    disabled={!isFormValid || loading}
                     className="
                         w-full
                         bg-[#106A2E]
@@ -209,9 +249,15 @@ export default function Register() {
                         rounded-xl
                         font-semibold
                         transition-all
+                        disabled:bg-gray-300
+                        disabled:cursor-not-allowed
                     "
                 >
-                    Register
+                    {
+                        loading
+                            ? "Sending OTP..."
+                            : "Register"
+                    }
                 </button>
 
                 <div className="flex items-center gap-2.5 my-5">
@@ -235,5 +281,6 @@ export default function Register() {
             </div>
 
         </div>
+    </>
     );
 }

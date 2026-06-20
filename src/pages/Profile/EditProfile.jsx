@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 export default function EditProfile() {
 
@@ -123,7 +124,7 @@ export default function EditProfile() {
             const data =
                 await response.text();
 
-            alert(data);
+            toast(data);
 
             if (response.ok) {
 
@@ -147,9 +148,7 @@ export default function EditProfile() {
 
         }
 
-        alert(
-            "Profile Updated Successfully"
-        );
+        toast.success("Profile Updated Successfully");
 
         navigate("/profile");
 
@@ -158,9 +157,7 @@ export default function EditProfile() {
 
         console.error(error);
 
-        alert(
-            "Unable to update profile."
-        );
+        toast.error("Unable to update profile.");
 
     }
 
@@ -187,9 +184,35 @@ if (!student) {
 
                 <div className="bg-white rounded-3xl p-6 shadow-xl shadow-[#106A2E]/10">
 
-                    <h1 className="text-xl font-semibold text-[#1F1F1F] mb-6">
-                        Edit Profile
-                    </h1>
+                    <div className="flex items-center justify-between mb-6">
+
+                        <h1 className="text-xl font-semibold text-[#1F1F1F]">
+                            Edit Profile
+                        </h1>
+
+                        <button
+                            onClick={() => navigate("/profile")}
+                            aria-label="Cancel"
+                            className="
+                                w-9 h-9
+                                rounded-full
+                                bg-white
+                                border border-gray-200
+                                flex items-center justify-center
+                                text-gray-500
+                                hover:bg-gray-50
+                                hover:text-[#1F1F1F]
+                                active:scale-95
+                                transition-all
+                                flex-shrink-0
+                            "
+                        >
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M18 6 6 18M6 6l12 12" />
+                            </svg>
+                        </button>
+
+                    </div>
 
                     {/* PROFILE PICTURE */}
 
@@ -393,12 +416,15 @@ if (!student) {
 
                     </div>
 
+                    {/* ACTION BUTTONS */}
+
                     <button
                         onClick={handleUpdate}
                         className="
                             w-full
                             bg-[#106A2E]
                             hover:bg-[#0D7856]
+                            active:scale-[0.98]
                             text-white
                             p-3
                             rounded-xl

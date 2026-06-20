@@ -12,6 +12,8 @@ import SetupProfile from "./pages/Profile/SetupProfile";
 import EditProfile from "./pages/Profile/EditProfile";
 import VerifyEmailChange from "./pages/Profile/VerifyEmailChange";
 import ProtectedRoute from "./pages/ProtectedRoute";
+import ForgotPassword from "./pages/Auth/ForgotPassword";
+import ResetPassword from "./pages/Auth/ResetPassword";
 
 function App() {
     return (
@@ -74,6 +76,16 @@ function App() {
                                 </ProtectedRoute>
                             }
                         />
+
+                        <Route
+                            path="/forgot-password"
+                            element={<ForgotPassword />}
+                        />
+
+                        <Route
+                            path="/reset-password"
+                            element={<ResetPassword />}
+/>
 
                     </Route>
 

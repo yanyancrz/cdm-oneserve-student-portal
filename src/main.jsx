@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App.jsx";
 import "./index.css";
 import { registerSW } from "virtual:pwa-register";
+import { Toaster } from "react-hot-toast";
 
 registerSW({
     immediate: true
@@ -13,5 +14,8 @@ ReactDOM.createRoot(
 ).render(
     <React.StrictMode>
         <App />
+        <Toaster
+            position="top-center"
+        />
     </React.StrictMode>
 );

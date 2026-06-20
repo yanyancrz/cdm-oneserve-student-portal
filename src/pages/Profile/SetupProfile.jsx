@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 export default function SetupProfile() {
 
@@ -46,7 +47,7 @@ export default function SetupProfile() {
 
             if (!uploadResponse.ok) {
 
-                alert("Photo upload failed");
+                toast.error("Photo upload failed");
 
                 return;
             }
@@ -83,7 +84,7 @@ export default function SetupProfile() {
         const data =
             await response.text();
 
-        alert(data);
+        toast(data);
 
         if (response.ok) {
 
@@ -111,9 +112,7 @@ export default function SetupProfile() {
 
         console.error(error);
 
-        alert(
-            "Unable to save profile."
-        );
+        toast.error("Unable to save profile.");
 
     }
 
@@ -122,8 +121,7 @@ export default function SetupProfile() {
     return (
 
         <div
-            className="min-h-screen flex items-center justify-center p-6"
-            style={{ background: "#F1F1F1" }}
+            className="min-h-screen flex items-center justify-center p-6"          
         >
 
             <div className="bg-white rounded-3xl p-8 w-full max-w-md shadow-xl shadow-[#106A2E]/10">

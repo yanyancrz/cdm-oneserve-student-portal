@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
 export default function Profile() {
 
     const navigate = useNavigate();
 
     const [student, setStudent] = useState(null);
+
+    const [logoutLoading, setLogoutLoading] = useState(false);
 
     useEffect(() => {
 
@@ -49,31 +52,40 @@ export default function Profile() {
 
     const handleLogout = () => {
 
+    setLogoutLoading(true);
+
+    toast.success(
+        "Logged out successfully"
+    );
+
+    setTimeout(() => {
+
         localStorage.clear();
 
-        navigate("/");
+        navigate("/", {
+            replace: true
+        });
 
-    };
+    }, 1000);
 
-    if (!student) {
+};
 
-        return (
+if (!student) {
 
-            <div className="min-h-screen flex items-center justify-center">
-                <p className="text-gray-500">
-                    Loading Profile...
-                </p>
-            </div>
+    return (
+        <div className="min-h-screen flex items-center justify-center">
+            <p className="text-gray-500">
+                Loading Profile...
+            </p>
+        </div>
+    );
 
-        );
-
-    }
+}
 
     return (
 
         <div
             className="min-h-screen p-4 pb-24 relative overflow-hidden"
-            style={{ background: "#F1F1F1" }}
         >
 
             {/* decorative blobs */}
@@ -282,6 +294,7 @@ export default function Profile() {
 
                 <button
                     onClick={handleLogout}
+                    disabled={logoutLoading}
                     className="
                         w-full
                         mt-4
@@ -293,9 +306,14 @@ export default function Profile() {
                         rounded-xl
                         font-semibold
                         transition-all
+                        disabled:opacity-70
                     "
                 >
-                    Logout
+                    {
+                        logoutLoading
+                        ? "Logging Out..."
+                        : "Logout"
+                    }
                 </button>
 
             </div>

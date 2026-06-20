@@ -1,11 +1,15 @@
 import { Outlet } from "react-router-dom";
 import BottomNavigation from "../components/BottomNavigation/BottomNavigation";
+import BackgroundLayout from "./BackgroundLayout";
 
 export default function StudentLayout() {
     return (
-        <div className="min-h-screen bg-slate-100 pb-24">
+        <BackgroundLayout>
+
             <Outlet />
+
             <BottomNavigation />
-        </div>
+
+        </BackgroundLayout>
     );
 }
