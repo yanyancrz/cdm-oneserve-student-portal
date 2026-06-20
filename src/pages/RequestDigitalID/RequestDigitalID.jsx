@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import BackgroundLayout from "../../layouts/BackgroundLayout";
 
 export default function RequestDigitalID() {
 
@@ -36,19 +38,16 @@ export default function RequestDigitalID() {
             profilePicture
         });
 
-        alert("Digital ID Request Submitted!");
+        toast.success("Digital ID Request Submitted!");
 
     };
 
     return (
-        <div
-            className="min-h-screen p-4 pb-10 relative overflow-hidden"
-            style={{ background: "#F1F1F1" }}
-        >
+        <BackgroundLayout>
 
-            {/* decorative blobs */}
-            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-[#106A2E]/[0.06]" />
-            <div className="absolute -bottom-24 -left-16 w-56 h-56 rounded-full bg-[#F4D35E]/[0.15]" />
+            <div
+                className="min-h-screen p-4 pb-10 relative overflow-hidden"                
+            >
 
             <div className="max-w-md mx-auto relative z-10">
 
@@ -331,5 +330,7 @@ export default function RequestDigitalID() {
             </div>
 
         </div>
+
+        </BackgroundLayout>
     );
 }

@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from "../../config/api";
 import BackgroundLayout from "../../layouts/BackgroundLayout";
+import toast from "react-hot-toast";
 
 export default function VerifyEmailChange() {
 
@@ -66,10 +67,7 @@ const handleVerify =
             otp.length !== 6
         ) {
 
-            alert(
-                "Please enter a valid OTP."
-            );
-
+            toast.error("Please enter a valid OTP.");
             return;
         }
 
@@ -110,7 +108,7 @@ const handleVerify =
                     data
                 );
 
-                alert(
+                toast(
                     data || "No response"
                 );
 
@@ -149,9 +147,7 @@ const handleVerify =
                 error
             );
 
-            alert(
-                "Unable to verify OTP."
-            );
+            toast.error("Unable to verify OTP.");
 
         }
 
@@ -169,11 +165,7 @@ return (
             justify-center
             px-4
         "
-        style={{
-            background:
-                "#F1F1F1"
-        }}
-    >
+>
 
         <div
             className="
@@ -290,7 +282,7 @@ return (
 
     </div>
 
-    </BackgroundLayout>
+</BackgroundLayout>
 
 );
 
