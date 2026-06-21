@@ -1,2 +1,1 @@
-export const API_URL =
-    "https://logging-jenny-front-annotation.trycloudflare.com";
+export const API_URL = "https://api.cdmconnect.online";

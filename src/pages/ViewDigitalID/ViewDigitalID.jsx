@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DigitalIDCard from "../../components/DigitalIDCard/DigitalIDCard";
 import { API_URL } from "../../config/api";
+import toast from "react-hot-toast";
 
 export default function ViewDigitalID() {
 
