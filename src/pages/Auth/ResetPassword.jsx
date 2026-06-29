@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import LoadingModal from "../../components/LoadingModal/LoadingModal";
 import { API_URL } from "../../config/api";
+import BackgroundLayout from "../../layouts/BackgroundLayout";
 
 export default function ResetPassword() {
 
@@ -52,7 +53,7 @@ export default function ResetPassword() {
         try {
 
             const response = await fetch(
-                `${API_URL}/auth/reset-password`,
+                `${API_URL}/api/auth/reset-password`,
                 {
                     method: "POST",
                     headers: {

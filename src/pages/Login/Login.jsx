@@ -40,6 +40,7 @@ if (response.ok) {
     localStorage.setItem("studentNumber", data.studentNumber);
     localStorage.setItem("userName", data.fullName);
     localStorage.setItem("userEmail", data.email);
+    localStorage.setItem("userRole", data.role);
     localStorage.setItem("course", data.course || "");
     localStorage.setItem("yearLevel", data.yearLevel || "");
     localStorage.setItem("contactNumber", data.contactNumber || "");
@@ -56,9 +57,20 @@ if (response.ok) {
 
     toast.success("Welcome back!");
 
-    navigate("/dashboard", {
-        replace: true
-    });
+        if (data.role === "Admin") {
+
+            navigate("/admin/dashboard", {
+                replace: true
+            });
+
+        }
+        else {
+
+            navigate("/dashboard", {
+                replace: true
+            });
+
+        }
 
 }
 else {

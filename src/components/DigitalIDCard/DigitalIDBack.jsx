@@ -1,117 +1,160 @@
 import QRCode from "react-qr-code";
-
+import logo from "../../assets/images/cdm-logo.png";
 
 export default function DigitalIDBack({
-
+    isFullscreen = false,
+    digitalIdNumber,
     studentNumber,
-    birthday,
-    contactNumber,
+    issuedDate,
+    expirationDate,
     email,
-    address,
-    emergencyContact,
-    emergencyNumber
-
+    qrCode,
 }) {
 
-    return (
+    const schoolName     = isFullscreen ? "text-[20px]"  : "text-[12px]";
+    const schoolSub      = isFullscreen ? "text-[13px]"  : "text-[9px]";
+    const labelSize      = isFullscreen ? "text-[10px]"  : "text-[7px]";
+    const valueSize      = isFullscreen ? "text-[15px]"  : "text-[10px]";
+    const emailSize      = isFullscreen ? "text-[13px]"  : "text-[9px]";
+    const qrLabel        = isFullscreen ? "text-[12px]"  : "text-[8px]";
+    const qrSub          = isFullscreen ? "text-[10px]"  : "text-[6.5px]";
+    const footerSize     = isFullscreen ? "text-[11px]"  : "text-[7px]";
+    const disclaimerSize = isFullscreen ? "text-[10px]"  : "text-[6px]";
 
+    const qrSize   = isFullscreen ? 120  : 72;
+    const qrColW   = isFullscreen ? "w-[200px]" : "w-[120px]";
+    const logoBox  = isFullscreen ? "w-14 h-14" : "w-8 h-8";
+    const logoImg  = isFullscreen ? "w-9 h-9"   : "w-5 h-5";
+
+    // Tight padding to prevent overflow
+    const headerPad = isFullscreen ? "px-6 py-3"   : "px-4 py-2";
+    const bodyPadL  = isFullscreen ? "px-6 py-3"   : "px-3 py-2";
+    const bodyPadR  = isFullscreen ? "px-4 py-3"   : "px-2 py-2";
+    const infoGap   = isFullscreen ? "space-y-[10px]" : "space-y-[5px]";
+
+    return (
         <div
             className="
-                bg-white
-                rounded-3xl
-                overflow-hidden
-                shadow-2xl
-                max-w-sm
-                mx-auto
+                relative mx-auto font-sans rounded-[18px]
+                border border-black/10 bg-white
+                shadow-[0_20px_45px_-12px_rgba(0,0,0,0.25)]
+                flex flex-col overflow-hidden
             "
+            style={{
+                width:  isFullscreen ? "650px" : "380px",
+                height: isFullscreen ? "410px" : "240px",
+            }}
         >
+            {/* HEADER */}
+            <div className={`bg-[#0B6B53] rounded-t-[18px] ${headerPad} flex-shrink-0`}>
+                <div className="flex items-center gap-2">
+                    <div className={`${logoBox} rounded-md bg-white flex items-center justify-center flex-shrink-0`}>
+                        <img src={logo} alt="CDM Logo" className={`${logoImg} object-contain`} />
+                    </div>
+                    <div>
+                        <h2 className={`text-white font-semibold ${schoolName} leading-tight`}>
+                            COLEGIO DE MONTALBAN
+                        </h2>
+                        <p className={`text-white/70 ${schoolSub} leading-tight`}>
+                            Digital Student Identification
+                        </p>
+                    </div>
+                </div>
+            </div>
 
-            <div
-                className="
-                    bg-[#0B6B53]
-                    text-white
-                    p-4
-                "
-            >
+            {/* GOLD STRIP */}
+            <div className="h-[3px] bg-[#F4D35E] flex-shrink-0" />
 
-                <h2 className="font-bold text-lg">
-                    CDM OneServe
-                </h2>
+            {/* CONTENT */}
+            <div className="flex flex-1 min-h-0 overflow-hidden">
 
-                <p className="text-sm">
-                    Digital Student ID
-                </p>
+                {/* LEFT SIDE */}
+                <div className={`flex-1 ${bodyPadL} overflow-hidden`}>
+                    <div className={infoGap}>
+
+                        <div>
+                            <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 leading-none`}>
+                                Digital ID No.
+                            </p>
+                            <p className={`${valueSize} font-semibold text-[#106A2E] leading-tight`}>
+                                {digitalIdNumber}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 leading-none`}>
+                                Student Number
+                            </p>
+                            <p className={`${valueSize} font-semibold leading-tight`}>
+                                {studentNumber}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 leading-none`}>
+                                Issued Date
+                            </p>
+                            <p className={`${valueSize} font-semibold leading-tight`}>
+                                {issuedDate ? new Date(issuedDate).toLocaleDateString() : "-"}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 leading-none`}>
+                                Expiration Date
+                            </p>
+                            <p className={`${valueSize} font-semibold leading-tight`}>
+                                {expirationDate ? new Date(expirationDate).toLocaleDateString() : "-"}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 leading-none`}>
+                                Email
+                            </p>
+                            <p className={`${emailSize} font-medium truncate leading-tight`}>
+                                {email}
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+
+                {/* DIVIDER */}
+                <div className="w-px bg-gray-200 flex-shrink-0" />
+
+                {/* RIGHT SIDE — QR */}
+                <div className={`${qrColW} flex flex-col items-center justify-center ${bodyPadR} flex-shrink-0`}>
+                    <div className="border border-gray-200 rounded-lg p-1 bg-white">
+                        <QRCode value={qrCode || ""} size={qrSize} />
+                    </div>
+                    <p className={`mt-1 ${qrLabel} font-semibold text-[#106A2E] leading-tight`}>
+                        SCAN TO VERIFY
+                    </p>
+                    <p className={`${qrSub} text-center text-gray-500 mt-0.5 leading-tight`}>
+                        Verify this Digital ID<br />through CDM OneServe
+                    </p>
+                </div>
 
             </div>
 
-            <div className="p-5">
-
-                <div className="flex justify-center mb-5">
-
-                    <QRCode
-                        value={studentNumber}
-                        size={140}
-                    />
-
+            {/* DISCLAIMER — only show if space allows */}
+            {isFullscreen && (
+                <div className="px-6 pb-1 flex-shrink-0">
+                    <div className="border-t pt-1">
+                        <p className={`${disclaimerSize} text-gray-400 text-center leading-tight`}>
+                            This Digital ID remains the property of Colegio de Montalban.
+                            Any misuse, duplication, or unauthorized transfer is strictly prohibited.
+                        </p>
+                    </div>
                 </div>
+            )}
 
-                <div className="space-y-3 text-sm">
-
-                    <p>
-                        <strong>Birthday:</strong>
-                        {" "}
-                        {birthday}
-                    </p>
-
-                    <p>
-                        <strong>Contact:</strong>
-                        {" "}
-                        {contactNumber}
-                    </p>
-
-                    <p>
-                        <strong>Email:</strong>
-                        {" "}
-                        {email}
-                    </p>
-
-                    <p>
-                        <strong>Address:</strong>
-                        {" "}
-                        {address}
-                    </p>
-
-                    <hr />
-
-                    <p>
-                        <strong>Emergency Contact:</strong>
-                        {" "}
-                        {emergencyContact}
-                    </p>
-
-                    <p>
-                        <strong>Emergency Number:</strong>
-                        {" "}
-                        {emergencyNumber}
-                    </p>
-
-                </div>
-
-                <div
-                    className="
-                        mt-5
-                        text-center
-                        text-xs
-                        text-gray-500
-                    "
-                >
-                    Scan QR Code for Verification
-                </div>
-
+            {/* FOOTER */}
+            <div className={`bg-[#0B6B53] rounded-b-[18px] text-white/75 ${footerSize} tracking-[1px] uppercase text-center py-1.5 px-2 flex-shrink-0`}>
+                CDM OneServe • Verify • Connect • Secure
             </div>
 
         </div>
-
     );
-
 }

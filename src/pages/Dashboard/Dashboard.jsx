@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { API_URL } from "../../config/api";
+import toast from "react-hot-toast";
 
 export default function Dashboard() {
 
@@ -9,25 +10,30 @@ export default function Dashboard() {
     const [user, setUser] = useState(null);
     const [search, setSearch] = useState("");
     const [announcementIndex, setAnnouncementIndex] = useState(0);
+    const [digitalIdStatus, setDigitalIdStatus] = useState(null);
 
     useEffect(() => {
 
-        const email =
-            localStorage.getItem(
-                "userEmail"
-            );
+            const email =
+                localStorage.getItem("userEmail");
 
-        fetch(
-            `${API_URL}/api/profile/${email}`
-        )
-            .then(res => res.json())
-            .then(data => setUser(data))
-            .catch(console.error);
+            fetch(`${API_URL}/api/profile/${email}`)
+                .then(res => res.json())
+                .then(data => setUser(data))
+                .catch(console.error);
+
+            fetch(`${API_URL}/api/digitalid/${email}`)
+                .then(res => res.json())
+                .then(data => setDigitalIdStatus(data))
+                .catch(console.error);
 
     }, []);
 
     const hasDigitalId =
-    user?.hasDigitalId ?? false; // Replace with actual logic to check if the user has a digital ID
+    digitalIdStatus?.hasDigitalId ?? false;
+
+    const requestSubmitted =
+    digitalIdStatus?.requestSubmitted ?? false; 
 
     const initials =
     user?.fullName
@@ -286,58 +292,59 @@ export default function Dashboard() {
                     </p>
 
                     {
-                        hasDigitalId ? (
-                            <button
-                                onClick={() => navigate("/view-digital-id")}
-                                className="
-                                    w-full
-                                    bg-[#F4D35E]
-                                    hover:opacity-90
-                                    active:scale-[0.98]
-                                    text-[#1F1F1F]
-                                    p-3
-                                    rounded-lg
-                                    font-medium
-                                    text-sm
-                                    transition-all
-                                    flex
-                                    items-center
-                                    justify-center
-                                    gap-2
-                                    relative
-                                    z-10
-                                "
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <rect x="3" y="3" width="7" height="7" rx="1" />
-                                    <rect x="14" y="3" width="7" height="7" rx="1" />
-                                    <rect x="3" y="14" width="7" height="7" rx="1" />
-                                    <path d="M14 14h3v3h-3zM17 17h4v4h-4z" />
-                                </svg>
-                                View Digital ID
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => navigate("/request-digital-id")}
-                                className="
-                                    w-full
-                                    bg-white
-                                    hover:opacity-90
-                                    active:scale-[0.98]
-                                    text-[#106A2E]
-                                    p-3
-                                    rounded-lg
-                                    font-medium
-                                    text-sm
-                                    transition-all
-                                    relative
-                                    z-10
-                                "
-                            >
-                                Request Digital ID
-                            </button>
-                        )
-                    }
+                    hasDigitalId ? (
+
+                        <button
+                            onClick={() => navigate("/view-digital-id")}
+                            className="
+                                w-full
+                                bg-[#F4D35E]
+                                text-[#1F1F1F]
+                                p-3
+                                rounded-lg
+                                font-medium
+                                text-sm
+                            "
+                        >
+                            View Digital ID
+                        </button>
+
+                    ) : requestSubmitted ? (
+
+                        <button
+                            onClick={() => navigate("/view-digital-id")}
+                            className="
+                                w-full
+                                bg-amber-400
+                                text-[#1F1F1F]
+                                p-3
+                                rounded-lg
+                                font-medium
+                                text-sm
+                            "
+                        >
+                            Request Pending
+                        </button>
+
+                    ) : (
+
+                        <button
+                            onClick={() => navigate("/request-digital-id")}
+                            className="
+                                w-full
+                                bg-white
+                                text-[#106A2E]
+                                p-3
+                                rounded-lg
+                                font-medium
+                                text-sm
+                            "
+                        >
+                            Request Digital ID
+                        </button>
+
+                    )
+                }
 
                 </div>
 
@@ -372,27 +379,33 @@ export default function Dashboard() {
                         filteredServices.map((service) => (
 
                             <button
-                                key={service.key}
-                                onClick={() => window.open(service.url, "_blank")}
-                                className="
-                                    bg-white/90
-                                    border border-[#106A2E]/10
-                                    rounded-2xl
-                                    p-4
-                                    flex
-                                    flex-col
-                                    items-start
-                                    justify-between
-                                    text-left
-                                    flex-shrink-0
-                                    w-32
-                                    h-32
-                                    snap-start
-                                    hover:border-[#106A2E]/30
-                                    hover:-translate-y-0.5
-                                    transition-all
-                                "
-                            >
+                                    key={service.key}
+                                    onClick={() => {
+                                        if (!hasDigitalId) {
+                                            toast("You need a Digital ID to access Campus Services.");
+                                            return;
+                                        }
+                                        window.open(service.url, "_blank");
+                                    }}
+                                    className="
+                                        bg-white/90
+                                        border border-[#106A2E]/10
+                                        rounded-2xl
+                                        p-4
+                                        flex
+                                        flex-col
+                                        items-start
+                                        justify-between
+                                        text-left
+                                        flex-shrink-0
+                                        w-32
+                                        h-32
+                                        snap-start
+                                        hover:border-[#106A2E]/30
+                                        hover:-translate-y-0.5
+                                        transition-all
+                                    "
+                                >
 
                                 <div
                                     className="w-10 h-10 rounded-xl flex items-center justify-center"

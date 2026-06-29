@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { API_URL } from "../../config/api";
+import toast from "react-hot-toast";
 
 export default function OTPVerification() {
 
@@ -58,7 +59,7 @@ export default function OTPVerification() {
    const handleVerify = async () => {
 
     if (otp.length !== 6) {
-        alert("Please enter a valid 6-digit OTP.");
+        toast.error("Please enter a valid 6-digit OTP.");
         return;
     }
 
@@ -83,7 +84,7 @@ export default function OTPVerification() {
 
         const data = await response.text();
 
-        alert(data);
+        toast.error(data);
 
         if (response.ok) {
 
@@ -98,14 +99,14 @@ export default function OTPVerification() {
 
             console.error(error);
 
-            alert(error.message);
+            toast.error(error.message);
 
         }
 
 };
 
     const handleResendOTP = () => {
-        alert("OTP has been resent to your email.");
+        toast.info("OTP has been resent to your email.");
     };
 
     return (

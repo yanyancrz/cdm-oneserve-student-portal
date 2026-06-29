@@ -14,6 +14,11 @@ import VerifyEmailChange from "./pages/Profile/VerifyEmailChange";
 import ProtectedRoute from "./pages/ProtectedRoute";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 import ResetPassword from "./pages/Auth/ResetPassword";
+import AdminDashboard from "./pages/Admin/AdminDashboard";
+import DigitalIDRequests from "./pages/Admin/DigitalIDRequests";
+import AdminLayout from "./layouts/AdminLayout";
+
+
 
 function App() {
     return (
@@ -35,8 +40,11 @@ function App() {
 
                     <Route  path="/reset-password"  element={<ResetPassword />} />  
 
-                    <Route path="/edit-profile"  element={<EditProfile />} />  
-                                                                                          
+                    <Route path="/edit-profile"  element={<EditProfile />} />
+
+                    <Route path="/request-digital-id" element={<RequestDigitalID />} /> 
+                  
+                                                                                        
                     {/* Student Pages */}
 
                     <Route element={<StudentLayout />}>
@@ -83,10 +91,15 @@ function App() {
                                     <Profile />
                                 </ProtectedRoute>
                             }
-                        />
+                        />                    
 
-                      
+                    </Route>
 
+                    {/* Sidebar Routes */}
+
+                    <Route path="/admin" element={<AdminLayout />}>
+                        <Route path="dashboard" element={<AdminDashboard />} />
+                        <Route path="requests" element={<DigitalIDRequests />} />x
                     </Route>
 
                 </Routes>

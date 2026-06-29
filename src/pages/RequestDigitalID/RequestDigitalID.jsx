@@ -2,6 +2,10 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import BackgroundLayout from "../../layouts/BackgroundLayout";
+import { API_URL } from "../../config/api";
+import LoadingModal from "../../components/LoadingModal/LoadingModal";
+
+
 
 export default function RequestDigitalID() {
 
@@ -9,10 +13,19 @@ export default function RequestDigitalID() {
 
     const [studentNumber, setStudentNumber] = useState("");
     const [fullName, setFullName] = useState("");
+    const [role, setRole] = useState("");
     const [course, setCourse] = useState("");
+    const [institute, setInstitute] = useState("");
     const [yearLevel, setYearLevel] = useState("");
     const [profilePicture, setProfilePicture] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
+    const [facultyIdNumber, setFacultyIdNumber] = useState("");
+    const [position, setPosition] = useState("");
+    const [address, setAddress] = useState("");
+    const [studentStatus, setStudentStatus] = useState("");
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const isFaculty = role === "faculty";
 
     const handleFileChange = (e) => {
 
@@ -28,22 +41,112 @@ export default function RequestDigitalID() {
 
     };
 
-    const handleSubmit = () => {
+    const isFormValid =
+    role === "student"
+        ? (
+            profilePicture &&
+            studentNumber &&
+            fullName &&
+            institute &&
+            course &&
+            yearLevel &&
+            studentStatus &&
+            address
+        )
+        : (
+            profilePicture &&
+            facultyIdNumber &&
+            fullName &&
+            institute &&
+            position &&
+            address
+        );
 
-        console.log({
-            studentNumber,
-            fullName,
-            course,
-            yearLevel,
-            profilePicture
-        });
+   const handleSubmit = async () => {
 
-        toast.success("Digital ID Request Submitted!");
+    try {
 
-    };
+        setIsSubmitting(true);
+
+        const userId =
+            localStorage.getItem("userId");
+
+       
+        const formData = new FormData();
+
+            formData.append("userId", userId);
+            formData.append("role", role);
+            formData.append("studentNumber", studentNumber);
+            formData.append("facultyIdNumber", facultyIdNumber);
+            formData.append("fullName", fullName);
+            formData.append("institute", institute);
+            formData.append("course", course);
+            formData.append("yearLevel", yearLevel);
+            formData.append("studentStatus", studentStatus);
+            formData.append("position", position);
+            formData.append("address", address);
+
+            if (profilePicture) {
+                formData.append(
+                    "profilePicture",
+                    profilePicture
+                );
+            }
+
+            const response = await fetch(
+                `${API_URL}/api/digitalid/request`,
+                {
+                    method: "POST",
+                    body: formData
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            toast.error(
+                data.message ||
+                "Unable to submit request."
+            );
+
+            return;
+        }
+
+        toast.success(
+            "Digital ID Request Submitted!"
+        );
+
+        navigate("/dashboard");
+
+    }
+    catch (error) {
+
+        console.error(error);
+
+        toast.error(
+            "Unable to connect to server."
+        );
+
+    }
+
+    finally {
+
+        setIsSubmitting(false);
+
+    }
+
+};
 
     return (
         <BackgroundLayout>
+
+            {isSubmitting && (
+                <LoadingModal
+                    message="Submitting Digital ID Request..."
+                />
+            )}
 
             <div
                 className="min-h-screen p-4 pb-10 relative overflow-hidden"                
@@ -154,23 +257,21 @@ export default function RequestDigitalID() {
 
                     </div>
 
-                    {/* STUDENT NUMBER */}
+                    {/* ROLE */}
 
                     <div className="mb-3.5">
                         <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                            Student Number
+                            I am a
                         </label>
                         <div className="relative flex items-center">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 text-gray-400">
-                                <rect x="3" y="4" width="18" height="16" rx="2" />
-                                <path d="M7 8h10M7 12h10M7 16h6" />
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 text-gray-400 pointer-events-none">
+                                <circle cx="12" cy="8" r="4" />
+                                <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
                             </svg>
-                            <input
-                                type="text"
-                                placeholder="2024-00123"
+                            <select
                                 className="
                                     w-full
-                                    pl-10 pr-3.5 py-3
+                                    pl-10 pr-9 py-3
                                     rounded-xl
                                     border border-gray-200
                                     bg-gray-50
@@ -179,12 +280,79 @@ export default function RequestDigitalID() {
                                     focus:border-[#106A2E]
                                     focus:bg-white
                                     transition-colors
+                                    appearance-none
+                                    text-[#1F1F1F]
                                 "
-                                value={studentNumber}
-                                onChange={(e) => setStudentNumber(e.target.value)}
-                            />
+                                value={role}
+                                onChange={(e) => {
+                                    setRole(e.target.value);
+                                    setCourse("");
+                                    setInstitute("");
+                                    setYearLevel("");
+                                    setStudentNumber("");
+                                }}
+                            >
+                                <option value="">Select Role</option>
+                                <option value="student">Student</option>
+                                <option value="faculty">Faculty</option>
+                            </select>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute right-3.5 text-gray-400 pointer-events-none">
+                                <path d="m6 9 6 6 6-6" />
+                            </svg>
                         </div>
                     </div>
+
+                    {/* STUDENT NUMBER (students only) */}
+
+                    {!isFaculty && (
+
+                        <div className="mb-3.5">
+                            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                                Student Number
+                            </label>
+                            <div className="relative flex items-center">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 text-gray-400">
+                                    <rect x="3" y="4" width="18" height="16" rx="2" />
+                                    <path d="M7 8h10M7 12h10M7 16h6" />
+                                </svg>
+                                <input
+                                    type="text"
+                                    placeholder="2024-00123"
+                                    className="
+                                        w-full
+                                        pl-10 pr-3.5 py-3
+                                        rounded-xl
+                                        border border-gray-200
+                                        bg-gray-50
+                                        text-sm
+                                        outline-none
+                                        focus:border-[#106A2E]
+                                        focus:bg-white
+                                        transition-colors
+                                    "
+                                    value={studentNumber}
+                                    onChange={(e) => setStudentNumber(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                    )}
+
+                    {isFaculty && (
+                        <div className="mb-3.5">
+                            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                                Faculty ID Number
+                            </label>
+
+                            <input
+                                type="text"
+                                placeholder="FAC-2026-001"
+                                value={facultyIdNumber}
+                                onChange={(e) => setFacultyIdNumber(e.target.value)}
+                                className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50"
+                            />
+                        </div>
+                    )}
 
                     {/* FULL NAME */}
 
@@ -218,113 +386,234 @@ export default function RequestDigitalID() {
                         </div>
                     </div>
 
-                    {/* COURSE */}
+                    {/* COURSE (students only) */}
+
+                    {!isFaculty && (
+
+                        <div className="mb-3.5">
+                            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                                Program
+                            </label>
+                            <div className="relative flex items-center">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 text-gray-400 pointer-events-none">
+                                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                                </svg>
+                                <select
+                                    className="
+                                        w-full
+                                        pl-10 pr-9 py-3
+                                        rounded-xl
+                                        border border-gray-200
+                                        bg-gray-50
+                                        text-sm
+                                        outline-none
+                                        focus:border-[#106A2E]
+                                        focus:bg-white
+                                        transition-colors
+                                        appearance-none
+                                        text-[#1F1F1F]
+                                    "
+                                    value={course}
+                                    onChange={(e) => setCourse(e.target.value)}
+                                >
+                                    <option value="">Select Program</option>
+                                    <option>Bachelor of Science in Business Administration Major in Human Resource Management</option>
+                                    <option>Bachelor of Science in Entrepreneurship</option>
+                                    <option>Bachelor of Science in Computer Engineering</option>
+                                    <option>Bachelor of Science in Information Technology</option>
+                                    <option>Bachelor of Early Childhood Education</option>
+                                    <option>Bachelor of Technology and Livelihood Education Major in Information and Communication Technology</option>
+                                    <option>Bachelor of Science in Secondary Education Major in Science</option>
+                                    <option>Bachelor of Elementary Education Major in General Education</option>
+                                    <option>Teacher Certificate Program</option>
+                                </select>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute right-3.5 text-gray-400 pointer-events-none">
+                                    <path d="m6 9 6 6 6-6" />
+                                </svg>
+                            </div>
+                        </div>
+
+                    )}
+
+                    {/* INSTITUTE (faculty only) */}
+
+                        <div className="mb-3.5">
+                            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                                Institute
+                            </label>
+                            <div className="relative flex items-center">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 text-gray-400 pointer-events-none">
+                                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                                </svg>
+                                <select
+                                    className="
+                                        w-full
+                                        pl-10 pr-9 py-3
+                                        rounded-xl
+                                        border border-gray-200
+                                        bg-gray-50
+                                        text-sm
+                                        outline-none
+                                        focus:border-[#106A2E]
+                                        focus:bg-white
+                                        transition-colors
+                                        appearance-none
+                                        text-[#1F1F1F]
+                                    "
+                                    value={institute}
+                                    onChange={(e) => setInstitute(e.target.value)}
+                                >
+                                    <option value="">Select Institute</option>
+                                    <option>Institute of Business and Entrepreneurship</option>
+                                    <option>Institute of Teacher Education</option>
+                                    <option>Institute of Computing Studies</option>
+                                </select>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute right-3.5 text-gray-400 pointer-events-none">
+                                    <path d="m6 9 6 6 6-6" />
+                                </svg>
+                            </div>
+                        </div>
+
+
+                    {isFaculty && (
+                        <div className="mb-3.5">
+                            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                                Position
+                            </label>
+
+                            <select
+                                value={position}
+                                onChange={(e) => setPosition(e.target.value)}
+                                className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50"
+                            >
+                                <option value="">Select Position</option>
+                                <option>Instructor I</option>
+                                <option>Instructor II</option>
+                                <option>Assistant Professor</option>
+                                <option>Associate Professor</option>
+                                <option>Professor</option>
+                            </select>
+                        </div>
+                    )}
+
+                    {!isFaculty && (
+
+                        <div className="mb-3.5">
+                            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                                Student Status
+                            </label>
+
+                            <select
+                                value={studentStatus}
+                                onChange={(e) => setStudentStatus(e.target.value)}
+                                className="
+                                    w-full
+                                    p-3
+                                    rounded-xl
+                                    border border-gray-200
+                                    bg-gray-50
+                                    text-sm
+                                    outline-none
+                                    focus:border-[#106A2E]
+                                    focus:bg-white
+                                "
+                            >
+                                <option value="">
+                                    Select Status
+                                </option>
+
+                                <option value="Regular">
+                                    Regular
+                                </option>
+
+                                <option value="Irregular">
+                                    Irregular
+                                </option>
+
+                            </select>
+                        </div>
+
+                    )}
+
+                    {/* YEAR LEVEL (students only) */}
+
+                    {!isFaculty && (
+
+                        <div className="mb-6">
+                            <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                                Year Level
+                            </label>
+                            <div className="relative flex items-center">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 text-gray-400 pointer-events-none">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                                    <path d="M16 2v4M8 2v4M3 10h18" />
+                                </svg>
+                                <select
+                                    className="
+                                        w-full
+                                        pl-10 pr-9 py-3
+                                        rounded-xl
+                                        border border-gray-200
+                                        bg-gray-50
+                                        text-sm
+                                        outline-none
+                                        focus:border-[#106A2E]
+                                        focus:bg-white
+                                        transition-colors
+                                        appearance-none
+                                        text-[#1F1F1F]
+                                    "
+                                    value={yearLevel}
+                                    onChange={(e) => setYearLevel(e.target.value)}
+                                >
+                                    <option value="">Select year level</option>
+                                    <option>1st Year</option>
+                                    <option>2nd Year</option>
+                                    <option>3rd Year</option>
+                                    <option>4th Year</option>
+                                </select>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute right-3.5 text-gray-400 pointer-events-none">
+                                    <path d="m6 9 6 6 6-6" />
+                                </svg>
+                            </div>
+                        </div>
+
+                    )}
 
                     <div className="mb-3.5">
                         <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                            Course
+                            Address
                         </label>
-                        <div className="relative flex items-center">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 text-gray-400">
-                                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                                <path d="M6 12v5c3 3 9 3 12 0v-5" />
-                            </svg>
-                            <input
-                                type="text"
-                                placeholder="BS Computer Science"
-                                className="
-                                    w-full
-                                    pl-10 pr-3.5 py-3
-                                    rounded-xl
-                                    border border-gray-200
-                                    bg-gray-50
-                                    text-sm
-                                    outline-none
-                                    focus:border-[#106A2E]
-                                    focus:bg-white
-                                    transition-colors
-                                "
-                                value={course}
-                                onChange={(e) => setCourse(e.target.value)}
-                            />
-                        </div>
-                    </div>
 
-                    {/* YEAR LEVEL */}
-
-                    <div className="mb-6">
-                        <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                            Year Level
-                        </label>
-                        <div className="relative flex items-center">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 text-gray-400 pointer-events-none">
-                                <rect x="3" y="4" width="18" height="18" rx="2" />
-                                <path d="M16 2v4M8 2v4M3 10h18" />
-                            </svg>
-                            <select
-                                className="
-                                    w-full
-                                    pl-10 pr-9 py-3
-                                    rounded-xl
-                                    border border-gray-200
-                                    bg-gray-50
-                                    text-sm
-                                    outline-none
-                                    focus:border-[#106A2E]
-                                    focus:bg-white
-                                    transition-colors
-                                    appearance-none
-                                    text-[#1F1F1F]
-                                "
-                                value={yearLevel}
-                                onChange={(e) => setYearLevel(e.target.value)}
-                            >
-                                <option value="">Select year level</option>
-                                <option>1st Year</option>
-                                <option>2nd Year</option>
-                                <option>3rd Year</option>
-                                <option>4th Year</option>
-                            </select>
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute right-3.5 text-gray-400 pointer-events-none">
-                                <path d="m6 9 6 6 6-6" />
-                            </svg>
-                        </div>
+                        <textarea
+                            rows="3"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            placeholder="Rodriguez, Rizal"
+                            className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50"
+                        />
                     </div>
 
                     {/* SUBMIT BUTTON */}
 
                     <button
+                        disabled={!isFormValid || isSubmitting}
                         onClick={handleSubmit}
-                        className="
-                            w-full
-                            bg-[#106A2E]
-                            hover:bg-[#0D7856]
-                            active:scale-[0.98]
-                            text-white
-                            p-3
-                            rounded-xl
-                            font-semibold
-                            text-sm
-                            transition-all
-                            flex
-                            items-center
-                            justify-center
-                            gap-2
-                            shadow-lg
-                            shadow-[#106A2E]/25
-                        "
+                        className={`
+                            w-full p-3 rounded-xl font-semibold
+                            ${isFormValid
+                                ? "bg-[#106A2E] text-white"
+                                : "bg-gray-300 text-gray-500 cursor-not-allowed"}
+                        `}
                     >
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M22 2 11 13" />
-                            <path d="M22 2 15 22l-4-9-9-4z" />
-                        </svg>
-                        Submit Request
+                        {isSubmitting
+                            ? "Submitting..."
+                            : "Submit Request"}
                     </button>
 
-                    <p className="text-xs text-gray-500 text-center mt-4">
-                        You'll be notified once your Digital ID is ready
-                    </p>
-
+                   
                 </div>
 
             </div>

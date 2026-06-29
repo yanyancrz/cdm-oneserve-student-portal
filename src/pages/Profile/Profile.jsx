@@ -83,6 +83,8 @@ if (!student) {
 
 }
 
+    const isFaculty = student.role === "faculty";
+
     return (
 
         <div
@@ -135,7 +137,7 @@ if (!student) {
 
                         <span className="inline-flex items-center gap-1.5 bg-[#106A2E]/10 text-[#106A2E] text-xs font-medium px-3 py-1 rounded-full mt-3">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#106A2E]" />
-                            Active Student
+                            {isFaculty ? "Active Faculty" : "Active Student"}
                         </span>
 
                     </div>
@@ -147,7 +149,7 @@ if (!student) {
                 <div className="bg-white rounded-3xl shadow-xl shadow-[#106A2E]/10 border border-[#106A2E]/[0.06] p-6 mt-4">
 
                     <h3 className="text-sm font-semibold text-[#1F1F1F] mb-4">
-                        Student Information
+                        {isFaculty ? "Faculty Information" : "Student Information"}
                     </h3>
 
                     <div className="space-y-4">
@@ -182,7 +184,7 @@ if (!student) {
 
                         </div>
 
-                        {/* Course */}
+                        {/* Course (student) or Institute (faculty) */}
 
                         <div className="flex items-center gap-3">
 
@@ -201,46 +203,54 @@ if (!student) {
                             <div>
 
                                 <p className="text-xs text-gray-500">
-                                    Course
+                                    {isFaculty ? "Institute" : "Program"}
                                 </p>
 
                                 <p className="text-sm font-medium text-[#1F1F1F]">
-                                    {student.course || "Not Set"}
+                                    {
+                                        isFaculty
+                                            ? (student.institute || "Not Set")
+                                            : (student.course || "Not Set")
+                                    }
                                 </p>
 
                             </div>
 
                         </div>
 
-                        {/* Year Level */}
+                        {/* Year Level (students only) */}
 
-                        <div className="flex items-center gap-3">
+                        {!isFaculty && (
 
-                            <div className="w-9 h-9 rounded-lg bg-[#106A2E]/10 flex items-center justify-center flex-shrink-0">
+                            <div className="flex items-center gap-3">
 
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#106A2E" strokeWidth="2">
+                                <div className="w-9 h-9 rounded-lg bg-[#106A2E]/10 flex items-center justify-center flex-shrink-0">
 
-                                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#106A2E" strokeWidth="2">
 
-                                    <path d="M16 2v4M8 2v4M3 10h18" />
+                                        <rect x="3" y="4" width="18" height="18" rx="2" />
 
-                                </svg>
+                                        <path d="M16 2v4M8 2v4M3 10h18" />
+
+                                    </svg>
+
+                                </div>
+
+                                <div>
+
+                                    <p className="text-xs text-gray-500">
+                                        Year Level
+                                    </p>
+
+                                    <p className="text-sm font-medium text-[#1F1F1F]">
+                                        {student.yearLevel || "Not Set"}
+                                    </p>
+
+                                </div>
 
                             </div>
 
-                            <div>
-
-                                <p className="text-xs text-gray-500">
-                                    Year Level
-                                </p>
-
-                                <p className="text-sm font-medium text-[#1F1F1F]">
-                                    {student.yearLevel || "Not Set"}
-                                </p>
-
-                            </div>
-
-                        </div>
+                        )}
 
                         {/* Contact Number */}
 

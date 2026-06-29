@@ -12,6 +12,7 @@ export default function EditProfile() {
 
     const [email, setEmail] = useState("");
     const [contactNumber, setContactNumber] = useState("");
+    const [institute, setInstitute] = useState("");
 
     const [profilePicture, setProfilePicture] =
         useState(null);
@@ -43,6 +44,10 @@ export default function EditProfile() {
                     data.contactNumber || ""
                 );
 
+                setInstitute(
+                    data.institute || ""
+                );
+
             }
             catch (error) {
 
@@ -55,6 +60,8 @@ export default function EditProfile() {
         loadProfile();
 
     }, []);
+
+    const isFaculty = student?.role === "faculty";
 
     const handleUpdate = async () => {
 
@@ -86,7 +93,7 @@ export default function EditProfile() {
 
         }
 
-        // Update contact number only
+        // Update contact number (and institute, for faculty)
 
         await fetch(
             `${API_URL}/api/profile/update`,
@@ -99,7 +106,8 @@ export default function EditProfile() {
                 body: JSON.stringify({
                     userId: student.id,
                     email: student.email,
-                    contactNumber
+                    contactNumber,
+                    ...(isFaculty && { institute })
                 })
             }
         );
@@ -266,28 +274,32 @@ if (!student) {
 
                     {/* STUDENT NUMBER */}
 
-                    <div className="mb-4">
+                    {!isFaculty && (
 
-                        <label className="text-sm text-gray-500">
-                            Student Number
-                        </label>
+                        <div className="mb-4">
 
-                        <input
-                            value={
-                                student.studentNumber
-                            }
-                            disabled
-                            className="
-                                w-full
-                                mt-1
-                                p-3
-                                rounded-xl
-                                bg-gray-100
-                                border
-                            "
-                        />
+                            <label className="text-sm text-gray-500">
+                                Student Number
+                            </label>
 
-                    </div>
+                            <input
+                                value={
+                                    student.studentNumber
+                                }
+                                disabled
+                                className="
+                                    w-full
+                                    mt-1
+                                    p-3
+                                    rounded-xl
+                                    bg-gray-100
+                                    border
+                                "
+                            />
+
+                        </div>
+
+                    )}
 
                     {/* FULL NAME */}
 
@@ -368,55 +380,110 @@ if (!student) {
 
                     </div>
 
-                    {/* COURSE */}
+                    {/* FACULTY: EDITABLE INSTITUTE */}
 
-                    <div className="mb-4">
+                    {isFaculty && (
 
-                        <label className="text-sm text-gray-500">
-                            Course
-                        </label>
+                        <div className="mb-4">
 
-                        <input
-                            value={
-                                student.course || ""
-                            }
-                            disabled
-                            className="
-                                w-full
-                                mt-1
-                                p-3
-                                rounded-xl
-                                bg-gray-100
-                                border
-                            "
-                        />
+                            <label className="text-sm text-gray-500">
+                                Institute
+                            </label>
 
-                    </div>
+                            <select
+                                value={institute}
+                                onChange={(e) =>
+                                    setInstitute(
+                                        e.target.value
+                                    )
+                                }
+                                className="
+                                    w-full
+                                    mt-1
+                                    p-3
+                                    rounded-xl
+                                    border
+                                    bg-white
+                                "
+                            >
 
-                    {/* YEAR LEVEL */}
+                                <option value="">
+                                    Select Institute
+                                </option>
 
-                    <div className="mb-6">
+                                <option>
+                                    Institute of Business and Entrepreneurship
+                                </option>
 
-                        <label className="text-sm text-gray-500">
-                            Year Level
-                        </label>
+                                <option>
+                                    Institute of Teacher Education
+                                </option>
 
-                        <input
-                            value={
-                                student.yearLevel || ""
-                            }
-                            disabled
-                            className="
-                                w-full
-                                mt-1
-                                p-3
-                                rounded-xl
-                                bg-gray-100
-                                border
-                            "
-                        />
+                                <option>
+                                    Institute of Computing Studies
+                                </option>
 
-                    </div>
+                            </select>
+
+                        </div>
+
+                    )}
+
+                    {/* STUDENT: READ-ONLY COURSE & YEAR LEVEL */}
+
+                    {!isFaculty && (
+
+                        <>
+
+                            <div className="mb-4">
+
+                                <label className="text-sm text-gray-500">
+                                    Course
+                                </label>
+
+                                <input
+                                    value={
+                                        student.course || ""
+                                    }
+                                    disabled
+                                    className="
+                                        w-full
+                                        mt-1
+                                        p-3
+                                        rounded-xl
+                                        bg-gray-100
+                                        border
+                                    "
+                                />
+
+                            </div>
+
+                            <div className="mb-6">
+
+                                <label className="text-sm text-gray-500">
+                                    Year Level
+                                </label>
+
+                                <input
+                                    value={
+                                        student.yearLevel || ""
+                                    }
+                                    disabled
+                                    className="
+                                        w-full
+                                        mt-1
+                                        p-3
+                                        rounded-xl
+                                        bg-gray-100
+                                        border
+                                    "
+                                />
+
+                            </div>
+
+                        </>
+
+                    )}
 
                     {/* ACTION BUTTONS */}
 

@@ -9,14 +9,26 @@ export default function SetupProfile() {
     const navigate = useNavigate();
 
     const [contactNumber, setContactNumber] = useState("");
+    const [role, setRole] = useState("");
     const [course, setCourse] = useState("");
+    const [institute, setInstitute] = useState("");
     const [yearLevel, setYearLevel] = useState("");
     const [profilePicture, setProfilePicture] = useState(null);
 
     const handleSaveProfile = async () => {
-
+       
     const userId =
         localStorage.getItem("userId");
+
+
+         console.log({
+        userId,
+        contactNumber,
+        role,
+        course,
+        institute,
+        yearLevel
+    });
 
     try {
 
@@ -77,7 +89,9 @@ export default function SetupProfile() {
                 body: JSON.stringify({
                     userId,
                     contactNumber,
+                    role,
                     course,
+                    institute,
                     yearLevel
                 })
             }
@@ -91,8 +105,18 @@ export default function SetupProfile() {
         if (response.ok) {
 
             localStorage.setItem(
+                "role",
+                role
+            );
+
+            localStorage.setItem(
                 "course",
                 course
+            );
+
+            localStorage.setItem(
+                "institute",
+                institute
             );
 
             localStorage.setItem(
@@ -233,16 +257,16 @@ export default function SetupProfile() {
                     <div>
 
                         <label className="text-sm text-gray-600">
-                            Course
+                            I am a
                         </label>
 
                         <select
-                            value={course}
-                            onChange={(e) =>
-                                setCourse(
-                                    e.target.value
-                                )
-                            }
+                            value={role}
+                            onChange={(e) => {
+                                setRole(e.target.value);
+                                setCourse("");
+                                setInstitute("");
+                            }}
                             className="
                                 w-full
                                 mt-1
@@ -257,74 +281,169 @@ export default function SetupProfile() {
                         >
 
                             <option value="">
-                                Select Course
+                                Select Role
                             </option>
 
-                            <option>
-                                BS Information Technology
+                            <option value="student">
+                                Student
                             </option>
 
-                            <option>
-                                BS Business Administration
-                            </option>
-
-                            <option>
-                                BS Education
+                            <option value="faculty">
+                                Faculty
                             </option>
 
                         </select>
 
                     </div>
 
-                    <div>
+                    {role === "student" && (
 
-                        <label className="text-sm text-gray-600">
-                            Year Level
-                        </label>
+                        <div>
 
-                        <select
-                            value={yearLevel}
-                            onChange={(e) =>
-                                setYearLevel(
-                                    e.target.value
-                                )
-                            }
-                            className="
-                                w-full
-                                mt-1
-                                p-3
-                                rounded-xl
-                                border
-                                border-gray-200
-                                bg-gray-50
-                                focus:border-[#106A2E]
-                                outline-none
-                            "
-                        >
+                            <label className="text-sm text-gray-600">
+                                Program
+                            </label>
 
-                            <option value="">
-                                Select Year Level
-                            </option>
+                            <select
+                                value={course}
+                                onChange={(e) =>
+                                    setCourse(
+                                        e.target.value
+                                    )
+                                }
+                                className="
+                                    w-full
+                                    mt-1
+                                    p-3
+                                    rounded-xl
+                                    border
+                                    border-gray-200
+                                    bg-gray-50
+                                    focus:border-[#106A2E]
+                                    outline-none
+                                "
+                            >
 
-                            <option>
-                                1st Year
-                            </option>
+                               <option value="">Select Program</option>
+                                    <option>Bachelor of Science in Business Administration Major in Human Resource Management</option>
+                                    <option>Bachelor of Science in Entrepreneurship</option>
+                                    <option>Bachelor of Science in Computer Engineering</option>
+                                    <option>Bachelor of Science in Information Technology</option>
+                                    <option>Bachelor of Early Childhood Education</option>
+                                    <option>Bachelor of Technology and Livelihood Education Major in Information and Communication Technology</option>
+                                    <option>Bachelor of Science in Secondary Education Major in Science</option>
+                                    <option>Bachelor of Elementary Education Major in General Education</option>
+                                    <option>Teacher Certificate Program</option>
 
-                            <option>
-                                2nd Year
-                            </option>
+                            </select>
 
-                            <option>
-                                3rd Year
-                            </option>
+                        </div>
 
-                            <option>
-                                4th Year
-                            </option>
+                    )}
 
-                        </select>
+                    {role === "faculty" && (
 
-                    </div>
+                        <div>
+
+                            <label className="text-sm text-gray-600">
+                                Institute
+                            </label>
+
+                            <select
+                                value={institute}
+                                onChange={(e) =>
+                                    setInstitute(
+                                        e.target.value
+                                    )
+                                }
+                                className="
+                                    w-full
+                                    mt-1
+                                    p-3
+                                    rounded-xl
+                                    border
+                                    border-gray-200
+                                    bg-gray-50
+                                    focus:border-[#106A2E]
+                                    outline-none
+                                "
+                            >
+
+                                <option value="">
+                                    Select Institute
+                                </option>
+
+                                <option>
+                                    Institute of Business and Entrepreneurship
+                                </option>
+
+                                <option>
+                                    Institute of Teacher Education
+                                </option>
+
+                                <option>
+                                    Institute of Computing Studies
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    )}
+
+                    {role === "student" && (
+
+                        <div>
+
+                            <label className="text-sm text-gray-600">
+                                Year Level
+                            </label>
+
+                            <select
+                                value={yearLevel}
+                                onChange={(e) =>
+                                    setYearLevel(
+                                        e.target.value
+                                    )
+                                }
+                                className="
+                                    w-full
+                                    mt-1
+                                    p-3
+                                    rounded-xl
+                                    border
+                                    border-gray-200
+                                    bg-gray-50
+                                    focus:border-[#106A2E]
+                                    outline-none
+                                "
+                            >
+
+                                <option value="">
+                                    Select Year Level
+                                </option>
+
+                                <option>
+                                    1st Year
+                                </option>
+
+                                <option>
+                                    2nd Year
+                                </option>
+
+                                <option>
+                                    3rd Year
+                                </option>
+
+                                <option>
+                                    4th Year
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    )}
 
                 </div>
 
