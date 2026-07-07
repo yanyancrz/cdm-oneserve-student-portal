@@ -17,6 +17,7 @@ import ResetPassword from "./pages/Auth/ResetPassword";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import DigitalIDRequests from "./pages/Admin/DigitalIDRequests";
 import AdminLayout from "./layouts/AdminLayout";
+import Users from "./pages/Admin/Users";
 
 
 
@@ -43,6 +44,7 @@ function App() {
                     <Route path="/edit-profile"  element={<EditProfile />} />
 
                     <Route path="/request-digital-id" element={<RequestDigitalID />} /> 
+                    
                   
                                                                                         
                     {/* Student Pages */}
@@ -99,7 +101,9 @@ function App() {
 
                     <Route path="/admin" element={<AdminLayout />}>
                         <Route path="dashboard" element={<AdminDashboard />} />
-                        <Route path="requests" element={<DigitalIDRequests />} />x
+                        <Route path="requests" element={<DigitalIDRequests />} />
+                        <Route path="users" element={<Users />} />
+
                     </Route>
 
                 </Routes>
