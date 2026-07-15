@@ -14,16 +14,50 @@ export default function DigitalIDCard(props) {
     const [scale, setScale] = useState(1);
     const scaleWrapRef = useRef(null);
 
+    // Native design size of DigitalIDFront/Back at isFullscreen=false
+    const CARD_W = 380;
+    const CARD_H = 240;
+
     // Native fullscreen design size of DigitalIDFront/Back (the isFullscreen=true dimensions)
-    const CARD_W = 650;
-    const CARD_H = 410;
+    const FULL_CARD_W = 650;
+    const FULL_CARD_H = 410;
+
+    // Ref for the small (non-fullscreen) card container so it can shrink to fit mobile screens
+    const cardWrapRef = useRef(null);
+    const [cardScale, setCardScale] = useState(1);
+
+    useEffect(() => {
+        const computeCardScale = () => {
+            if (!cardWrapRef.current) return;
+            const availableWidth = cardWrapRef.current.offsetWidth;
+            if (!availableWidth) return;
+            setCardScale(Math.min(availableWidth / CARD_W, 1));
+        };
+
+        computeCardScale();
+
+        const raf = requestAnimationFrame(computeCardScale);
+        window.addEventListener("resize", computeCardScale);
+
+        let resizeObserver;
+        if (typeof ResizeObserver !== "undefined" && cardWrapRef.current) {
+            resizeObserver = new ResizeObserver(computeCardScale);
+            resizeObserver.observe(cardWrapRef.current);
+        }
+
+        return () => {
+            cancelAnimationFrame(raf);
+            window.removeEventListener("resize", computeCardScale);
+            if (resizeObserver) resizeObserver.disconnect();
+        };
+    }, []);
 
     useEffect(() => {
         if (!showFullId) return;
 
         // Rough estimate immediately, so it never flashes at full 650px size
         const roughWidth = window.innerWidth - 32;
-        setScale(Math.min(roughWidth / CARD_W, 1));
+        setScale(Math.min(roughWidth / FULL_CARD_W, 1));
 
         const computeScale = () => {
             const padding = 40;
@@ -31,8 +65,8 @@ export default function DigitalIDCard(props) {
             const availableWidth = window.innerWidth - padding;
             const availableHeight = window.innerHeight - 180;
 
-            const scaleByWidth = availableWidth / CARD_W;
-            const scaleByHeight = availableHeight / CARD_H;
+            const scaleByWidth = availableWidth / FULL_CARD_W;
+            const scaleByHeight = availableHeight / FULL_CARD_H;
 
             setScale(Math.min(scaleByWidth, scaleByHeight, 1));
         };
@@ -58,45 +92,64 @@ export default function DigitalIDCard(props) {
     return (
         <div>
 
-            {/* FLIP CARD CONTAINER — tap to flip */}
+            {/* FLIP CARD CONTAINER — tap to flip — scales down to fit narrow mobile screens */}
             <div
-                className="relative w-full flex justify-center cursor-pointer"
-                style={{ perspective: "1200px", height: "240px" }}
-                onClick={() => setShowBack(!showBack)}
+                ref={cardWrapRef}
+                className="w-full flex justify-center"
+                style={{ height: CARD_H * cardScale }}
             >
                 <div
+                    className="cursor-pointer"
                     style={{
-                        position: "relative",
-                        width: "380px",
-                        height: "240px",
-                        transformStyle: "preserve-3d",
-                        transition: "transform 0.65s cubic-bezier(0.45, 0.05, 0.55, 0.95)",
-                        transform: showBack ? "rotateY(180deg)" : "rotateY(0deg)",
+                        perspective: "1200px",
+                        width: CARD_W * cardScale,
+                        height: CARD_H * cardScale,
                     }}
+                    onClick={() => setShowBack(!showBack)}
                 >
-                    {/* FRONT */}
                     <div
                         style={{
-                            position: "absolute",
-                            width: "380px",
-                            backfaceVisibility: "hidden",
-                            WebkitBackfaceVisibility: "hidden",
+                            width: CARD_W,
+                            height: CARD_H,
+                            transform: `scale(${cardScale})`,
+                            transformOrigin: "top left",
                         }}
                     >
-                        <DigitalIDFront {...props} />
-                    </div>
+                        <div
+                            style={{
+                                position: "relative",
+                                width: CARD_W,
+                                height: CARD_H,
+                                transformStyle: "preserve-3d",
+                                transition: "transform 0.65s cubic-bezier(0.45, 0.05, 0.55, 0.95)",
+                                transform: showBack ? "rotateY(180deg)" : "rotateY(0deg)",
+                            }}
+                        >
+                            {/* FRONT */}
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    width: CARD_W,
+                                    backfaceVisibility: "hidden",
+                                    WebkitBackfaceVisibility: "hidden",
+                                }}
+                            >
+                                <DigitalIDFront {...props} />
+                            </div>
 
-                    {/* BACK */}
-                    <div
-                        style={{
-                            position: "absolute",
-                            width: "380px",
-                            backfaceVisibility: "hidden",
-                            WebkitBackfaceVisibility: "hidden",
-                            transform: "rotateY(180deg)",
-                        }}
-                    >
-                        <DigitalIDBack {...props} />
+                            {/* BACK */}
+                            <div
+                                style={{
+                                    position: "absolute",
+                                    width: CARD_W,
+                                    backfaceVisibility: "hidden",
+                                    WebkitBackfaceVisibility: "hidden",
+                                    transform: "rotateY(180deg)",
+                                }}
+                            >
+                                <DigitalIDBack {...props} />
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -152,8 +205,8 @@ export default function DigitalIDCard(props) {
         >
             <div
                 style={{
-                    width: CARD_W * scale,
-                    height: CARD_H * scale,
+                    width: FULL_CARD_W * scale,
+                    height: FULL_CARD_H * scale,
                     display: "flex",
                     justifyContent: "center",
                     alignItems: "center",
@@ -163,8 +216,8 @@ export default function DigitalIDCard(props) {
                 {/* SCALE */}
                 <div
                     style={{
-                        width: CARD_W,
-                        height: CARD_H,
+                        width: FULL_CARD_W,
+                        height: FULL_CARD_H,
                         transform: `scale(${scale})`,
                         transformOrigin: "center",
                     }}
@@ -174,8 +227,8 @@ export default function DigitalIDCard(props) {
                     <div
                         onClick={() => setShowFullBack(!showFullBack)}
                         style={{
-                            width: CARD_W,
-                            height: CARD_H,
+                            width: FULL_CARD_W,
+                            height: FULL_CARD_H,
                             position: "relative",
                             transformStyle: "preserve-3d",
                             transition: "transform .7s ease",
