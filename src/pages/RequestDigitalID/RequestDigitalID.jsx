@@ -11,7 +11,7 @@ export default function RequestDigitalID() {
 
     const navigate = useNavigate();
 
-    const [studentNumber, setStudentNumber] = useState("");
+    const [idNumber, setIdNumber] = useState("");
     const [fullName, setFullName] = useState("");
     const [role, setRole] = useState("");
     const [course, setCourse] = useState("");
@@ -19,7 +19,6 @@ export default function RequestDigitalID() {
     const [yearLevel, setYearLevel] = useState("");
     const [profilePicture, setProfilePicture] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(null);
-    const [facultyIdNumber, setFacultyIdNumber] = useState("");
     const [position, setPosition] = useState("");
     const [address, setAddress] = useState("");
     const [studentStatus, setStudentStatus] = useState("");
@@ -45,7 +44,7 @@ export default function RequestDigitalID() {
     role === "student"
         ? (
             profilePicture &&
-            studentNumber &&
+            idNumber &&
             fullName &&
             institute &&
             course &&
@@ -55,7 +54,6 @@ export default function RequestDigitalID() {
         )
         : (
             profilePicture &&
-            facultyIdNumber &&
             fullName &&
             institute &&
             position &&
@@ -76,8 +74,7 @@ export default function RequestDigitalID() {
 
             formData.append("userId", userId);
             formData.append("role", role);
-            formData.append("studentNumber", studentNumber);
-            formData.append("facultyIdNumber", facultyIdNumber);
+            formData.append("idNumber", idNumber);
             formData.append("fullName", fullName);
             formData.append("institute", institute);
             formData.append("course", course);
@@ -289,7 +286,7 @@ export default function RequestDigitalID() {
                                     setCourse("");
                                     setInstitute("");
                                     setYearLevel("");
-                                    setStudentNumber("");
+                                    setIdNumber("");
                                 }}
                             >
                                 <option value="">Select Role</option>
@@ -308,7 +305,7 @@ export default function RequestDigitalID() {
 
                         <div className="mb-3.5">
                             <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                                Student Number
+                                ID Number
                             </label>
                             <div className="relative flex items-center">
                                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 text-gray-400">
@@ -330,8 +327,8 @@ export default function RequestDigitalID() {
                                         focus:bg-white
                                         transition-colors
                                     "
-                                    value={studentNumber}
-                                    onChange={(e) => setStudentNumber(e.target.value)}
+                                    value={idNumber}
+                                    onChange={(e) => setIdNumber(e.target.value)}
                                 />
                             </div>
                         </div>
@@ -341,14 +338,14 @@ export default function RequestDigitalID() {
                     {isFaculty && (
                         <div className="mb-3.5">
                             <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                                Faculty ID Number
+                                ID Number
                             </label>
 
                             <input
                                 type="text"
                                 placeholder="FAC-2026-001"
-                                value={facultyIdNumber}
-                                onChange={(e) => setFacultyIdNumber(e.target.value)}
+                                value={idNumber}
+                                onChange={(e) => setIdNumber(e.target.value)}
                                 className="w-full p-3 rounded-xl border border-gray-200 bg-gray-50"
                             />
                         </div>

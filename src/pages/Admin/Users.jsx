@@ -68,7 +68,7 @@ function UserForm({ initial, onCancel, onSubmit, submitLabel }) {
             email: "",
             role: "Student",
             status: "Active",
-            studentNumber: "",
+            idNumber: "",
             institute: "",
             course: "",
             yearLevel: "",
@@ -141,10 +141,10 @@ function UserForm({ initial, onCancel, onSubmit, submitLabel }) {
                 <>
                     <div className="flex gap-3">
                         <div className="flex-1">
-                            <label className="text-xs font-medium text-gray-500">Student number</label>
+                            <label className="text-xs font-medium text-gray-500">ID number</label>
                             <input
-                                value={form.studentNumber}
-                                onChange={update("studentNumber")}
+                                value={form.idNumber}
+                                onChange={update("idNumber")}
                                 className="w-full mt-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2"
                                 style={{ borderColor: "#E5E1D8", "--tw-ring-color": "#106A2E" }}
                             />
@@ -577,7 +577,7 @@ export default function Users() {
                                 </td>
                                 <td className="px-5 py-3.5 text-gray-600">
                                     {(u.role === "Student" || u.role === "Faculty")
-                                        ? (u.studentNumber || "—")
+                                        ? (u.idNumber || "—")
                                         : "—"}
                                 </td>
                                 <td className="px-5 py-3.5 text-gray-600">
@@ -697,7 +697,7 @@ export default function Users() {
                             <>
                                 <div className="flex justify-between">
                                     <span className="text-gray-500">ID Number</span>
-                                    <span className="font-medium text-gray-800">{activeUser.studentNumber || "—"}</span>
+                                    <span className="font-medium text-gray-800">{activeUser.idNumber || "—"}</span>
                                 </div>
                                 
                                 {activeUser.role === "Faculty" && (

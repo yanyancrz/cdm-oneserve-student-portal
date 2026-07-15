@@ -5,6 +5,8 @@ import QRCode from "react-qr-code";
 
 export default function DigitalIDCard(props) {
 
+    console.log("DigitalIDCard Props:", props);
+
     const [showBack, setShowBack] = useState(false);
     const [showFullId, setShowFullId] = useState(false);
     const [showQr, setShowQr] = useState(false);

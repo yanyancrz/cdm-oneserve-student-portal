@@ -284,7 +284,7 @@ if (!student) {
 
                             <input
                                 value={
-                                    student.studentNumber
+                                    student.idNumber || ""
                                 }
                                 disabled
                                 className="

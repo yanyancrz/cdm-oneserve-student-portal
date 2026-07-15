@@ -9,13 +9,13 @@ import BackgroundLayout from "../../layouts/BackgroundLayout";
 
 export default function Register() {
 
-    const [studentNumber, setStudentNumber] = useState("");
+    const [idNumber, setIdNumber] = useState("");
     const [fullName, setFullName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const isFormValid =
-    studentNumber.trim() &&
+    idNumber.trim() &&
     fullName.trim() &&
     email.trim() &&
     password.trim();
@@ -25,7 +25,7 @@ export default function Register() {
     const handleRegister = async () => {
 
     if (
-        !studentNumber.trim() ||
+        !idNumber.trim() ||
         !fullName.trim() ||
         !email.trim() ||
         !password.trim()
@@ -48,7 +48,7 @@ export default function Register() {
                     "Content-Type": "application/json"
                 },
                 body: JSON.stringify({
-                    studentNumber,
+                    idNumber,
                     fullName,
                     email,
                     password
@@ -146,9 +146,9 @@ export default function Register() {
                             focus:border-[#106A2E]
                             focus:bg-white
                         "
-                        value={studentNumber}
+                        value={idNumber}
                         onChange={(e) =>
-                            setStudentNumber(e.target.value)
+                            setIdNumber(e.target.value)
                         }
                     />
                 </div>

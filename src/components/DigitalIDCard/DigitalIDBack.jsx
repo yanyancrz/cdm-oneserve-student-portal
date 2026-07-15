@@ -3,8 +3,7 @@ import logo from "../../assets/images/cdm-logo.png";
 
 export default function DigitalIDBack({
     isFullscreen = false,
-    digitalIdNumber,
-    studentNumber,
+    idNumber,
     issuedDate,
     expirationDate,
     email,
@@ -71,22 +70,13 @@ export default function DigitalIDBack({
                 {/* LEFT SIDE */}
                 <div className={`flex-1 ${bodyPadL} overflow-hidden`}>
                     <div className={infoGap}>
-
-                        <div>
-                            <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 leading-none`}>
-                                Digital ID No.
-                            </p>
-                            <p className={`${valueSize} font-semibold text-[#106A2E] leading-tight`}>
-                                {digitalIdNumber}
-                            </p>
-                        </div>
-
+                        
                         <div>
                             <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 leading-none`}>
                                 Student Number
                             </p>
                             <p className={`${valueSize} font-semibold leading-tight`}>
-                                {studentNumber}
+                                {idNumber}
                             </p>
                         </div>
 

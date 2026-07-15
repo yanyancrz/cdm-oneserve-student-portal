@@ -163,14 +163,13 @@ export default function ViewRequestModal({
 
                             {request.role === "Student" && (
                                 <>
-                                    <InfoField label="Student Number" value={request.studentNumber} />
-                                    <InfoField label="Student Status" value={request.studentStatus} />
+                                    <InfoField label="Student Number" value={request.idNumber} />
                                 </>
                             )}
 
                             {request.role === "Faculty" && (
                                 <>
-                                    <InfoField label="Faculty ID Number" value={request.facultyIdNumber} />
+                                    <InfoField label="Faculty ID Number" value={request.facultyidNumber} />
                                     <InfoField label="Position" value={request.position} />
                                 </>
                             )}

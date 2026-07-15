@@ -19,6 +19,7 @@ export default function ViewDigitalID() {
         fetch(`${API_URL}/api/digitalid/view/${email}`)
             .then(res => res.json())
             .then(data => {
+                console.log(data);
                 setDigitalId(data);
             })
             .catch(() => {

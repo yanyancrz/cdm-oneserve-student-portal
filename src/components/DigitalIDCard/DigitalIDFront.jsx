@@ -4,16 +4,20 @@ import { API_URL } from "../../config/api";
 
 export default function DigitalIDFront({
     isFullscreen = false,
-    studentNumber,
+    role,
+    idNumber,
     fullName,
-    course,
-    yearLevel,
+    course,       // student only (Program)
+    yearLevel,    // student only
+    institute,    // faculty only
+    position,     // faculty only
     profilePicture,
-    digitalIdNumber,
     qrCode,
     status,
     academicYear = "2025 – 2026",
 }) {
+
+    const isFaculty = role?.toLowerCase() === "faculty";
 
     const photoWidth  = isFullscreen ? "120px" : "72px";
     const photoHeight = isFullscreen ? "140px" : "84px";
@@ -72,7 +76,7 @@ export default function DigitalIDFront({
                 </div>
                 <div className="mt-2 flex items-center justify-between">
                     <span className={`text-white/80 ${idBadge} uppercase tracking-[1.5px] whitespace-nowrap`}>
-                        Official Student Identification
+                        {isFaculty ? "Official Faculty Identification" : "Official Student Identification"}
                     </span>
                     <span className={`text-[#F4D35E] ${ayText} font-semibold tracking-wide whitespace-nowrap`}>
                         AY {academicYear}
@@ -115,42 +119,66 @@ export default function DigitalIDFront({
                         </h3>
                     </div>
 
-                    <div className="flex gap-3">
-                        <div className="min-w-0">
-                            <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 font-medium leading-none`}>
-                                Student No.
-                            </p>
-                            <p className={`${valueSize} font-semibold text-gray-800 tracking-wide mt-0.5 truncate`}>
-                                {studentNumber}
-                            </p>
-                        </div>
-                        <div className="min-w-0">
-                            <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 font-medium leading-none`}>
-                                Year Level
-                            </p>
-                            <p className={`${valueSize} font-semibold text-gray-800 mt-0.5 truncate`}>
-                                {yearLevel}
-                            </p>
-                        </div>
-                    </div>
+                    {isFaculty ? (
+                        <>
+                            <div>
+                                <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 font-medium leading-none`}>
+                                    ID No.
+                                </p>
+                                <p className={`${valueSize} font-semibold text-gray-800 tracking-wide mt-0.5 truncate`}>
+                                    {idNumber}
+                                </p>
+                            </div>
 
-                    <div>
-                        <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 font-medium leading-none`}>
-                            Digital ID No.
-                        </p>
-                        <p className={`${valueSize} font-semibold text-[#106A2E] mt-0.5 truncate`}>
-                            {digitalIdNumber}
-                        </p>
-                    </div>
+                            <div>
+                                <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 font-medium leading-none`}>
+                                    Institute
+                                </p>
+                                <p className={`${courseSize} font-semibold text-gray-800 mt-0.5 truncate`}>
+                                    {institute}
+                                </p>
+                            </div>
 
-                    <div>
-                        <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 font-medium leading-none`}>
-                            Program
-                        </p>
-                        <p className={`${courseSize} font-semibold text-gray-800 mt-0.5 truncate`}>
-                            {course}
-                        </p>
-                    </div>
+                            <div>
+                                <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 font-medium leading-none`}>
+                                    Position
+                                </p>
+                                <p className={`${courseSize} font-semibold text-gray-800 mt-0.5 truncate`}>
+                                    {position}
+                                </p>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            <div className="flex gap-3">
+                                <div className="min-w-0">
+                                    <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 font-medium leading-none`}>
+                                        ID No.
+                                    </p>
+                                    <p className={`${valueSize} font-semibold text-gray-800 tracking-wide mt-0.5 truncate`}>
+                                        {idNumber}
+                                    </p>
+                                </div>
+                                <div className="min-w-0">
+                                    <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 font-medium leading-none`}>
+                                        Year Level
+                                    </p>
+                                    <p className={`${valueSize} font-semibold text-gray-800 mt-0.5 truncate`}>
+                                        {yearLevel}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 font-medium leading-none`}>
+                                    Program
+                                </p>
+                                <p className={`${courseSize} font-semibold text-gray-800 mt-0.5 truncate`}>
+                                    {course}
+                                </p>
+                            </div>
+                        </>
+                    )}
                 </div>
 
                 {/* QR CODE */}

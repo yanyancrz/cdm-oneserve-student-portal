@@ -37,7 +37,7 @@ export default function Login() {
 if (response.ok) {
 
     localStorage.setItem("userId", data.id);
-    localStorage.setItem("studentNumber", data.studentNumber);
+    localStorage.setItem("idNumber", data.idNumber || "");
     localStorage.setItem("userName", data.fullName);
     localStorage.setItem("userEmail", data.email);
     localStorage.setItem("userRole", data.role);

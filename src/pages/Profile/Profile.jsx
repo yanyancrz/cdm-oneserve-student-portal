@@ -132,7 +132,7 @@ if (!student) {
                         </h2>
 
                         <p className="text-sm text-gray-500 mt-0.5">
-                            {student.studentNumber}
+                            {student.idNumber || "No ID Number"}
                         </p>
 
                         <span className="inline-flex items-center gap-1.5 bg-[#106A2E]/10 text-[#106A2E] text-xs font-medium px-3 py-1 rounded-full mt-3">
