@@ -129,7 +129,7 @@ export default function Register() {
 
                 <div className="mb-3.5">
                     <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                        Student Number
+                        ID Number
                     </label>
 
                     <input

@@ -83,7 +83,7 @@ if (!student) {
 
 }
 
-    const isFaculty = student.role === "faculty";
+   const isFaculty = student.role === "Faculty";
 
     return (
 

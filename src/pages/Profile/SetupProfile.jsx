@@ -284,11 +284,9 @@ export default function SetupProfile() {
                                 Select Role
                             </option>
 
-                            <option value="student">
-                                Student
-                            </option>
+                            <option value="Student">Student</option>
 
-                            <option value="faculty">
+                            <option value="Faculty">
                                 Faculty
                             </option>
 
@@ -296,7 +294,7 @@ export default function SetupProfile() {
 
                     </div>
 
-                    {role === "student" && (
+                    {role === "Student" && (
 
                         <div>
 
@@ -341,7 +339,7 @@ export default function SetupProfile() {
 
                     )}
 
-                    {role === "faculty" && (
+                    {role === "Faculty" && (
 
                         <div>
 
@@ -391,7 +389,7 @@ export default function SetupProfile() {
 
                     )}
 
-                    {role === "student" && (
+                    {role === "Student" && (
 
                         <div>
 
