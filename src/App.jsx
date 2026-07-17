@@ -18,6 +18,18 @@ import AdminDashboard from "./pages/Admin/AdminDashboard";
 import DigitalIDRequests from "./pages/Admin/DigitalIDRequests";
 import AdminLayout from "./layouts/AdminLayout";
 import Users from "./pages/Admin/Users";
+import LibraryDashboard from "./pages/Library/Dashboard";
+import BrowseBooks from "./pages/Library/BrowseBooks";
+import BorrowBook from "./pages/Library/BorrowBook";
+import ReserveBook from "./pages/Library/ReserveBook";
+import RenewBook from "./pages/Library/RenewBook";
+import BorrowHistory from "./pages/Library/BorrowHistory";
+import Favorites from "./pages/Library/Favorites";
+import LibraryClearance from "./pages/Library/LibraryClearance";
+import AskLibrarian from "./pages/Library/AskLibrarian";
+import Notifications from "./pages/Library/Notifications";
+import SuggestBook from "./pages/Library/SuggestBook";
+import BookDetails from "./pages/Library/BookDetails";
 
 
 
@@ -44,6 +56,8 @@ function App() {
                     <Route path="/edit-profile"  element={<EditProfile />} />
 
                     <Route path="/request-digital-id" element={<RequestDigitalID />} /> 
+
+                    <Route path="/library/ask-librarian" element={<AskLibrarian />} />
                     
                   
                                                                                         
@@ -93,7 +107,63 @@ function App() {
                                     <Profile />
                                 </ProtectedRoute>
                             }
-                        />                    
+                        />  
+
+                        <Route
+                            path="/library"
+                            element={<LibraryDashboard />}
+                        />
+
+                        <Route
+                            path="/library/books"
+                            element={<BrowseBooks />}
+                        />
+                        
+                        <Route
+                            path="/library/borrow"
+                            element={<BorrowBook />}
+                        />     
+
+                        <Route
+                            path="/library/reserve"
+                            element={<ReserveBook />}
+                        />  
+
+                        <Route
+                            path="/library/renew"
+                            element={<RenewBook />}
+                        />
+
+                        <Route
+                            path="/library/borrow-history"
+                            element={<BorrowHistory />}
+                        />
+
+                        <Route
+                            path="/library/favorites"
+                            element={<Favorites />}
+                        />
+
+                        <Route
+                            path="/library/clearance"
+                            element={<LibraryClearance />}
+                        />
+                        
+                        <Route
+                            path="/library/notifications"
+                            element={<Notifications />}
+                        />
+
+                        <Route
+                            path="/library/suggest"
+                            element={<SuggestBook />}
+                        />
+
+                        <Route
+                            path="/library/book/:bookId"
+                            element={<BookDetails />}
+                        />
+
 
                     </Route>
 

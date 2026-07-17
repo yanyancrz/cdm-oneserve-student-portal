@@ -31,16 +31,18 @@ export default function AdminLayout() {
                 </svg>
             ),
         },
+
         {
-            label: "Users",
+            label: "User Management",
             path: "/admin/users",
             icon: (
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
                 </svg>
             ),
         },
+       
         {
             label: "Profile",
             path: "/admin/profile",

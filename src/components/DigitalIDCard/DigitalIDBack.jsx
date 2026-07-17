@@ -7,14 +7,16 @@ export default function DigitalIDBack({
     issuedDate,
     expirationDate,
     email,
+    contactNumber,
+    address,
     qrCode,
 }) {
 
     const schoolName     = isFullscreen ? "text-[20px]"  : "text-[12px]";
     const schoolSub      = isFullscreen ? "text-[13px]"  : "text-[9px]";
-    const labelSize      = isFullscreen ? "text-[10px]"  : "text-[7px]";
-    const valueSize      = isFullscreen ? "text-[15px]"  : "text-[10px]";
-    const emailSize      = isFullscreen ? "text-[13px]"  : "text-[9px]";
+    const labelSize      = isFullscreen ? "text-[11px]"  : "text-[8px]";
+    const valueSize      = isFullscreen ? "text-[17px]"  : "text-[12px]";
+    const emailSize      = isFullscreen ? "text-[15px]"  : "text-[11px]";
     const qrLabel        = isFullscreen ? "text-[12px]"  : "text-[8px]";
     const qrSub          = isFullscreen ? "text-[10px]"  : "text-[6.5px]";
     const footerSize     = isFullscreen ? "text-[11px]"  : "text-[7px]";
@@ -27,9 +29,9 @@ export default function DigitalIDBack({
 
     // Tight padding to prevent overflow
     const headerPad = isFullscreen ? "px-6 py-3"   : "px-4 py-2";
-    const bodyPadL  = isFullscreen ? "px-6 py-3"   : "px-3 py-2";
+    const bodyPadL  = isFullscreen ? "px-6 py-4"   : "px-3 py-2.5";
     const bodyPadR  = isFullscreen ? "px-4 py-3"   : "px-2 py-2";
-    const infoGap   = isFullscreen ? "space-y-[10px]" : "space-y-[5px]";
+    const rowGapY   = isFullscreen ? "gap-y-[10px]" : "gap-y-[6px]";
 
     return (
         <div
@@ -68,34 +70,46 @@ export default function DigitalIDBack({
             <div className="flex flex-1 min-h-0 overflow-hidden">
 
                 {/* LEFT SIDE */}
-                <div className={`flex-1 ${bodyPadL} overflow-hidden`}>
-                    <div className={infoGap}>
-                        
-                        <div>
-                            <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 leading-none`}>
-                                Student Number
-                            </p>
-                            <p className={`${valueSize} font-semibold leading-tight`}>
-                                {idNumber}
-                            </p>
-                        </div>
+                <div className={`flex-1 ${bodyPadL} overflow-hidden flex flex-col`}>
+                    <div className="flex-1 flex flex-col justify-between">
 
-                        <div>
-                            <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 leading-none`}>
-                                Issued Date
-                            </p>
-                            <p className={`${valueSize} font-semibold leading-tight`}>
-                                {issuedDate ? new Date(issuedDate).toLocaleDateString() : "-"}
-                            </p>
-                        </div>
+                        {/* Short fields in a 2-column grid to save vertical space */}
+                        <div className={`grid grid-cols-2 gap-x-3 ${rowGapY}`}>
+                            <div>
+                                <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 leading-none`}>
+                                    ID Number
+                                </p>
+                                <p className={`${valueSize} font-semibold leading-tight truncate`}>
+                                    {idNumber}
+                                </p>
+                            </div>
 
-                        <div>
-                            <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 leading-none`}>
-                                Expiration Date
-                            </p>
-                            <p className={`${valueSize} font-semibold leading-tight`}>
-                                {expirationDate ? new Date(expirationDate).toLocaleDateString() : "-"}
-                            </p>
+                            <div>
+                                <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 leading-none`}>
+                                    Contact No.
+                                </p>
+                                <p className={`${valueSize} font-semibold leading-tight truncate`}>
+                                    {contactNumber || "-"}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 leading-none`}>
+                                    Issued Date
+                                </p>
+                                <p className={`${valueSize} font-semibold leading-tight`}>
+                                    {issuedDate ? new Date(issuedDate).toLocaleDateString() : "-"}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 leading-none`}>
+                                    Expiration Date
+                                </p>
+                                <p className={`${valueSize} font-semibold leading-tight`}>
+                                    {expirationDate ? new Date(expirationDate).toLocaleDateString() : "-"}
+                                </p>
+                            </div>
                         </div>
 
                         <div>
@@ -104,6 +118,22 @@ export default function DigitalIDBack({
                             </p>
                             <p className={`${emailSize} font-medium truncate leading-tight`}>
                                 {email}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p className={`${labelSize} uppercase tracking-[1.5px] text-gray-400 leading-none`}>
+                                Address
+                            </p>
+                            <p
+                                className={`${emailSize} font-medium leading-tight overflow-hidden text-ellipsis`}
+                                style={{
+                                    display: "-webkit-box",
+                                    WebkitLineClamp: isFullscreen ? 2 : 1,
+                                    WebkitBoxOrient: "vertical",
+                                }}
+                            >
+                                {address || "-"}
                             </p>
                         </div>
 
