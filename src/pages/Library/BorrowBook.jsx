@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import noCover from "../../assets/images/no-cover.png";
 
 import PageHeader from "../../components/Library/PageHeader";
 import SearchBar from "../../components/Library/SearchBar";

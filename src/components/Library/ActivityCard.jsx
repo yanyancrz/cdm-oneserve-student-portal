@@ -43,10 +43,14 @@ const ACTIVITY_STYLES = {
 
 export default function ActivityCard({ activity }) {
 
-    const style = ACTIVITY_STYLES[activity.type] ?? ACTIVITY_STYLES.returned;
+    const activityType = activity.type?.toLowerCase();
+
+    const style =
+        ACTIVITY_STYLES[activityType] ??
+        ACTIVITY_STYLES.borrowed;
 
     return (
-        <div className="flex items-center gap-3 px-3 py-3 border-b border-gray-100 last:border-b-0">
+        <div className="flex items-center gap-3 px-3 py-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 transition-colors">
 
             <div
                 className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
@@ -56,13 +60,22 @@ export default function ActivityCard({ activity }) {
             </div>
 
             <div className="min-w-0 flex-1">
-                <p className="text-sm text-[#1F1F1F] truncate">
-                    {activity.label}
+                <p className="text-sm font-medium text-[#1F1F1F] truncate">
+                    {activity.title}
                 </p>
+                <span
+                    className="inline-block mt-0.5 text-[11px] font-medium px-2 py-0.5 rounded-full capitalize"
+                    style={{ background: style.bg, color: style.color }}
+                >
+                    {activity.type}
+                </span>
             </div>
 
-            <span className="text-xs text-gray-400 flex-shrink-0">
-                {activity.time}
+            <span className="text-xs text-gray-400 flex-shrink-0 whitespace-nowrap">
+                {new Date(activity.date).toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric"
+                })}
             </span>
 
         </div>

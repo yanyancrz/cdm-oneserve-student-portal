@@ -9,7 +9,7 @@ const ACTIONS = [
     {
         key: "borrow",
         label: "Borrow Book",
-        path: "/library/borrow",
+        path: "/library/books",
         bg: "#E1F5EE",
         color: "#085041",
         icon: (

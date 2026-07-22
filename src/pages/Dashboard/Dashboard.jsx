@@ -461,21 +461,26 @@ export default function Dashboard() {
                     )}
                 </div>
 
-                {/* GRID on larger screens, CAROUSEL on mobile — free swipe/scroll with snap */}
+                {/*
+                    Mobile: horizontally-scrolling flex row (cards keep their fixed w-32 width,
+                    free-scroll + snap).
+                    sm and up: real 4-column grid, no scrolling needed.
+
+                    NOTE: previously this used `grid grid-cols-4 ... grid-flow-col` together,
+                    which made the explicit 4-column grid override the fixed card widths and
+                    silenced the scroll/snap behavior. Flex on mobile fixes that.
+                */}
 
                 <div
                     className="
-                        grid grid-cols-4 gap-3
-                        sm:grid
-                        overflow-x-auto
+                        flex gap-3
+                        sm:grid sm:grid-cols-4
+                        overflow-x-auto sm:overflow-visible
                         pb-2
                         -mx-4 px-4 sm:mx-0 sm:px-0
-                        snap-x snap-mandatory
+                        snap-x snap-mandatory sm:snap-none
                         scrollbar-hide
                         mb-7
-                        auto-cols-[minmax(7.5rem,1fr)]
-                        grid-flow-col
-                        sm:grid-flow-row
                     "
                     style={{ scrollbarWidth: "none" }}
                 >
@@ -547,7 +552,7 @@ export default function Dashboard() {
 
                     {
                         filteredServices.length === 0 && (
-                            <div className="w-full col-span-4 text-center text-sm text-gray-500 py-8">
+                            <div className="w-full sm:col-span-4 text-center text-sm text-gray-500 py-8">
                                 No services match "{search}"
                             </div>
                         )

@@ -11,12 +11,15 @@ import RecommendedBooks from "../../components/Library/RecommendedBooks";
 import ActivityCard from "../../components/Library/ActivityCard";
 import NotificationCard from "../../components/Library/NotificationCard";
 
+import { getCurrentBorrowedBooks } from "../../services/libraryService";
+import { getBooks } from "../../services/libraryService";
+import { getBorrowHistory } from "../../services/libraryService";
+import { getLibraryActivities } from "../../services/libraryService";
+import { getMyReservations } from "../../services/libraryService";
+
 import {
     mockStudentLibraryStatus,
     mockAnnouncements,
-    mockBooks,
-    mockRecommendedBookIds,
-    mockRecentActivity,
     mockNotifications,
 } from "../../data/mockLibraryData";
 
@@ -26,6 +29,70 @@ export default function Dashboard() {
     const [user, setUser] = useState(null);
     const [digitalIdStatus, setDigitalIdStatus] = useState(null);
     const [isLoadingAccess, setIsLoadingAccess] = useState(true);
+    const [currentBorrowed, setCurrentBorrowed] = useState([]);
+    const [borrowedBooks, setBorrowedBooks] = useState([]);
+    const [books, setBooks] = useState([]);
+    const [loadingBooks, setLoadingBooks] = useState(true);
+    const [recentActivities, setRecentActivities] = useState([]);
+    const [loadingActivities, setLoadingActivities] = useState(true);    
+    const [reservations, setReservations] = useState([]);
+
+    useEffect(() => {
+
+    const loadReservations = async () => {
+
+        const userId = Number(localStorage.getItem("userId"));
+
+        if (!userId) return;
+
+        try {
+
+            const data = await getMyReservations(userId);
+
+            setReservations(data);
+
+        }
+        catch (error) {
+
+            console.error("Failed to load reservations:", error);
+
+        }
+
+    };
+
+    loadReservations();
+
+}, []);
+    
+    useEffect(() => {
+
+        const loadActivities = async () => {
+
+            const userId = Number(localStorage.getItem("userId"));
+
+            if (!userId) return;
+
+            try {
+
+                const data = await getLibraryActivities(userId);
+
+                setRecentActivities(data);
+
+            } catch (error) {
+
+                console.error(error);
+
+            } finally {
+
+                setLoadingActivities(false);
+
+            }
+
+        };
+
+        loadActivities();
+
+    }, []);
 
     useEffect(() => {
 
@@ -43,6 +110,33 @@ export default function Dashboard() {
             .finally(() => setIsLoadingAccess(false));
 
     }, []);
+    
+    useEffect(() => {
+
+        const loadBorrowedBooks = async () => {
+
+            const userId = Number(localStorage.getItem("userId"));
+
+            if (!userId) return;
+
+            try {
+
+                const data = await getCurrentBorrowedBooks(userId);
+
+                setBorrowedBooks(data);
+
+            }
+            catch (error) {
+
+                console.error("Failed to load borrowed books:", error);
+
+            }
+
+        };
+
+        loadBorrowedBooks();
+
+    }, []);
 
     const hasDigitalId = digitalIdStatus?.hasDigitalId ?? false;
 
@@ -56,6 +150,10 @@ export default function Dashboard() {
 
     const studentName = user?.fullName || localStorage.getItem("userName") || "Student";
 
+    const activeBorrowed = borrowedBooks.filter(
+        (book) => book.status === "Borrowed"
+    );
+
     const todayLabel = new Date().toLocaleDateString("en-US", {
         weekday: "long",
         month: "long",
@@ -64,18 +162,52 @@ export default function Dashboard() {
     });
 
     // Recently added: newest additions first, top 6
-    const recentlyAddedBooks = [...mockBooks]
-        .sort((a, b) => new Date(b.addedDate) - new Date(a.addedDate))
-        .slice(0, 6);
+    const recentlyAddedBooks = books.slice(0, 6);
 
-    // Recommended: resolved from the mock recommendation ID list
-    const recommendedBooks = mockRecommendedBookIds
-        .map((id) => mockBooks.find((book) => book.id === id))
-        .filter(Boolean);
+    // Recommended books: available and in stock, top 4 
+    const borrowedIds = borrowedBooks.map(book => book.bookId);
+
+   const recommendedBooks = books
+    .filter(book =>
+        book.status === "Available" &&
+        book.availableCopies > 0 &&
+        !borrowedIds.includes(book.bookId)
+    )
+    .slice(0, 5);
 
     // Only the latest few notifications preview on the dashboard;
     // the full list lives on /library/notifications
     const notificationPreview = mockNotifications.slice(0, 3);
+    
+    const latestActivities = recentActivities.slice(0, 5);
+
+    const loadBooks = async () => {
+
+        try {
+
+            const response = await getBooks();
+
+            setBooks(response.data);
+
+        }
+        catch (error) {
+
+            console.error("Failed to load books:", error);
+
+        }
+        finally {
+
+            setLoadingBooks(false);
+
+        }
+
+    };
+
+    useEffect(() => {
+
+        loadBooks();
+
+    }, []);
 
     if (isLoadingAccess) {
         return (
@@ -199,7 +331,7 @@ export default function Dashboard() {
                                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
                                 </svg>
                             </div>
-                            <p className="text-xl font-semibold text-[#1F1F1F]">{mockStudentLibraryStatus.currentLoans}</p>
+                            <p className="text-xl font-semibold text-[#1F1F1F]"> {activeBorrowed.length} </p>
                             <p className="text-xs text-gray-500">Borrowed</p>
                         </Link>
 
@@ -213,7 +345,7 @@ export default function Dashboard() {
                                     <path d="M12 7v5l3 3" />
                                 </svg>
                             </div>
-                            <p className="text-xl font-semibold text-[#1F1F1F]">{mockStudentLibraryStatus.reservationsCount}</p>
+                            <p className="text-xl font-semibold text-[#1F1F1F]">{reservations.length}</p>
                             <p className="text-xs text-gray-500">Reservations</p>
                         </Link>
 
@@ -264,7 +396,21 @@ export default function Dashboard() {
                             See all
                         </Link>
                     </div>
-                    <RecentlyAddedBooks books={recentlyAddedBooks} />
+                    {
+                        loadingBooks ? (
+
+                            <p className="text-sm text-gray-500">
+                                Loading books...
+                            </p>
+
+                        ) : (
+
+                            <RecentlyAddedBooks
+                                books={recentlyAddedBooks}
+                            />
+
+                        )
+                    }
                 </div>
 
                 {/* RECOMMENDED BOOKS */}
@@ -293,9 +439,30 @@ export default function Dashboard() {
                         </Link>
                     </div>
                     <div className="bg-white/80 rounded-2xl shadow-sm p-2">
-                        {mockRecentActivity.map((activity) => (
-                            <ActivityCard key={activity.id} activity={activity} />
-                        ))}
+                       {
+                            loadingActivities ? (
+
+                                <p className="text-sm text-gray-500 p-5 text-center">
+                                    Loading activities...
+                                </p>
+
+                            ) : latestActivities.length === 0 ? (
+
+                                <p className="text-sm text-gray-500 p-5 text-center">
+                                    No recent activity.
+                                </p>
+
+                            ) : (
+
+                                latestActivities.map((activity) => (
+                                    <ActivityCard
+                                        key={activity.activityId}
+                                        activity={activity}
+                                    />
+))
+
+                            )
+                        }
                     </div>
                 </div>
 

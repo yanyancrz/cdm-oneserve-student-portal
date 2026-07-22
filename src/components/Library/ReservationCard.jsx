@@ -1,13 +1,3 @@
-// ReservationCard.jsx
-//
-// Used by ReserveBook.jsx. One card per reservation.
-//
-// Expected shape (see mockReservations in data/mockLibraryData.js):
-// reservation = {
-//   id, bookId, bookTitle, coverUrl,
-//   queuePosition, queueLength, reservedDate, estimatedAvailability, status
-// }
-
 export default function ReservationCard({ reservation, onCancel }) {
 
     const statusStyles = {

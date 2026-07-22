@@ -1,10 +1,14 @@
+import Modal from "../../components/Common/Modal";
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { API_URL } from "../../config/api";
 
-import { getBook } from "../../services/libraryService";
+import { getBook, borrowBook } from "../../services/libraryService";
 import PageHeader from "../../components/Library/PageHeader";
 import EmptyState from "../../components/Library/EmptyState";
+import noCover from "../../assets/images/no-cover.png";
+
 
 export default function BookDetails() {
 
@@ -15,6 +19,8 @@ export default function BookDetails() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isFavorite, setIsFavorite] = useState(false);
+    const [borrowing, setBorrowing] = useState(false);
+    const [showBorrowModal, setShowBorrowModal] = useState(false);
 
     useEffect(() => {
         async function loadBook() {
@@ -57,10 +63,46 @@ export default function BookDetails() {
     }
 
     const isAvailable = book.availableCopies > 0;
+    
 
     const handleBorrow = () => {
-        if (!isAvailable) return;
-        navigate(`/library/borrow?bookId=${book.bookId}`);
+
+        if (!isAvailable || borrowing) return;
+
+        setShowBorrowModal(true);
+
+    };
+
+    const confirmBorrow = async () => {
+
+        setShowBorrowModal(false);
+        setBorrowing(true);
+
+        try {
+
+            const userId = parseInt(localStorage.getItem("userId"), 10);
+
+            const response = await borrowBook(
+                userId,
+                book.bookId
+            );
+
+            toast.success(response.message);
+
+            const updated = await getBook(book.bookId);
+
+            setBook(updated.data);
+
+        } catch (err) {
+
+            toast.error(err.message || "Failed to borrow book.");
+
+        } finally {
+
+            setBorrowing(false);
+
+        }
+
     };
 
     const handleReserve = () => {
@@ -121,8 +163,15 @@ export default function BookDetails() {
 
                     {/* COVER */}
                     <div className="sm:w-64 flex-shrink-0 bg-gray-50 flex items-center justify-center p-6 sm:p-8">
-                        <img
-                            src={book.coverImage || "https://placehold.co/300x450?text=No+Cover"}
+                       <img
+                            src={
+                                book.coverImage
+                                    ? `${API_URL}/${book.coverImage}`
+                                    : noCover
+                            }
+                            onError={(e) => {
+                                e.currentTarget.src = noCover;
+                            }}
                             alt={`Cover of ${book.title}`}
                             className="w-40 sm:w-full rounded-xl shadow-md object-cover"
                         />
@@ -162,19 +211,19 @@ export default function BookDetails() {
                             </div>
                             <div>
                                 <dt className="text-gray-400 text-xs mb-0.5">Publisher</dt>
-                                <dd className="text-[#1F1F1F] font-medium">{book.publisher}</dd>
+                                <dd className="text-[#1F1F1F] font-medium">{book.publisher || "N/A"}</dd>
                             </div>
                             <div>
                                 <dt className="text-gray-400 text-xs mb-0.5">Year</dt>
-                                <dd className="text-[#1F1F1F] font-medium">{book.publishYear}</dd>
+                                <dd className="text-[#1F1F1F] font-medium">{book.publishYear || "N/A"}</dd>
                             </div>
                             <div>
                                 <dt className="text-gray-400 text-xs mb-0.5">Language</dt>
-                                <dd className="text-[#1F1F1F] font-medium">{book.language}</dd>
+                                <dd className="text-[#1F1F1F] font-medium">{book.language || "N/A"}</dd>
                             </div>
                             <div>
                                 <dt className="text-gray-400 text-xs mb-0.5">Shelf Location</dt>
-                                <dd className="text-[#1F1F1F] font-medium">{book.shelfLocation}</dd>
+                                <dd className="text-[#1F1F1F] font-medium">{book.shelfLocation || "N/A"}</dd>
                             </div>
                             <div>
                                 <dt className="text-gray-400 text-xs mb-0.5">Available Copies</dt>
@@ -189,7 +238,7 @@ export default function BookDetails() {
                                 Description
                             </h2>
                             <p className="text-sm text-gray-600 leading-relaxed">
-                                {book.description}
+                                {book.description || "No description available."}
                             </p>
                         </div>
 
@@ -203,7 +252,7 @@ export default function BookDetails() {
 
                     <button
                         onClick={handleBorrow}
-                        disabled={!isAvailable}
+                        disabled={!isAvailable || borrowing}
                         className="
                             col-span-2 sm:col-span-1
                             bg-[#106A2E] text-white
@@ -214,7 +263,11 @@ export default function BookDetails() {
                             transition-all
                         "
                     >
-                        {isAvailable ? "Borrow Book" : "Not Available"}
+                        {borrowing
+                            ? "Borrowing..."
+                            : isAvailable
+                                ? "Borrow Book"
+                                : "Not Available"}
                     </button>
 
                     <button
@@ -276,6 +329,24 @@ export default function BookDetails() {
                 </div>
 
             </div>
+
+            <Modal
+                isOpen={showBorrowModal}
+                type="confirm"
+                title="Borrow Book"
+                message={`Are you sure you want to borrow "${book.title}"?`}
+                confirmText="Borrow"
+                cancelText="Cancel"
+                onConfirm={confirmBorrow}
+                onClose={() => setShowBorrowModal(false)}
+            />
+
+            <Modal
+                isOpen={borrowing}
+                type="loading"
+                title="Borrowing Book"
+                message="Please wait..."
+            />
 
         </div>
 

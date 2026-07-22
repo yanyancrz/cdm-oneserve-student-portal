@@ -1,4 +1,6 @@
 import { useNavigate } from "react-router-dom";
+import noCover from "../../assets/images/no-cover.png";
+import { API_URL } from "../../config/api";
 
 const STATUS_STYLES = {
     Available: {
@@ -49,9 +51,8 @@ export default function BookCard({
         STATUS_STYLES[status] ??
         STATUS_STYLES.Available;
 
-    const image =
-    book.coverImage ||
-    "https://placehold.co/300x450?text=No+Cover";
+   const image =
+    book.coverImage || noCover;
 
     const handleClick = () => {
 
@@ -75,10 +76,13 @@ export default function BookCard({
     };
 
     const handleFavoriteClick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (onToggleFavorite) {
         onToggleFavorite(book.bookId);
-    };
+    }
+};
 
     return (
 
@@ -115,22 +119,29 @@ export default function BookCard({
 
             <div className="relative aspect-[3/4] bg-gray-100 overflow-hidden">
 
-                <img
+                   <img
+                        src={
+                            book.coverImage
+                                ? `${API_URL}/${book.coverImage}?v=2`
+                                : noCover
+                        }
+                        alt={book.title}
+                        onError={(e) => {
+                            e.currentTarget.src = noCover;
+                        }}
+                        className="
+                            w-full
+                            h-full
+                            object-cover
+                            transition-transform
+                            duration-300
+                            group-hover:scale-105
+                        "
+                    />
 
-                    src={image}
+                    
 
-                    alt={book.title}
-
-                    className="
-                        w-full
-                        h-full
-                        object-cover
-                        transition-transform
-                        duration-300
-                        group-hover:scale-105
-                    "
-
-                />
+                
 
                 {
 

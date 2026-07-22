@@ -30,7 +30,7 @@ export default function RecentlyAddedBooks({ books }) {
         >
             {
                 books.map((book) => (
-                    <div key={book.id} className="flex-shrink-0 w-36 snap-start">
+                    <div key={book.bookId} className="flex-shrink-0 w-36 snap-start">
                         <BookCard book={book} />
                     </div>
                 ))

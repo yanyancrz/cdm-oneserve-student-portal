@@ -1,11 +1,13 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import PageHeader from "../../components/Library/PageHeader";
 import EmptyState from "../../components/Library/EmptyState";
 
-import { mockBorrowHistory } from "../../data/mockLibraryData";
+import { getBorrowHistory } from "../../services/libraryService";
 import { formatDate, getLoanStatus } from "../../utils/libraryHelpers";
+import { API_URL } from "../../config/api";
+import noCover from "../../assets/images/no-cover.png";
 
 const FILTERS = ["All", "Ongoing", "Overdue", "Returned"];
 
@@ -15,25 +17,111 @@ const STATUS_STYLES = {
     Returned: { bg: "#F3F4F6", color: "#6B7280", dot: "#9CA3AF" },
 };
 
+
 export default function BorrowHistory() {
 
     const navigate = useNavigate();
     const [activeFilter, setActiveFilter] = useState("All");
 
+    const [borrowHistory, setBorrowHistory] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+
+    useEffect(() => {
+
+        const loadBorrowHistory = async () => {
+
+            const userId = Number(localStorage.getItem("userId"));
+
+            if (!userId) {
+
+                setLoading(false);
+                return;
+
+            }
+
+            try {
+
+                const response = await getBorrowHistory(userId);
+
+                console.log(response);
+
+                setBorrowHistory(response.data ?? response);
+
+            }
+            catch (err) {
+
+                console.error(err);
+
+                setError("Failed to load borrow history.");
+
+            }
+            finally {
+
+                setLoading(false);
+
+            }
+
+        };
+
+        loadBorrowHistory();
+
+    }, []);
+
     // Compute live status per entry (self-corrects Ongoing -> Overdue over time)
     // rather than trusting the static `status` field in the mock data.
-    const historyWithLiveStatus = useMemo(
+   const historyWithLiveStatus = useMemo(
         () =>
-            mockBorrowHistory
-                .map((entry) => ({ ...entry, liveStatus: getLoanStatus(entry) }))
-                .sort((a, b) => new Date(b.borrowDate) - new Date(a.borrowDate)),
-        []
+            borrowHistory
+                .map((entry) => ({
+                    ...entry,
+                    liveStatus: getLoanStatus(entry),
+                }))
+                .sort(
+                    (a, b) =>
+                        new Date(b.borrowDate) -
+                        new Date(a.borrowDate)
+                ),
+        [borrowHistory]
     );
 
     const filteredHistory = useMemo(() => {
         if (activeFilter === "All") return historyWithLiveStatus;
         return historyWithLiveStatus.filter((entry) => entry.liveStatus === activeFilter);
+        
     }, [historyWithLiveStatus, activeFilter]);
+
+    if (loading) {
+
+    return (
+
+        <div className="min-h-screen flex items-center justify-center">
+
+            <p className="text-gray-600">
+                Loading borrow history...
+            </p>
+
+        </div>
+
+    );
+
+}
+
+if (error) {
+
+    return (
+
+        <div className="min-h-screen flex items-center justify-center">
+
+            <p className="text-red-600">
+                {error}
+            </p>
+
+        </div>
+
+    );
+
+}
 
     return (
 
@@ -88,7 +176,7 @@ export default function BorrowHistory() {
                                 const style = STATUS_STYLES[entry.liveStatus] ?? STATUS_STYLES.Returned;
 
                                 return (
-                                    <div key={entry.id} className="relative">
+                                    <div key={entry.borrowId} className="relative">
 
                                         {/* Timeline dot */}
                                         <div
@@ -98,7 +186,14 @@ export default function BorrowHistory() {
 
                                         <div className="bg-white/90 rounded-2xl shadow-sm p-4 flex gap-4">
                                             <img
-                                                src={entry.coverUrl}
+                                                src={
+                                                    entry.coverImage
+                                                        ? `${API_URL}/${entry.coverImage}`
+                                                        : noCover
+                                                }
+                                                onError={(e) => {
+                                                    e.currentTarget.src = noCover;
+                                                }}
                                                 alt={`Cover of ${entry.bookTitle}`}
                                                 className="w-16 h-20 rounded-lg object-cover flex-shrink-0"
                                             />

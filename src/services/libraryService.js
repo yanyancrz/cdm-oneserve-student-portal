@@ -3,7 +3,7 @@ import { API_URL } from "../config/api";
 
 const BASE = `${API_URL}/api/library`;
 
-async function request(path, options = {}) {    
+async function request(path, options = {}) {
 
     const res = await fetch(`${BASE}${path}`, {
         ...options,
@@ -13,11 +13,15 @@ async function request(path, options = {}) {
         }
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-        throw new Error(`Library API error (${res.status}): ${path}`);
+        throw new Error(
+            data.message || `Library API error (${res.status})`
+        );
     }
 
-    return await res.json();
+    return data;
 }
 
 // ---------------------------------------------------------------------------
@@ -33,19 +37,25 @@ export function getBook(bookId) {
     return request(`/books/${bookId}`);
 }
 
+
 // ---------------------------------------------------------------------------
 // BORROWING / RESERVATIONS / RENEWALS
 // ---------------------------------------------------------------------------
 
 export function borrowBook(userId, bookId) {
-    return request(`/borrow?userId=${userId}&bookId=${bookId}`, {
+    return request("/borrow", {
         method: "POST",
+        body: JSON.stringify({
+            userId,
+            bookId,
+        }),
     });
 }
 
 export function reserveBook(userId, bookId) {
-    return request(`/reservations?userId=${userId}&bookId=${bookId}`, {
+    return request("/reservations", {
         method: "POST",
+        body: JSON.stringify({ userId, bookId })
     });
 }
 
@@ -149,4 +159,12 @@ export function sendMessage(userId, text) {
         method: "POST",
         body: JSON.stringify({ userId, text }),
     });
+}
+
+// ---------------------------------------------------------------------------
+// Recent Activities (for dashboard preview)
+// ---------------------------------------------------------------------------
+
+export function getLibraryActivities(userId) {
+    return request(`/activity/${userId}`);
 }

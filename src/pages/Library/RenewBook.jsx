@@ -1,40 +1,89 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import PageHeader from "../../components/Library/PageHeader";
 import EmptyState from "../../components/Library/EmptyState";
 
-import { mockCurrentLoans } from "../../data/mockLibraryData";
-import { addDays, formatDate, calculateDueDays } from "../../utils/libraryHelpers";
+import {
+    getCurrentBorrowedBooks,
+    renewBook,
+} from "../../services/libraryService";
+
+import { API_URL } from "../../config/api";
+import noCover from "../../assets/images/no-cover.png";
+
+import { formatDate, calculateDueDays, } from "../../utils/libraryHelpers";
 
 const RENEWAL_EXTENSION_DAYS = 14;
 
 export default function RenewBook() {
 
     const navigate = useNavigate();
-    const [loans, setLoans] = useState(mockCurrentLoans || []);
+    const [loans, setLoans] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
-    const handleRenew = (loanId) => {
-        setLoans((prev) =>
-            prev.map((loan) => {
-                if (loan.id !== loanId) return loan;
+    useEffect(() => {
 
-                const newRenewCount = loan.renewCount + 1;
-                const nowEligible = newRenewCount < loan.maxRenewals;
+        async function loadLoans() {
 
-                return {
-                    ...loan,
-                    dueDate: addDays(loan.dueDate, RENEWAL_EXTENSION_DAYS).toISOString(),
-                    renewCount: newRenewCount,
-                    renewStatus: nowEligible ? "Eligible" : "Not Eligible",
-                };
-            })
-        );
-        // Placeholder only — no backend call yet. libraryService.renewBook()
-        // will replace this once that file exists.
-        toast.success("Book renewed successfully");
-    };
+            const userId = Number(localStorage.getItem("userId"));
+
+            if (!userId) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+
+                const response = await getCurrentBorrowedBooks(userId);
+
+                console.log(response);
+
+                setLoans(response.data ?? response);
+
+            } catch (err) {
+
+                console.error(err);
+
+                setError("Failed to load borrowed books.");
+
+            } finally {
+
+                setLoading(false);
+
+            }
+
+        }
+
+        loadLoans();
+
+    }, []);
+
+   const handleRenew = async (borrowId) => {
+
+    try {
+
+        const response = await renewBook(borrowId);
+
+        toast.success(response.message);
+
+        const userId = Number(localStorage.getItem("userId"));
+
+        const updated = await getCurrentBorrowedBooks(userId);
+
+        setLoans(updated.data ?? updated);
+
+    } catch (err) {
+
+        console.error(err);
+
+        toast.error(err.message || "Failed to renew book.");
+
+    }
+
+};
 
     const statusStyles = {
         Eligible: { bg: "#DCFCE7", color: "#106A2E" },
@@ -71,7 +120,7 @@ export default function RenewBook() {
                             const daysRemaining = calculateDueDays(loan.dueDate);
                             const isOverdue = daysRemaining < 0;
                             const isDueSoon = daysRemaining >= 0 && daysRemaining <= 3;
-                            const canRenew = loan.renewStatus === "Eligible" && !isOverdue;
+                            const canRenew = !isOverdue && loan.status === "Borrowed";
 
                             const daysLabel = isOverdue
                                 ? `${Math.abs(daysRemaining)} day${Math.abs(daysRemaining) === 1 ? "" : "s"} overdue`
@@ -89,11 +138,18 @@ export default function RenewBook() {
 
                             return (
                                 <div
-                                    key={loan.id}
+                                    key={loan.borrowId}
                                     className="bg-white/90 rounded-2xl shadow-sm p-4 flex gap-4"
                                 >
                                     <img
-                                        src={loan.coverUrl}
+                                        src={
+                                            loan.coverImage
+                                                ? `${API_URL}/${loan.coverImage}`
+                                                : noCover
+                                        }
+                                        onError={(e) => {
+                                            e.currentTarget.src = noCover;
+                                        }}
                                         alt={`Cover of ${loan.bookTitle}`}
                                         className="w-16 h-20 rounded-lg object-cover flex-shrink-0"
                                     />
@@ -111,7 +167,7 @@ export default function RenewBook() {
                                             </span>
                                         </div>
 
-                                        <p className="text-xs text-gray-500 mb-2">{loan.bookAuthor}</p>
+                                        <p className="text-xs text-gray-500 mb-2">{loan.author}</p>
 
                                         <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] mb-3">
                                             <span className="text-gray-500">
@@ -123,11 +179,11 @@ export default function RenewBook() {
                                         </div>
 
                                         <div className="flex items-center justify-between">
-                                            <p className="text-[11px] text-gray-400">
-                                                Renewed {loan.renewCount} of {loan.maxRenewals} times
+                                           <p className="text-[11px] text-gray-400">
+                                                Renewed {loan.renewalCount} time(s)
                                             </p>
                                             <button
-                                                onClick={() => handleRenew(loan.id)}
+                                                onClick={() => handleRenew(loan.borrowId)}
                                                 disabled={!canRenew}
                                                 className={`
                                                     px-4 py-2 rounded-lg text-xs font-semibold transition-all
@@ -162,4 +218,4 @@ export default function RenewBook() {
 
     );
 
-}
+}   

@@ -25,14 +25,14 @@ export default function BorrowedBookCard({ loan, onRenew }) {
 
     const daysRemaining = getDaysRemaining(loan.dueDate);
     const isOverdue = daysRemaining < 0;
-    const isEligible = loan.renewStatus === "Eligible" && loan.renewCount < loan.maxRenewals;
+    const isEligible = loan.renewStatus === "Eligible" && loan.renewalCount < loan.maxRenewals;
 
     const statusStyles = {
         Eligible: { bg: "#E1F5EE", color: "#085041" },
         Renewed: { bg: "#EEEDFE", color: "#3C3489" },
         "Not Eligible": { bg: "#FAECE7", color: "#712B13" },
     };
-    const statusStyle = statusStyles[loan.renewStatus] ?? statusStyles.Eligible;
+    const statusStyle = statusStyles.Eligible;
 
     return (
         <div className="bg-white/90 rounded-2xl shadow-sm p-4 flex gap-4">

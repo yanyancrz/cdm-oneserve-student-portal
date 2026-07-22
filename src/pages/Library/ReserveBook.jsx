@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -8,7 +8,15 @@ import BookGrid from "../../components/Library/BookGrid";
 import EmptyState from "../../components/Library/EmptyState";
 import ReservationCard from "../../components/Library/ReservationCard";
 
-import { mockBooks, mockReservations } from "../../data/mockLibraryData";
+
+import {
+    getBooks,
+    getMyReservations,
+    reserveBook,
+    cancelReservation,
+} from "../../services/libraryService";
+
+
 
 function addDays(date, days) {
     const result = new Date(date);
@@ -18,19 +26,72 @@ function addDays(date, days) {
 
 export default function ReserveBook() {
 
+    useEffect(() => {
+
+    const loadBooks = async () => {
+
+        try {
+
+            const response = await getBooks();
+
+            setBooks(response.data);
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+        }
+
+    };
+
+    loadBooks();
+
+}, []);
+
+useEffect(() => {
+
+    const loadReservations = async () => {
+
+        const userId = Number(localStorage.getItem("userId"));
+
+        if (!userId) return;
+
+        try {
+
+            const data = await getMyReservations(userId);
+
+            setReservations(data);
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+        }
+
+    };
+
+    loadReservations();
+
+}, []);
+
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const preselectedId = searchParams.get("bookId");
 
-    const [reservations, setReservations] = useState(mockReservations || []);
+    const [reservations, setReservations] = useState([]);
     const [selectedBookId, setSelectedBookId] = useState(preselectedId || null);
     const [step, setStep] = useState(preselectedId ? "confirm" : "list");
     const [searchQuery, setSearchQuery] = useState("");
 
     // Only books with zero available copies can be reserved.
-    const unavailableBooks = useMemo(
-        () => mockBooks.filter((book) => book.availableCopies === 0),
-        []
+    const [books, setBooks] = useState([]);
+
+    const unavailableBooks = books.filter(
+        (book) =>
+            book.availableCopies === 0 &&
+            book.status === "Unavailable"
     );
 
     const filteredBooks = useMemo(() => {
@@ -43,7 +104,9 @@ export default function ReserveBook() {
         );
     }, [unavailableBooks, searchQuery]);
 
-    const selectedBook = mockBooks.find((b) => b.id === selectedBookId);
+    const selectedBook = books.find(
+        (b) => b.bookId === Number(selectedBookId)
+    );
 
     const activeReservations = reservations.filter((r) => r.status !== "Cancelled");
 
@@ -143,7 +206,7 @@ export default function ReserveBook() {
                             <div className="space-y-3">
                                 {activeReservations.map((reservation) => (
                                     <ReservationCard
-                                        key={reservation.id}
+                                        key={reservation.reservationId}
                                         reservation={reservation}
                                         onCancel={handleCancelReservation}
                                     />
