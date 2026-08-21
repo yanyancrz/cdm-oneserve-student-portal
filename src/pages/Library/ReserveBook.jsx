@@ -108,7 +108,11 @@ useEffect(() => {
         (b) => b.bookId === Number(selectedBookId)
     );
 
-    const activeReservations = reservations.filter((r) => r.status !== "Cancelled");
+   const activeReservations = reservations.filter(
+    (r) =>
+        r.status === "Pending" ||
+        r.status === "Approved"
+);
 
     // How many active reservations already exist for the selected book.
     const existingQueueForSelected = useMemo(() => {
@@ -127,33 +131,79 @@ useEffect(() => {
         setStep("confirm");
     };
 
-    const handleConfirmReservation = () => {
-        // Placeholder only — no backend call yet. libraryService.reserveBook()
-        // will replace this once that file exists.
-        const newReservation = {
-            id: `res-${Date.now()}`,
-            bookId: selectedBook.id,
-            bookTitle: selectedBook.title,
-            coverUrl: selectedBook.coverUrl,
-            queuePosition,
-            queueLength,
-            reservedDate: new Date().toISOString(),
-            estimatedAvailability: estimatedAvailableDate.toISOString(),
-            status: "Waiting",
-        };
-        setReservations((prev) => [newReservation, ...prev]);
-        setStep("success");
-        toast.success("Book reserved successfully");
-    };
+   const handleConfirmReservation = async () => {
 
-    const handleCancelReservation = (reservationId) => {
-        setReservations((prev) =>
-            prev.map((r) =>
-                r.id === reservationId ? { ...r, status: "Cancelled" } : r
-            )
+    const userId = Number(localStorage.getItem("userId"));
+
+    if (!userId) {
+        toast.error("User not found. Please log in again.");
+        return;
+    }
+
+    if (!selectedBook) {
+        toast.error("Please select a book.");
+        return;
+    }
+
+    try {
+
+        const response = await reserveBook(
+            userId,
+            selectedBook.bookId
         );
-        toast.success("Reservation cancelled");
-    };
+
+        toast.success(
+            response.message || "Book reserved successfully"
+        );
+
+        const updatedReservations =
+            await getMyReservations(userId);
+
+        setReservations(
+            updatedReservations.data ?? updatedReservations
+        );
+
+        setStep("success");
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast.error(
+            error.message || "Failed to reserve book."
+        );
+    }
+};
+
+   const handleCancelReservation = async (reservationId) => {
+
+    try {
+
+        const response = await cancelReservation(reservationId);
+
+        toast.success(
+            response.message || "Reservation cancelled successfully."
+        );
+
+        const userId = Number(localStorage.getItem("userId"));
+
+        const updatedReservations =
+            await getMyReservations(userId);
+
+        setReservations(
+            updatedReservations.data ?? updatedReservations
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast.error(
+            error.message || "Failed to cancel reservation."
+        );
+
+    }
+};
 
     return (
 
@@ -167,10 +217,10 @@ useEffect(() => {
             <div className="max-w-md sm:max-w-2xl lg:max-w-4xl mx-auto p-4 sm:p-6">
 
                 <PageHeader
-                    title="Reserve Book"
+                    title={step === "list" ? "My Reservations" : "Reserve Book"}
                     subtitle={
                         step === "list"
-                            ? "Manage your reservations"
+                            ? "View and manage your book reservations"
                             : step === "select"
                             ? "Choose an unavailable book"
                             : step === "confirm"
@@ -185,7 +235,7 @@ useEffect(() => {
                     <>
                         <div className="flex items-center justify-between mb-4">
                             <h3 className="text-sm font-semibold text-[#1F1F1F]">
-                                Your Reservations
+                                My Reservations
                             </h3>
                             <button
                                 onClick={() => setStep("select")}
@@ -195,16 +245,16 @@ useEffect(() => {
                             </button>
                         </div>
 
-                        {activeReservations.length === 0 ? (
+                        {reservations.length === 0 ? (
                             <EmptyState
-                                title="No active reservations"
-                                message="Reserve a book that's currently unavailable and we'll notify you when it's ready."
+                                title="No reservations yet"
+                                message="You haven't made any book reservations yet."
                                 actionLabel="Browse Unavailable Books"
                                 onAction={() => setStep("select")}
                             />
                         ) : (
                             <div className="space-y-3">
-                                {activeReservations.map((reservation) => (
+                                {reservations.map((reservation) => (
                                     <ReservationCard
                                         key={reservation.reservationId}
                                         reservation={reservation}

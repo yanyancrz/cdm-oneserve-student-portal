@@ -346,7 +346,7 @@ export default function Dashboard() {
                                 </svg>
                             </div>
                             <p className="text-xl font-semibold text-[#1F1F1F]">{reservations.length}</p>
-                            <p className="text-xs text-gray-500">Reservations</p>
+                            <p className="text-xs text-gray-500">My Reservations</p>
                         </Link>
 
                         <Link
