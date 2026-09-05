@@ -88,22 +88,26 @@ const ReportLostFoundModal = ({
         }
     };
 
-    const title =
-        reportType?.toLowerCase() === "found"
-            ? "Report Found Item"
-            : "Report Lost Item";
+    const isFound = reportType?.toLowerCase() === "found";
+
+    const title = isFound ? "Report Found Item" : "Report Lost Item";
+
+    const accentColor = isFound ? "#106A2E" : "#712B13";
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4 py-6">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4 py-6">
 
-            <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-xl">
+            <div
+                className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-[24px] bg-white shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+            >
 
                 {/* HEADER */}
 
-                <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+                <div className="flex items-center justify-between border-b border-black/5 bg-white px-6 py-5 flex-shrink-0">
 
                     <div>
-                        <h2 className="text-xl font-bold text-gray-800">
+                        <h2 className="text-xl font-semibold text-[#1F1F1F] tracking-tight">
                             {title}
                         </h2>
 
@@ -115,7 +119,7 @@ const ReportLostFoundModal = ({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="rounded-full px-3 py-1 text-2xl text-gray-400 hover:bg-gray-100 hover:text-gray-700"
+                        className="rounded-full w-8 h-8 flex items-center justify-center text-xl text-gray-400 transition-all hover:bg-gray-100 hover:text-gray-700"
                     >
                         ×
                     </button>
@@ -127,13 +131,23 @@ const ReportLostFoundModal = ({
 
                 <form
                     onSubmit={handleSubmit}
-                    className="space-y-5 p-6"
+                    id="report-lost-found-form"
+                    className="
+                        space-y-5 overflow-y-auto p-6
+                        [&::-webkit-scrollbar]:w-1.5
+                        [&::-webkit-scrollbar-track]:bg-transparent
+                        [&::-webkit-scrollbar-thumb]:rounded-full
+                        [&::-webkit-scrollbar-thumb]:bg-[#106A2E]/25
+                        hover:[&::-webkit-scrollbar-thumb]:bg-[#106A2E]/40
+                        [scrollbar-width:thin]
+                        [scrollbar-color:rgba(16,106,46,0.25)_transparent]
+                    "
                 >
 
                     {/* ERROR */}
 
                     {error && (
-                        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                        <div className="rounded-xl bg-[#FAECE7] px-4 py-3 text-sm text-[#712B13]">
                             {error}
                         </div>
                     )}
@@ -142,7 +156,7 @@ const ReportLostFoundModal = ({
                     {/* ITEM NAME */}
 
                     <div>
-                        <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                        <label className="mb-1.5 block text-sm font-semibold text-[#1F1F1F]">
                             Item Name
                         </label>
 
@@ -151,7 +165,7 @@ const ReportLostFoundModal = ({
                             value={itemName}
                             onChange={(e) => setItemName(e.target.value)}
                             placeholder="e.g. Black Wallet"
-                            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#106A2E] focus:ring-1 focus:ring-[#106A2E]"
                             required
                         />
                     </div>
@@ -160,14 +174,14 @@ const ReportLostFoundModal = ({
                     {/* CATEGORY */}
 
                     <div>
-                        <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                        <label className="mb-1.5 block text-sm font-semibold text-[#1F1F1F]">
                             Category
                         </label>
 
                         <select
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
-                            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm outline-none focus:border-[#106A2E] focus:ring-1 focus:ring-[#106A2E]"
                             required
                         >
                             <option value="">
@@ -204,7 +218,7 @@ const ReportLostFoundModal = ({
                     {/* DESCRIPTION */}
 
                     <div>
-                        <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                        <label className="mb-1.5 block text-sm font-semibold text-[#1F1F1F]">
                             Description
                         </label>
 
@@ -213,7 +227,7 @@ const ReportLostFoundModal = ({
                             onChange={(e) => setDescription(e.target.value)}
                             placeholder="Describe the item, including identifying details."
                             rows={4}
-                            className="w-full resize-none rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            className="w-full resize-none rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#106A2E] focus:ring-1 focus:ring-[#106A2E]"
                             required
                         />
                     </div>
@@ -224,7 +238,7 @@ const ReportLostFoundModal = ({
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 
                         <div>
-                            <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                            <label className="mb-1.5 block text-sm font-semibold text-[#1F1F1F]">
                                 Date
                             </label>
 
@@ -234,14 +248,14 @@ const ReportLostFoundModal = ({
                                 onChange={(e) =>
                                     setDateLostFound(e.target.value)
                                 }
-                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#106A2E] focus:ring-1 focus:ring-[#106A2E]"
                                 required
                             />
                         </div>
 
 
                         <div>
-                            <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                            <label className="mb-1.5 block text-sm font-semibold text-[#1F1F1F]">
                                 Location
                             </label>
 
@@ -250,7 +264,7 @@ const ReportLostFoundModal = ({
                                 value={location}
                                 onChange={(e) => setLocation(e.target.value)}
                                 placeholder="e.g. Library"
-                                className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                                className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#106A2E] focus:ring-1 focus:ring-[#106A2E]"
                                 required
                             />
                         </div>
@@ -261,7 +275,7 @@ const ReportLostFoundModal = ({
                     {/* PHOTO */}
 
                     <div>
-                        <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+                        <label className="mb-1.5 block text-sm font-semibold text-[#1F1F1F]">
                             Photo URL
                             <span className="ml-1 font-normal text-gray-400">
                                 (Optional)
@@ -273,41 +287,39 @@ const ReportLostFoundModal = ({
                             value={photo}
                             onChange={(e) => setPhoto(e.target.value)}
                             placeholder="Enter photo URL"
-                            className="w-full rounded-lg border border-gray-300 px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#106A2E] focus:ring-1 focus:ring-[#106A2E]"
                         />
                     </div>
 
-
-                    {/* ACTIONS */}
-
-                    <div className="flex justify-end gap-3 border-t border-gray-200 pt-5">
-
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            disabled={loading}
-                            className="rounded-lg border border-gray-300 px-5 py-2.5 text-sm font-semibold text-gray-600 transition hover:bg-gray-100 disabled:opacity-50"
-                        >
-                            Cancel
-                        </button>
-
-                        <button
-                            type="submit"
-                            disabled={loading}
-                            className={`rounded-lg px-5 py-2.5 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${
-                                reportType?.toLowerCase() === "found"
-                                    ? "bg-green-600 hover:bg-green-700"
-                                    : "bg-red-600 hover:bg-red-700"
-                            }`}
-                        >
-                            {loading
-                                ? "Submitting..."
-                                : "Submit Report"}
-                        </button>
-
-                    </div>
-
                 </form>
+
+
+                {/* ACTIONS */}
+
+                <div className="flex justify-end gap-3 border-t border-black/5 px-6 py-4 flex-shrink-0">
+
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={loading}
+                        className="rounded-xl bg-gray-100 px-5 py-2.5 text-sm font-semibold text-gray-600 transition-all hover:bg-gray-200 disabled:opacity-50"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        form="report-lost-found-form"
+                        disabled={loading}
+                        style={{ backgroundColor: accentColor }}
+                        className="rounded-xl px-5 py-2.5 text-sm font-semibold text-white transition-all hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                        {loading
+                            ? "Submitting..."
+                            : "Submit Report"}
+                    </button>
+
+                </div>
 
             </div>
 
