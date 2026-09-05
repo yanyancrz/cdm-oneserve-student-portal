@@ -13,6 +13,8 @@ export default function SetupProfile() {
     const [course, setCourse] = useState("");
     const [institute, setInstitute] = useState("");
     const [yearLevel, setYearLevel] = useState("");
+    const [studentStatus, setStudentStatus] = useState("");
+    const [position, setPosition] = useState("");
     const [profilePicture, setProfilePicture] = useState(null);
 
     const handleSaveProfile = async () => {
@@ -22,13 +24,14 @@ export default function SetupProfile() {
 
 
          console.log({
-        userId,
-        contactNumber,
-        role,
-        course,
-        institute,
-        yearLevel
-    });
+            userId,
+            contactNumber,
+            role,
+            course,
+            institute,
+            yearLevel,
+            position
+        });
 
     try {
 
@@ -92,7 +95,9 @@ export default function SetupProfile() {
                     role,
                     course,
                     institute,
-                    yearLevel
+                    yearLevel,
+                    studentStatus,
+                    position
                 })
             }
         );
@@ -389,6 +394,38 @@ export default function SetupProfile() {
 
                     )}
 
+                    {role === "Faculty" && (
+
+                        <div>
+
+                            <label className="text-sm text-gray-600">
+                                Faculty Position
+                            </label>
+
+                            <input
+                                type="text"
+                                placeholder="Enter Faculty Position"
+                                value={position}
+                                onChange={(e) =>
+                                    setPosition(e.target.value)
+                                }
+                                className="
+                                    w-full
+                                    mt-1
+                                    p-3
+                                    rounded-xl
+                                    border
+                                    border-gray-200
+                                    bg-gray-50
+                                    focus:border-[#106A2E]
+                                    outline-none
+                                "
+                            />
+
+                        </div>
+
+                    )}
+
                     {role === "Student" && (
 
                         <div>
@@ -435,6 +472,50 @@ export default function SetupProfile() {
 
                                 <option>
                                     4th Year
+                                </option>
+
+                            </select>
+
+                        </div>
+
+                    )}
+
+                    {role === "Student" && (
+
+                        <div>
+
+                            <label className="text-sm text-gray-600">
+                                Student Status
+                            </label>
+
+                            <select
+                                value={studentStatus}
+                                onChange={(e) =>
+                                    setStudentStatus(e.target.value)
+                                }
+                                className="
+                                    w-full
+                                    mt-1
+                                    p-3
+                                    rounded-xl
+                                    border
+                                    border-gray-200
+                                    bg-gray-50
+                                    focus:border-[#106A2E]
+                                    outline-none
+                                "
+                            >
+
+                                <option value="">
+                                    Select Student Status
+                                </option>
+
+                                <option value="Regular">
+                                    Regular
+                                </option>
+
+                                <option value="Irregular">
+                                    Irregular
                                 </option>
 
                             </select>

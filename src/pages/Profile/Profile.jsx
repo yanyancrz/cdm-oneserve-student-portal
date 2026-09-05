@@ -11,6 +11,11 @@ export default function Profile() {
 
     const [logoutLoading, setLogoutLoading] = useState(false);
 
+
+    // ==========================================
+    // LOAD PROFILE
+    // ==========================================
+
     useEffect(() => {
 
         const loadProfile = async () => {
@@ -20,10 +25,16 @@ export default function Profile() {
                 const email =
                     localStorage.getItem("userEmail");
 
+                if (!email) {
+                    toast.error("User email not found.");
+                    return;
+                }
+
                 const response =
                     await fetch(
-                        `${API_URL}/api/profile/${email}`
+                        `${API_URL}/api/profile/${encodeURIComponent(email)}`
                     );
+
 
                 if (!response.ok) {
 
@@ -33,8 +44,10 @@ export default function Profile() {
 
                 }
 
+
                 const data =
                     await response.json();
+
 
                 setStudent(data);
 
@@ -43,71 +56,188 @@ export default function Profile() {
 
                 console.error(error);
 
+                toast.error(
+                    "Unable to load profile."
+                );
+
             }
 
         };
+
 
         loadProfile();
 
     }, []);
 
+
+    // ==========================================
+    // ROLE
+    // ==========================================
+
+    const isFaculty =
+        student?.role?.toLowerCase() === "faculty";
+
+
+    // ==========================================
+    // LOGOUT
+    // ==========================================
+
     const handleLogout = () => {
 
-    setLogoutLoading(true);
+        setLogoutLoading(true);
 
-    toast.success(
-        "Logged out successfully"
-    );
 
-    setTimeout(() => {
+        toast.success(
+            "Logged out successfully"
+        );
 
-        localStorage.clear();
 
-        navigate("/", {
-            replace: true
-        });
+        setTimeout(() => {
 
-    }, 1000);
+            localStorage.clear();
 
-};
+            navigate("/", {
+                replace: true
+            });
 
-if (!student) {
+        }, 1000);
 
-    return (
-        <div className="min-h-screen flex items-center justify-center">
-            <p className="text-gray-500">
-                Loading Profile...
-            </p>
-        </div>
-    );
+    };
 
-}
 
-   const isFaculty = student.role === "Faculty";
+    // ==========================================
+    // LOADING
+    // ==========================================
+
+    if (!student) {
+
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+
+                <p className="text-gray-500">
+                    Loading Profile...
+                </p>
+
+            </div>
+        );
+
+    }
+
+
+    // ==========================================
+    // PAGE
+    // ==========================================
 
     return (
 
         <div
-            className="min-h-screen p-4 pb-24 relative overflow-hidden"
+            className="
+                min-h-screen
+                p-4
+                pb-24
+                relative
+                overflow-hidden
+            "
         >
 
-            {/* decorative blobs */}
-            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-[#106A2E]/[0.06]" />
-            <div className="absolute -bottom-24 -left-16 w-56 h-56 rounded-full bg-[#F4D35E]/[0.15]" />
+            {/* ==========================================
+                DECORATIVE BLOBS
+            ========================================== */}
 
-            <div className="max-w-md mx-auto relative z-10">
+            <div
+                className="
+                    absolute
+                    -top-20
+                    -right-20
+                    w-64
+                    h-64
+                    rounded-full
+                    bg-[#106A2E]/[0.06]
+                "
+            />
 
-                <h1 className="text-lg font-semibold text-[#1F1F1F] pt-4 mb-4">
+            <div
+                className="
+                    absolute
+                    -bottom-24
+                    -left-16
+                    w-56
+                    h-56
+                    rounded-full
+                    bg-[#F4D35E]/[0.15]
+                "
+            />
+
+
+            <div
+                className="
+                    max-w-md
+                    mx-auto
+                    relative
+                    z-10
+                "
+            >
+
+
+                {/* ==========================================
+                    PAGE TITLE
+                ========================================== */}
+
+                <h1
+                    className="
+                        text-lg
+                        font-semibold
+                        text-[#1F1F1F]
+                        pt-4
+                        mb-4
+                    "
+                >
                     My Profile
                 </h1>
 
-                {/* PROFILE CARD */}
 
-                <div className="bg-white rounded-3xl shadow-xl shadow-[#106A2E]/10 border border-[#106A2E]/[0.06] overflow-hidden">
+                {/* ==========================================
+                    PROFILE CARD
+                ========================================== */}
 
-                    <div className="h-20 bg-gradient-to-r from-[#106A2E] to-[#0D7856]" />
+                <div
+                    className="
+                        bg-white
+                        rounded-3xl
+                        shadow-xl
+                        shadow-[#106A2E]/10
+                        border
+                        border-[#106A2E]/[0.06]
+                        overflow-hidden
+                    "
+                >
 
-                    <div className="flex flex-col items-center -mt-12 px-6 pb-6">
+                    {/* Green Header */}
+
+                    <div
+                        className="
+                            h-20
+                            bg-gradient-to-r
+                            from-[#106A2E]
+                            to-[#0D7856]
+                        "
+                    />
+
+
+                    {/* Profile Information */}
+
+                    <div
+                        className="
+                            flex
+                            flex-col
+                            items-center
+                            -mt-12
+                            px-6
+                            pb-6
+                        "
+                    >
+
+                        {/* PROFILE PICTURE */}
 
                         <img
                             src={
@@ -127,48 +257,159 @@ if (!student) {
                             "
                         />
 
-                        <h2 className="text-xl font-semibold text-[#1F1F1F] mt-3">
+
+                        {/* FULL NAME */}
+
+                        <h2
+                            className="
+                                text-xl
+                                font-semibold
+                                text-[#1F1F1F]
+                                mt-3
+                            "
+                        >
                             {student.fullName}
                         </h2>
 
-                        <p className="text-sm text-gray-500 mt-0.5">
+
+                        {/* ID NUMBER */}
+
+                        <p
+                            className="
+                                text-sm
+                                text-gray-500
+                                mt-0.5
+                            "
+                        >
                             {student.idNumber || "No ID Number"}
                         </p>
 
-                        <span className="inline-flex items-center gap-1.5 bg-[#106A2E]/10 text-[#106A2E] text-xs font-medium px-3 py-1 rounded-full mt-3">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#106A2E]" />
-                            {isFaculty ? "Active Faculty" : "Active Student"}
+
+                        {/* ROLE STATUS */}
+
+                        <span
+                            className="
+                                inline-flex
+                                items-center
+                                gap-1.5
+                                bg-[#106A2E]/10
+                                text-[#106A2E]
+                                text-xs
+                                font-medium
+                                px-3
+                                py-1
+                                rounded-full
+                                mt-3
+                            "
+                        >
+
+                            <span
+                                className="
+                                    w-1.5
+                                    h-1.5
+                                    rounded-full
+                                    bg-[#106A2E]
+                                "
+                            />
+
+                            {isFaculty
+                                ? "Active Faculty"
+                                : "Active Student"}
+
                         </span>
 
                     </div>
 
                 </div>
 
-                {/* DETAILS */}
 
-                <div className="bg-white rounded-3xl shadow-xl shadow-[#106A2E]/10 border border-[#106A2E]/[0.06] p-6 mt-4">
+                {/* ==========================================
+                    DETAILS
+                ========================================== */}
 
-                    <h3 className="text-sm font-semibold text-[#1F1F1F] mb-4">
-                        {isFaculty ? "Faculty Information" : "Student Information"}
+                <div
+                    className="
+                        bg-white
+                        rounded-3xl
+                        shadow-xl
+                        shadow-[#106A2E]/10
+                        border
+                        border-[#106A2E]/[0.06]
+                        p-6
+                        mt-4
+                    "
+                >
+
+
+                    {/* SECTION TITLE */}
+
+                    <h3
+                        className="
+                            text-sm
+                            font-semibold
+                            text-[#1F1F1F]
+                            mb-4
+                        "
+                    >
+                        {isFaculty
+                            ? "Faculty Information"
+                            : "Student Information"}
                     </h3>
+
 
                     <div className="space-y-4">
 
-                        {/* Email */}
 
-                        <div className="flex items-center gap-3">
+                        {/* ==========================================
+                            EMAIL
+                        ========================================== */}
 
-                            <div className="w-9 h-9 rounded-lg bg-[#106A2E]/10 flex items-center justify-center flex-shrink-0">
+                        <div
+                            className="
+                                flex
+                                items-center
+                                gap-3
+                            "
+                        >
 
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#106A2E" strokeWidth="2">
+                            <div
+                                className="
+                                    w-9
+                                    h-9
+                                    rounded-lg
+                                    bg-[#106A2E]/10
+                                    flex
+                                    items-center
+                                    justify-center
+                                    flex-shrink-0
+                                "
+                            >
 
-                                    <rect x="2" y="4" width="20" height="16" rx="2" />
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="#106A2E"
+                                    strokeWidth="2"
+                                >
 
-                                    <path d="m22 7-10 6L2 7" />
+                                    <rect
+                                        x="2"
+                                        y="4"
+                                        width="20"
+                                        height="16"
+                                        rx="2"
+                                    />
+
+                                    <path
+                                        d="m22 7-10 6L2 7"
+                                    />
 
                                 </svg>
 
                             </div>
+
 
                             <div>
 
@@ -176,65 +417,174 @@ if (!student) {
                                     Email
                                 </p>
 
-                                <p className="text-sm font-medium text-[#1F1F1F]">
-                                    {student.email}
+                                <p
+                                    className="
+                                        text-sm
+                                        font-medium
+                                        text-[#1F1F1F]
+                                    "
+                                >
+                                    {student.email || "Not Set"}
                                 </p>
 
                             </div>
 
                         </div>
 
-                        {/* Course (student) or Institute (faculty) */}
 
-                        <div className="flex items-center gap-3">
+                        {/* ==========================================
+                            FACULTY → INSTITUTE
+                            STUDENT → PROGRAM
+                        ========================================== */}
 
-                            <div className="w-9 h-9 rounded-lg bg-[#106A2E]/10 flex items-center justify-center flex-shrink-0">
+                        <div
+                            className="
+                                flex
+                                items-center
+                                gap-3
+                            "
+                        >
 
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#106A2E" strokeWidth="2">
+                            <div
+                                className="
+                                    w-9
+                                    h-9
+                                    rounded-lg
+                                    bg-[#106A2E]/10
+                                    flex
+                                    items-center
+                                    justify-center
+                                    flex-shrink-0
+                                "
+                            >
 
-                                    <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="#106A2E"
+                                    strokeWidth="2"
+                                >
 
-                                    <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                                    <path d="M22 10v6" />
+
+                                    <path
+                                        d="
+                                            M2 10
+                                            l10-5
+                                            10 5
+                                            -10 5
+                                            z
+                                        "
+                                    />
+
+                                    <path
+                                        d="
+                                            M6 12
+                                            v5
+                                            c3 3
+                                            9 3
+                                            12 0
+                                            v-5
+                                        "
+                                    />
 
                                 </svg>
 
                             </div>
 
+
                             <div>
 
                                 <p className="text-xs text-gray-500">
-                                    {isFaculty ? "Institute" : "Program"}
+                                    {isFaculty
+                                        ? "Institute"
+                                        : "Program"}
                                 </p>
 
-                                <p className="text-sm font-medium text-[#1F1F1F]">
-                                    {
-                                        isFaculty
-                                            ? (student.institute || "Not Set")
-                                            : (student.course || "Not Set")
-                                    }
+
+                                <p
+                                    className="
+                                        text-sm
+                                        font-medium
+                                        text-[#1F1F1F]
+                                    "
+                                >
+
+                                    {isFaculty
+                                        ? (
+                                            student.institute ||
+                                            "Not Set"
+                                        )
+                                        : (
+                                            student.course ||
+                                            "Not Set"
+                                        )}
+
                                 </p>
 
                             </div>
 
                         </div>
 
-                        {/* Year Level (students only) */}
+
+                        {/* ==========================================
+                            STUDENT ONLY → YEAR LEVEL
+                        ========================================== */}
 
                         {!isFaculty && (
 
-                            <div className="flex items-center gap-3">
+                            <div
+                                className="
+                                    flex
+                                    items-center
+                                    gap-3
+                                "
+                            >
 
-                                <div className="w-9 h-9 rounded-lg bg-[#106A2E]/10 flex items-center justify-center flex-shrink-0">
+                                <div
+                                    className="
+                                        w-9
+                                        h-9
+                                        rounded-lg
+                                        bg-[#106A2E]/10
+                                        flex
+                                        items-center
+                                        justify-center
+                                        flex-shrink-0
+                                    "
+                                >
 
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#106A2E" strokeWidth="2">
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="#106A2E"
+                                        strokeWidth="2"
+                                    >
 
-                                        <rect x="3" y="4" width="18" height="18" rx="2" />
+                                        <rect
+                                            x="3"
+                                            y="4"
+                                            width="18"
+                                            height="18"
+                                            rx="2"
+                                        />
 
-                                        <path d="M16 2v4M8 2v4M3 10h18" />
+                                        <path
+                                            d="
+                                                M16 2v4
+                                                M8 2v4
+                                                M3 10h18
+                                            "
+                                        />
 
                                     </svg>
 
                                 </div>
+
 
                                 <div>
 
@@ -242,8 +592,16 @@ if (!student) {
                                         Year Level
                                     </p>
 
-                                    <p className="text-sm font-medium text-[#1F1F1F]">
-                                        {student.yearLevel || "Not Set"}
+
+                                    <p
+                                        className="
+                                            text-sm
+                                            font-medium
+                                            text-[#1F1F1F]
+                                        "
+                                    >
+                                        {student.yearLevel ||
+                                            "Not Set"}
                                     </p>
 
                                 </div>
@@ -252,19 +610,237 @@ if (!student) {
 
                         )}
 
-                        {/* Contact Number */}
 
-                        <div className="flex items-center gap-3">
+                        {/* ==========================================
+                            STUDENT ONLY → STUDENT STATUS
+                        ========================================== */}
 
-                            <div className="w-9 h-9 rounded-lg bg-[#106A2E]/10 flex items-center justify-center flex-shrink-0">
+                        {!isFaculty && (
 
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#106A2E" strokeWidth="2">
+                            <div
+                                className="
+                                    flex
+                                    items-center
+                                    gap-3
+                                "
+                            >
 
-                                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.08 4.18 2 2 0 0 1 4.06 2h3a2 2 0 0 1 2 1.72" />
+                                <div
+                                    className="
+                                        w-9
+                                        h-9
+                                        rounded-lg
+                                        bg-[#106A2E]/10
+                                        flex
+                                        items-center
+                                        justify-center
+                                        flex-shrink-0
+                                    "
+                                >
+
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="#106A2E"
+                                        strokeWidth="2"
+                                    >
+
+                                        <circle
+                                            cx="12"
+                                            cy="12"
+                                            r="9"
+                                        />
+
+                                        <path
+                                            d="m8 12 2.5 2.5L16 9"
+                                        />
+
+                                    </svg>
+
+                                </div>
+
+
+                                <div>
+
+                                    <p className="text-xs text-gray-500">
+                                        Student Status
+                                    </p>
+
+
+                                    <p
+                                        className="
+                                            text-sm
+                                            font-medium
+                                            text-[#1F1F1F]
+                                        "
+                                    >
+                                        {student.studentStatus ||
+                                            "Not Set"}
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        )}
+
+
+                        {/* ==========================================
+                            FACULTY ONLY → FACULTY POSITION
+                        ========================================== */}
+
+                        {isFaculty && (
+
+                            <div
+                                className="
+                                    flex
+                                    items-center
+                                    gap-3
+                                "
+                            >
+
+                                <div
+                                    className="
+                                        w-9
+                                        h-9
+                                        rounded-lg
+                                        bg-[#106A2E]/10
+                                        flex
+                                        items-center
+                                        justify-center
+                                        flex-shrink-0
+                                    "
+                                >
+
+                                    <svg
+                                        width="16"
+                                        height="16"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="#106A2E"
+                                        strokeWidth="2"
+                                    >
+
+                                        <path
+                                            d="
+                                                M20 7
+                                                h-4
+                                                V5
+                                                a2 2 0 0 0-2-2
+                                                h-4
+                                                a2 2 0 0 0-2 2
+                                                v2
+                                                H4
+                                                a2 2 0 0 0-2 2
+                                                v9
+                                                a2 2 0 0 0 2 2
+                                                h16
+                                                a2 2 0 0 0 2-2
+                                                V9
+                                                a2 2 0 0 0-2-2Z
+                                            "
+                                        />
+
+                                        <path
+                                            d="
+                                                M8 7
+                                                V5
+                                                h8
+                                                v2
+                                            "
+                                        />
+
+                                        <path
+                                            d="
+                                                M12 12
+                                                v4
+                                            "
+                                        />
+
+                                    </svg>
+
+                                </div>
+
+
+                                <div>
+
+                                    <p className="text-xs text-gray-500">
+                                        Faculty Position
+                                    </p>
+
+
+                                    <p
+                                        className="
+                                            text-sm
+                                            font-medium
+                                            text-[#1F1F1F]
+                                        "
+                                    >
+                                        {student.position ||
+                                            "Not Set"}
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                        )}
+
+
+                        {/* ==========================================
+                            CONTACT NUMBER
+                        ========================================== */}
+
+                        <div
+                            className="
+                                flex
+                                items-center
+                                gap-3
+                            "
+                        >
+
+                            <div
+                                className="
+                                    w-9
+                                    h-9
+                                    rounded-lg
+                                    bg-[#106A2E]/10
+                                    flex
+                                    items-center
+                                    justify-center
+                                    flex-shrink-0
+                                "
+                            >
+
+                                <svg
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="#106A2E"
+                                    strokeWidth="2"
+                                >
+
+                                    <path
+                                        d="
+                                            M22 16.92
+                                            v3
+                                            a2 2 0 0 1-2.18 2
+                                            19.79 19.79 0 0 1-8.63-3.07
+                                            19.5 19.5 0 0 1-6-6
+                                            A19.79 19.79 0 0 1 2.08 4.18
+                                            2 2 0 0 1 4.06 2
+                                            h3
+                                            a2 2 0 0 1 2 1.72
+                                        "
+                                    />
 
                                 </svg>
 
                             </div>
+
 
                             <div>
 
@@ -272,20 +848,36 @@ if (!student) {
                                     Contact Number
                                 </p>
 
-                                <p className="text-sm font-medium text-[#1F1F1F]">
-                                    {student.contactNumber || "Not Set"}
+
+                                <p
+                                    className="
+                                        text-sm
+                                        font-medium
+                                        text-[#1F1F1F]
+                                    "
+                                >
+                                    {student.contactNumber ||
+                                        "Not Set"}
                                 </p>
 
                             </div>
 
                         </div>
 
+
                     </div>
 
                 </div>
 
+
+                {/* ==========================================
+                    EDIT PROFILE BUTTON
+                ========================================== */}
+
                 <button
-                    onClick={() => navigate("/edit-profile")}
+                    onClick={() =>
+                        navigate("/edit-profile")
+                    }
                     className="
                         w-full
                         mt-4
@@ -301,7 +893,10 @@ if (!student) {
                     Edit Profile
                 </button>
 
-                {/* LOGOUT */}
+
+                {/* ==========================================
+                    LOGOUT
+                ========================================== */}
 
                 <button
                     onClick={handleLogout}
@@ -312,7 +907,8 @@ if (!student) {
                         bg-white
                         hover:bg-red-50
                         text-red-600
-                        border border-red-200
+                        border
+                        border-red-200
                         p-3
                         rounded-xl
                         font-semibold
@@ -320,16 +916,18 @@ if (!student) {
                         disabled:opacity-70
                     "
                 >
-                    {
-                        logoutLoading
+
+                    {logoutLoading
                         ? "Logging Out..."
-                        : "Logout"
-                    }
+                        : "Logout"}
+
                 </button>
+
 
             </div>
 
         </div>
 
     );
+
 }

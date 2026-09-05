@@ -3,21 +3,44 @@ import noCover from "../../assets/images/no-cover.png";
 
 export default function ReservationCard({ reservation, onCancel }) {
 
-    const statusStyles = {
-        Pending: { bg: "#FAEEDA", color: "#633806" },
-        Approved: { bg: "#DCFCE7", color: "#106A2E" },
-        Cancelled: { bg: "#F3F4F6", color: "#6B7280" },
-        Rejected: { bg: "#FEE2E2", color: "#B91C1C" },
-        Expired: { bg: "#F3F4F6", color: "#6B7280" },
-        Claimed: { bg: "#E1F5EE", color: "#106A2E" },
-    };
+    const statusConfig = {
+    Pending: {
+        label: "Pending",
+        bg: "#FAEEDA",
+        color: "#633806",
+    },
+    Approved: {
+        label: "Ready for Pickup",
+        bg: "#DCFCE7",
+        color: "#106A2E",
+    },
+    Cancelled: {
+        label: "Cancelled",
+        bg: "#F3F4F6",
+        color: "#6B7280",
+    },
+    Rejected: {
+        label: "Rejected",
+        bg: "#FEE2E2",
+        color: "#B91C1C",
+    },
+    Expired: {
+        label: "Expired",
+        bg: "#F3F4F6",
+        color: "#6B7280",
+    },
+    Claimed: {
+        label: "Claimed",
+        bg: "#E1F5EE",
+        color: "#106A2E",
+    },
+};
 
-    const statusStyle =
-        statusStyles[reservation.status] ??
-        statusStyles.Pending;
+const status =
+    statusConfig[reservation.status] ??
+    statusConfig.Pending;
 
-    const canCancel =
-        reservation.status === "Pending";
+const canCancel = reservation.status === "Pending";
 
     return (
         <div className="bg-white/90 rounded-2xl shadow-sm p-4 flex gap-4">
@@ -47,34 +70,42 @@ export default function ReservationCard({ reservation, onCancel }) {
                     <span
                         className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
                         style={{
-                            background: statusStyle.bg,
-                            color: statusStyle.color
+                            background: status.bg,
+                            color: status.color
                         }}
                     >
-                        {reservation.status}
+                        {status.label}
                     </span>
 
                 </div>
 
-                {reservation.queuePosition != null && (
-                    <p className="text-xs text-gray-500 mb-1">
-                        Queue position {reservation.queuePosition}
-                        {reservation.queueLength != null
-                            ? ` of ${reservation.queueLength}`
-                            : ""}
+                <p className="text-xs text-gray-500 mb-1">
+                    Reserved:{" "}
+                    {new Date(reservation.reservationAt).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                    })}
+                </p>
+
+                <p className="text-xs text-gray-400 mb-2">
+                    Expires:{" "}
+                    {new Date(reservation.expirationDate).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                    })}
+                </p>
+
+                {reservation.status === "Approved" && (
+                    <p className="text-xs font-semibold text-[#106A2E] mb-2">
+                        This book is ready for pickup at the library.
                     </p>
                 )}
 
-                {reservation.estimatedAvailability && (
-                    <p className="text-xs text-gray-400 mb-2">
-                        Estimated availability:{" "}
-                        {new Date(
-                            reservation.estimatedAvailability
-                        ).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                        })}
+                {reservation.status === "Expired" && (
+                    <p className="text-xs text-red-500 mb-2">
+                        This reservation has expired.
                     </p>
                 )}
 

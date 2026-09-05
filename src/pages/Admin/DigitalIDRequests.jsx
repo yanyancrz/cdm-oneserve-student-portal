@@ -14,6 +14,12 @@ export default function DigitalIDRequests() {
     const [forApproval, setForApproval] = useState([]);
     const [forRejection, setForRejection] = useState([]);
 
+    const adminEmail = localStorage.getItem("userEmail");
+
+    const getAdminActionUrl = (url) => {
+        return `${url}?adminEmail=${encodeURIComponent(adminEmail || "")}`;
+    };
+
     useEffect(() => {
 
         loadRequests();
@@ -23,77 +29,231 @@ export default function DigitalIDRequests() {
 
     const approveAll = async () => {
 
-        const response = await fetch(
-            `${API_URL}/api/digitalid/admin/approve-all`,
-            {
-                method: "PUT"
-            }
-        );
+        if (!adminEmail) {
+            toast.error("Admin email not found. Please login again.");
+            return;
+        }
 
-        if (response.ok) {
-            toast.success(
-                "All requests approved"
+        try {
+
+            setActionLoading("approve-all");
+
+            const response = await fetch(
+                getAdminActionUrl(
+                    `${API_URL}/api/digitalid/admin/approve-all`
+                ),
+                {
+                    method: "PUT"
+                }
             );
 
-            window.location.reload();
+            const data = await response.json();
+
+            if (!response.ok) {
+                toast.error(
+                    data.message || "Failed to approve requests."
+                );
+                return;
+            }
+
+            toast.success("All requests approved");
+
+            await loadRequests();
+            await loadQueues();
+
+        } catch (error) {
+
+            console.error(error);
+
+            toast.error(
+                "Unable to connect to server."
+            );
+
+        } finally {
+
+            setActionLoading(null);
         }
     };
 
     const rejectAll = async () => {
 
-        const response = await fetch(
-            `${API_URL}/api/digitalid/admin/reject-all`,
-            {
-                method: "PUT"
-            }
-        );
+        if (!adminEmail) {
+            toast.error("Admin email not found. Please login again.");
+            return;
+        }
 
-        if (response.ok) {
-            toast.success(
-                "All requests rejected"
+        try {
+
+            setActionLoading("reject-all");
+
+            const response = await fetch(
+                getAdminActionUrl(
+                    `${API_URL}/api/digitalid/admin/reject-all`
+                ),
+                {
+                    method: "PUT"
+                }
             );
 
-            window.location.reload();
+            const data = await response.json();
+
+            if (!response.ok) {
+                toast.error(
+                    data.message || "Failed to reject requests."
+                );
+                return;
+            }
+
+            toast.success("All requests rejected");
+
+            await loadRequests();
+            await loadQueues();
+
+        } catch (error) {
+
+            console.error(error);
+
+            toast.error(
+                "Unable to connect to server."
+            );
+
+        } finally {
+
+            setActionLoading(null);
         }
     };
 
     const handleForApproval = async (id) => {
 
-        const response = await fetch(
-            `${API_URL}/api/digitalid/admin/for-approval/${id}`,
-            {
-                method: "PUT"
-            }
-        );
+        if (!adminEmail) {
+            toast.error("Admin email not found. Please login again.");
+            return;
+        }
 
-        if (response.ok) {
-            toast.success(
-                "Added to Approval Queue"
+        try {
+
+            setActionLoading(id);
+
+            const response = await fetch(
+                getAdminActionUrl(
+                    `${API_URL}/api/digitalid/admin/for-approval/${id}`
+                ),
+                {
+                    method: "PUT"
+                }
             );
 
-            loadQueues();
+            const data = await response.json();
+
+            if (!response.ok) {
+                toast.error(
+                    data.message || "Failed to add to approval queue."
+                );
+                return;
+            }
+
+            toast.success("Added to Approval Queue");
+
+            await loadQueues();
 
             setSelectedRequest(null);
+
+        } catch (error) {
+
+            console.error(error);
+
+            toast.error("Unable to connect to server.");
+
+        } finally {
+
+            setActionLoading(null);
         }
     };
 
     const handleForRejection = async (id) => {
 
-        const response = await fetch(
-            `${API_URL}/api/digitalid/admin/for-rejection/${id}`,
-            {
-                method: "PUT"
-            }
-        );
+        if (!adminEmail) {
+            toast.error("Admin email not found. Please login again.");
+            return;
+        }
 
-        if (response.ok) {
-            toast.success(
-                "Added to Rejection Queue"
+        try {
+
+            setActionLoading(id);
+
+            const response = await fetch(
+                getAdminActionUrl(
+                    `${API_URL}/api/digitalid/admin/for-rejection/${id}`
+                ),
+                {
+                    method: "PUT"
+                }
             );
 
-            loadQueues();
+            const data = await response.json();
+
+            if (!response.ok) {
+                toast.error(
+                    data.message || "Failed to add to rejection queue."
+                );
+                return;
+            }
+
+            toast.success("Added to Rejection Queue");
+
+            await loadQueues();
 
             setSelectedRequest(null);
+
+        } catch (error) {
+
+            console.error(error);
+
+            toast.error("Unable to connect to server.");
+
+        } finally {
+
+            setActionLoading(null);
+        }
+    };
+
+    const handleMoveToPending = async (id) => {
+        if (!adminEmail) {
+            toast.error("Admin email not found. Please login again.");
+            return;
+        }
+
+        try {
+            setActionLoading(id);
+
+            const response = await fetch(
+                getAdminActionUrl(
+                    `${API_URL}/api/digitalid/admin/move-to-pending/${id}`
+                ),
+                {
+                    method: "PUT"
+                }
+            );
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                toast.error(
+                    data.message || "Failed to move request back to pending."
+                );
+                return;
+            }
+
+            toast.success("Request moved back to Pending");
+
+            await loadRequests();
+            await loadQueues();
+
+        } catch (error) {
+            console.error(error);
+            toast.error("Unable to connect to server.");
+        } finally {
+            setActionLoading(null);
         }
     };
 
@@ -422,6 +582,8 @@ export default function DigitalIDRequests() {
                                         <th className="text-left p-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Name</th>
                                         <th className="text-left p-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Role</th>
                                         <th className="text-left p-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Institute</th>
+                                        <th className="text-left p-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Action</th>
+
                                     </tr>
                                 </thead>
 
@@ -429,7 +591,7 @@ export default function DigitalIDRequests() {
 
                                     {forApproval.length === 0 && (
                                         <tr>
-                                            <td colSpan={3} className="p-8 text-center text-gray-400 text-sm">
+                                            <td colSpan={4} className="p-8 text-center text-gray-400 text-sm">
                                                 No requests in the approval queue.
                                             </td>
                                         </tr>
@@ -438,9 +600,70 @@ export default function DigitalIDRequests() {
                                     {forApproval.map(req => (
 
                                         <tr key={req.id} className="border-t border-gray-100">
-                                            <td className="p-3 font-medium text-gray-800">{req.fullName}</td>
-                                            <td className="p-3 text-gray-600">{req.role}</td>
-                                            <td className="p-3 text-gray-600">{req.institute}</td>
+
+                                            <td className="p-3 font-medium text-gray-800">
+                                                {req.fullName}
+                                            </td>
+
+                                            <td className="p-3 text-gray-600">
+                                                {req.role}
+                                            </td>
+
+                                            <td className="p-3 text-gray-600">
+                                                {req.institute}
+                                            </td>
+
+                                            <td className="p-3">
+                                                <div className="flex justify-center gap-2">
+
+                                                    {/* VIEW */}
+                                                    <button
+                                                        onClick={() => setSelectedRequest(req)}
+                                                        className="
+                                                            px-3
+                                                            py-1.5
+                                                            rounded-lg
+                                                            text-xs
+                                                            font-medium
+                                                            border
+                                                            border-[#0E3B22]
+                                                            text-[#0E3B22]
+                                                            hover:bg-[#0E3B22]
+                                                            hover:text-white
+                                                            transition
+                                                        "
+                                                    >
+                                                        View
+                                                    </button>
+
+                                                    {/* MOVE TO PENDING */}
+                                                    <button
+                                                        onClick={() => handleMoveToPending(req.id)}
+                                                        disabled={actionLoading === req.id}
+                                                        className="
+                                                            px-3
+                                                            py-1.5
+                                                            rounded-lg
+                                                            text-xs
+                                                            font-medium
+                                                            border
+                                                            border-gray-200
+                                                            text-gray-600
+                                                            hover:bg-gray-50
+                                                            hover:border-gray-300
+                                                            transition
+                                                            disabled:opacity-50
+                                                            disabled:cursor-not-allowed
+                                                        "
+                                                    >
+                                                        {actionLoading === req.id
+                                                            ? "Moving..."
+                                                            : "Move to Pending"}
+                                                    </button>
+
+                                                </div>
+                                            </td>
+
                                         </tr>
 
                                     ))}
@@ -497,6 +720,7 @@ export default function DigitalIDRequests() {
                                         <th className="text-left p-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Name</th>
                                         <th className="text-left p-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Role</th>
                                         <th className="text-left p-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Institute</th>
+                                        <th className="text-left p-3 font-semibold text-gray-500 uppercase text-xs tracking-wide">Action</th>
                                     </tr>
                                 </thead>
 
@@ -504,7 +728,7 @@ export default function DigitalIDRequests() {
 
                                     {forRejection.length === 0 && (
                                         <tr>
-                                            <td colSpan={3} className="p-8 text-center text-gray-400 text-sm">
+                                            <td colSpan={4} className="p-8 text-center text-gray-400 text-sm">
                                                 No requests in the rejection queue.
                                             </td>
                                         </tr>
@@ -513,9 +737,70 @@ export default function DigitalIDRequests() {
                                     {forRejection.map(req => (
 
                                         <tr key={req.id} className="border-t border-gray-100">
-                                            <td className="p-3 font-medium text-gray-800">{req.fullName}</td>
-                                            <td className="p-3 text-gray-600">{req.role}</td>
-                                            <td className="p-3 text-gray-600">{req.institute}</td>
+
+                                            <td className="p-3 font-medium text-gray-800">
+                                                {req.fullName}
+                                            </td>
+
+                                            <td className="p-3 text-gray-600">
+                                                {req.role}
+                                            </td>
+
+                                            <td className="p-3 text-gray-600">
+                                                {req.institute}
+                                            </td>
+
+                                            <td className="p-3">
+                                                <div className="flex justify-center gap-2">
+
+                                                    {/* VIEW */}
+                                                    <button
+                                                        onClick={() => setSelectedRequest(req)}
+                                                        className="
+                                                            px-3
+                                                            py-1.5
+                                                            rounded-lg
+                                                            text-xs
+                                                            font-medium
+                                                            border
+                                                            border-[#0E3B22]
+                                                            text-[#0E3B22]
+                                                            hover:bg-[#0E3B22]
+                                                            hover:text-white
+                                                            transition
+                                                        "
+                                                    >
+                                                        View
+                                                    </button>
+
+                                                    {/* MOVE TO PENDING */}
+                                                    <button
+                                                        onClick={() => handleMoveToPending(req.id)}
+                                                        disabled={actionLoading === req.id}
+                                                        className="
+                                                            px-3
+                                                            py-1.5
+                                                            rounded-lg
+                                                            text-xs
+                                                            font-medium
+                                                            border
+                                                            border-gray-200
+                                                            text-gray-600
+                                                            hover:bg-gray-50
+                                                            hover:border-gray-300
+                                                            transition
+                                                            disabled:opacity-50
+                                                            disabled:cursor-not-allowed
+                                                        "
+                                                    >
+                                                        {actionLoading === req.id
+                                                            ? "Moving..."
+                                                            : "Move to Pending"}
+                                                    </button>
+
+                                                </div>
+                                            </td>
+
                                         </tr>
 
                                     ))}

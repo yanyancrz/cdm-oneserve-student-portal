@@ -117,6 +117,18 @@ export function getNotifications(userId) {
     return request(`/notifications/${userId}`);
 }
 
+export function markNotificationRead(notificationId) {
+    return request(`/notifications/read/${notificationId}`, {
+        method: "PUT",
+    });
+}
+
+export function markAllNotificationsRead(userId) {
+    return request(`/notifications/read-all/${userId}`, {
+        method: "PUT",
+    });
+}
+
 // ---------------------------------------------------------------------------
 // CLEARANCE
 // ---------------------------------------------------------------------------
@@ -167,4 +179,15 @@ export function sendMessage(userId, text) {
 
 export function getLibraryActivities(userId) {
     return request(`/activity/${userId}`);
+}
+
+
+export function getBorrowById(borrowId) {
+    return request(`/borrow/${borrowId}`);
+}
+
+export function clearLibraryNotifications(userId) {
+    return request(`/notifications/user/${userId}/clear`, {
+        method: "DELETE",
+    });
 }

@@ -30,6 +30,9 @@ import AskLibrarian from "./pages/Library/AskLibrarian";
 import Notifications from "./pages/Library/Notifications";
 import SuggestBook from "./pages/Library/SuggestBook";
 import BookDetails from "./pages/Library/BookDetails";
+import BorrowClaimPass from "./pages/Library/BorrowClaimPass";
+import AdminProfile from "./pages/Admin/AdminProfile";
+import LostFound from "./pages/LostFound/LostFound";
 
 
 
@@ -164,6 +167,17 @@ function App() {
                             element={<BookDetails />}
                         />
 
+                        <Route
+                            path="/library/borrow-pass/:borrowId"
+                            element={<BorrowClaimPass />}
+                        />
+
+
+                        <Route
+                            path="/lost-found"
+                            element={<LostFound />}
+                        />
+
 
                     </Route>
 
@@ -173,6 +187,7 @@ function App() {
                         <Route path="dashboard" element={<AdminDashboard />} />
                         <Route path="requests" element={<DigitalIDRequests />} />
                         <Route path="users" element={<Users />} />
+                        <Route path="profile" element={<AdminProfile />} />
 
                     </Route>
 

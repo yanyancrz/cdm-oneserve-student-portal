@@ -88,7 +88,7 @@ export default function Dashboard() {
             key: "lost-found",
             title: "Lost & Found",
             description: "Report items",
-            url: "https://lostfound.cdmoneserve.vercel.app",
+            route: "/lost-found",
             bg: "#EEEDFE",
             color: "#3C3489",
             icon: (

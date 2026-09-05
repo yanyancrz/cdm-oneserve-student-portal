@@ -145,20 +145,18 @@ export default function Modal({
                     <div className="px-6 pb-6">
 
                         <button
-                            onClick={onClose}
-                            className="
+                            onClick={onConfirm || onClose}
+                            className={`
                                 w-full
                                 py-3
                                 rounded-xl
-                                bg-[#106A2E]
                                 text-white
                                 font-semibold
                                 hover:brightness-110
-                            "
+                                ${confirmColor}
+                            `}
                         >
-
-                            OK
-
+                            {confirmText || "OK"}
                         </button>
 
                     </div>

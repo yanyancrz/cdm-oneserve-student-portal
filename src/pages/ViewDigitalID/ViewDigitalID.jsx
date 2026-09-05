@@ -7,69 +7,293 @@ import BackgroundLayout from "../../layouts/BackgroundLayout";
 export default function ViewDigitalID() {
 
     const [digitalId, setDigitalId] = useState(null);
+    const [request, setRequest] = useState(null);
     const [loading, setLoading] = useState(true);
 
     const navigate = useNavigate();
 
+
+    // ==========================================
+    // LOAD DIGITAL ID + REQUEST STATUS
+    // ==========================================
+
     useEffect(() => {
 
-        const email =
-            localStorage.getItem("userEmail");
+        const loadDigitalID = async () => {
 
-        fetch(`${API_URL}/api/digitalid/view/${email}`)
-            .then(res => res.json())
-            .then(data => {
-                console.log(data);
-                setDigitalId(data);
-            })
-            .catch(() => {
+            try {
+
+                const email =
+                    localStorage.getItem("userEmail");
+
+                if (!email) {
+                    setDigitalId(null);
+                    setRequest(null);
+                    return;
+                }
+
+                const encodedEmail =
+                    encodeURIComponent(email);
+
+
+                // ==========================================
+                // 1. CHECK APPROVED DIGITAL ID
+                // ==========================================
+
+                const digitalIdResponse =
+                    await fetch(
+                        `${API_URL}/api/digitalid/view/${encodedEmail}`
+                    );
+
+
+                let digitalIdData = null;
+
+
+                if (digitalIdResponse.ok) {
+
+                    digitalIdData =
+                        await digitalIdResponse.json();
+
+                }
+
+
+                console.log(
+                    "Digital ID:",
+                    digitalIdData
+                );
+
+
+                setDigitalId(
+                    digitalIdData
+                );
+
+
+                // ==========================================
+                // 2. CHECK DIGITAL ID REQUEST
+                // ==========================================
+
+                const requestResponse =
+                    await fetch(
+                        `${API_URL}/api/digitalid/${encodedEmail}`
+                    );
+
+
+                let requestData = null;
+
+
+                if (requestResponse.ok) {
+
+                    requestData =
+                        await requestResponse.json();
+
+                }
+
+
+                console.log(
+                    "Digital ID Request:",
+                    requestData
+                );
+
+
+                setRequest(
+                    requestData
+                );
+
+            }
+            catch (error) {
+
+                console.error(
+                    "Failed to load Digital ID:",
+                    error
+                );
+
                 setDigitalId(null);
-            })
-            .finally(() => {
+                setRequest(null);
+
+            }
+            finally {
+
                 setLoading(false);
-            });
+
+            }
+
+        };
+
+
+        loadDigitalID();
 
     }, []);
 
+
+    // ==========================================
+    // LOADING
+    // ==========================================
+
     if (loading) {
+
         return (
+
             <BackgroundLayout>
+
                 <div className="min-h-screen flex items-center justify-center">
-                    Loading...
+
+                    <p className="text-gray-500">
+                        Loading...
+                    </p>
+
                 </div>
+
             </BackgroundLayout>
+
         );
+
     }
 
-    // MAY PENDING REQUEST
+
+    // ==========================================
+    // CHECK REQUEST STATUS
+    // ==========================================
+
+    const requestStatus =
+        request?.status?.toLowerCase();
+
+
+    const hasPendingRequest =
+        requestStatus === "pending" ||
+        requestStatus === "forapproval" ||
+        requestStatus === "forrejection";
+
+
+    // ==========================================
+    // APPROVED DIGITAL ID
+    // ==========================================
+
     if (
         digitalId &&
-        digitalId.requestSubmitted &&
-        !digitalId.hasDigitalId
+        digitalId.hasDigitalId
     ) {
+
         return (
+
+            <BackgroundLayout>
+
+                <div className="min-h-screen bg-slate-100 p-4">
+
+                    <div className="max-w-md mx-auto">
+
+                        <h1 className="text-2xl font-bold mb-4">
+                            Digital ID
+                        </h1>
+
+
+                        <DigitalIDCard
+                            {...digitalId}
+                        />
+
+                    </div>
+
+                </div>
+
+            </BackgroundLayout>
+
+        );
+
+    }
+
+
+    // ==========================================
+    // PENDING / ACTIVE REQUEST
+    // ==========================================
+
+    if (hasPendingRequest) {
+
+        return (
+
             <BackgroundLayout>
 
                 <div className="min-h-screen flex items-center justify-center p-4">
 
                     <div className="bg-white rounded-2xl p-6 shadow-lg w-full max-w-sm text-center">
 
+                        <div
+                            className="
+                                w-14
+                                h-14
+                                mx-auto
+                                mb-4
+                                rounded-full
+                                bg-amber-50
+                                flex
+                                items-center
+                                justify-center
+                            "
+                        >
+
+                            <svg
+                                width="28"
+                                height="28"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="#D97706"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+
+                                <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="9"
+                                />
+
+                                <path d="M12 7v5l3 2" />
+
+                            </svg>
+
+                        </div>
+
+
                         <h2 className="text-xl font-semibold mb-3">
                             Request Submitted
                         </h2>
 
-                        <p className="text-gray-500 mb-3">
-                            Your Digital ID request has been received.
+
+                        <p className="text-gray-500 mb-4">
+                            Your Digital ID request has been received
+                            and is currently being processed.
                         </p>
 
-                        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3">
 
-                            <p className="text-sm font-medium text-amber-700">
-                                Status: {digitalId.status}
+                        <div
+                            className="
+                                bg-amber-50
+                                border
+                                border-amber-200
+                                rounded-xl
+                                p-3
+                            "
+                        >
+
+                            <p
+                                className="
+                                    text-sm
+                                    font-medium
+                                    text-amber-700
+                                "
+                            >
+                                Status: {request?.status || "Pending"}
                             </p>
 
-                            <p className="text-xs text-amber-600 mt-2">
-                                You'll be notified once your Digital ID is ready.
+
+                            <p
+                                className="
+                                    text-xs
+                                    text-amber-600
+                                    mt-2
+                                "
+                            >
+                                You'll be notified once your Digital ID
+                                is ready.
                             </p>
 
                         </div>
@@ -79,69 +303,103 @@ export default function ViewDigitalID() {
                 </div>
 
             </BackgroundLayout>
-        );
-    }
-
-    // WALANG REQUEST
-    if (!digitalId || !digitalId.hasDigitalId) {
-
-        return (
-
-            <BackgroundLayout>
-
-                <div className="min-h-screen flex items-center justify-center p-4">
-
-                    <div className="bg-white rounded-2xl p-6 shadow-lg w-full max-w-sm text-center">
-
-                        <h2 className="text-xl font-semibold mb-3">
-                            No Digital ID Found
-                        </h2>
-
-                        <p className="text-gray-500 mb-5">
-                            Please submit a Digital ID request first.
-                        </p>
-
-                        <button
-                            onClick={() =>
-                                navigate("/request-digital-id")
-                            }
-                            className="
-                                w-full
-                                bg-[#106A2E]
-                                text-white
-                                p-3
-                                rounded-xl
-                                font-medium
-                            "
-                        >
-                            Request Digital ID
-                        </button>
-
-                    </div>
-
-                </div>
-
-            </BackgroundLayout>
 
         );
+
     }
 
-    // APPROVED DIGITAL ID
+
+    // ==========================================
+    // NO REQUEST / NO DIGITAL ID
+    // ==========================================
+
     return (
 
         <BackgroundLayout>
 
-            <div className="min-h-screen bg-slate-100 p-4">
+            <div className="min-h-screen flex items-center justify-center p-4">
 
-                <div className="max-w-md mx-auto">
+                <div
+                    className="
+                        bg-white
+                        rounded-2xl
+                        p-6
+                        shadow-lg
+                        w-full
+                        max-w-sm
+                        text-center
+                    "
+                >
 
-                    <h1 className="text-2xl font-bold mb-4">
-                        Digital ID
-                    </h1>
+                    <div
+                        className="
+                            w-14
+                            h-14
+                            mx-auto
+                            mb-4
+                            rounded-full
+                            bg-[#106A2E]/10
+                            flex
+                            items-center
+                            justify-center
+                        "
+                    >
 
-                    <DigitalIDCard
-                        {...digitalId}
-                    />
+                        <svg
+                            width="28"
+                            height="28"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="#106A2E"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
+
+                            <rect
+                                x="3"
+                                y="4"
+                                width="18"
+                                height="16"
+                                rx="2"
+                            />
+
+                            <path d="M8 9h8" />
+
+                            <path d="M8 13h5" />
+
+                        </svg>
+
+                    </div>
+
+
+                    <h2 className="text-xl font-semibold mb-3">
+                        No Digital ID Found
+                    </h2>
+
+
+                    <p className="text-gray-500 mb-5">
+                        Please submit a Digital ID request first.
+                    </p>
+
+
+                    <button
+                        onClick={() =>
+                            navigate("/request-digital-id")
+                        }
+                        className="
+                            w-full
+                            bg-[#106A2E]
+                            hover:bg-[#0D7856]
+                            text-white
+                            p-3
+                            rounded-xl
+                            font-medium
+                            transition-all
+                        "
+                    >
+                        Request Digital ID
+                    </button>
 
                 </div>
 
@@ -150,4 +408,5 @@ export default function ViewDigitalID() {
         </BackgroundLayout>
 
     );
+
 }

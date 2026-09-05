@@ -13,14 +13,13 @@ import NotificationCard from "../../components/Library/NotificationCard";
 
 import { getCurrentBorrowedBooks } from "../../services/libraryService";
 import { getBooks } from "../../services/libraryService";
-import { getBorrowHistory } from "../../services/libraryService";
 import { getLibraryActivities } from "../../services/libraryService";
 import { getMyReservations } from "../../services/libraryService";
+import { getNotifications } from "../../services/libraryService";
 
 import {
     mockStudentLibraryStatus,
     mockAnnouncements,
-    mockNotifications,
 } from "../../data/mockLibraryData";
 
 export default function Dashboard() {
@@ -36,6 +35,43 @@ export default function Dashboard() {
     const [recentActivities, setRecentActivities] = useState([]);
     const [loadingActivities, setLoadingActivities] = useState(true);    
     const [reservations, setReservations] = useState([]);
+    const [notifications, setNotifications] = useState([]);
+    const [loadingNotifications, setLoadingNotifications] = useState(true);
+
+    useEffect(() => {
+
+        const loadNotifications = async () => {
+
+            const userId = Number(localStorage.getItem("userId"));
+
+            if (!userId) {
+                setLoadingNotifications(false);
+                return;
+            }
+
+            try {
+
+                const data = await getNotifications(userId);
+
+                setNotifications(data.data ?? data);
+
+            } catch (error) {
+
+                console.error("Failed to load notifications:", error);
+
+            } finally {
+
+                setLoadingNotifications(false);
+
+            }
+
+        };
+
+        loadNotifications();
+
+    }, []);
+
+
 
     useEffect(() => {
 
@@ -150,9 +186,11 @@ export default function Dashboard() {
 
     const studentName = user?.fullName || localStorage.getItem("userName") || "Student";
 
-    const activeBorrowed = borrowedBooks.filter(
-        (book) => book.status === "Borrowed"
-    );
+   const activeBorrowTransactions = borrowedBooks.filter(
+    (book) =>
+        book.status === "Borrowed" ||
+        book.status === "ForClaiming"
+);
 
     const todayLabel = new Date().toLocaleDateString("en-US", {
         weekday: "long",
@@ -177,7 +215,7 @@ export default function Dashboard() {
 
     // Only the latest few notifications preview on the dashboard;
     // the full list lives on /library/notifications
-    const notificationPreview = mockNotifications.slice(0, 3);
+    const notificationPreview = notifications.slice(0, 3);
     
     const latestActivities = recentActivities.slice(0, 5);
 
@@ -287,7 +325,7 @@ export default function Dashboard() {
                             <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
                             <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
                         </svg>
-                        {mockNotifications.some((n) => !n.read) && (
+                       {notifications.some((n) => !n.read) && (
                             <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#F4D35E] border border-white" />
                         )}
                     </Link>
@@ -331,8 +369,13 @@ export default function Dashboard() {
                                     <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
                                 </svg>
                             </div>
-                            <p className="text-xl font-semibold text-[#1F1F1F]"> {activeBorrowed.length} </p>
-                            <p className="text-xs text-gray-500">Borrowed</p>
+                            <p className="text-xl font-semibold text-[#1F1F1F]">
+                                {activeBorrowTransactions.length}
+                            </p>
+
+                            <p className="text-xs text-gray-500">
+                                My Borrow Transactions
+                            </p>
                         </Link>
 
                         <Link
@@ -459,7 +502,7 @@ export default function Dashboard() {
                                         key={activity.activityId}
                                         activity={activity}
                                     />
-))
+            ))
 
                             )
                         }
@@ -473,14 +516,40 @@ export default function Dashboard() {
                         <h2 className="font-semibold text-base text-[#1F1F1F]">
                             Notifications
                         </h2>
-                        <Link to="/library/notifications" className="text-xs font-medium text-[#106A2E] hover:underline">
+
+                        <Link
+                            to="/library/notifications"
+                            className="text-xs font-medium text-[#106A2E] hover:underline"
+                        >
                             View all
                         </Link>
                     </div>
+
                     <div className="space-y-2.5">
-                        {notificationPreview.map((notification) => (
-                            <NotificationCard key={notification.id} notification={notification} />
-                        ))}
+
+                        {loadingNotifications ? (
+
+                            <p className="text-sm text-gray-500 text-center py-4">
+                                Loading notifications...
+                            </p>
+
+                        ) : notificationPreview.length === 0 ? (
+
+                            <p className="text-sm text-gray-500 text-center py-4">
+                                No notifications yet.
+                            </p>
+
+                        ) : (
+
+                            notificationPreview.map((notification) => (
+                                <NotificationCard
+                                    key={notification.id}
+                                    notification={notification}
+                                />
+                            ))
+
+                        )}
+
                     </div>
                 </div>
 

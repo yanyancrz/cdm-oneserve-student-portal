@@ -6,10 +6,22 @@ import CategoryTabs from "../../components/Library/CategoryTabs";
 import FilterChips from "../../components/Library/FilterChips";
 import BookGrid from "../../components/Library/BookGrid";
 
-
 import useLibrary from "../../hooks/useLibrary";
 
-const STATUS_FILTERS = [ "All", "Available", "Unavailable", "Maintenance" ];
+const STATUS_FILTERS = [
+    {
+        value: "All",
+        label: "All Books"
+    },
+    {
+        value: "Available",
+        label: "Available Now"
+    },
+    {
+        value: "Unavailable",
+        label: "Not Available"
+    }
+];
 
 export default function BrowseBooks() {
 
@@ -17,36 +29,67 @@ export default function BrowseBooks() {
     const [selectedCategory, setSelectedCategory] = useState("All");
     const [selectedFilter, setSelectedFilter] = useState("All");
 
-    const { books, loading, error, categories, isFavorite, toggleFavorite } = useLibrary();
-
+    const {
+        books,
+        loading,
+        error,
+        categories,
+        isFavorite,
+        toggleFavorite
+    } = useLibrary();
 
     const filteredBooks = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
 
-    return books.filter((book) => {
-        const matchesQuery =
-            query === "" ||
-            (book.title ?? "").toLowerCase().includes(query) ||
-            (book.author ?? "").toLowerCase().includes(query) ||
-            (book.isbn ?? "").toLowerCase().includes(query) ||
-            (book.category ?? "").toLowerCase().includes(query);
+        const query = searchQuery.trim().toLowerCase();
 
-        const matchesCategory =
-            selectedCategory === "All" ||
-            book.category === selectedCategory;
+        return books.filter((book) => {
 
-        const matchesFilter =
-            selectedFilter === "All" ||
-            book.status === selectedFilter;
+            const matchesQuery =
+                query === "" ||
+                (book.title ?? "").toLowerCase().includes(query) ||
+                (book.author ?? "").toLowerCase().includes(query) ||
+                (book.isbn ?? "").toLowerCase().includes(query) ||
+                (book.category ?? "").toLowerCase().includes(query);
 
-        return matchesQuery && matchesCategory && matchesFilter;
-    });
-}, [books, searchQuery, selectedCategory, selectedFilter]);
+            const matchesCategory =
+                selectedCategory === "All" ||
+                book.category === selectedCategory;
+
+            const matchesFilter =
+                selectedFilter === "All" ||
+                (
+                    selectedFilter === "Available" &&
+                    book.status === "Available" &&
+                    book.availableCopies > 0
+                ) ||
+                (
+                    selectedFilter === "Unavailable" &&
+                    (
+                        book.status === "Unavailable" ||
+                        book.availableCopies <= 0
+                    )
+                );
+
+            return (
+                matchesQuery &&
+                matchesCategory &&
+                matchesFilter
+            );
+        });
+
+    }, [
+        books,
+        searchQuery,
+        selectedCategory,
+        selectedFilter
+    ]);
 
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <p className="text-lg text-gray-600">Loading books...</p>
+                <p className="text-lg text-gray-600">
+                    Loading books...
+                </p>
             </div>
         );
     }
@@ -54,23 +97,27 @@ export default function BrowseBooks() {
     if (error) {
         return (
             <div className="min-h-screen flex items-center justify-center">
-                <p className="text-red-600">{error}</p>
+                <p className="text-red-600">
+                    {error}
+                </p>
             </div>
         );
     }
 
     return (
-
         <div
             className="min-h-screen pb-24"
             style={{
-                background: "linear-gradient(160deg, #d7ead9 0%, #cfe9de 45%, #fcf0c8 100%)"
+                background:
+                    "linear-gradient(160deg, #d7ead9 0%, #cfe9de 45%, #fcf0c8 100%)"
             }}
         >
-
             <div className="max-w-md sm:max-w-2xl lg:max-w-5xl mx-auto p-4 sm:p-6">
 
-                <PageHeader title="Browse Books" subtitle={`${filteredBooks.length} books found`} />
+                <PageHeader
+                    title="Browse Books"
+                    subtitle={`${filteredBooks.length} book${filteredBooks.length === 1 ? "" : "s"} found`}
+                />
 
                 <div className="mb-4">
                     <SearchBar
@@ -89,6 +136,10 @@ export default function BrowseBooks() {
                 </div>
 
                 <div className="mb-6">
+                    <p className="text-xs font-semibold text-[#1F1F1F] mb-2">
+                        Availability
+                    </p>
+
                     <FilterChips
                         options={STATUS_FILTERS}
                         selected={selectedFilter}
@@ -108,9 +159,6 @@ export default function BrowseBooks() {
                 />
 
             </div>
-
         </div>
-
     );
-
 }

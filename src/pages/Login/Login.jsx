@@ -11,6 +11,7 @@ export default function Login() {
     const navigate = useNavigate();
     const [password, setPassword] = useState("");   
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
    const handleLogin = async () => {
 
@@ -172,7 +173,7 @@ else {
                     </div>
                 </div>
 
-                {/* PASSWORD */}
+                                {/* PASSWORD */}
 
                 <div className="mb-2">
                     <label className="block text-xs font-medium text-gray-600 mb-1.5">
@@ -184,11 +185,11 @@ else {
                             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                         </svg>
                         <input
-                            type="password"
+                            type={showPassword ? "text" : "password"}
                             placeholder="••••••••"
                             className="
                                 w-full
-                                pl-10 pr-3.5 py-3
+                                pl-10 pr-10 py-3
                                 rounded-xl
                                 border border-gray-200
                                 bg-gray-50
@@ -201,6 +202,29 @@ else {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                         />
+
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            className="absolute right-3.5 text-gray-400 hover:text-[#106A2E] transition-colors"
+                            tabIndex={-1}
+                        >
+                            {showPassword ? (
+                                // EYE OFF (hide)
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+                                    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+                                    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+                                    <line x1="2" y1="2" x2="22" y2="22" />
+                                </svg>
+                            ) : (
+                                // EYE (show)
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                            )}
+                        </button>
                     </div>
                 </div>
                 

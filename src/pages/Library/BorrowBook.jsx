@@ -1,16 +1,20 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import toast from "react-hot-toast";
-import noCover from "../../assets/images/no-cover.png";
 
 import PageHeader from "../../components/Library/PageHeader";
 import SearchBar from "../../components/Library/SearchBar";
 import BookGrid from "../../components/Library/BookGrid";
-import BookCard from "../../components/Library/BookCard";
 
 import { mockBooks } from "../../data/mockLibraryData";
 
 const LOAN_PERIOD_DAYS = 14;
+
+const STEPS = [
+    { key: "select", label: "Select" },
+    { key: "confirm", label: "Confirm" },
+    { key: "success", label: "Done" },
+];
 
 function addDays(date, days) {
     const result = new Date(date);
@@ -20,6 +24,44 @@ function addDays(date, days) {
 
 function formatDate(date) {
     return date.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" });
+}
+
+function StepIndicator({ currentStep }) {
+    const currentIndex = STEPS.findIndex((s) => s.key === currentStep);
+
+    return (
+        <div className="flex items-center justify-center gap-2 mb-6">
+            {STEPS.map((s, i) => (
+                <div key={s.key} className="flex items-center gap-2">
+                    <div className="flex flex-col items-center gap-1">
+                        <div
+                            className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-semibold transition-all ${
+                                i < currentIndex
+                                    ? "bg-[#106A2E] text-white"
+                                    : i === currentIndex
+                                    ? "bg-[#106A2E] text-white ring-4 ring-[#106A2E]/20"
+                                    : "bg-gray-100 text-gray-400"
+                            }`}
+                        >
+                            {i < currentIndex ? (
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M20 6 9 17l-5-5" />
+                                </svg>
+                            ) : (
+                                i + 1
+                            )}
+                        </div>
+                        <span className={`text-[10px] font-medium ${i <= currentIndex ? "text-[#106A2E]" : "text-gray-400"}`}>
+                            {s.label}
+                        </span>
+                    </div>
+                    {i < STEPS.length - 1 && (
+                        <div className={`w-8 h-0.5 mb-4 rounded-full ${i < currentIndex ? "bg-[#106A2E]" : "bg-gray-200"}`} />
+                    )}
+                </div>
+            ))}
+        </div>
+    );
 }
 
 export default function BorrowBook() {
@@ -64,6 +106,33 @@ export default function BorrowBook() {
     const borrowDate = new Date();
     const dueDate = addDays(borrowDate, LOAN_PERIOD_DAYS);
 
+    // Guard: a stale/invalid ?bookId= param should bounce back to selection
+    // instead of silently rendering an empty confirm step.
+    if (step === "confirm" && !selectedBook) {
+        return (
+            <div
+                className="min-h-screen pb-24 flex items-center justify-center"
+                style={{
+                    background: "linear-gradient(160deg, #d7ead9 0%, #cfe9de 45%, #fcf0c8 100%)"
+                }}
+            >
+                <div className="max-w-md mx-auto p-4 sm:p-6 text-center">
+                    <div className="bg-white/90 rounded-[24px] shadow-sm p-7">
+                        <p className="text-sm text-gray-500 mb-5">
+                            We couldn't find that book. It may no longer be available.
+                        </p>
+                        <button
+                            onClick={() => setStep("select")}
+                            className="px-5 py-3 rounded-xl font-semibold text-sm text-white bg-[#106A2E] hover:brightness-105 transition-all"
+                        >
+                            Browse Books
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
 
         <div
@@ -86,6 +155,8 @@ export default function BorrowBook() {
                     }
                 />
 
+                <StepIndicator currentStep={step} />
+
                 {/* STEP 1 — SELECT A BOOK */}
 
                 {step === "select" && (
@@ -98,24 +169,11 @@ export default function BorrowBook() {
                             />
                         </div>
 
-                        <div onClick={(e) => {
-                            const card = e.target.closest("[data-book-id]");
-                            if (card) handleSelect(card.getAttribute("data-book-id"));
-                        }}>
-                            {/* BookGrid navigates on click by default (BookCard -> /library/book/:id);
-                                here we intercept via a data attribute wrapper instead so selecting
-                                a book keeps the user inside the borrow flow. */}
-                            <BookGrid
-                                books={filteredBooks}
-                                emptyMessage={`No available books match "${searchQuery}"`}
-                                onBookClick={(book) => handleSelect(book.id)}
-                            />
-                            {filteredBooks.length === 0 && (
-                                <p className="text-sm text-gray-500 text-center py-10">
-                                    No available books match "{searchQuery}"
-                                </p>
-                            )}
-                        </div>
+                        <BookGrid
+                            books={filteredBooks}
+                            emptyMessage={`No available books match "${searchQuery}"`}
+                            onBookClick={(book) => handleSelect(book.id)}
+                        />
                     </>
                 )}
 
@@ -139,7 +197,7 @@ export default function BorrowBook() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4 mb-6">
+                        <div className="grid grid-cols-2 gap-4 mb-4">
                             <div className="bg-[#F7FAF8] rounded-xl p-3.5">
                                 <p className="text-[11px] text-gray-400 mb-1">Borrow Date</p>
                                 <p className="text-sm font-semibold text-[#1F1F1F]">{formatDate(borrowDate)}</p>
@@ -150,10 +208,20 @@ export default function BorrowBook() {
                             </div>
                         </div>
 
+                        <div className="flex items-start gap-2 bg-[#FEF9E7] rounded-xl p-3.5 mb-6">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B8860B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="flex-shrink-0 mt-0.5">
+                                <circle cx="12" cy="12" r="10" />
+                                <path d="M12 16v-4M12 8h.01" />
+                            </svg>
+                            <p className="text-xs text-[#8a6d1a] leading-relaxed">
+                                Loan period is {LOAN_PERIOD_DAYS} days. Renew before the due date to avoid late fees and keep your borrowing privileges in good standing.
+                            </p>
+                        </div>
+
                         {/* QR VERIFICATION PLACEHOLDER */}
-                        <div className="border-2 border-dashed border-gray-200 rounded-xl p-5 flex flex-col items-center justify-center text-center mb-6">
-                            <div className="w-20 h-20 rounded-lg bg-gray-100 flex items-center justify-center mb-3">
-                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                        <div className="border-2 border-dashed border-[#106A2E]/25 bg-[#F7FAF8] rounded-xl p-5 flex flex-col items-center justify-center text-center mb-6">
+                            <div className="w-20 h-20 rounded-lg bg-white shadow-sm flex items-center justify-center mb-3">
+                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#106A2E" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                     <rect x="3" y="3" width="7" height="7" />
                                     <rect x="14" y="3" width="7" height="7" />
                                     <rect x="3" y="14" width="7" height="7" />
@@ -165,7 +233,7 @@ export default function BorrowBook() {
                             </p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-[1fr_1.6fr] gap-3">
                             <button
                                 onClick={() => (preselectedId ? navigate(-1) : setStep("select"))}
                                 className="p-3.5 rounded-xl font-semibold text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 transition-all"
@@ -195,9 +263,16 @@ export default function BorrowBook() {
                         <h2 className="text-lg font-semibold text-[#1F1F1F] mb-1.5">
                             Book Borrowed
                         </h2>
-                        <p className="text-sm text-gray-500 mb-6">
-                            "{selectedBook.title}" is due back on {formatDate(dueDate)}.
+                        <p className="text-sm text-gray-500 mb-3">
+                            "{selectedBook.title}" has been added to your loans.
                         </p>
+                        <div className="inline-flex items-center gap-1.5 bg-[#E1F5EE] text-[#106A2E] text-xs font-semibold px-3.5 py-2 rounded-full mb-6">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" />
+                                <path d="M16 2v4M8 2v4M3 10h18" />
+                            </svg>
+                            Due {formatDate(dueDate)}
+                        </div>
                         <div className="grid grid-cols-2 gap-3">
                             <Link
                                 to="/library/borrow-history"

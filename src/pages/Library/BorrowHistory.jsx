@@ -9,12 +9,38 @@ import { formatDate, getLoanStatus } from "../../utils/libraryHelpers";
 import { API_URL } from "../../config/api";
 import noCover from "../../assets/images/no-cover.png";
 
-const FILTERS = ["All", "Ongoing", "Overdue", "Returned"];
+const FILTERS = [
+    "All",
+    "For Claiming",
+    "Ongoing",
+    "Overdue",
+    "Returned"
+];
 
 const STATUS_STYLES = {
-    Ongoing: { bg: "#E1F5EE", color: "#106A2E", dot: "#106A2E" },
-    Overdue: { bg: "#FEE2E2", color: "#B91C1C", dot: "#DC2626" },
-    Returned: { bg: "#F3F4F6", color: "#6B7280", dot: "#9CA3AF" },
+    "For Claiming": {
+        bg: "#FAEEDA",
+        color: "#633806",
+        dot: "#D97706",
+    },
+
+    Ongoing: {
+        bg: "#E1F5EE",
+        color: "#106A2E",
+        dot: "#106A2E"
+    },
+
+    Overdue: {
+        bg: "#FEE2E2",
+        color: "#B91C1C",
+        dot: "#DC2626"
+    },
+
+    Returned: {
+        bg: "#F3F4F6",
+        color: "#6B7280",
+        dot: "#9CA3AF"
+    },
 };
 
 
@@ -71,19 +97,23 @@ export default function BorrowHistory() {
     // Compute live status per entry (self-corrects Ongoing -> Overdue over time)
     // rather than trusting the static `status` field in the mock data.
    const historyWithLiveStatus = useMemo(
-        () =>
-            borrowHistory
-                .map((entry) => ({
-                    ...entry,
-                    liveStatus: getLoanStatus(entry),
-                }))
-                .sort(
-                    (a, b) =>
-                        new Date(b.borrowDate) -
-                        new Date(a.borrowDate)
-                ),
-        [borrowHistory]
-    );
+    () =>
+        borrowHistory
+            .map((entry) => ({
+                ...entry,
+
+                liveStatus:
+                    entry.status === "ForClaiming"
+                        ? "For Claiming"
+                        : getLoanStatus(entry),
+            }))
+            .sort(
+                (a, b) =>
+                    new Date(b.borrowDate) -
+                    new Date(a.borrowDate)
+            ),
+    [borrowHistory]
+);
 
     const filteredHistory = useMemo(() => {
         if (activeFilter === "All") return historyWithLiveStatus;
@@ -227,6 +257,33 @@ if (error) {
                                                     <span className="inline-block text-[11px] font-semibold text-red-600 bg-red-50 px-2 py-1 rounded-lg">
                                                         Fine: ₱{entry.fine.toFixed(2)}
                                                     </span>
+                                                )}
+
+                                                {/* VIEW CLAIM PASS */}
+                                                {entry.status === "ForClaiming" && (
+                                                    <div className="mt-3">
+                                                        <button
+                                                            onClick={() =>
+                                                                navigate(`/library/borrow-pass/${entry.borrowId}`)
+                                                            }
+                                                            className="
+                                                                inline-flex
+                                                                items-center
+                                                                justify-center
+                                                                px-3
+                                                                py-1.5
+                                                                rounded-lg
+                                                                text-[11px]
+                                                                font-semibold
+                                                                bg-[#FAEEDA]
+                                                                text-[#633806]
+                                                                hover:brightness-95
+                                                                transition-all
+                                                            "
+                                                        >
+                                                            View Claim Pass
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </div>
                                         </div>

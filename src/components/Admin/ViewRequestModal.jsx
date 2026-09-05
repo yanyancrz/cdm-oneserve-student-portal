@@ -20,6 +20,13 @@ export default function ViewRequestModal({
 
     const isPending = request.status === "Pending";
 
+    const displayRole =
+    request.role?.toLowerCase() === "faculty"
+        ? "Faculty"
+        : request.role?.toLowerCase() === "student"
+            ? "Student"
+            : request.role;
+
     const InfoField = ({ label, value }) => (
         <div>
             <p className="text-[11px] text-gray-400 uppercase tracking-wide font-medium">
@@ -134,7 +141,7 @@ export default function ViewRequestModal({
                                 {request.fullName}
                             </p>
                             <p className="text-sm text-gray-400">
-                                {request.role}
+                                {displayRole}
                             </p>
                         </div>
 
@@ -159,24 +166,53 @@ export default function ViewRequestModal({
                         <div className="grid grid-cols-2 gap-y-5 gap-x-6 bg-[#F7F5EF] rounded-2xl p-5">
 
                             <InfoField label="Full Name" value={request.fullName} />
-                            <InfoField label="Role" value={request.role} />
+                            <InfoField label="Role" value={displayRole} />
 
-                            {request.role === "Student" && (
+                           {request.role?.toLowerCase() === "student" && (
                                 <>
-                                    <InfoField label="Student Number" value={request.idNumber} />
+                                    <InfoField
+                                        label="Student Number"
+                                        value={request.idNumber}
+                                    />
+                                    <InfoField
+                                        label="Student Status"
+                                        value={request.studentStatus}
+                                    />
                                 </>
                             )}
 
-                            {request.role === "Faculty" && (
+                            {request.role?.toLowerCase() === "faculty" && (
                                 <>
-                                    <InfoField label="Faculty ID Number" value={request.facultyidNumber} />
-                                    <InfoField label="Position" value={request.position} />
+                                    <InfoField
+                                        label="Faculty ID Number"
+                                        value={request.idNumber}
+                                    />
+                                    <InfoField
+                                        label="Position"
+                                        value={request.position}
+                                    />
+
+                                    <InfoField 
+                                    label="Institute" 
+                                    value={request.institute} 
+                                    />
+
                                 </>
                             )}
 
-                            <InfoField label="Institute" value={request.institute} />
-                            <InfoField label="Course" value={request.course} />
-                            <InfoField label="Year Level" value={request.yearLevel} />
+                            {request.role?.toLowerCase() === "student" && (
+                                <>
+                                    <InfoField
+                                        label="Course"
+                                        value={request.course}
+                                    />
+
+                                    <InfoField
+                                        label="Year Level"
+                                        value={request.yearLevel}
+                                    />
+                                </>
+                            )}
 
                         </div>
 

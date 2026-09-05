@@ -2,6 +2,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { API_URL } from "../../config/api";
 import AdminLayout from "../../layouts/AdminLayout";
+import ViewRequestModal from "../../components/Admin/ViewRequestModal";
 
 export default function AdminDashboard() {
 
@@ -13,6 +14,8 @@ export default function AdminDashboard() {
     const [stats, setStats] = useState([]);
 
     const [requests, setRequests] = useState([]);
+    const [selectedRequest, setSelectedRequest] = useState(null);
+    const adminEmail = localStorage.getItem("userEmail");
 
     const statusStyles = {
         Pending: "bg-[#FCEFCB] text-[#A16207]",
@@ -83,6 +86,85 @@ export default function AdminDashboard() {
         });
 
 }, []);
+
+const handleForApproval = async (id) => {
+    if (!adminEmail) {
+        alert("Admin email not found. Please login again.");
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `${API_URL}/api/digitalid/admin/for-approval/${id}?adminEmail=${encodeURIComponent(adminEmail)}`,
+            {
+                method: "PUT"
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(data.message || "Failed to add to approval queue.");
+            return;
+        }
+
+        alert("Added to Approval Queue");
+
+        setSelectedRequest(null);
+
+        // Refresh dashboard requests
+        const refreshResponse = await fetch(
+            `${API_URL}/api/digitalid/admin/recent-requests`
+        );
+
+        const refreshData = await refreshResponse.json();
+        setRequests(refreshData);
+
+    } catch (error) {
+        console.error(error);
+        alert("Unable to connect to server.");
+    }
+};
+
+
+const handleForRejection = async (id) => {
+    if (!adminEmail) {
+        alert("Admin email not found. Please login again.");
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `${API_URL}/api/digitalid/admin/for-rejection/${id}?adminEmail=${encodeURIComponent(adminEmail)}`,
+            {
+                method: "PUT"
+            }
+        );
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            alert(data.message || "Failed to add to rejection queue.");
+            return;
+        }
+
+        alert("Added to Rejection Queue");
+
+        setSelectedRequest(null);
+
+        // Refresh dashboard requests
+        const refreshResponse = await fetch(
+            `${API_URL}/api/digitalid/admin/recent-requests`
+        );
+
+        const refreshData = await refreshResponse.json();
+        setRequests(refreshData);
+
+    } catch (error) {
+        console.error(error);
+        alert("Unable to connect to server.");
+    }
+};
 
     return (
 
@@ -337,8 +419,8 @@ export default function AdminDashboard() {
 
                                             <td className="text-right px-6">
 
-                                                <button
-                                                    onClick={() => navigate("/admin/requests")}
+                                               <button
+                                                    onClick={() => setSelectedRequest(req)}
                                                     className="text-sm font-medium text-[#106A2E] hover:underline"
                                                 >
                                                     View
@@ -370,6 +452,15 @@ export default function AdminDashboard() {
                 </div>
 
             </main>
+
+            {selectedRequest && (
+                <ViewRequestModal
+                    request={selectedRequest}
+                    onClose={() => setSelectedRequest(null)}
+                    onForApproval={handleForApproval}
+                    onForRejection={handleForRejection}
+                />
+            )}
 
         </div>
 
