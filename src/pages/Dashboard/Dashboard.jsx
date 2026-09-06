@@ -29,6 +29,9 @@ export default function Dashboard() {
 
     }, []);
 
+    // Both profile + digital ID status must be in before we show real content
+    const isLoading = !user || !digitalIdStatus;
+
     const hasDigitalId =
     digitalIdStatus?.hasDigitalId ?? false;
 
@@ -225,6 +228,11 @@ export default function Dashboard() {
         { key: "act-4", label: "Guidance Appointment", time: "Jul 12, 2:30 PM" },
     ];
 
+    // Small reusable pulsing block for skeleton state
+    const Bone = ({ className = "" }) => (
+        <div className={`animate-pulse bg-gray-300/90 rounded-lg ${className}`} />
+    );
+
     return (
 
         <div
@@ -244,29 +252,43 @@ export default function Dashboard() {
 
                 {/* GREETING */}
 
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-5 sm:mb-6">
 
-                    <div>
-                        <h1 className="text-2xl sm:text-3xl font-semibold text-[#1F1F1F] tracking-tight">
+                    <div className="min-w-0 flex-1 pr-4">
+                        <h1 className="text-xl sm:text-3xl font-semibold text-[#1F1F1F] tracking-tight">
                             Good Morning
                         </h1>
-                        <p className="text-gray-600 text-sm sm:text-base mt-0.5">
-                            {localStorage.getItem("userName")}
-                        </p>
+
+                        {
+                            isLoading ? (
+                                <Bone className="h-3.5 w-32 mt-2" />
+                            ) : (
+                                <p className="text-gray-600 text-sm sm:text-base mt-0.5 truncate">
+                                    {localStorage.getItem("userName")}
+                                </p>
+                            )
+                        }
+
                         <p className="text-gray-400 text-xs mt-1">
                             {todayLabel}
                         </p>
                     </div>
 
                    {
-                    profilePicture ? (
+                    isLoading ? (
+
+                        <Bone className="w-11 h-11 sm:w-12 sm:h-12 rounded-full flex-shrink-0" />
+
+                    ) : profilePicture ? (
 
                         <img
                             src={profilePicture}
                             alt="Profile"
                             className="
-                                w-12
-                                h-12
+                                w-11
+                                h-11
+                                sm:w-12
+                                sm:h-12
                                 rounded-full
                                 object-cover
                                 border-2
@@ -280,8 +302,10 @@ export default function Dashboard() {
 
                         <div
                             className="
-                                w-12
-                                h-12
+                                w-11
+                                h-11
+                                sm:w-12
+                                sm:h-12
                                 rounded-full
                                 bg-[#106A2E]
                                 text-white
@@ -306,7 +330,7 @@ export default function Dashboard() {
 
                 {/* SEARCH BAR */}
 
-                <div className="relative mb-6">
+                <div className="relative mb-5 sm:mb-6">
 
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                         <circle cx="11" cy="11" r="8" />
@@ -322,7 +346,8 @@ export default function Dashboard() {
                             w-full
                             pl-11
                             pr-4
-                            py-3.5
+                            py-3
+                            sm:py-3.5
                             rounded-2xl
                             border border-white/60
                             bg-white/80
@@ -344,19 +369,19 @@ export default function Dashboard() {
 
                 {/* DIGITAL ID CARD — hero card, gateway to campus services */}
 
-                <div className="bg-[#106A2E] rounded-[24px] p-6 mb-7 relative overflow-hidden shadow-lg shadow-[#106A2E]/20">
+                <div className="bg-[#106A2E] rounded-[24px] p-5 sm:p-6 mb-5 sm:mb-7 relative overflow-hidden shadow-lg shadow-[#106A2E]/20">
 
-                    {/* decorative shapes */}
-                    <div className="absolute -top-10 -right-10 w-40 h-40 rounded-full bg-white/[0.06]" />
-                    <div className="absolute -bottom-14 -left-6 w-32 h-32 rounded-full bg-white/[0.05]" />
-                    <div className="absolute top-6 right-6 w-24 h-24 rounded-full border border-white/10" />
+                    {/* decorative shapes — smaller on mobile so they don't crowd the card */}
+                    <div className="absolute -top-8 -right-8 sm:-top-10 sm:-right-10 w-28 h-28 sm:w-40 sm:h-40 rounded-full bg-white/[0.06]" />
+                    <div className="absolute -bottom-10 -left-5 sm:-bottom-14 sm:-left-6 w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-white/[0.05]" />
+                    <div className="absolute top-5 right-5 sm:top-6 sm:right-6 w-20 h-20 sm:w-24 sm:h-24 rounded-full border border-white/10" />
 
-                    <div className="flex items-center justify-between mb-4 relative z-10">
+                    <div className="flex items-center justify-between mb-3.5 sm:mb-4 relative z-10">
                         <span className="inline-flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-widest text-white/70 bg-white/10 px-2.5 py-1 rounded-full">
                             <span className="w-1.5 h-1.5 rounded-full bg-[#F4D35E]" />
                             CDM OneServe
                         </span>
-                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/10 flex items-center justify-center text-white">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <rect x="3" y="4" width="18" height="16" rx="2" />
                                 <circle cx="9" cy="10" r="2" />
@@ -365,16 +390,20 @@ export default function Dashboard() {
                         </div>
                     </div>
 
-                    <h2 className="text-white text-xl font-semibold mb-1.5 relative z-10 tracking-tight">
+                    <h2 className="text-white text-lg sm:text-xl font-semibold mb-1.5 relative z-10 tracking-tight">
                         Digital Student ID
                     </h2>
 
-                    <p className="text-white/70 text-sm mb-5 leading-relaxed relative z-10 max-w-[80%]">
+                    <p className="text-white/70 text-sm mb-4 sm:mb-5 leading-relaxed relative z-10 max-w-[85%] sm:max-w-[80%]">
                         Your gateway to Library, Clinic, Lost &amp; Found, and Guidance.
                     </p>
 
                     {
-                    hasDigitalId ? (
+                    isLoading ? (
+
+                        <Bone className="w-full h-11 sm:h-12 rounded-xl relative z-10 !bg-white/35" />
+
+                    ) : hasDigitalId ? (
 
                         <button
                             onClick={() => navigate("/view-digital-id")}
@@ -382,7 +411,8 @@ export default function Dashboard() {
                                 w-full
                                 bg-[#F4D35E]
                                 text-[#1F1F1F]
-                                p-3.5
+                                p-3
+                                sm:p-3.5
                                 rounded-xl
                                 font-semibold
                                 text-sm
@@ -404,7 +434,8 @@ export default function Dashboard() {
                                 w-full
                                 bg-amber-400
                                 text-[#1F1F1F]
-                                p-3.5
+                                p-3
+                                sm:p-3.5
                                 rounded-xl
                                 font-semibold
                                 text-sm
@@ -426,7 +457,8 @@ export default function Dashboard() {
                                 w-full
                                 bg-white
                                 text-[#106A2E]
-                                p-3.5
+                                p-3
+                                sm:p-3.5
                                 rounded-xl
                                 font-semibold
                                 text-sm
@@ -447,14 +479,14 @@ export default function Dashboard() {
 
                 {/* CAMPUS SERVICES */}
 
-                <div className="flex items-center justify-between mb-3.5">
-                    <h2 className="flex items-center gap-2 font-semibold text-base text-[#1F1F1F]">
+                <div className="flex items-center justify-between mb-3 sm:mb-3.5">
+                    <h2 className="flex items-center gap-2 font-semibold text-[15px] sm:text-base text-[#1F1F1F]">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#106A2E]">
                             <path d="M3 21h18M5 21V7l8-4 8 4v14M9 21v-6h6v6" />
                         </svg>
                         Campus Services
                     </h2>
-                    {!hasDigitalId && (
+                    {!isLoading && !hasDigitalId && (
                         <span className="text-[11px] text-gray-500 bg-white/70 px-2.5 py-1 rounded-full">
                             Digital ID required
                         </span>
@@ -462,7 +494,7 @@ export default function Dashboard() {
                 </div>
 
                 {/*
-                    Mobile: horizontally-scrolling flex row (cards keep their fixed w-32 width,
+                    Mobile: horizontally-scrolling flex row (cards keep their fixed width,
                     free-scroll + snap).
                     sm and up: real 4-column grid, no scrolling needed.
 
@@ -473,19 +505,49 @@ export default function Dashboard() {
 
                 <div
                     className="
-                        flex gap-3
+                        flex gap-2.5 sm:gap-3
                         sm:grid sm:grid-cols-4
                         overflow-x-auto sm:overflow-visible
                         pb-2
                         -mx-4 px-4 sm:mx-0 sm:px-0
                         snap-x snap-mandatory sm:snap-none
                         scrollbar-hide
-                        mb-7
+                        mb-5 sm:mb-7
                     "
                     style={{ scrollbarWidth: "none" }}
                 >
 
                     {
+                        isLoading ? (
+
+                            Array.from({ length: 4 }).map((_, i) => (
+                                <div
+                                    key={`service-skeleton-${i}`}
+                                    className="
+                                        bg-white/60
+                                        rounded-2xl
+                                        p-3.5
+                                        sm:p-4
+                                        flex
+                                        flex-col
+                                        justify-between
+                                        flex-shrink-0
+                                        w-28
+                                        sm:w-auto
+                                        h-28
+                                        sm:h-32
+                                    "
+                                >
+                                    <Bone className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl" />
+                                    <div>
+                                        <Bone className="h-3 w-14 mb-1.5" />
+                                        <Bone className="h-2.5 w-16" />
+                                    </div>
+                                </div>
+                            ))
+
+                        ) : (
+
                         filteredServices.map((service) => (
 
                             <button
@@ -508,16 +570,18 @@ export default function Dashboard() {
                                         bg-white/90
                                         border border-white/60
                                         rounded-2xl
-                                        p-4
+                                        p-3.5
+                                        sm:p-4
                                         flex
                                         flex-col
                                         items-start
                                         justify-between
                                         text-left
                                         flex-shrink-0
-                                        w-32
+                                        w-28
                                         sm:w-auto
-                                        h-32
+                                        h-28
+                                        sm:h-32
                                         snap-start
                                         shadow-sm
                                         hover:shadow-md
@@ -530,17 +594,17 @@ export default function Dashboard() {
                                 >
 
                                 <div
-                                    className="w-10 h-10 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
+                                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-transform duration-200 group-hover:scale-105"
                                     style={{ background: service.bg, color: service.color }}
                                 >
                                     {service.icon}
                                 </div>
 
                                 <div>
-                                    <div className="text-sm font-semibold text-[#1F1F1F]">
+                                    <div className="text-[13px] sm:text-sm font-semibold text-[#1F1F1F]">
                                         {service.title}
                                     </div>
-                                    <div className="text-xs text-gray-500 mt-0.5 leading-snug">
+                                    <div className="text-[11px] sm:text-xs text-gray-500 mt-0.5 leading-snug">
                                         {service.description}
                                     </div>
                                 </div>
@@ -548,10 +612,12 @@ export default function Dashboard() {
                             </button>
 
                         ))
+
+                        )
                     }
 
                     {
-                        filteredServices.length === 0 && (
+                        !isLoading && filteredServices.length === 0 && (
                             <div className="w-full sm:col-span-4 text-center text-sm text-gray-500 py-8">
                                 No services match "{search}"
                             </div>
@@ -562,47 +628,52 @@ export default function Dashboard() {
 
                 {/* ANNOUNCEMENTS — rectangle card style, matching Digital ID card, with a side button to cycle through multiple announcements */}
 
-                <div className="bg-[#F4D35E] rounded-[24px] p-5 mb-7 relative overflow-hidden shadow-md shadow-[#F4D35E]/30">
+                <div className="bg-[#F4D35E] rounded-[24px] p-4 sm:p-5 mb-5 sm:mb-7 relative overflow-hidden shadow-md shadow-[#F4D35E]/30">
 
                     {/* decorative circle, mirroring the Digital ID card's style */}
-                    <div className="absolute -top-8 -right-8 w-28 h-28 rounded-full bg-white/15" />
+                    <div className="absolute -top-6 -right-6 sm:-top-8 sm:-right-8 w-20 h-20 sm:w-28 sm:h-28 rounded-full bg-white/15" />
 
-                    <div className="flex items-center justify-between mb-3 relative z-10">
+                    <div className="flex items-center justify-between mb-2.5 sm:mb-3 relative z-10">
 
                         <span className="text-[11px] font-medium uppercase tracking-widest text-[#1F1F1F]/60">
                             Announcements
                         </span>
 
-                        <div className="flex items-center gap-1.5">
-
-                            {
-                                announcements.map((item, index) => (
-                                    <span
-                                        key={item.key}
-                                        className={`
-                                            rounded-full
-                                            transition-all
-                                            duration-200
-                                            ${index === announcementIndex ? "w-4 h-1.5 bg-[#1F1F1F]" : "w-1.5 h-1.5 bg-[#1F1F1F]/25"}
-                                        `}
-                                    />
-                                ))
-                            }
-
-                        </div>
+                        {
+                            !isLoading && (
+                                <div className="flex items-center gap-1.5">
+                                    {
+                                        announcements.map((item, index) => (
+                                            <span
+                                                key={item.key}
+                                                className={`
+                                                    rounded-full
+                                                    transition-all
+                                                    duration-200
+                                                    ${index === announcementIndex ? "w-4 h-1.5 bg-[#1F1F1F]" : "w-1.5 h-1.5 bg-[#1F1F1F]/25"}
+                                                `}
+                                            />
+                                        ))
+                                    }
+                                </div>
+                            )
+                        }
 
                     </div>
 
-                    <div className="flex items-center gap-3 relative z-10">
+                    <div className="flex items-center gap-2.5 sm:gap-3 relative z-10">
 
                         {/* SIDE BUTTON — goes back to the previous announcement */}
 
                         <button
                             onClick={goToPreviousAnnouncement}
+                            disabled={isLoading}
                             aria-label="Previous announcement"
                             className="
-                                w-9
-                                h-9
+                                w-8
+                                h-8
+                                sm:w-9
+                                sm:h-9
                                 rounded-full
                                 bg-white/40
                                 text-[#1F1F1F]
@@ -612,6 +683,7 @@ export default function Dashboard() {
                                 flex-shrink-0
                                 active:scale-95
                                 hover:bg-white/60
+                                disabled:opacity-50
                                 transition-all
                             "
                         >
@@ -620,7 +692,7 @@ export default function Dashboard() {
                             </svg>
                         </button>
 
-                        <div className="w-10 h-10 rounded-xl bg-white/40 text-[#1F1F1F] flex items-center justify-center flex-shrink-0">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/40 text-[#1F1F1F] flex items-center justify-center flex-shrink-0">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
                                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
@@ -628,27 +700,41 @@ export default function Dashboard() {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                            {currentAnnouncement.isNew && (
-                                <span className="inline-block text-[10px] font-semibold uppercase tracking-wide text-[#106A2E] bg-white/50 px-1.5 py-0.5 rounded mb-1">
-                                    New
-                                </span>
-                            )}
-                            <h2 className="text-[#1F1F1F] text-base font-semibold leading-snug">
-                                {currentAnnouncement.title}
-                            </h2>
-                            <p className="text-[#1F1F1F]/70 text-xs leading-relaxed mt-0.5">
-                                {currentAnnouncement.message}
-                            </p>
+                            {
+                                isLoading ? (
+                                    <>
+                                        <Bone className="h-3 w-2/3 mb-1.5 !bg-[#1F1F1F]/20" />
+                                        <Bone className="h-2.5 w-1/2 !bg-[#1F1F1F]/20" />
+                                    </>
+                                ) : (
+                                    <>
+                                        {currentAnnouncement.isNew && (
+                                            <span className="inline-block text-[10px] font-semibold uppercase tracking-wide text-[#106A2E] bg-white/50 px-1.5 py-0.5 rounded mb-1">
+                                                New
+                                            </span>
+                                        )}
+                                        <h2 className="text-[#1F1F1F] text-[15px] sm:text-base font-semibold leading-snug">
+                                            {currentAnnouncement.title}
+                                        </h2>
+                                        <p className="text-[#1F1F1F]/70 text-xs leading-relaxed mt-0.5">
+                                            {currentAnnouncement.message}
+                                        </p>
+                                    </>
+                                )
+                            }
                         </div>
 
                         {/* SIDE BUTTON — advances to the next announcement */}
 
                         <button
                             onClick={goToNextAnnouncement}
+                            disabled={isLoading}
                             aria-label="Next announcement"
                             className="
-                                w-9
-                                h-9
+                                w-8
+                                h-8
+                                sm:w-9
+                                sm:h-9
                                 rounded-full
                                 bg-white/40
                                 text-[#1F1F1F]
@@ -658,6 +744,7 @@ export default function Dashboard() {
                                 flex-shrink-0
                                 active:scale-95
                                 hover:bg-white/60
+                                disabled:opacity-50
                                 transition-all
                             "
                         >
@@ -670,11 +757,11 @@ export default function Dashboard() {
 
                 </div>
 
-                {/* NOTIFICATIONS — new section, placeholder data only, pending API integration */}
+                {/* NOTIFICATIONS — placeholder data only, pending API integration */}
 
-                <div className="mb-7">
+                <div className="mb-5 sm:mb-7">
 
-                    <h2 className="flex items-center gap-2 font-semibold text-base text-[#1F1F1F] mb-3.5">
+                    <h2 className="flex items-center gap-2 font-semibold text-[15px] sm:text-base text-[#1F1F1F] mb-3 sm:mb-3.5">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#106A2E]">
                             <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
                             <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
@@ -685,38 +772,54 @@ export default function Dashboard() {
                     <div className="bg-white/80 rounded-2xl divide-y divide-gray-100 shadow-sm overflow-hidden sm:grid sm:grid-cols-2 sm:divide-y-0 sm:gap-px sm:bg-gray-100">
 
                         {
+                            isLoading ? (
+
+                                Array.from({ length: 4 }).map((_, i) => (
+                                    <div key={`notif-skeleton-${i}`} className="flex items-center gap-3 p-3 sm:p-4 bg-white">
+                                        <Bone className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex-shrink-0" />
+                                        <div className="min-w-0 flex-1">
+                                            <Bone className="h-3 w-3/4 mb-1.5" />
+                                            <Bone className="h-2.5 w-10" />
+                                        </div>
+                                    </div>
+                                ))
+
+                            ) : (
+
                             notifications.map((item) => (
                                 <div
                                     key={item.key}
-                                    className="flex items-center gap-3 p-4 bg-white hover:bg-gray-50 transition-colors"
+                                    className="flex items-center gap-3 p-3 sm:p-4 bg-white hover:bg-gray-50 transition-colors"
                                 >
                                     <div
-                                        className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                                        className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center flex-shrink-0"
                                         style={{ background: item.tint, color: item.iconColor }}
                                     >
                                         {notificationIcons[item.icon]}
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-sm font-medium text-[#1F1F1F] truncate">
+                                        <p className="text-[13px] sm:text-sm font-medium text-[#1F1F1F] truncate">
                                             {item.title}
                                         </p>
-                                        <p className="text-xs text-gray-400 mt-0.5">
+                                        <p className="text-[11px] sm:text-xs text-gray-400 mt-0.5">
                                             {item.time}
                                         </p>
                                     </div>
                                 </div>
                             ))
+
+                            )
                         }
 
                     </div>
 
                 </div>
 
-                {/* RECENT ACTIVITY — new section, placeholder data only, pending API integration */}
+                {/* RECENT ACTIVITY — placeholder data only, pending API integration */}
 
                 <div>
 
-                    <h2 className="flex items-center gap-2 font-semibold text-base text-[#1F1F1F] mb-3.5">
+                    <h2 className="flex items-center gap-2 font-semibold text-[15px] sm:text-base text-[#1F1F1F] mb-3 sm:mb-3.5">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#106A2E]">
                             <path d="M12 8v4l3 3" />
                             <circle cx="12" cy="12" r="9" />
@@ -727,11 +830,29 @@ export default function Dashboard() {
                     <div className="bg-white/80 rounded-2xl shadow-sm p-2">
 
                         {
+                            isLoading ? (
+
+                                Array.from({ length: 4 }).map((_, i) => (
+                                    <div
+                                        key={`activity-skeleton-${i}`}
+                                        className={`
+                                            flex items-center gap-3 px-2.5 py-2.5 sm:px-3 sm:py-3
+                                            ${i !== 3 ? "border-b border-gray-100" : ""}
+                                        `}
+                                    >
+                                        <Bone className="w-6 h-6 rounded-full flex-shrink-0" />
+                                        <Bone className="h-3 flex-1" />
+                                        <Bone className="h-2.5 w-16 flex-shrink-0" />
+                                    </div>
+                                ))
+
+                            ) : (
+
                             recentActivity.map((item, index) => (
                                 <div
                                     key={item.key}
                                     className={`
-                                        flex items-center gap-3 px-3 py-3
+                                        flex items-center gap-3 px-2.5 py-2.5 sm:px-3 sm:py-3
                                         ${index !== recentActivity.length - 1 ? "border-b border-gray-100" : ""}
                                     `}
                                 >
@@ -741,15 +862,17 @@ export default function Dashboard() {
                                         </svg>
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-sm text-[#1F1F1F]">
+                                        <p className="text-[13px] sm:text-sm text-[#1F1F1F]">
                                             {item.label}
                                         </p>
                                     </div>
-                                    <span className="text-xs text-gray-400 flex-shrink-0">
+                                    <span className="text-[11px] sm:text-xs text-gray-400 flex-shrink-0">
                                         {item.time}
                                     </span>
                                 </div>
                             ))
+
+                            )
                         }
 
                     </div>

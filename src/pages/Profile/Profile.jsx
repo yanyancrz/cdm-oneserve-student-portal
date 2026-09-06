@@ -105,20 +105,172 @@ export default function Profile() {
     };
 
 
+    // Small reusable pulsing block for skeleton state
+    const Bone = ({ className = "" }) => (
+        <div className={`animate-pulse bg-gray-300/90 rounded-lg ${className}`} />
+    );
+
+
     // ==========================================
-    // LOADING
+    // LOADING — skeleton shaped like the real profile page
     // ==========================================
 
     if (!student) {
 
         return (
-            <div className="min-h-screen flex items-center justify-center">
 
-                <p className="text-gray-500">
-                    Loading Profile...
-                </p>
+            <div
+                className="
+                    min-h-screen
+                    p-4
+                    pb-24
+                    relative
+                    overflow-hidden
+                "
+            >
+
+                {/* DECORATIVE BLOBS */}
+
+                <div
+                    className="
+                        absolute
+                        -top-20
+                        -right-20
+                        w-64
+                        h-64
+                        rounded-full
+                        bg-[#106A2E]/[0.06]
+                    "
+                />
+
+                <div
+                    className="
+                        absolute
+                        -bottom-24
+                        -left-16
+                        w-56
+                        h-56
+                        rounded-full
+                        bg-[#F4D35E]/[0.15]
+                    "
+                />
+
+                <div
+                    className="
+                        max-w-md
+                        mx-auto
+                        relative
+                        z-10
+                    "
+                >
+
+                    {/* PAGE TITLE */}
+
+                    <h1
+                        className="
+                            text-lg
+                            font-semibold
+                            text-[#1F1F1F]
+                            pt-4
+                            mb-4
+                        "
+                    >
+                        My Profile
+                    </h1>
+
+                    {/* PROFILE CARD */}
+
+                    <div
+                        className="
+                            bg-white
+                            rounded-3xl
+                            shadow-xl
+                            shadow-[#106A2E]/10
+                            border
+                            border-[#106A2E]/[0.06]
+                            overflow-hidden
+                        "
+                    >
+
+                        {/* Green Header */}
+
+                        <div
+                            className="
+                                h-20
+                                bg-gradient-to-r
+                                from-[#106A2E]
+                                to-[#0D7856]
+                            "
+                        />
+
+                        <div
+                            className="
+                                flex
+                                flex-col
+                                items-center
+                                -mt-12
+                                px-6
+                                pb-6
+                            "
+                        >
+
+                            <Bone className="w-24 h-24 rounded-full border-4 border-white shadow-md !bg-gray-300" />
+
+                            <Bone className="h-5 w-40 mt-4" />
+
+                            <Bone className="h-3.5 w-24 mt-2" />
+
+                            <Bone className="h-6 w-28 rounded-full mt-3" />
+
+                        </div>
+
+                    </div>
+
+                    {/* DETAILS */}
+
+                    <div
+                        className="
+                            bg-white
+                            rounded-3xl
+                            shadow-xl
+                            shadow-[#106A2E]/10
+                            border
+                            border-[#106A2E]/[0.06]
+                            p-6
+                            mt-4
+                        "
+                    >
+
+                        <Bone className="h-3.5 w-36 mb-5" />
+
+                        <div className="space-y-4">
+
+                            {
+                                Array.from({ length: 4 }).map((_, i) => (
+                                    <div key={`profile-skeleton-row-${i}`} className="flex items-center gap-3">
+                                        <Bone className="w-9 h-9 rounded-lg flex-shrink-0" />
+                                        <div className="flex-1">
+                                            <Bone className="h-2.5 w-16 mb-1.5" />
+                                            <Bone className="h-3.5 w-32" />
+                                        </div>
+                                    </div>
+                                ))
+                            }
+
+                        </div>
+
+                    </div>
+
+                    {/* BUTTONS */}
+
+                    <Bone className="h-11 w-full rounded-xl mt-4" />
+
+                    <Bone className="h-11 w-full rounded-xl mt-4" />
+
+                </div>
 
             </div>
+
         );
 
     }

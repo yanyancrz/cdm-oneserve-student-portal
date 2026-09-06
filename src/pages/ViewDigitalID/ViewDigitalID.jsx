@@ -125,8 +125,15 @@ export default function ViewDigitalID() {
     }, []);
 
 
+    // Small reusable pulsing block for skeleton state
+    const Bone = ({ className = "" }) => (
+        <div className={`animate-pulse bg-gray-300/90 rounded-lg ${className}`} />
+    );
+
+
     // ==========================================
-    // LOADING
+    // LOADING — skeleton shaped like the ID card view,
+    // since that's the most common end state
     // ==========================================
 
     if (loading) {
@@ -135,11 +142,37 @@ export default function ViewDigitalID() {
 
             <BackgroundLayout>
 
-                <div className="min-h-screen flex items-center justify-center">
+                <div className="min-h-screen bg-slate-100 p-4">
 
-                    <p className="text-gray-500">
-                        Loading...
-                    </p>
+                    <div className="max-w-md mx-auto">
+
+                        <Bone className="h-7 w-40 mb-4" />
+
+                        <div className="bg-white rounded-2xl p-5 shadow-lg">
+
+                            {/* card header — photo + name/id lines */}
+                            <div className="flex items-center gap-4 mb-5">
+                                <Bone className="w-16 h-16 rounded-full flex-shrink-0" />
+                                <div className="flex-1 min-w-0">
+                                    <Bone className="h-4 w-3/4 mb-2" />
+                                    <Bone className="h-3 w-1/2 mb-2" />
+                                    <Bone className="h-3 w-1/3" />
+                                </div>
+                            </div>
+
+                            {/* card body — a few detail rows */}
+                            <div className="space-y-3 mb-5">
+                                <Bone className="h-3 w-full" />
+                                <Bone className="h-3 w-5/6" />
+                                <Bone className="h-3 w-2/3" />
+                            </div>
+
+                            {/* QR / barcode placeholder */}
+                            <Bone className="h-28 w-28 mx-auto rounded-xl" />
+
+                        </div>
+
+                    </div>
 
                 </div>
 

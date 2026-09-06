@@ -247,11 +247,131 @@ export default function Dashboard() {
 
     }, []);
 
+    // Small reusable pulsing block for skeleton state
+    const Bone = ({ className = "" }) => (
+        <div className={`animate-pulse bg-gray-300/90 rounded-lg ${className}`} />
+    );
+
+    // A single skeleton "book cover" card, used for both book rows below
+    const BookSkeletonCard = ({ skeletonKey }) => (
+        <div key={skeletonKey} className="bg-white/80 rounded-2xl shadow-sm p-3 flex-shrink-0 w-32">
+            <Bone className="w-full h-36 rounded-xl mb-3" />
+            <Bone className="h-3 w-full mb-1.5" />
+            <Bone className="h-2.5 w-2/3" />
+        </div>
+    );
+
     if (isLoadingAccess) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#F7FAF8]">
-                <p className="text-sm text-gray-400">Loading your library access...</p>
+
+            <div
+                className="min-h-screen p-4 sm:p-6 pb-24"
+                style={{
+                    background: "linear-gradient(160deg, #d7ead9 0%, #cfe9de 45%, #fcf0c8 100%)"
+                }}
+            >
+
+                <div className="max-w-md sm:max-w-2xl lg:max-w-5xl mx-auto">
+
+                    {/* PAGE TITLE */}
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h1 className="text-2xl sm:text-3xl font-semibold text-[#1F1F1F] tracking-tight">
+                                Library
+                            </h1>
+                            <p className="text-gray-500 text-sm mt-0.5">
+                                CDM: OneServe
+                            </p>
+                        </div>
+                        <Bone className="w-11 h-11 rounded-full !bg-white/60 flex-shrink-0" />
+                    </div>
+
+                    {/* WELCOME CARD */}
+                    <Bone className="w-full h-32 rounded-[24px] mb-7" />
+
+                    {/* QUICK ACTIONS */}
+                    <div className="mb-7">
+                        <Bone className="h-4 w-32 mb-3.5" />
+                        <div className="grid grid-cols-4 gap-3">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <Bone key={`qa-skeleton-${i}`} className="h-20 rounded-2xl" />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* STATISTICS */}
+                    <div className="mb-7">
+                        <Bone className="h-4 w-48 mb-3.5" />
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <div key={`stat-skeleton-${i}`} className="bg-white/80 rounded-2xl shadow-sm p-4">
+                                    <Bone className="w-9 h-9 rounded-xl mb-3" />
+                                    <Bone className="h-5 w-8 mb-2" />
+                                    <Bone className="h-2.5 w-20" />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* ANNOUNCEMENTS */}
+                    <Bone className="w-full h-24 rounded-[24px] mb-7" />
+
+                    {/* RECENTLY ADDED BOOKS */}
+                    <div className="mb-7">
+                        <Bone className="h-4 w-36 mb-3.5" />
+                        <div className="flex gap-3 overflow-hidden">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <BookSkeletonCard key={`recent-book-skeleton-${i}`} />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* RECOMMENDED BOOKS */}
+                    <div className="mb-7">
+                        <Bone className="h-4 w-40 mb-3.5" />
+                        <div className="flex gap-3 overflow-hidden">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <BookSkeletonCard key={`rec-book-skeleton-${i}`} />
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* RECENT ACTIVITY */}
+                    <div className="mb-7">
+                        <Bone className="h-4 w-32 mb-3.5" />
+                        <div className="bg-white/80 rounded-2xl shadow-sm p-2">
+                            {Array.from({ length: 3 }).map((_, i) => (
+                                <div key={`activity-skeleton-${i}`} className="flex items-center gap-3 p-3">
+                                    <Bone className="w-9 h-9 rounded-lg flex-shrink-0" />
+                                    <div className="flex-1">
+                                        <Bone className="h-3 w-3/4 mb-1.5" />
+                                        <Bone className="h-2.5 w-1/3" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* NOTIFICATIONS PREVIEW */}
+                    <div>
+                        <Bone className="h-4 w-32 mb-3.5" />
+                        <div className="space-y-2.5">
+                            {Array.from({ length: 3 }).map((_, i) => (
+                                <div key={`notif-skeleton-${i}`} className="bg-white/80 rounded-2xl shadow-sm p-3 flex items-center gap-3">
+                                    <Bone className="w-9 h-9 rounded-lg flex-shrink-0" />
+                                    <div className="flex-1">
+                                        <Bone className="h-3 w-3/4 mb-1.5" />
+                                        <Bone className="h-2.5 w-1/2" />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                </div>
+
             </div>
+
         );
     }
 
@@ -442,9 +562,11 @@ export default function Dashboard() {
                     {
                         loadingBooks ? (
 
-                            <p className="text-sm text-gray-500">
-                                Loading books...
-                            </p>
+                            <div className="flex gap-3 overflow-hidden">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                    <BookSkeletonCard key={`recent-book-loading-${i}`} />
+                                ))}
+                            </div>
 
                         ) : (
 
@@ -467,7 +589,21 @@ export default function Dashboard() {
                             See all
                         </Link>
                     </div>
-                    <RecommendedBooks books={recommendedBooks} />
+                    {
+                        loadingBooks ? (
+
+                            <div className="flex gap-3 overflow-hidden">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                    <BookSkeletonCard key={`rec-book-loading-${i}`} />
+                                ))}
+                            </div>
+
+                        ) : (
+
+                            <RecommendedBooks books={recommendedBooks} />
+
+                        )
+                    }
                 </div>
 
                 {/* RECENT ACTIVITY */}
@@ -485,9 +621,15 @@ export default function Dashboard() {
                        {
                             loadingActivities ? (
 
-                                <p className="text-sm text-gray-500 p-5 text-center">
-                                    Loading activities...
-                                </p>
+                                Array.from({ length: 3 }).map((_, i) => (
+                                    <div key={`activity-loading-${i}`} className="flex items-center gap-3 p-3">
+                                        <Bone className="w-9 h-9 rounded-lg flex-shrink-0" />
+                                        <div className="flex-1">
+                                            <Bone className="h-3 w-3/4 mb-1.5" />
+                                            <Bone className="h-2.5 w-1/3" />
+                                        </div>
+                                    </div>
+                                ))
 
                             ) : latestActivities.length === 0 ? (
 
@@ -529,9 +671,15 @@ export default function Dashboard() {
 
                         {loadingNotifications ? (
 
-                            <p className="text-sm text-gray-500 text-center py-4">
-                                Loading notifications...
-                            </p>
+                            Array.from({ length: 3 }).map((_, i) => (
+                                <div key={`notif-loading-${i}`} className="bg-white/80 rounded-2xl shadow-sm p-3 flex items-center gap-3">
+                                    <Bone className="w-9 h-9 rounded-lg flex-shrink-0" />
+                                    <div className="flex-1">
+                                        <Bone className="h-3 w-3/4 mb-1.5" />
+                                        <Bone className="h-2.5 w-1/2" />
+                                    </div>
+                                </div>
+                            ))
 
                         ) : notificationPreview.length === 0 ? (
 
