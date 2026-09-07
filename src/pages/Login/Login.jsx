@@ -6,278 +6,322 @@ import BackgroundLayout from "../../layouts/BackgroundLayout";
 import { API_URL } from "../../config/api";
 
 export default function Login() {
-
     const [email, setEmail] = useState("");
-    const navigate = useNavigate();
-    const [password, setPassword] = useState("");   
+    const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
-   const handleLogin = async () => {
+    const navigate = useNavigate();
 
-    setLoading(true);
+    const handleLogin = async () => {
+        if (!email.trim() || !password.trim()) {
+            toast.error("Please enter your email and password.");
+            return;
+        }
 
-    try {
+        setLoading(true);
 
-        const response = await fetch(
-            `${API_URL}/api/auth/login`,
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    email,
-                    password
-                })
+        try {
+            const response = await fetch(
+                `${API_URL}/api/auth/login`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        email: email.trim(),
+                        password,
+                    }),
+                }
+            );
+
+            const data = await response.json();
+
+            // ==========================================
+            // LOGIN FAILED
+            // ==========================================
+            if (!response.ok) {
+                toast.error(
+                    data.message ||
+                        "Invalid Email or Password"
+                );
+
+                return;
             }
-        );
 
-        const data = await response.json();
+            // ==========================================
+            // SAVE USER INFORMATION
+            // ==========================================
+            localStorage.setItem(
+                "userId",
+                data.id
+            );
 
-if (response.ok) {
+            localStorage.setItem(
+                "idNumber",
+                data.idNumber || ""
+            );
 
-    localStorage.setItem("userId", data.id);
-    localStorage.setItem("idNumber", data.idNumber || "");
-    localStorage.setItem("userName", data.fullName);
-    localStorage.setItem("userEmail", data.email);
-    localStorage.setItem("userRole", data.role);
-    localStorage.setItem("course", data.course || "");
-    localStorage.setItem("yearLevel", data.yearLevel || "");
-    localStorage.setItem("contactNumber", data.contactNumber || "");
+            localStorage.setItem(
+                "userName",
+                data.fullName || ""
+            );
 
-    if (!data.isProfileComplete) {
+            localStorage.setItem(
+                "userEmail",
+                data.email || ""
+            );
 
-        toast.success(
-            "Login successful. Please complete your profile."
-        );
+            localStorage.setItem(
+                "userRole",
+                data.role || ""
+            );
 
-        navigate("/setup-profile");
-        return;
-    }
+            localStorage.setItem(
+                "course",
+                data.course || ""
+            );
 
-    toast.success("Welcome back!");
+            localStorage.setItem(
+                "yearLevel",
+                data.yearLevel || ""
+            );
 
-        if (data.role === "Admin") {
+            localStorage.setItem(
+                "contactNumber",
+                data.contactNumber || ""
+            );
 
-            navigate("/admin/dashboard", {
-                replace: true
-            });
+            localStorage.setItem(
+                "profilePicture",
+                data.profilePicture || ""
+            );
 
+            localStorage.setItem(
+                "isProfileComplete",
+                data.isProfileComplete
+            );
+
+            // ==========================================
+            // NORMALIZE ROLE
+            // ==========================================
+            const role = String(
+                data.role || ""
+            )
+                .trim()
+                .toLowerCase();
+
+            // ==========================================
+            // ADMIN ACCOUNTS
+            // ==========================================
+            // These accounts are already stored
+            // in the database, so they do NOT need
+            // to complete the student profile setup.
+            // ==========================================
+
+            if (role === "admin") {
+                toast.success(
+                    "Welcome back, Admin!"
+                );
+
+                navigate(
+                    "/admin/dashboard",
+                    {
+                        replace: true,
+                    }
+                );
+
+                return;
+            }
+
+            if (
+                role === "lostfoundadmin" ||
+                role === "lost_found_admin" ||
+                role === "lost-found-admin"
+            ) {
+                toast.success(
+                    "Welcome, Lost & Found Admin!"
+                );
+
+                navigate(
+                    "/admin/lost-found/dashboard",
+                    {
+                        replace: true,
+                    }
+                );
+
+                return;
+            }
+
+            // ==========================================
+            // STUDENT / FACULTY PROFILE CHECK
+            // ==========================================
+            if (!data.isProfileComplete) {
+                toast.success(
+                    "Login successful. Please complete your profile."
+                );
+
+                navigate(
+                    "/setup-profile",
+                    {
+                        replace: true,
+                    }
+                );
+
+                return;
+            }
+
+            // ==========================================
+            // STUDENT / FACULTY
+            // ==========================================
+            toast.success("Welcome back!");
+
+            if (
+                role === "student" ||
+                role === "faculty"
+            ) {
+                navigate(
+                    "/dashboard",
+                    {
+                        replace: true,
+                    }
+                );
+
+                return;
+            }
+
+            // ==========================================
+            // FALLBACK
+            // ==========================================
+            navigate(
+                "/dashboard",
+                {
+                    replace: true,
+                }
+            );
+        } catch (error) {
+            console.error(
+                "Login error:",
+                error
+            );
+
+            toast.error(
+                "Unable to connect to API"
+            );
+        } finally {
+            setLoading(false);
         }
-        else {
-
-            navigate("/dashboard", {
-                replace: true
-            });
-
-        }
-
-}
-else {
-
-    toast.error(
-        data.message
-    );
-
-}
-    }
-    catch (error) {
-
-        console.error(error);
-
-        toast.error("Unable to connect to API");
-
-    }
-    finally {
-
-        setLoading(false);
-
-    }
-
-};
+    };
 
     return (
         <>
-    {
-        loading && (
-            <LoadingModal
-                message="Signing In..."
-            />
-        )
-    }
+            {loading && (
+                <LoadingModal
+                    message="Signing In..."
+                />
+            )}
 
-    <BackgroundLayout>
-
-        <div
-            className="
-                min-h-screen
-                flex
-                items-center
-                justify-center
-                p-6
-                relative
-                overflow-hidden
-            "
-        >
-
-
-            <div className="bg-white rounded-3xl p-9 w-full max-w-sm shadow-xl shadow-[#106A2E]/10 border border-[#106A2E]/[0.06] relative z-10">
-
-                {/* BRAND */}
-
-                <div className="w-14 h-14 rounded-2xl bg-[#106A2E] flex items-center justify-center mx-auto mb-4">
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                        <path d="M6 12v5c3 3 9 3 12 0v-5" />
-                    </svg>
-                </div>
-
-                <h1 className="text-xl font-semibold text-center text-[#1F1F1F]">
-                    CDM OneServe
-                </h1>
-
-                <p className="text-sm text-gray-500 text-center mt-1 mb-7">
-                    Sign in to your student account
-                </p>
-
-                {/* EMAIL */}
-
-                <div className="mb-3.5">
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                        Email
-                    </label>
-                    <div className="relative flex items-center">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 text-gray-400">
-                            <rect x="2" y="4" width="20" height="16" rx="2" />
-                            <path d="m22 7-10 6L2 7" />
-                        </svg>
-                        <input
-                            type="email"
-                            placeholder="you@cdm.edu.ph"
-                            className="
-                                w-full
-                                pl-10 pr-3.5 py-3
-                                rounded-xl
-                                border border-gray-200
-                                bg-gray-50
-                                text-sm
-                                outline-none
-                                focus:border-[#106A2E]
-                                focus:bg-white
-                                transition-colors
-                            "
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                        />
-                    </div>
-                </div>
-
-                                {/* PASSWORD */}
-
-                <div className="mb-2">
-                    <label className="block text-xs font-medium text-gray-600 mb-1.5">
-                        Password
-                    </label>
-                    <div className="relative flex items-center">
-                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="absolute left-3.5 text-gray-400">
-                            <rect x="3" y="11" width="18" height="11" rx="2" />
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
-                        <input
-                            type={showPassword ? "text" : "password"}
-                            placeholder="••••••••"
-                            className="
-                                w-full
-                                pl-10 pr-10 py-3
-                                rounded-xl
-                                border border-gray-200
-                                bg-gray-50
-                                text-sm
-                                outline-none
-                                focus:border-[#106A2E]
-                                focus:bg-white
-                                transition-colors
-                            "
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-
-                        <button
-                            type="button"
-                            onClick={() => setShowPassword((prev) => !prev)}
-                            className="absolute right-3.5 text-gray-400 hover:text-[#106A2E] transition-colors"
-                            tabIndex={-1}
-                        >
-                            {showPassword ? (
-                                // EYE OFF (hide)
-                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
-                                    <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
-                                    <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
-                                    <line x1="2" y1="2" x2="22" y2="22" />
-                                </svg>
-                            ) : (
-                                // EYE (show)
-                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
-                                    <circle cx="12" cy="12" r="3" />
-                                </svg>
-                            )}
-                        </button>
-                    </div>
-                </div>
-                
-                <Link
-                    to="/forgot-password"
-                    className="text-xs font-medium text-[#106A2E] hover:underline"
-                >
-                    Forgot password?
-                </Link>
-
-                {/* LOGIN BUTTON */}
-
-                <button
-                    onClick={handleLogin}
-                    disabled={loading}
+            <BackgroundLayout>
+                <div
                     className="
-                        w-full
-                        bg-[#106A2E]
-                        hover:opacity-90
-                        active:scale-[0.98]
-                        text-white
-                        p-3
-                        rounded-xl
-                        font-semibold
-                        text-sm
-                        transition-all
+                        min-h-screen
                         flex
                         items-center
                         justify-center
-                        gap-2
-                        shadow-lg
-                        shadow-[#106A2E]/25
-                        disabled:opacity-70
+                        p-6
+                        relative
+                        overflow-hidden
                     "
                 >
-                    {
-                        loading ? (
-                            <>
-                                <div
-                                    className="
-                                        w-4
-                                        h-4
-                                        border-2
-                                        border-white/30
-                                        border-t-white
-                                        rounded-full
-                                        animate-spin
-                                    "
-                                />
-                                Signing In...
-                            </>
-                        ) : (
-                            <>
+                    <div
+                        className="
+                            bg-white
+                            rounded-3xl
+                            p-9
+                            w-full
+                            max-w-sm
+                            shadow-xl
+                            shadow-[#106A2E]/10
+                            border
+                            border-[#106A2E]/[0.06]
+                            relative
+                            z-10
+                        "
+                    >
+                        {/* =========================
+                            BRAND
+                        ========================= */}
+
+                        <div
+                            className="
+                                w-14
+                                h-14
+                                rounded-2xl
+                                bg-[#106A2E]
+                                flex
+                                items-center
+                                justify-center
+                                mx-auto
+                                mb-4
+                            "
+                        >
+                            <svg
+                                width="26"
+                                height="26"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="white"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+                                <path d="M6 12v5c3 3 9 3 12 0v-5" />
+                            </svg>
+                        </div>
+
+                        <h1
+                            className="
+                                text-xl
+                                font-semibold
+                                text-center
+                                text-[#1F1F1F]
+                            "
+                        >
+                            CDM OneServe
+                        </h1>
+
+                        <p
+                            className="
+                                text-sm
+                                text-gray-500
+                                text-center
+                                mt-1
+                                mb-7
+                            "
+                        >
+                            Sign in to your account
+                        </p>
+
+                        {/* =========================
+                            EMAIL
+                        ========================= */}
+
+                        <div className="mb-3.5">
+                            <label
+                                className="
+                                    block
+                                    text-xs
+                                    font-medium
+                                    text-gray-600
+                                    mb-1.5
+                                "
+                            >
+                                Email
+                            </label>
+
+                            <div className="relative flex items-center">
                                 <svg
                                     width="17"
                                     height="17"
@@ -287,43 +331,332 @@ else {
                                     strokeWidth="2"
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
+                                    className="
+                                        absolute
+                                        left-3.5
+                                        text-gray-400
+                                    "
                                 >
-                                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
-                                    <path d="M10 17l5-5-5-5M15 12H3" />
+                                    <rect
+                                        x="2"
+                                        y="4"
+                                        width="20"
+                                        height="16"
+                                        rx="2"
+                                    />
+
+                                    <path d="m22 7-10 6L2 7" />
                                 </svg>
-                                Sign In
-                            </>
-                        )
-                    }
-                </button>
 
-                {/* DIVIDER */}
+                                <input
+                                    type="email"
+                                    placeholder="you@cdm.edu.ph"
+                                    className="
+                                        w-full
+                                        pl-10
+                                        pr-3.5
+                                        py-3
+                                        rounded-xl
+                                        border
+                                        border-gray-200
+                                        bg-gray-50
+                                        text-sm
+                                        outline-none
+                                        focus:border-[#106A2E]
+                                        focus:bg-white
+                                        transition-colors
+                                    "
+                                    value={email}
+                                    onChange={(e) =>
+                                        setEmail(
+                                            e.target.value
+                                        )
+                                    }
+                                    onKeyDown={(e) => {
+                                        if (
+                                            e.key ===
+                                            "Enter"
+                                        ) {
+                                            handleLogin();
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </div>
 
-                <div className="flex items-center gap-2.5 my-5">
-                    <span className="flex-1 h-px bg-gray-200" />
-                    <span className="text-[11px] uppercase tracking-wider text-gray-400">
-                        New here
-                    </span>
-                    <span className="flex-1 h-px bg-gray-200" />
+                        {/* =========================
+                            PASSWORD
+                        ========================= */}
+
+                        <div className="mb-2">
+                            <label
+                                className="
+                                    block
+                                    text-xs
+                                    font-medium
+                                    text-gray-600
+                                    mb-1.5
+                                "
+                            >
+                                Password
+                            </label>
+
+                            <div className="relative flex items-center">
+                                <svg
+                                    width="17"
+                                    height="17"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className="
+                                        absolute
+                                        left-3.5
+                                        text-gray-400
+                                    "
+                                >
+                                    <rect
+                                        x="3"
+                                        y="11"
+                                        width="18"
+                                        height="11"
+                                        rx="2"
+                                    />
+
+                                    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                </svg>
+
+                                <input
+                                    type={
+                                        showPassword
+                                            ? "text"
+                                            : "password"
+                                    }
+                                    placeholder="••••••••"
+                                    className="
+                                        w-full
+                                        pl-10
+                                        pr-10
+                                        py-3
+                                        rounded-xl
+                                        border
+                                        border-gray-200
+                                        bg-gray-50
+                                        text-sm
+                                        outline-none
+                                        focus:border-[#106A2E]
+                                        focus:bg-white
+                                        transition-colors
+                                    "
+                                    value={password}
+                                    onChange={(e) =>
+                                        setPassword(
+                                            e.target.value
+                                        )
+                                    }
+                                    onKeyDown={(e) => {
+                                        if (
+                                            e.key ===
+                                            "Enter"
+                                        ) {
+                                            handleLogin();
+                                        }
+                                    }}
+                                />
+
+                                {/* SHOW / HIDE PASSWORD */}
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setShowPassword(
+                                            (prev) =>
+                                                !prev
+                                        )
+                                    }
+                                    className="
+                                        absolute
+                                        right-3.5
+                                        text-gray-400
+                                        hover:text-[#106A2E]
+                                        transition-colors
+                                    "
+                                    tabIndex={-1}
+                                >
+                                    {showPassword ? (
+                                        <svg
+                                            width="17"
+                                            height="17"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+
+                                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+
+                                            <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+
+                                            <line
+                                                x1="2"
+                                                y1="2"
+                                                x2="22"
+                                                y2="22"
+                                            />
+                                        </svg>
+                                    ) : (
+                                        <svg
+                                            width="17"
+                                            height="17"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z" />
+
+                                            <circle
+                                                cx="12"
+                                                cy="12"
+                                                r="3"
+                                            />
+                                        </svg>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* =========================
+                            FORGOT PASSWORD
+                        ========================= */}
+
+                        <Link
+                            to="/forgot-password"
+                            className="
+                                text-xs
+                                font-medium
+                                text-[#106A2E]
+                                hover:underline
+                            "
+                        >
+                            Forgot password?
+                        </Link>
+
+                        {/* =========================
+                            LOGIN BUTTON
+                        ========================= */}
+
+                        <button
+                            onClick={handleLogin}
+                            disabled={loading}
+                            className="
+                                w-full
+                                bg-[#106A2E]
+                                hover:opacity-90
+                                active:scale-[0.98]
+                                text-white
+                                p-3
+                                rounded-xl
+                                font-semibold
+                                text-sm
+                                transition-all
+                                flex
+                                items-center
+                                justify-center
+                                gap-2
+                                shadow-lg
+                                shadow-[#106A2E]/25
+                                disabled:opacity-70
+                                mt-5
+                            "
+                        >
+                            {loading ? (
+                                <>
+                                    <div
+                                        className="
+                                            w-4
+                                            h-4
+                                            border-2
+                                            border-white/30
+                                            border-t-white
+                                            rounded-full
+                                            animate-spin
+                                        "
+                                    />
+
+                                    Signing In...
+                                </>
+                            ) : (
+                                <>
+                                    <svg
+                                        width="17"
+                                        height="17"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+
+                                        <path d="M10 17l5-5-5-5M15 12H3" />
+                                    </svg>
+
+                                    Sign In
+                                </>
+                            )}
+                        </button>
+
+                        {/* =========================
+                            DIVIDER
+                        ========================= */}
+
+                        <div className="flex items-center gap-2.5 my-5">
+                            <span className="flex-1 h-px bg-gray-200" />
+
+                            <span
+                                className="
+                                    text-[11px]
+                                    uppercase
+                                    tracking-wider
+                                    text-gray-400
+                                "
+                            >
+                                New here
+                            </span>
+
+                            <span className="flex-1 h-px bg-gray-200" />
+                        </div>
+
+                        {/* =========================
+                            REGISTER
+                        ========================= */}
+
+                        <p className="text-center text-sm text-gray-600">
+                            Don't have an account?{" "}
+
+                            <Link
+                                to="/register"
+                                className="
+                                    text-[#106A2E]
+                                    font-semibold
+                                    hover:underline
+                                "
+                            >
+                                Register
+                            </Link>
+                        </p>
+                    </div>
                 </div>
-
-                {/* REGISTER */}
-
-                <p className="text-center text-sm text-gray-600">
-                    Don't have an account?{" "}
-                    <Link
-                        to="/register"
-                        className="text-[#106A2E] font-semibold hover:underline"
-                    >
-                        Register
-                    </Link>
-                </p>
-
-            </div>
-
-        </div>
-
-        </BackgroundLayout>
-    </>
+            </BackgroundLayout>
+        </>
     );
 }

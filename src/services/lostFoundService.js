@@ -206,3 +206,92 @@ export const getUserClaims = async (userId) => {
 
     return await response.json();
 };
+
+// ==========================================
+// GET ADMIN MATCHES
+// GET: /api/lostfound/admin/matches
+// ==========================================
+
+export const getAdminMatches = async () => {
+    const response = await fetch(
+        `${API_URL}/api/lostfound/admin/matches`
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to fetch Lost & Found matches.");
+    }
+
+    return await response.json();
+};
+
+
+// ==========================================
+// CONFIRM ADMIN MATCH
+// PUT: /api/lostfound/admin/matches/{id}/confirm
+// ==========================================
+
+export const confirmAdminMatch = async (id) => {
+    const response = await fetch(
+        `${API_URL}/api/lostfound/admin/matches/${id}/confirm`,
+        {
+            method: "PUT",
+        }
+    );
+
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(
+            error || "Failed to confirm match."
+        );
+    }
+
+    return await response.json();
+};
+
+
+// ==========================================
+// REJECT ADMIN MATCH
+// PUT: /api/lostfound/admin/matches/{id}/reject
+// ==========================================
+
+export const rejectAdminMatch = async (id) => {
+    const response = await fetch(
+        `${API_URL}/api/lostfound/admin/matches/${id}/reject`,
+        {
+            method: "PUT",
+        }
+    );
+
+    if (!response.ok) {
+        const error = await response.text();
+        throw new Error(
+            error || "Failed to reject match."
+        );
+    }
+
+    return await response.json();
+};
+
+export const uploadPhoto = async (file) => {
+    if (!file) {
+        throw new Error("No photo selected.");
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch(`${LOST_FOUND_API}/upload-photo`, {
+        method: "POST",
+        body: formData,
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(
+            data?.message || "Failed to upload the item photo."
+        );
+    }
+
+    return data.photo;
+};

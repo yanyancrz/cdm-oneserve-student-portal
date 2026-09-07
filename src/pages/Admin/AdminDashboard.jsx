@@ -1,7 +1,6 @@
 import { useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { API_URL } from "../../config/api";
-import AdminLayout from "../../layouts/AdminLayout";
 import ViewRequestModal from "../../components/Admin/ViewRequestModal";
 
 export default function AdminDashboard() {
@@ -169,7 +168,7 @@ const handleForRejection = async (id) => {
     return (
 
         <div
-            className="min-h-screen flex"
+            className="min-h-screen flex overflow-x-hidden"
         >
 
             <style>{`
@@ -177,24 +176,25 @@ const handleForRejection = async (id) => {
                 .font-display { font-family: 'Fraunces', serif; }
             `}</style>
             
-            {/* MAIN CONTENT */}
+            {/* MAIN CONTENT — fluid width, capped and centered on wide windows,
+                shrinks gracefully on narrow ones instead of overflowing */}
 
-            <main className="flex-1 px-10 py-8 max-w-[1200px]">
+            <main className="flex-1 w-full min-w-0 max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8">
 
                 {/* TOP BAR */}
 
-                <div className="flex items-center justify-between mb-9">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-9">
 
                     <div>
                         <p className="text-xs uppercase tracking-[0.18em] text-[#106A2E]/70 font-medium mb-1">
                             Tuesday, June 23
                         </p>
-                        <h2 className="font-display text-3xl text-[#1F1F1F]">
+                        <h2 className="font-display text-2xl lg:text-3xl text-[#1F1F1F]">
                             Good morning, Admin
                         </h2>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-wrap">
 
                         <button
                             onClick={() => navigate("/admin/requests")}
@@ -209,6 +209,7 @@ const handleForRejection = async (id) => {
                                 font-medium
                                 text-white
                                 transition-colors
+                                whitespace-nowrap
                             "
                             style={{ background: "#106A2E" }}
                         >
@@ -230,9 +231,9 @@ const handleForRejection = async (id) => {
 
                 </div>
 
-                {/* STATS */}
+                {/* STATS — 2 columns on narrower windows, 4 once there's room */}
 
-                <div className="grid grid-cols-4 gap-5 mb-8">
+                <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-5 mb-8">
 
                     {
                         stats.map((stat) => {
@@ -242,7 +243,7 @@ const handleForRejection = async (id) => {
 
                                 <div
                                     key={stat.key}
-                                    className="bg-white rounded-2xl p-5 border border-[#1F1F1F]/[0.05] hover:-translate-y-0.5 hover:shadow-md transition-all"
+                                    className="bg-white rounded-2xl p-5 border border-[#1F1F1F]/[0.05] hover:-translate-y-0.5 hover:shadow-md transition-all min-w-0"
                                 >
 
                                     <p className="text-xs uppercase tracking-wide text-gray-500 font-medium mb-2">
@@ -273,7 +274,7 @@ const handleForRejection = async (id) => {
 
                 <div className="bg-white rounded-2xl border border-[#1F1F1F]/[0.05] overflow-hidden">
 
-                    <div className="flex items-center justify-between px-6 pt-6 pb-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-6 pt-6 pb-4">
 
                         <h3 className="font-display text-xl text-[#1F1F1F]">
                             Recent Digital ID Requests
@@ -281,7 +282,7 @@ const handleForRejection = async (id) => {
 
                         <button
                             onClick={() => navigate("/admin/requests")}
-                            className="text-sm font-medium text-[#106A2E] hover:underline"
+                            className="text-sm font-medium text-[#106A2E] hover:underline whitespace-nowrap"
                         >
                             View all →
                         </button>
@@ -290,7 +291,7 @@ const handleForRejection = async (id) => {
 
                     {/* FILTER TABS */}
 
-                    <div className="flex gap-2 px-6 pb-4">
+                    <div className="flex gap-2 flex-wrap px-4 sm:px-6 pb-4">
 
                         {
                             tabs.map((tab) => (
@@ -305,6 +306,7 @@ const handleForRejection = async (id) => {
                                         text-xs
                                         font-medium
                                         transition-colors
+                                        whitespace-nowrap
                                         ${
                                             filter === tab
                                                 ? "bg-[#106A2E] text-white"
@@ -320,15 +322,18 @@ const handleForRejection = async (id) => {
 
                     </div>
 
+                    {/* Table scrolls horizontally on narrow windows instead of
+                        squishing every column unreadably thin */}
+
                     <div className="overflow-x-auto">
 
-                        <table className="w-full">
+                        <table className="w-full min-w-[720px]">
 
                             <thead>
 
                                 <tr className="border-t border-b border-[#1F1F1F]/[0.06] text-gray-500 text-xs uppercase tracking-wide">
 
-                                    <th className="text-left py-3 px-6 font-medium">
+                                    <th className="text-left py-3 px-4 sm:px-6 font-medium">
                                         Name
                                     </th>
 
@@ -348,7 +353,7 @@ const handleForRejection = async (id) => {
                                         Status
                                     </th>
 
-                                    <th className="text-right py-3 px-6 font-medium">
+                                    <th className="text-right py-3 px-4 sm:px-6 font-medium">
                                         Action
                                     </th>
 
@@ -366,7 +371,7 @@ const handleForRejection = async (id) => {
                                             className="border-b border-[#1F1F1F]/[0.05] last:border-0 hover:bg-[#F7F5EF]/60 transition-colors"
                                         >
 
-                                            <td className="py-4 px-6">
+                                            <td className="py-4 px-4 sm:px-6">
 
                                                 <div className="flex items-center gap-3">
 
@@ -417,7 +422,7 @@ const handleForRejection = async (id) => {
 
                                             </td>
 
-                                            <td className="text-right px-6">
+                                            <td className="text-right px-4 sm:px-6">
 
                                                <button
                                                     onClick={() => setSelectedRequest(req)}

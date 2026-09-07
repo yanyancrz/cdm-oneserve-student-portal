@@ -338,7 +338,7 @@ export default function AdminProfile() {
                 .card-transition { transition: all 0.2s ease-in-out; }
             `}</style>
 
-            <main className="flex-1 px-6 py-8 max-w-[1200px] mx-auto">
+            <main className="flex-1 w-full min-w-0 max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8">
                 {/* Header */}
                 <div className="mb-8">
                     <p className="text-xs uppercase tracking-[0.18em] text-[#106A2E]/70 font-medium mb-1">

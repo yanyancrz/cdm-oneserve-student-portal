@@ -1,5 +1,15 @@
-import { useEffect, useState } from "react";
-import { createReport } from "../../services/lostFoundService";
+import { useEffect, useRef, useState } from "react";
+import {
+    Camera,
+    Image as ImageIcon,
+    Upload,
+    Trash2,
+} from "lucide-react";
+
+import {
+    createReport,
+    uploadPhoto
+} from "../../services/lostFoundService";
 
 const ReportLostFoundModal = ({
     isOpen,
@@ -13,6 +23,11 @@ const ReportLostFoundModal = ({
     const [dateLostFound, setDateLostFound] = useState("");
     const [location, setLocation] = useState("");
     const [photo, setPhoto] = useState("");
+    const [photoFile, setPhotoFile] = useState(null);
+    const [photoPreview, setPhotoPreview] = useState("");
+
+    const uploadInputRef = useRef(null);
+    const cameraInputRef = useRef(null);
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -25,13 +40,63 @@ const ReportLostFoundModal = ({
             setDateLostFound("");
             setLocation("");
             setPhoto("");
+            setPhotoFile(null);
+            setPhotoPreview("");
             setError("");
         }
     }, [isOpen]);
 
+    useEffect(() => {
+        return () => {
+            if (photoPreview) {
+                URL.revokeObjectURL(photoPreview);
+            }
+        };
+    }, [photoPreview]);
+
     if (!isOpen) {
         return null;
     }
+
+    const handlePhotoChange = (e) => {
+        const file = e.target.files?.[0];
+
+        if (!file) return;
+
+        if (!file.type.startsWith("image/")) {
+            setError("Please select an image file.");
+            e.target.value = "";
+            return;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+            setError("Photo must be 5 MB or smaller.");
+            e.target.value = "";
+            return;
+        }
+
+        if (photoPreview) {
+            URL.revokeObjectURL(photoPreview);
+        }
+
+        setPhotoFile(file);
+        setPhotoPreview(URL.createObjectURL(file));
+        setPhoto("");
+        setError("");
+
+        // Allow the same file to be selected again later.
+        e.target.value = "";
+    };
+
+    const removePhoto = () => {
+        if (photoPreview) {
+            URL.revokeObjectURL(photoPreview);
+        }
+
+        setPhotoFile(null);
+        setPhotoPreview("");
+        setPhoto("");
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -59,6 +124,13 @@ const ReportLostFoundModal = ({
         try {
             setLoading(true);
 
+            let photoPath = photo.trim() || null;
+
+            // Upload the selected/captured image first.
+            if (photoFile) {
+                photoPath = await uploadPhoto(photoFile);
+            }
+
             const reportData = {
                 userId: Number(userId),
                 itemName: itemName.trim(),
@@ -67,7 +139,7 @@ const ReportLostFoundModal = ({
                 reportType,
                 dateLostFound,
                 location: location.trim(),
-                photo: photo.trim() || null,
+                photo: photoPath,
             };
 
             await createReport(reportData);
@@ -276,19 +348,118 @@ const ReportLostFoundModal = ({
 
                     <div>
                         <label className="mb-1.5 block text-sm font-semibold text-[#1F1F1F]">
-                            Photo URL
+                            Item Photo
                             <span className="ml-1 font-normal text-gray-400">
                                 (Optional)
                             </span>
                         </label>
 
                         <input
-                            type="text"
-                            value={photo}
-                            onChange={(e) => setPhoto(e.target.value)}
-                            placeholder="Enter photo URL"
-                            className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-[#106A2E] focus:ring-1 focus:ring-[#106A2E]"
+                            ref={uploadInputRef}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={handlePhotoChange}
                         />
+
+                        <input
+                            ref={cameraInputRef}
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            className="hidden"
+                            onChange={handlePhotoChange}
+                        />
+
+                        {!photoPreview ? (
+                            <div className="rounded-2xl border border-dashed border-gray-300 bg-[#F9F9F7] p-5">
+                                <div className="flex flex-col items-center justify-center text-center">
+                                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#106A2E]/10">
+                                        <ImageIcon
+                                            size={23}
+                                            className="text-[#106A2E]"
+                                        />
+                                    </div>
+
+                                    <p className="text-sm font-medium text-[#1F1F1F]">
+                                        Add a photo of the item
+                                    </p>
+
+                                    <p className="mt-1 text-xs text-gray-400">
+                                        JPG, PNG, WEBP • Maximum 5 MB
+                                    </p>
+
+                                    <div className="mt-4 flex flex-wrap justify-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                uploadInputRef.current?.click()
+                                            }
+                                            disabled={loading}
+                                            className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold text-[#1F1F1F] transition hover:border-[#106A2E]/30 hover:text-[#106A2E] disabled:opacity-50"
+                                        >
+                                            <Upload size={16} />
+                                            Upload Photo
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                cameraInputRef.current?.click()
+                                            }
+                                            disabled={loading}
+                                            className="inline-flex items-center gap-2 rounded-xl bg-[#106A2E] px-4 py-2.5 text-sm font-semibold text-white transition hover:brightness-105 disabled:opacity-50"
+                                        >
+                                            <Camera size={16} />
+                                            Open Camera
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-[#F9F9F7]">
+                                <div className="relative">
+                                    <img
+                                        src={photoPreview}
+                                        alt="Selected item"
+                                        className="h-56 w-full object-contain bg-gray-100"
+                                    />
+
+                                    <button
+                                        type="button"
+                                        onClick={removePhoto}
+                                        disabled={loading}
+                                        title="Remove photo"
+                                        className="absolute right-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/95 text-red-600 shadow-sm transition hover:bg-white disabled:opacity-50"
+                                    >
+                                        <Trash2 size={17} />
+                                    </button>
+                                </div>
+
+                                <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-medium text-[#1F1F1F]">
+                                            {photoFile?.name || "Item photo"}
+                                        </p>
+                                        <p className="text-xs text-gray-400">
+                                            Ready to upload with your report
+                                        </p>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            cameraInputRef.current?.click()
+                                        }
+                                        disabled={loading}
+                                        className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-[#1F1F1F] transition hover:text-[#106A2E] disabled:opacity-50"
+                                    >
+                                        <Camera size={15} />
+                                        Retake
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                 </form>
