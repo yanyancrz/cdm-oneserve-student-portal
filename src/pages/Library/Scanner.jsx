@@ -43,13 +43,23 @@ export default function Scanner() {
                 await scanner.stop();
             }
 
-            await scanner.clear();
+            try {
+                await scanner.clear();
+            } catch (clearError) {
+                console.warn(
+                    "Scanner clear warning:",
+                    clearError
+                );
+            }
         } catch (err) {
-            console.warn("Scanner cleanup:", err);
+            console.warn(
+                "Scanner cleanup:",
+                err
+            );
+        } finally {
+            scannerRef.current = null;
+            setScanning(false);
         }
-
-        scannerRef.current = null;
-        setScanning(false);
     };
 
     // ==========================================
@@ -57,7 +67,16 @@ export default function Scanner() {
     // ==========================================
 
     const verifyQr = async (qrText) => {
+        // Prevent duplicate QR processing
         if (processingRef.current) {
+            return;
+        }
+
+        if (!qrText) {
+            setError(
+                "Unable to read the QR code."
+            );
+
             return;
         }
 
@@ -67,12 +86,35 @@ export default function Scanner() {
         setError("");
 
         try {
-            console.log("=================================");
-            console.log("QR DATA:", qrText);
-            console.log("API URL:", API_URL);
-            console.log("=================================");
+            console.log(
+                "================================="
+            );
 
+            console.log(
+                "QR DATA:",
+                qrText
+            );
+
+            console.log(
+                "API URL:",
+                API_URL
+            );
+
+            console.log(
+                "VERIFY ENDPOINT:",
+                `${API_URL}/api/library/scanner/verify`
+            );
+
+            console.log(
+                "================================="
+            );
+
+            // Stop camera before API verification
             await stopScanner();
+
+            // ======================================
+            // CHECK API URL
+            // ======================================
 
             if (!API_URL) {
                 throw new Error(
@@ -80,23 +122,35 @@ export default function Scanner() {
                 );
             }
 
+            // ======================================
+            // VERIFY QR
+            // ======================================
+
             const response = await fetch(
                 `${API_URL}/api/library/scanner/verify`,
                 {
                     method: "POST",
+
                     headers: {
-                        "Content-Type": "application/json",
+                        "Content-Type":
+                            "application/json",
                     },
+
                     body: JSON.stringify({
-                        qrData,
+                        qrData: qrText,
                     }),
                 }
             );
 
+            // ======================================
+            // READ API RESPONSE
+            // ======================================
+
             let data = null;
 
             try {
-                data = await response.json();
+                data =
+                    await response.json();
             } catch {
                 throw new Error(
                     "The server returned an invalid response."
@@ -108,6 +162,10 @@ export default function Scanner() {
                 data
             );
 
+            // ======================================
+            // API ERROR
+            // ======================================
+
             if (!response.ok) {
                 throw new Error(
                     data?.message ||
@@ -116,10 +174,13 @@ export default function Scanner() {
                 );
             }
 
+            // ======================================
+            // SUCCESS
+            // ======================================
+
             setResult(
                 data?.data || data
             );
-
         } catch (err) {
             console.error(
                 "QR verification error:",
@@ -130,45 +191,88 @@ export default function Scanner() {
                 err?.message ||
                     "Unable to connect to the library server."
             );
-
         } finally {
             setLoading(false);
+
             processingRef.current = false;
         }
     };
 
     // ==========================================
-    // START PWA CAMERA SCANNER
+    // QR DETECTED
+    // ==========================================
+
+    const handleQrDetected = async (
+        decodedText
+    ) => {
+        console.log(
+            "QR detected:",
+            decodedText
+        );
+
+        if (
+            processingRef.current
+        ) {
+            return;
+        }
+
+        if (!decodedText) {
+            return;
+        }
+
+        await verifyQr(
+            decodedText
+        );
+    };
+
+    // ==========================================
+    // START CAMERA
     // ==========================================
 
     const startScanner = async () => {
+        // Reset UI
         setResult(null);
         setError("");
+        setLoading(false);
+
         processingRef.current = false;
+
+        // ======================================
+        // STOP EXISTING SCANNER
+        // ======================================
+
+        await stopScanner();
 
         try {
             // ======================================
-            // HTTPS / SECURE CONTEXT CHECK
+            // HTTPS / SECURE CONTEXT
             // ======================================
+
+            const isLocalhost =
+                window.location.hostname ===
+                    "localhost" ||
+                window.location.hostname ===
+                    "127.0.0.1";
 
             if (
                 !window.isSecureContext &&
-                window.location.hostname !== "localhost"
+                !isLocalhost
             ) {
                 setError(
-                    "Camera access requires HTTPS. Please open the installed PWA using your secure website."
+                    "Camera access requires HTTPS. Please open CDM OneServe using your secure HTTPS website."
                 );
 
                 return;
             }
 
             // ======================================
-            // CHECK CAMERA SUPPORT
+            // CAMERA SUPPORT
             // ======================================
 
             if (
                 !navigator.mediaDevices ||
-                !navigator.mediaDevices.getUserMedia
+                !navigator.mediaDevices
+                    .getUserMedia
             ) {
                 setError(
                     "Camera access is not supported by this browser."
@@ -177,10 +281,36 @@ export default function Scanner() {
                 return;
             }
 
-            setScanning(true);
+            // ======================================
+            // CHECK CAMERA PERMISSION
+            // ======================================
+
+            try {
+                const permission =
+                    await navigator.permissions?.query(
+                        {
+                            name: "camera",
+                        }
+                    );
+
+                if (
+                    permission &&
+                    permission.state ===
+                        "denied"
+                ) {
+                    setError(
+                        "Camera permission is blocked. Please allow camera access in your browser settings."
+                    );
+
+                    return;
+                }
+            } catch {
+                // Some browsers do not support
+                // camera permission query.
+            }
 
             // ======================================
-            // CREATE QR SCANNER
+            // CREATE SCANNER
             // ======================================
 
             const scanner =
@@ -188,10 +318,13 @@ export default function Scanner() {
                     "library-qr-reader"
                 );
 
-            scannerRef.current = scanner;
+            scannerRef.current =
+                scanner;
+
+            setScanning(true);
 
             // ======================================
-            // CAMERA CONFIGURATION
+            // CAMERA CONFIG
             // ======================================
 
             const config = {
@@ -204,17 +337,21 @@ export default function Scanner() {
 
                 aspectRatio: 1,
 
-                rememberLastUsedCamera: true,
+                rememberLastUsedCamera:
+                    true,
 
-                showTorchButtonIfSupported: true,
+                showTorchButtonIfSupported:
+                    true,
 
-                showZoomSliderIfSupported: true,
+                showZoomSliderIfSupported:
+                    true,
 
-                defaultZoomValueIfSupported: 2,
+                defaultZoomValueIfSupported:
+                    2,
             };
 
             // ======================================
-            // START CAMERA
+            // START ENVIRONMENT CAMERA
             // ======================================
 
             await scanner.start(
@@ -226,34 +363,27 @@ export default function Scanner() {
 
                 config,
 
-                async (decodedText) => {
-                    console.log(
-                        "QR detected:",
-                        decodedText
-                    );
-
-                    if (
-                        processingRef.current
-                    ) {
-                        return;
-                    }
-
-                    await verifyQr(
+                async (
+                    decodedText
+                ) => {
+                    await handleQrDetected(
                         decodedText
                     );
                 },
 
                 () => {
-                    // Normal scanning errors.
-                    // Do not display them because
-                    // this happens continuously while
-                    // the camera is looking for a QR.
+                    // Normal QR scanning errors.
+                    // These occur continuously while
+                    // searching for a QR code.
                 }
             );
 
+            console.log(
+                "Camera scanner started."
+            );
         } catch (err) {
             console.error(
-                "Camera scanner error:",
+                "Primary camera error:",
                 err
             );
 
@@ -264,66 +394,94 @@ export default function Scanner() {
             try {
                 await stopScanner();
 
+                console.log(
+                    "Trying fallback camera..."
+                );
+
                 const cameras =
                     await Html5Qrcode.getCameras();
 
                 if (
-                    cameras &&
-                    cameras.length > 0
+                    !cameras ||
+                    cameras.length === 0
                 ) {
-                    const scanner =
-                        new Html5Qrcode(
-                            "library-qr-reader"
-                        );
-
-                    scannerRef.current =
-                        scanner;
-
-                    setScanning(true);
-
-                    await scanner.start(
-                        cameras[0].id,
-
-                        {
-                            fps: 10,
-
-                            qrbox: {
-                                width: 250,
-                                height: 250,
-                            },
-
-                            aspectRatio: 1,
-
-                            rememberLastUsedCamera:
-                                true,
-
-                            showTorchButtonIfSupported:
-                                true,
-
-                            showZoomSliderIfSupported:
-                                true,
-                        },
-
-                        async (
-                            decodedText
-                        ) => {
-                            if (
-                                processingRef.current
-                            ) {
-                                return;
-                            }
-
-                            await verifyQr(
-                                decodedText
-                            );
-                        },
-
-                        () => {}
+                    throw new Error(
+                        "No camera detected."
                     );
-
-                    return;
                 }
 
+                // Prefer rear camera
+                const rearCamera =
+                    cameras.find(
+                        (camera) =>
+                            /back|rear|environment/i.test(
+                                camera.label
+                            )
+                    );
+
+                const selectedCamera =
+                    rearCamera ||
+                    cameras[0];
+
+                console.log(
+                    "Selected camera:",
+                    selectedCamera
+                );
+
+                const scanner =
+                    new Html5Qrcode(
+                        "library-qr-reader"
+                    );
+
+                scannerRef.current =
+                    scanner;
+
+                setScanning(true);
+
+                await scanner.start(
+                    selectedCamera.id,
+
+                    {
+                        fps: 10,
+
+                        qrbox: {
+                            width: 250,
+                            height: 250,
+                        },
+
+                        aspectRatio: 1,
+
+                        rememberLastUsedCamera:
+                            true,
+
+                        showTorchButtonIfSupported:
+                            true,
+
+                        showZoomSliderIfSupported:
+                            true,
+
+                        defaultZoomValueIfSupported:
+                            2,
+                    },
+
+                    async (
+                        decodedText
+                    ) => {
+                        await handleQrDetected(
+                            decodedText
+                        );
+                    },
+
+                    () => {
+                        // Ignore normal scan errors
+                    }
+                );
+
+                console.log(
+                    "Fallback camera started."
+                );
+
+                return;
             } catch (fallbackError) {
                 console.error(
                     "Fallback camera error:",
@@ -331,7 +489,11 @@ export default function Scanner() {
                 );
             }
 
-            setScanning(false);
+            // ======================================
+            // CAMERA FAILED
+            // ======================================
+
+            await stopScanner();
 
             setError(
                 "Unable to access the camera. Please allow camera permission and make sure you are using HTTPS."
@@ -350,6 +512,9 @@ export default function Scanner() {
         setError("");
         setLoading(false);
 
+        processingRef.current =
+            false;
+
         setTimeout(() => {
             startScanner();
         }, 300);
@@ -361,7 +526,19 @@ export default function Scanner() {
 
     useEffect(() => {
         return () => {
-            stopScanner();
+            const cleanup =
+                async () => {
+                    try {
+                        await stopScanner();
+                    } catch (err) {
+                        console.warn(
+                            "Scanner cleanup error:",
+                            err
+                        );
+                    }
+                };
+
+            cleanup();
         };
     }, []);
 
@@ -383,7 +560,9 @@ export default function Scanner() {
                     <div className="flex items-center gap-3">
 
                         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#106A2E] text-white shadow-sm">
+
                             <QrCode size={23} />
+
                         </div>
 
                         <div>
@@ -448,13 +627,17 @@ export default function Scanner() {
                                 <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/15">
 
                                     {result.cleared ? (
+
                                         <CheckCircle2
                                             size={38}
                                         />
+
                                     ) : (
+
                                         <XCircle
                                             size={38}
                                         />
+
                                     )}
 
                                 </div>
@@ -468,7 +651,10 @@ export default function Scanner() {
                                 </h2>
 
                                 <p className="mt-1 text-sm text-white/80">
-                                    {result.message}
+
+                                    {result.message ||
+                                        "QR verification completed."}
+
                                 </p>
 
                             </div>
@@ -484,7 +670,9 @@ export default function Scanner() {
                             <div className="flex items-center gap-4 rounded-2xl bg-slate-50 p-4">
 
                                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#106A2E]">
+
                                     <User size={21} />
+
                                 </div>
 
                                 <div>
@@ -628,8 +816,10 @@ export default function Scanner() {
                                                 }
                                             `}
                                         >
+
                                             {result.remainingBooks ??
                                                 0}
+
                                         </p>
 
                                         <p className="text-[11px] text-slate-400">
@@ -740,11 +930,6 @@ export default function Scanner() {
 
                         <div className="relative overflow-hidden bg-slate-950 p-4">
 
-                            {/* IMPORTANT:
-                                html5-qrcode renders the
-                                camera inside this div.
-                            */}
-
                             <div
                                 id="library-qr-reader"
                                 className="
@@ -847,34 +1032,35 @@ export default function Scanner() {
 
                         {/* STOP BUTTON */}
 
-                        {scanning && !loading && (
+                        {scanning &&
+                            !loading && (
 
-                            <div className="flex justify-center px-5 py-4">
+                                <div className="flex justify-center px-5 py-4">
 
-                                <button
-                                    type="button"
-                                    onClick={
-                                        stopScanner
-                                    }
-                                    className="
-                                        rounded-xl
-                                        border
-                                        border-slate-200
-                                        px-5
-                                        py-2.5
-                                        text-sm
-                                        font-semibold
-                                        text-slate-600
-                                        transition
-                                        hover:bg-slate-50
-                                    "
-                                >
-                                    Stop Camera
-                                </button>
+                                    <button
+                                        type="button"
+                                        onClick={
+                                            stopScanner
+                                        }
+                                        className="
+                                            rounded-xl
+                                            border
+                                            border-slate-200
+                                            px-5
+                                            py-2.5
+                                            text-sm
+                                            font-semibold
+                                            text-slate-600
+                                            transition
+                                            hover:bg-slate-50
+                                        "
+                                    >
+                                        Stop Camera
+                                    </button>
 
-                            </div>
+                                </div>
 
-                        )}
+                            )}
 
                         {/* ERROR */}
 
