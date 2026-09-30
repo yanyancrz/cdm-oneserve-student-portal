@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Html5Qrcode } from "html5-qrcode";
 import {
     QrCode,
@@ -11,11 +12,34 @@ import {
     BookOpen,
     ShieldCheck,
     Loader2,
+    LogOut,
 } from "lucide-react";
 
 import { API_URL } from "../../config/api";
 
+// Route ng Login page mo. Palitan kung iba ang path.
+const LOGIN_PATH = "/";
+
+// Lahat ng keys na sine-save ng Login.jsx
+const SESSION_KEYS = [
+    "token",
+    "authToken",
+    "userId",
+    "idNumber",
+    "userName",
+    "userEmail",
+    "userRole",
+    "role",
+    "course",
+    "yearLevel",
+    "contactNumber",
+    "profilePicture",
+    "isProfileComplete",
+];
+
 export default function Scanner() {
+    const navigate = useNavigate();
+
     const scannerRef = useRef(null);
     const processingRef = useRef(false);
 
@@ -73,6 +97,22 @@ export default function Scanner() {
 
         scannerRef.current = null;
         setScanning(false);
+    };
+
+    // =========================================================
+    // LOGOUT
+    // =========================================================
+
+    const handleLogout = async () => {
+        await stopScanner();
+
+        SESSION_KEYS.forEach((key) => {
+            localStorage.removeItem(key);
+        });
+
+        navigate(LOGIN_PATH, {
+            replace: true,
+        });
     };
 
     // =========================================================
@@ -642,25 +682,63 @@ export default function Scanner() {
 
                 <div className="mb-6">
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-between gap-3">
 
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#106A2E] text-white shadow-sm">
+                        <div className="flex items-center gap-3">
 
-                            <QrCode size={23} />
+                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#106A2E] text-white shadow-sm">
+
+                                <QrCode size={23} />
+
+                            </div>
+
+                            <div>
+
+                                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#106A2E]">
+                                    CDM LibHub
+                                </p>
+
+                                <h1 className="text-2xl font-bold text-slate-800">
+                                    Library Scanner
+                                </h1>
+
+                            </div>
 
                         </div>
 
-                        <div>
+                        {/* LOGOUT */}
 
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#106A2E]">
-                                CDM LibHub
-                            </p>
+                        <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="
+                                flex
+                                shrink-0
+                                items-center
+                                gap-2
+                                rounded-xl
+                                border
+                                border-slate-200
+                                bg-white
+                                px-3.5
+                                py-2.5
+                                text-xs
+                                font-semibold
+                                text-slate-600
+                                shadow-sm
+                                transition
+                                hover:border-red-200
+                                hover:bg-red-50
+                                hover:text-red-600
+                                active:scale-[0.98]
+                            "
+                        >
 
-                            <h1 className="text-2xl font-bold text-slate-800">
-                                Library Scanner
-                            </h1>
+                            <LogOut size={15} />
 
-                        </div>
+                            Logout
+
+                        </button>
 
                     </div>
 
