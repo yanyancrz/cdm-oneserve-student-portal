@@ -11,7 +11,10 @@ export default defineConfig({
         VitePWA({
             registerType: "autoUpdate",
 
-            injectRegister: "auto",
+            workbox: {
+                maximumFileSizeToCacheInBytes:
+                    10 * 1024 * 1024,
+            },
 
             manifest: {
                 name: "CDM OneServe",
@@ -23,40 +26,20 @@ export default defineConfig({
                 background_color: "#F1F1F1",
 
                 display: "standalone",
-
                 start_url: "/",
-                scope: "/",
-
-                orientation: "any",
 
                 icons: [
                     {
                         src: "/icons/icon-192.png",
                         sizes: "192x192",
                         type: "image/png",
-                        purpose: "any maskable",
                     },
                     {
                         src: "/icons/icon-512.png",
                         sizes: "512x512",
                         type: "image/png",
-                        purpose: "any maskable",
                     },
                 ],
-            },
-
-            workbox: {
-                cleanupOutdatedCaches: true,
-
-                navigateFallback: "/index.html",
-
-                globPatterns: [
-                    "**/*.{js,css,html,ico,png,svg,jpg,jpeg,woff2}",
-                ],
-            },
-
-            devOptions: {
-                enabled: true,
             },
         }),
     ],
