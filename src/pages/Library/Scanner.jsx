@@ -25,6 +25,18 @@ export default function Scanner() {
     const [error, setError] = useState("");
 
     // =========================================================
+    // GET AUTH TOKEN
+    // =========================================================
+
+    const getAuthToken = () => {
+        return (
+            localStorage.getItem("token") ||
+            localStorage.getItem("authToken") ||
+            ""
+        );
+    };
+
+    // =========================================================
     // STOP SCANNER
     // =========================================================
 
@@ -43,18 +55,18 @@ export default function Scanner() {
             if (state === 2) {
                 await scanner.stop();
             }
-
-            try {
-                await scanner.clear();
-            } catch (clearError) {
-                console.warn(
-                    "Scanner clear warning:",
-                    clearError
-                );
-            }
         } catch (err) {
             console.warn(
-                "Scanner cleanup warning:",
+                "Scanner stop warning:",
+                err
+            );
+        }
+
+        try {
+            await scanner.clear();
+        } catch (err) {
+            console.warn(
+                "Scanner clear warning:",
                 err
             );
         }
@@ -64,23 +76,10 @@ export default function Scanner() {
     };
 
     // =========================================================
-    // GET AUTH TOKEN
-    // =========================================================
-
-    const getAuthToken = () => {
-        const token =
-            localStorage.getItem("token") ||
-            localStorage.getItem("authToken");
-
-        return token;
-    };
-
-    // =========================================================
     // VERIFY QR WITH API
     // =========================================================
 
     const verifyQr = async (qrText) => {
-        // Prevent duplicate requests
         if (processingRef.current) {
             return;
         }
@@ -106,15 +105,42 @@ export default function Scanner() {
             );
 
             console.log(
+                "VERIFY ENDPOINT:",
+                `${API_URL}/api/library/scanner/verify`
+            );
+
+            console.log(
                 "================================="
             );
 
-            // Stop camera first
+            // =================================================
+            // GET TOKEN
+            // =================================================
+
+            const token = getAuthToken();
+
+            if (!token) {
+                throw new Error(
+                    "Your login session is missing. Please log in again."
+                );
+            }
+
+            console.log(
+                "AUTH TOKEN FOUND:",
+                token
+                    ? "YES"
+                    : "NO"
+            );
+
+            // =================================================
+            // STOP CAMERA
+            // =================================================
+
             await stopScanner();
 
-            // =====================================================
+            // =================================================
             // CHECK API URL
-            // =====================================================
+            // =================================================
 
             if (!API_URL) {
                 throw new Error(
@@ -122,41 +148,12 @@ export default function Scanner() {
                 );
             }
 
-            // =====================================================
-            // GET JWT TOKEN
-            // =====================================================
-
-            const token = getAuthToken();
-
-            console.log(
-                "JWT TOKEN EXISTS:",
-                Boolean(token)
-            );
-
-            if (!token) {
-                throw new Error(
-                    "Your login session is missing or expired. Please log in again."
-                );
-            }
-
-            // =====================================================
-            // API ENDPOINT
-            // =====================================================
-
-            const endpoint =
-                `${API_URL}/api/library/scanner/verify`;
-
-            console.log(
-                "VERIFY ENDPOINT:",
-                endpoint
-            );
-
-            // =====================================================
-            // SEND REQUEST
-            // =====================================================
+            // =================================================
+            // SEND QR TO API
+            // =================================================
 
             const response = await fetch(
-                endpoint,
+                `${API_URL}/api/library/scanner/verify`,
                 {
                     method: "POST",
 
@@ -164,10 +161,7 @@ export default function Scanner() {
                         "Content-Type":
                             "application/json",
 
-                        "Accept":
-                            "application/json",
-
-                        "Authorization":
+                        Authorization:
                             `Bearer ${token}`,
                     },
 
@@ -177,76 +171,51 @@ export default function Scanner() {
                 }
             );
 
+            // =================================================
+            // READ RESPONSE AS TEXT FIRST
+            // =================================================
+
+            const responseText =
+                await response.text();
+
             console.log(
                 "HTTP STATUS:",
                 response.status
             );
 
             console.log(
-                "HTTP STATUS TEXT:",
-                response.statusText
+                "SERVER RESPONSE:",
+                responseText
             );
 
-            // =====================================================
-            // READ SERVER RESPONSE
-            // =====================================================
-
-            const contentType =
-                response.headers.get(
-                    "content-type"
-                ) || "";
+            // =================================================
+            // PARSE JSON
+            // =================================================
 
             let data = null;
 
-            if (
-                contentType.includes(
-                    "application/json"
-                )
-            ) {
+            if (responseText) {
                 try {
                     data =
-                        await response.json();
+                        JSON.parse(
+                            responseText
+                        );
                 } catch (jsonError) {
-                    console.error(
-                        "JSON parsing error:",
-                        jsonError
-                    );
-
-                    throw new Error(
-                        "The server returned an invalid JSON response."
+                    console.warn(
+                        "Response is not JSON:",
+                        responseText
                     );
                 }
-            } else {
-                const text =
-                    await response.text();
-
-                console.log(
-                    "NON-JSON SERVER RESPONSE:",
-                    text
-                );
-
-                data = {
-                    message:
-                        text ||
-                        "The server returned an invalid response.",
-                };
             }
 
-            console.log(
-                "SERVER RESPONSE:",
-                data
-            );
+            // =================================================
+            // UNAUTHORIZED
+            // =================================================
 
-            // =====================================================
-            // 401 UNAUTHORIZED
-            // =====================================================
-
-            if (response.status === 401) {
-                console.error(
-                    "401 Unauthorized - JWT rejected by API."
-                );
-
-                // Remove invalid tokens
+            if (
+                response.status === 401
+            ) {
+                // Remove expired/invalid token
                 localStorage.removeItem(
                     "token"
                 );
@@ -256,52 +225,64 @@ export default function Scanner() {
                 );
 
                 throw new Error(
-                    "Your login session is invalid or expired. Please log in again."
+                    "Your login session has expired or is invalid. Please log in again."
                 );
             }
 
-            // =====================================================
-            // 403 FORBIDDEN
-            // =====================================================
+            // =================================================
+            // FORBIDDEN
+            // =================================================
 
-            if (response.status === 403) {
+            if (
+                response.status === 403
+            ) {
                 throw new Error(
                     data?.message ||
                         data?.error ||
-                        data?.data?.message ||
-                        "You are not authorized to use the library scanner."
+                        "You do not have permission to use the library scanner."
                 );
             }
 
-            // =====================================================
-            // OTHER SERVER ERRORS
-            // =====================================================
+            // =================================================
+            // OTHER HTTP ERRORS
+            // =================================================
 
             if (!response.ok) {
                 throw new Error(
                     data?.message ||
                         data?.error ||
                         data?.data?.message ||
+                        responseText ||
                         `Server returned HTTP ${response.status}.`
                 );
             }
 
-            // =====================================================
-            // SUCCESS
-            // =====================================================
+            // =================================================
+            // SUCCESS BUT EMPTY RESPONSE
+            // =================================================
 
-            const verificationResult =
-                data?.data || data;
+            if (!data) {
+                throw new Error(
+                    "The server returned an empty response."
+                );
+            }
 
             console.log(
-                "VERIFICATION RESULT:",
-                verificationResult
+                "Scanner verification:",
+                data
             );
+
+            // =================================================
+            // GET RESULT
+            // =================================================
+
+            const verificationResult =
+                data?.data ??
+                data;
 
             setResult(
                 verificationResult
             );
-
         } catch (err) {
             console.error(
                 "QR verification error:",
@@ -314,52 +295,40 @@ export default function Scanner() {
             );
         } finally {
             setLoading(false);
-            processingRef.current = false;
+
+            processingRef.current =
+                false;
         }
     };
 
     // =========================================================
-    // QR SUCCESS HANDLER
-    // =========================================================
-
-    const handleQrDetected = async (
-        decodedText
-    ) => {
-        console.log(
-            "QR detected:",
-            decodedText
-        );
-
-        if (
-            processingRef.current
-        ) {
-            return;
-        }
-
-        if (!decodedText) {
-            return;
-        }
-
-        await verifyQr(
-            decodedText
-        );
-    };
-
-    // =========================================================
-    // START SCANNER
+    // START CAMERA
     // =========================================================
 
     const startScanner = async () => {
-        // Reset state
         setResult(null);
         setError("");
-        setLoading(false);
+
         processingRef.current = false;
 
         try {
-            // =====================================================
-            // SECURE CONTEXT CHECK
-            // =====================================================
+            // =================================================
+            // CHECK API TOKEN
+            // =================================================
+
+            const token = getAuthToken();
+
+            if (!token) {
+                setError(
+                    "No login session found. Please log in again."
+                );
+
+                return;
+            }
+
+            // =================================================
+            // HTTPS CHECK
+            // =================================================
 
             if (
                 !window.isSecureContext &&
@@ -373,14 +342,13 @@ export default function Scanner() {
                 return;
             }
 
-            // =====================================================
-            // CAMERA SUPPORT CHECK
-            // =====================================================
+            // =================================================
+            // CAMERA SUPPORT
+            // =================================================
 
             if (
                 !navigator.mediaDevices ||
-                !navigator.mediaDevices
-                    .getUserMedia
+                !navigator.mediaDevices.getUserMedia
             ) {
                 setError(
                     "Camera access is not supported by this browser."
@@ -389,21 +357,17 @@ export default function Scanner() {
                 return;
             }
 
-            // =====================================================
-            // CLEAR OLD SCANNER
-            // =====================================================
+            // =================================================
+            // CLEAN OLD SCANNER
+            // =================================================
 
             await stopScanner();
 
-            // =====================================================
-            // SHOW SCANNING STATE
-            // =====================================================
+            // =================================================
+            // START SCANNING
+            // =================================================
 
             setScanning(true);
-
-            // =====================================================
-            // CREATE SCANNER
-            // =====================================================
 
             const scanner =
                 new Html5Qrcode(
@@ -413,9 +377,9 @@ export default function Scanner() {
             scannerRef.current =
                 scanner;
 
-            // =====================================================
-            // CAMERA CONFIGURATION
-            // =====================================================
+            // =================================================
+            // CAMERA CONFIG
+            // =================================================
 
             const config = {
                 fps: 10,
@@ -440,123 +404,133 @@ export default function Scanner() {
                     2,
             };
 
-            // =====================================================
-            // PRIMARY CAMERA
-            // =====================================================
-
-            console.log(
-                "Trying primary camera..."
-            );
-
-            await scanner.start(
-                {
-                    facingMode: {
-                        exact: "environment",
-                    },
-                },
-
-                config,
-
-                async (
-                    decodedText
-                ) => {
-                    await handleQrDetected(
-                        decodedText
-                    );
-                },
-
-                () => {
-                    // Normal QR scanning errors.
-                    // These happen continuously while
-                    // searching for a QR code.
-                }
-            );
-
-            console.log(
-                "Primary camera started."
-            );
-
-        } catch (primaryError) {
-            console.error(
-                "Primary camera error:",
-                primaryError
-            );
-
-            // =====================================================
-            // FALLBACK CAMERA
-            // =====================================================
+            // =================================================
+            // START ENVIRONMENT CAMERA
+            // =================================================
 
             try {
-                console.log(
-                    "Trying fallback camera..."
+                await scanner.start(
+                    {
+                        facingMode: {
+                            exact: "environment",
+                        },
+                    },
+
+                    config,
+
+                    async (
+                        decodedText
+                    ) => {
+                        console.log(
+                            "QR detected:",
+                            decodedText
+                        );
+
+                        if (
+                            processingRef.current
+                        ) {
+                            return;
+                        }
+
+                        await verifyQr(
+                            decodedText
+                        );
+                    },
+
+                    () => {
+                        // Ignore continuous
+                        // QR scanning errors.
+                    }
                 );
 
-                await stopScanner();
-
-                const cameras =
-                    await Html5Qrcode.getCameras();
-
                 console.log(
-                    "Available cameras:",
-                    cameras
+                    "Environment camera started."
                 );
 
-                if (
-                    !cameras ||
-                    cameras.length === 0
-                ) {
-                    throw new Error(
-                        "No camera was found."
+                return;
+            } catch (cameraError) {
+                console.warn(
+                    "Primary camera error:",
+                    cameraError
+                );
+            }
+
+            // =================================================
+            // FALLBACK CAMERA
+            // =================================================
+
+            await stopScanner();
+
+            console.log(
+                "Trying fallback camera..."
+            );
+
+            const cameras =
+                await Html5Qrcode.getCameras();
+
+            console.log(
+                "Available cameras:",
+                cameras
+            );
+
+            if (
+                !cameras ||
+                cameras.length === 0
+            ) {
+                throw new Error(
+                    "No camera was detected."
+                );
+            }
+
+            // =================================================
+            // SELECT CAMERA
+            // Prefer environment/back camera
+            // =================================================
+
+            let selectedCamera =
+                cameras[0];
+
+            const backCamera =
+                cameras.find((camera) => {
+                    const label =
+                        camera.label ||
+                        "";
+
+                    return (
+                        /back|rear|environment/i.test(
+                            label
+                        )
                     );
-                }
+                });
 
-                // =================================================
-                // SELECT CAMERA
-                // =================================================
+            if (backCamera) {
+                selectedCamera =
+                    backCamera;
+            }
 
-                let selectedCamera =
-                    cameras.find(
-                        (camera) =>
-                            /back|rear|environment/i.test(
-                                camera.label ||
-                                    ""
-                            )
-                    );
+            console.log(
+                "Selected camera:",
+                selectedCamera
+            );
 
-                if (
-                    !selectedCamera
-                ) {
-                    selectedCamera =
-                        cameras[
-                            cameras.length -
-                                1
-                        ];
-                }
+            // =================================================
+            // CREATE FALLBACK SCANNER
+            // =================================================
 
-                console.log(
-                    "Selected camera:",
-                    selectedCamera
+            const fallbackScanner =
+                new Html5Qrcode(
+                    "library-qr-reader"
                 );
 
-                // =================================================
-                // CREATE FALLBACK SCANNER
-                // =================================================
+            scannerRef.current =
+                fallbackScanner;
 
-                const fallbackScanner =
-                    new Html5Qrcode(
-                        "library-qr-reader"
-                    );
+            setScanning(true);
 
-                scannerRef.current =
-                    fallbackScanner;
+            await fallbackScanner.start(
+                selectedCamera.id,
 
-                setScanning(true);
-
-                // =================================================
-                // FALLBACK CONFIG
-                // =================================================
-
-                const fallbackConfig = {
+                {
                     fps: 10,
 
                     qrbox: {
@@ -577,53 +551,49 @@ export default function Scanner() {
 
                     defaultZoomValueIfSupported:
                         2,
-                };
+                },
 
-                // =================================================
-                // START FALLBACK
-                // =================================================
-
-                await fallbackScanner.start(
-                    selectedCamera.id,
-
-                    fallbackConfig,
-
-                    async (
+                async (
+                    decodedText
+                ) => {
+                    console.log(
+                        "QR detected:",
                         decodedText
-                    ) => {
-                        await handleQrDetected(
-                            decodedText
-                        );
-                    },
+                    );
 
-                    () => {
-                        // Ignore normal QR scan errors
+                    if (
+                        processingRef.current
+                    ) {
+                        return;
                     }
-                );
 
-                console.log(
-                    "Fallback camera started."
-                );
+                    await verifyQr(
+                        decodedText
+                    );
+                },
 
-                return;
+                () => {
+                    // Ignore continuous
+                    // scanning errors.
+                }
+            );
 
-            } catch (fallbackError) {
-                console.error(
-                    "Fallback camera error:",
-                    fallbackError
-                );
-            }
-
-            // =====================================================
-            // CAMERA FAILED
-            // =====================================================
+            console.log(
+                "Fallback camera started."
+            );
+        } catch (err) {
+            console.error(
+                "Camera scanner error:",
+                err
+            );
 
             await stopScanner();
 
             setScanning(false);
 
             setError(
-                "Unable to access the camera. Please allow camera permission and make sure you are using HTTPS."
+                err?.message ||
+                    "Unable to access the camera. Please allow camera permission and make sure you are using HTTPS."
             );
         }
     };
@@ -638,7 +608,9 @@ export default function Scanner() {
         setResult(null);
         setError("");
         setLoading(false);
-        processingRef.current = false;
+
+        processingRef.current =
+            false;
 
         setTimeout(() => {
             startScanner();
@@ -646,7 +618,7 @@ export default function Scanner() {
     };
 
     // =========================================================
-    // CLEANUP WHEN PAGE CLOSES
+    // CLEANUP
     // =========================================================
 
     useEffect(() => {
@@ -664,51 +636,27 @@ export default function Scanner() {
 
             <div className="mx-auto w-full max-w-2xl">
 
-                {/* ==================================================
+                {/* =====================================================
                     HEADER
-                ================================================== */}
+                ===================================================== */}
 
                 <div className="mb-6">
 
                     <div className="flex items-center gap-3">
 
-                        <div
-                            className="
-                                flex
-                                h-11
-                                w-11
-                                items-center
-                                justify-center
-                                rounded-2xl
-                                bg-[#106A2E]
-                                text-white
-                                shadow-sm
-                            "
-                        >
+                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#106A2E] text-white shadow-sm">
+
                             <QrCode size={23} />
+
                         </div>
 
                         <div>
 
-                            <p
-                                className="
-                                    text-[11px]
-                                    font-semibold
-                                    uppercase
-                                    tracking-[0.18em]
-                                    text-[#106A2E]
-                                "
-                            >
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#106A2E]">
                                 CDM LibHub
                             </p>
 
-                            <h1
-                                className="
-                                    text-2xl
-                                    font-bold
-                                    text-slate-800
-                                "
-                            >
+                            <h1 className="text-2xl font-bold text-slate-800">
                                 Library Scanner
                             </h1>
 
@@ -716,14 +664,7 @@ export default function Scanner() {
 
                     </div>
 
-                    <p
-                        className="
-                            mt-2
-                            text-sm
-                            leading-6
-                            text-slate-500
-                        "
-                    >
+                    <p className="mt-2 text-sm leading-6 text-slate-500">
                         Scan a student's or faculty
                         member's QR code to verify
                         their borrowing eligibility.
@@ -731,9 +672,9 @@ export default function Scanner() {
 
                 </div>
 
-                {/* ==================================================
+                {/* =====================================================
                     RESULT
-                ================================================== */}
+                ===================================================== */}
 
                 {result ? (
 
@@ -766,28 +707,9 @@ export default function Scanner() {
                             `}
                         >
 
-                            <div
-                                className="
-                                    flex
-                                    flex-col
-                                    items-center
-                                    text-center
-                                    text-white
-                                "
-                            >
+                            <div className="flex flex-col items-center text-center text-white">
 
-                                <div
-                                    className="
-                                        mb-3
-                                        flex
-                                        h-16
-                                        w-16
-                                        items-center
-                                        justify-center
-                                        rounded-full
-                                        bg-white/15
-                                    "
-                                >
+                                <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/15">
 
                                     {result.cleared ? (
                                         <CheckCircle2
@@ -801,26 +723,17 @@ export default function Scanner() {
 
                                 </div>
 
-                                <h2
-                                    className="
-                                        text-2xl
-                                        font-bold
-                                    "
-                                >
+                                <h2 className="text-2xl font-bold">
+
                                     {result.cleared
                                         ? "CLEARED"
                                         : "NOT CLEARED"}
+
                                 </h2>
 
-                                <p
-                                    className="
-                                        mt-1
-                                        text-sm
-                                        text-white/80
-                                    "
-                                >
+                                <p className="mt-1 text-sm text-white/80">
                                     {result.message ||
-                                        "Verification completed."}
+                                        "QR verification completed."}
                                 </p>
 
                             </div>
@@ -833,50 +746,21 @@ export default function Scanner() {
 
                             {/* NAME */}
 
-                            <div
-                                className="
-                                    flex
-                                    items-center
-                                    gap-4
-                                    rounded-2xl
-                                    bg-slate-50
-                                    p-4
-                                "
-                            >
+                            <div className="flex items-center gap-4 rounded-2xl bg-slate-50 p-4">
 
-                                <div
-                                    className="
-                                        flex
-                                        h-11
-                                        w-11
-                                        shrink-0
-                                        items-center
-                                        justify-center
-                                        rounded-xl
-                                        bg-emerald-50
-                                        text-[#106A2E]
-                                    "
-                                >
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#106A2E]">
+
                                     <User size={21} />
+
                                 </div>
 
                                 <div>
 
-                                    <p
-                                        className="
-                                            text-xs
-                                            text-slate-400
-                                        "
-                                    >
+                                    <p className="text-xs text-slate-400">
                                         Name
                                     </p>
 
-                                    <p
-                                        className="
-                                            font-semibold
-                                            text-slate-800
-                                        "
-                                    >
+                                    <p className="font-semibold text-slate-800">
                                         {result.name ||
                                             "N/A"}
                                     </p>
@@ -887,31 +771,11 @@ export default function Scanner() {
 
                             {/* ID + ROLE */}
 
-                            <div
-                                className="
-                                    grid
-                                    gap-3
-                                    sm:grid-cols-2
-                                "
-                            >
+                            <div className="grid gap-3 sm:grid-cols-2">
 
-                                <div
-                                    className="
-                                        rounded-2xl
-                                        bg-slate-50
-                                        p-4
-                                    "
-                                >
+                                <div className="rounded-2xl bg-slate-50 p-4">
 
-                                    <div
-                                        className="
-                                            mb-2
-                                            flex
-                                            items-center
-                                            gap-2
-                                            text-slate-400
-                                        "
-                                    >
+                                    <div className="mb-2 flex items-center gap-2 text-slate-400">
 
                                         <CreditCard
                                             size={16}
@@ -923,35 +787,16 @@ export default function Scanner() {
 
                                     </div>
 
-                                    <p
-                                        className="
-                                            font-semibold
-                                            text-slate-800
-                                        "
-                                    >
+                                    <p className="font-semibold text-slate-800">
                                         {result.idNumber ||
                                             "N/A"}
                                     </p>
 
                                 </div>
 
-                                <div
-                                    className="
-                                        rounded-2xl
-                                        bg-slate-50
-                                        p-4
-                                    "
-                                >
+                                <div className="rounded-2xl bg-slate-50 p-4">
 
-                                    <div
-                                        className="
-                                            mb-2
-                                            flex
-                                            items-center
-                                            gap-2
-                                            text-slate-400
-                                        "
-                                    >
+                                    <div className="mb-2 flex items-center gap-2 text-slate-400">
 
                                         <ShieldCheck
                                             size={16}
@@ -963,12 +808,7 @@ export default function Scanner() {
 
                                     </div>
 
-                                    <p
-                                        className="
-                                            font-semibold
-                                            text-slate-800
-                                        "
-                                    >
+                                    <p className="font-semibold text-slate-800">
                                         {result.role ||
                                             "N/A"}
                                     </p>
@@ -980,133 +820,48 @@ export default function Scanner() {
                             {/* INSTITUTE */}
 
                             {result.institute && (
-                                <div
-                                    className="
-                                        rounded-2xl
-                                        bg-slate-50
-                                        p-4
-                                    "
-                                >
 
-                                    <p
-                                        className="
-                                            text-xs
-                                            text-slate-400
-                                        "
-                                    >
+                                <div className="rounded-2xl bg-slate-50 p-4">
+
+                                    <p className="text-xs text-slate-400">
                                         Institute
                                     </p>
 
-                                    <p
-                                        className="
-                                            mt-1
-                                            font-semibold
-                                            text-slate-800
-                                        "
-                                    >
+                                    <p className="mt-1 font-semibold text-slate-800">
                                         {result.institute}
                                     </p>
 
                                 </div>
-                            )}
 
-                            {/* PROGRAM */}
-
-                            {result.program && (
-                                <div
-                                    className="
-                                        rounded-2xl
-                                        bg-slate-50
-                                        p-4
-                                    "
-                                >
-
-                                    <p
-                                        className="
-                                            text-xs
-                                            text-slate-400
-                                        "
-                                    >
-                                        Program
-                                    </p>
-
-                                    <p
-                                        className="
-                                            mt-1
-                                            font-semibold
-                                            text-slate-800
-                                        "
-                                    >
-                                        {result.program}
-                                    </p>
-
-                                </div>
                             )}
 
                             {/* BORROWING STATUS */}
 
-                            <div
-                                className="
-                                    rounded-2xl
-                                    border
-                                    border-slate-200
-                                    p-5
-                                "
-                            >
+                            <div className="rounded-2xl border border-slate-200 p-5">
 
-                                <div
-                                    className="
-                                        mb-4
-                                        flex
-                                        items-center
-                                        gap-2
-                                    "
-                                >
+                                <div className="mb-4 flex items-center gap-2">
 
                                     <BookOpen
                                         size={19}
                                         className="text-[#106A2E]"
                                     />
 
-                                    <h3
-                                        className="
-                                            font-semibold
-                                            text-slate-800
-                                        "
-                                    >
+                                    <h3 className="font-semibold text-slate-800">
                                         Borrowing Status
                                     </h3>
 
                                 </div>
 
-                                <div
-                                    className="
-                                        grid
-                                        grid-cols-3
-                                        gap-3
-                                        text-center
-                                    "
-                                >
+                                <div className="grid grid-cols-3 gap-3 text-center">
 
                                     <div>
 
-                                        <p
-                                            className="
-                                                text-2xl
-                                                font-bold
-                                                text-slate-800
-                                            "
-                                        >
+                                        <p className="text-2xl font-bold text-slate-800">
                                             {result.borrowedBooks ??
                                                 0}
                                         </p>
 
-                                        <p
-                                            className="
-                                                text-[11px]
-                                                text-slate-400
-                                            "
-                                        >
+                                        <p className="text-[11px] text-slate-400">
                                             Borrowed
                                         </p>
 
@@ -1114,23 +869,12 @@ export default function Scanner() {
 
                                     <div>
 
-                                        <p
-                                            className="
-                                                text-2xl
-                                                font-bold
-                                                text-slate-800
-                                            "
-                                        >
+                                        <p className="text-2xl font-bold text-slate-800">
                                             {result.borrowLimit ??
                                                 0}
                                         </p>
 
-                                        <p
-                                            className="
-                                                text-[11px]
-                                                text-slate-400
-                                            "
-                                        >
+                                        <p className="text-[11px] text-slate-400">
                                             Limit
                                         </p>
 
@@ -1143,10 +887,9 @@ export default function Scanner() {
                                                 text-2xl
                                                 font-bold
                                                 ${
-                                                    (
-                                                        result.remainingBooks ??
-                                                        0
-                                                    ) > 0
+                                                    (result.remainingBooks ??
+                                                        0) >
+                                                    0
                                                         ? "text-[#106A2E]"
                                                         : "text-red-600"
                                                 }
@@ -1156,12 +899,7 @@ export default function Scanner() {
                                                 0}
                                         </p>
 
-                                        <p
-                                            className="
-                                                text-[11px]
-                                                text-slate-400
-                                            "
-                                        >
+                                        <p className="text-[11px] text-slate-400">
                                             Remaining
                                         </p>
 
@@ -1186,24 +924,11 @@ export default function Scanner() {
                                 `}
                             >
 
-                                <p
-                                    className="
-                                        text-xs
-                                        font-medium
-                                        uppercase
-                                        tracking-wider
-                                    "
-                                >
+                                <p className="text-xs font-medium uppercase tracking-wider">
                                     Account Status
                                 </p>
 
-                                <p
-                                    className="
-                                        mt-1
-                                        text-lg
-                                        font-bold
-                                    "
-                                >
+                                <p className="mt-1 text-lg font-bold">
                                     {result.status ||
                                         "N/A"}
                                 </p>
@@ -1214,7 +939,9 @@ export default function Scanner() {
 
                             <button
                                 type="button"
-                                onClick={scanAgain}
+                                onClick={
+                                    scanAgain
+                                }
                                 className="
                                     flex
                                     w-full
@@ -1248,63 +975,30 @@ export default function Scanner() {
 
                 ) : (
 
-                    /* ==================================================
+                    /* =====================================================
                        SCANNER
-                    ================================================== */
+                    ===================================================== */
 
-                    <div
-                        className="
-                            overflow-hidden
-                            rounded-3xl
-                            border
-                            border-slate-200
-                            bg-white
-                            shadow-sm
-                        "
-                    >
+                    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
 
                         {/* HEADER */}
 
-                        <div
-                            className="
-                                border-b
-                                border-slate-100
-                                px-5
-                                py-4
-                            "
-                        >
+                        <div className="border-b border-slate-100 px-5 py-4">
 
-                            <div
-                                className="
-                                    flex
-                                    items-center
-                                    gap-2
-                                "
-                            >
+                            <div className="flex items-center gap-2">
 
                                 <Camera
                                     size={18}
                                     className="text-[#106A2E]"
                                 />
 
-                                <span
-                                    className="
-                                        font-semibold
-                                        text-slate-800
-                                    "
-                                >
+                                <span className="font-semibold text-slate-800">
                                     Scan QR Code
                                 </span>
 
                             </div>
 
-                            <p
-                                className="
-                                    mt-1
-                                    text-xs
-                                    text-slate-500
-                                "
-                            >
+                            <p className="mt-1 text-xs text-slate-500">
                                 Position the QR code inside
                                 the scanning area.
                             </p>
@@ -1313,16 +1007,7 @@ export default function Scanner() {
 
                         {/* CAMERA AREA */}
 
-                        <div
-                            className="
-                                relative
-                                overflow-hidden
-                                bg-slate-950
-                                p-4
-                            "
-                        >
-
-                            {/* HTML5 QR CONTAINER */}
+                        <div className="relative overflow-hidden bg-slate-950 p-4">
 
                             <div
                                 id="library-qr-reader"
@@ -1341,33 +1026,9 @@ export default function Scanner() {
                             {!scanning &&
                                 !loading && (
 
-                                    <div
-                                        className="
-                                            absolute
-                                            inset-0
-                                            flex
-                                            flex-col
-                                            items-center
-                                            justify-center
-                                            bg-slate-950
-                                            px-6
-                                            text-center
-                                        "
-                                    >
+                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 px-6 text-center">
 
-                                        <div
-                                            className="
-                                                mb-4
-                                                flex
-                                                h-16
-                                                w-16
-                                                items-center
-                                                justify-center
-                                                rounded-full
-                                                bg-white/10
-                                                text-white
-                                            "
-                                        >
+                                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-white">
 
                                             <QrCode
                                                 size={32}
@@ -1375,24 +1036,11 @@ export default function Scanner() {
 
                                         </div>
 
-                                        <h2
-                                            className="
-                                                text-lg
-                                                font-semibold
-                                                text-white
-                                            "
-                                        >
+                                        <h2 className="text-lg font-semibold text-white">
                                             Ready to Scan
                                         </h2>
 
-                                        <p
-                                            className="
-                                                mt-2
-                                                max-w-xs
-                                                text-sm
-                                                text-slate-300
-                                            "
-                                        >
+                                        <p className="mt-2 max-w-xs text-sm text-slate-300">
                                             Use this device's
                                             camera to scan a
                                             CDM Library
@@ -1440,44 +1088,18 @@ export default function Scanner() {
 
                             {loading && (
 
-                                <div
-                                    className="
-                                        absolute
-                                        inset-0
-                                        flex
-                                        flex-col
-                                        items-center
-                                        justify-center
-                                        bg-slate-950/90
-                                    "
-                                >
+                                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-slate-950/90">
 
                                     <Loader2
                                         size={42}
-                                        className="
-                                            animate-spin
-                                            text-white
-                                        "
+                                        className="animate-spin text-white"
                                     />
 
-                                    <p
-                                        className="
-                                            mt-4
-                                            text-lg
-                                            font-semibold
-                                            text-white
-                                        "
-                                    >
+                                    <p className="mt-4 text-lg font-semibold text-white">
                                         Checking account...
                                     </p>
 
-                                    <p
-                                        className="
-                                            mt-2
-                                            text-sm
-                                            text-slate-300
-                                        "
-                                    >
+                                    <p className="mt-2 text-sm text-slate-300">
                                         Please wait.
                                     </p>
 
@@ -1492,14 +1114,7 @@ export default function Scanner() {
                         {scanning &&
                             !loading && (
 
-                                <div
-                                    className="
-                                        flex
-                                        justify-center
-                                        px-5
-                                        py-4
-                                    "
-                                >
+                                <div className="flex justify-center px-5 py-4">
 
                                     <button
                                         type="button"
@@ -1530,20 +1145,10 @@ export default function Scanner() {
 
                         {error && (
 
-                            <div
-                                className="
-                                    m-4
-                                    rounded-2xl
-                                    border
-                                    border-red-200
-                                    bg-red-50
-                                    px-4
-                                    py-3
-                                    text-sm
-                                    text-red-700
-                                "
-                            >
+                            <div className="m-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+
                                 {error}
+
                             </div>
 
                         )}
