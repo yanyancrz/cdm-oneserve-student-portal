@@ -1,4 +1,3 @@
-import { API_URL } from "../../config/api";
 import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import {
@@ -14,6 +13,8 @@ import {
     Loader2,
 } from "lucide-react";
 
+import { API_URL } from "../../config/api";
+
 export default function Scanner() {
     const scannerRef = useRef(null);
     const processingRef = useRef(false);
@@ -23,9 +24,9 @@ export default function Scanner() {
     const [result, setResult] = useState(null);
     const [error, setError] = useState("");
 
-    // ==========================================
+    // =========================================================
     // STOP SCANNER
-    // ==========================================
+    // =========================================================
 
     const stopScanner = async () => {
         const scanner = scannerRef.current;
@@ -53,30 +54,34 @@ export default function Scanner() {
             }
         } catch (err) {
             console.warn(
-                "Scanner cleanup:",
+                "Scanner cleanup warning:",
                 err
             );
-        } finally {
-            scannerRef.current = null;
-            setScanning(false);
         }
+
+        scannerRef.current = null;
+        setScanning(false);
     };
 
-    // ==========================================
+    // =========================================================
+    // GET AUTH TOKEN
+    // =========================================================
+
+    const getAuthToken = () => {
+        const token =
+            localStorage.getItem("token") ||
+            localStorage.getItem("authToken");
+
+        return token;
+    };
+
+    // =========================================================
     // VERIFY QR WITH API
-    // ==========================================
+    // =========================================================
 
     const verifyQr = async (qrText) => {
-        // Prevent duplicate QR processing
+        // Prevent duplicate requests
         if (processingRef.current) {
-            return;
-        }
-
-        if (!qrText) {
-            setError(
-                "Unable to read the QR code."
-            );
-
             return;
         }
 
@@ -101,20 +106,15 @@ export default function Scanner() {
             );
 
             console.log(
-                "VERIFY ENDPOINT:",
-                `${API_URL}/api/library/scanner/verify`
-            );
-
-            console.log(
                 "================================="
             );
 
-            // Stop camera before API verification
+            // Stop camera first
             await stopScanner();
 
-            // ======================================
+            // =====================================================
             // CHECK API URL
-            // ======================================
+            // =====================================================
 
             if (!API_URL) {
                 throw new Error(
@@ -122,18 +122,53 @@ export default function Scanner() {
                 );
             }
 
-            // ======================================
-            // VERIFY QR
-            // ======================================
+            // =====================================================
+            // GET JWT TOKEN
+            // =====================================================
+
+            const token = getAuthToken();
+
+            console.log(
+                "JWT TOKEN EXISTS:",
+                Boolean(token)
+            );
+
+            if (!token) {
+                throw new Error(
+                    "Your login session is missing or expired. Please log in again."
+                );
+            }
+
+            // =====================================================
+            // API ENDPOINT
+            // =====================================================
+
+            const endpoint =
+                `${API_URL}/api/library/scanner/verify`;
+
+            console.log(
+                "VERIFY ENDPOINT:",
+                endpoint
+            );
+
+            // =====================================================
+            // SEND REQUEST
+            // =====================================================
 
             const response = await fetch(
-                `${API_URL}/api/library/scanner/verify`,
+                endpoint,
                 {
                     method: "POST",
 
                     headers: {
                         "Content-Type":
                             "application/json",
+
+                        "Accept":
+                            "application/json",
+
+                        "Authorization":
+                            `Bearer ${token}`,
                     },
 
                     body: JSON.stringify({
@@ -142,45 +177,131 @@ export default function Scanner() {
                 }
             );
 
-            // ======================================
-            // READ API RESPONSE
-            // ======================================
+            console.log(
+                "HTTP STATUS:",
+                response.status
+            );
+
+            console.log(
+                "HTTP STATUS TEXT:",
+                response.statusText
+            );
+
+            // =====================================================
+            // READ SERVER RESPONSE
+            // =====================================================
+
+            const contentType =
+                response.headers.get(
+                    "content-type"
+                ) || "";
 
             let data = null;
 
-            try {
-                data =
-                    await response.json();
-            } catch {
-                throw new Error(
-                    "The server returned an invalid response."
+            if (
+                contentType.includes(
+                    "application/json"
+                )
+            ) {
+                try {
+                    data =
+                        await response.json();
+                } catch (jsonError) {
+                    console.error(
+                        "JSON parsing error:",
+                        jsonError
+                    );
+
+                    throw new Error(
+                        "The server returned an invalid JSON response."
+                    );
+                }
+            } else {
+                const text =
+                    await response.text();
+
+                console.log(
+                    "NON-JSON SERVER RESPONSE:",
+                    text
                 );
+
+                data = {
+                    message:
+                        text ||
+                        "The server returned an invalid response.",
+                };
             }
 
             console.log(
-                "Scanner verification:",
+                "SERVER RESPONSE:",
                 data
             );
 
-            // ======================================
-            // API ERROR
-            // ======================================
+            // =====================================================
+            // 401 UNAUTHORIZED
+            // =====================================================
+
+            if (response.status === 401) {
+                console.error(
+                    "401 Unauthorized - JWT rejected by API."
+                );
+
+                // Remove invalid tokens
+                localStorage.removeItem(
+                    "token"
+                );
+
+                localStorage.removeItem(
+                    "authToken"
+                );
+
+                throw new Error(
+                    "Your login session is invalid or expired. Please log in again."
+                );
+            }
+
+            // =====================================================
+            // 403 FORBIDDEN
+            // =====================================================
+
+            if (response.status === 403) {
+                throw new Error(
+                    data?.message ||
+                        data?.error ||
+                        data?.data?.message ||
+                        "You are not authorized to use the library scanner."
+                );
+            }
+
+            // =====================================================
+            // OTHER SERVER ERRORS
+            // =====================================================
 
             if (!response.ok) {
                 throw new Error(
                     data?.message ||
+                        data?.error ||
                         data?.data?.message ||
-                        "Unable to verify QR code."
+                        `Server returned HTTP ${response.status}.`
                 );
             }
 
-            // ======================================
+            // =====================================================
             // SUCCESS
-            // ======================================
+            // =====================================================
+
+            const verificationResult =
+                data?.data || data;
+
+            console.log(
+                "VERIFICATION RESULT:",
+                verificationResult
+            );
 
             setResult(
-                data?.data || data
+                verificationResult
             );
+
         } catch (err) {
             console.error(
                 "QR verification error:",
@@ -193,14 +314,13 @@ export default function Scanner() {
             );
         } finally {
             setLoading(false);
-
             processingRef.current = false;
         }
     };
 
-    // ==========================================
-    // QR DETECTED
-    // ==========================================
+    // =========================================================
+    // QR SUCCESS HANDLER
+    // =========================================================
 
     const handleQrDetected = async (
         decodedText
@@ -225,49 +345,37 @@ export default function Scanner() {
         );
     };
 
-    // ==========================================
-    // START CAMERA
-    // ==========================================
+    // =========================================================
+    // START SCANNER
+    // =========================================================
 
     const startScanner = async () => {
-        // Reset UI
+        // Reset state
         setResult(null);
         setError("");
         setLoading(false);
-
         processingRef.current = false;
 
-        // ======================================
-        // STOP EXISTING SCANNER
-        // ======================================
-
-        await stopScanner();
-
         try {
-            // ======================================
-            // HTTPS / SECURE CONTEXT
-            // ======================================
-
-            const isLocalhost =
-                window.location.hostname ===
-                    "localhost" ||
-                window.location.hostname ===
-                    "127.0.0.1";
+            // =====================================================
+            // SECURE CONTEXT CHECK
+            // =====================================================
 
             if (
                 !window.isSecureContext &&
-                !isLocalhost
+                window.location.hostname !==
+                    "localhost"
             ) {
                 setError(
-                    "Camera access requires HTTPS. Please open CDM OneServe using your secure HTTPS website."
+                    "Camera access requires HTTPS. Please open the secure CDM OneServe website."
                 );
 
                 return;
             }
 
-            // ======================================
-            // CAMERA SUPPORT
-            // ======================================
+            // =====================================================
+            // CAMERA SUPPORT CHECK
+            // =====================================================
 
             if (
                 !navigator.mediaDevices ||
@@ -281,37 +389,21 @@ export default function Scanner() {
                 return;
             }
 
-            // ======================================
-            // CHECK CAMERA PERMISSION
-            // ======================================
+            // =====================================================
+            // CLEAR OLD SCANNER
+            // =====================================================
 
-            try {
-                const permission =
-                    await navigator.permissions?.query(
-                        {
-                            name: "camera",
-                        }
-                    );
+            await stopScanner();
 
-                if (
-                    permission &&
-                    permission.state ===
-                        "denied"
-                ) {
-                    setError(
-                        "Camera permission is blocked. Please allow camera access in your browser settings."
-                    );
+            // =====================================================
+            // SHOW SCANNING STATE
+            // =====================================================
 
-                    return;
-                }
-            } catch {
-                // Some browsers do not support
-                // camera permission query.
-            }
+            setScanning(true);
 
-            // ======================================
+            // =====================================================
             // CREATE SCANNER
-            // ======================================
+            // =====================================================
 
             const scanner =
                 new Html5Qrcode(
@@ -321,11 +413,9 @@ export default function Scanner() {
             scannerRef.current =
                 scanner;
 
-            setScanning(true);
-
-            // ======================================
-            // CAMERA CONFIG
-            // ======================================
+            // =====================================================
+            // CAMERA CONFIGURATION
+            // =====================================================
 
             const config = {
                 fps: 10,
@@ -350,9 +440,13 @@ export default function Scanner() {
                     2,
             };
 
-            // ======================================
-            // START ENVIRONMENT CAMERA
-            // ======================================
+            // =====================================================
+            // PRIMARY CAMERA
+            // =====================================================
+
+            console.log(
+                "Trying primary camera..."
+            );
 
             await scanner.start(
                 {
@@ -373,96 +467,126 @@ export default function Scanner() {
 
                 () => {
                     // Normal QR scanning errors.
-                    // These occur continuously while
+                    // These happen continuously while
                     // searching for a QR code.
                 }
             );
 
             console.log(
-                "Camera scanner started."
+                "Primary camera started."
             );
-        } catch (err) {
+
+        } catch (primaryError) {
             console.error(
                 "Primary camera error:",
-                err
+                primaryError
             );
 
-            // ======================================
+            // =====================================================
             // FALLBACK CAMERA
-            // ======================================
+            // =====================================================
 
             try {
-                await stopScanner();
-
                 console.log(
                     "Trying fallback camera..."
                 );
 
+                await stopScanner();
+
                 const cameras =
                     await Html5Qrcode.getCameras();
+
+                console.log(
+                    "Available cameras:",
+                    cameras
+                );
 
                 if (
                     !cameras ||
                     cameras.length === 0
                 ) {
                     throw new Error(
-                        "No camera detected."
+                        "No camera was found."
                     );
                 }
 
-                // Prefer rear camera
-                const rearCamera =
+                // =================================================
+                // SELECT CAMERA
+                // =================================================
+
+                let selectedCamera =
                     cameras.find(
                         (camera) =>
                             /back|rear|environment/i.test(
-                                camera.label
+                                camera.label ||
+                                    ""
                             )
                     );
 
-                const selectedCamera =
-                    rearCamera ||
-                    cameras[0];
+                if (
+                    !selectedCamera
+                ) {
+                    selectedCamera =
+                        cameras[
+                            cameras.length -
+                                1
+                        ];
+                }
 
                 console.log(
                     "Selected camera:",
                     selectedCamera
                 );
 
-                const scanner =
+                // =================================================
+                // CREATE FALLBACK SCANNER
+                // =================================================
+
+                const fallbackScanner =
                     new Html5Qrcode(
                         "library-qr-reader"
                     );
 
                 scannerRef.current =
-                    scanner;
+                    fallbackScanner;
 
                 setScanning(true);
 
-                await scanner.start(
+                // =================================================
+                // FALLBACK CONFIG
+                // =================================================
+
+                const fallbackConfig = {
+                    fps: 10,
+
+                    qrbox: {
+                        width: 250,
+                        height: 250,
+                    },
+
+                    aspectRatio: 1,
+
+                    rememberLastUsedCamera:
+                        true,
+
+                    showTorchButtonIfSupported:
+                        true,
+
+                    showZoomSliderIfSupported:
+                        true,
+
+                    defaultZoomValueIfSupported:
+                        2,
+                };
+
+                // =================================================
+                // START FALLBACK
+                // =================================================
+
+                await fallbackScanner.start(
                     selectedCamera.id,
 
-                    {
-                        fps: 10,
-
-                        qrbox: {
-                            width: 250,
-                            height: 250,
-                        },
-
-                        aspectRatio: 1,
-
-                        rememberLastUsedCamera:
-                            true,
-
-                        showTorchButtonIfSupported:
-                            true,
-
-                        showZoomSliderIfSupported:
-                            true,
-
-                        defaultZoomValueIfSupported:
-                            2,
-                    },
+                    fallbackConfig,
 
                     async (
                         decodedText
@@ -473,7 +597,7 @@ export default function Scanner() {
                     },
 
                     () => {
-                        // Ignore normal scan errors
+                        // Ignore normal QR scan errors
                     }
                 );
 
@@ -482,6 +606,7 @@ export default function Scanner() {
                 );
 
                 return;
+
             } catch (fallbackError) {
                 console.error(
                     "Fallback camera error:",
@@ -489,11 +614,13 @@ export default function Scanner() {
                 );
             }
 
-            // ======================================
+            // =====================================================
             // CAMERA FAILED
-            // ======================================
+            // =====================================================
 
             await stopScanner();
+
+            setScanning(false);
 
             setError(
                 "Unable to access the camera. Please allow camera permission and make sure you are using HTTPS."
@@ -501,9 +628,9 @@ export default function Scanner() {
         }
     };
 
-    // ==========================================
+    // =========================================================
     // SCAN AGAIN
-    // ==========================================
+    // =========================================================
 
     const scanAgain = async () => {
         await stopScanner();
@@ -511,67 +638,77 @@ export default function Scanner() {
         setResult(null);
         setError("");
         setLoading(false);
-
-        processingRef.current =
-            false;
+        processingRef.current = false;
 
         setTimeout(() => {
             startScanner();
         }, 300);
     };
 
-    // ==========================================
-    // CLEANUP
-    // ==========================================
+    // =========================================================
+    // CLEANUP WHEN PAGE CLOSES
+    // =========================================================
 
     useEffect(() => {
         return () => {
-            const cleanup =
-                async () => {
-                    try {
-                        await stopScanner();
-                    } catch (err) {
-                        console.warn(
-                            "Scanner cleanup error:",
-                            err
-                        );
-                    }
-                };
-
-            cleanup();
+            stopScanner();
         };
     }, []);
 
-    // ==========================================
+    // =========================================================
     // UI
-    // ==========================================
+    // =========================================================
 
     return (
         <div className="min-h-screen bg-[#f6f8f5] px-4 py-6 sm:px-6">
 
             <div className="mx-auto w-full max-w-2xl">
 
-                {/* ==================================
+                {/* ==================================================
                     HEADER
-                ================================== */}
+                ================================================== */}
 
                 <div className="mb-6">
 
                     <div className="flex items-center gap-3">
 
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#106A2E] text-white shadow-sm">
-
+                        <div
+                            className="
+                                flex
+                                h-11
+                                w-11
+                                items-center
+                                justify-center
+                                rounded-2xl
+                                bg-[#106A2E]
+                                text-white
+                                shadow-sm
+                            "
+                        >
                             <QrCode size={23} />
-
                         </div>
 
                         <div>
 
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#106A2E]">
+                            <p
+                                className="
+                                    text-[11px]
+                                    font-semibold
+                                    uppercase
+                                    tracking-[0.18em]
+                                    text-[#106A2E]
+                                "
+                            >
                                 CDM LibHub
                             </p>
 
-                            <h1 className="text-2xl font-bold text-slate-800">
+                            <h1
+                                className="
+                                    text-2xl
+                                    font-bold
+                                    text-slate-800
+                                "
+                            >
                                 Library Scanner
                             </h1>
 
@@ -579,7 +716,14 @@ export default function Scanner() {
 
                     </div>
 
-                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                    <p
+                        className="
+                            mt-2
+                            text-sm
+                            leading-6
+                            text-slate-500
+                        "
+                    >
                         Scan a student's or faculty
                         member's QR code to verify
                         their borrowing eligibility.
@@ -587,9 +731,9 @@ export default function Scanner() {
 
                 </div>
 
-                {/* ==================================
+                {/* ==================================================
                     RESULT
-                ================================== */}
+                ================================================== */}
 
                 {result ? (
 
@@ -622,39 +766,61 @@ export default function Scanner() {
                             `}
                         >
 
-                            <div className="flex flex-col items-center text-center text-white">
+                            <div
+                                className="
+                                    flex
+                                    flex-col
+                                    items-center
+                                    text-center
+                                    text-white
+                                "
+                            >
 
-                                <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/15">
+                                <div
+                                    className="
+                                        mb-3
+                                        flex
+                                        h-16
+                                        w-16
+                                        items-center
+                                        justify-center
+                                        rounded-full
+                                        bg-white/15
+                                    "
+                                >
 
                                     {result.cleared ? (
-
                                         <CheckCircle2
                                             size={38}
                                         />
-
                                     ) : (
-
                                         <XCircle
                                             size={38}
                                         />
-
                                     )}
 
                                 </div>
 
-                                <h2 className="text-2xl font-bold">
-
+                                <h2
+                                    className="
+                                        text-2xl
+                                        font-bold
+                                    "
+                                >
                                     {result.cleared
                                         ? "CLEARED"
                                         : "NOT CLEARED"}
-
                                 </h2>
 
-                                <p className="mt-1 text-sm text-white/80">
-
+                                <p
+                                    className="
+                                        mt-1
+                                        text-sm
+                                        text-white/80
+                                    "
+                                >
                                     {result.message ||
-                                        "QR verification completed."}
-
+                                        "Verification completed."}
                                 </p>
 
                             </div>
@@ -667,21 +833,50 @@ export default function Scanner() {
 
                             {/* NAME */}
 
-                            <div className="flex items-center gap-4 rounded-2xl bg-slate-50 p-4">
+                            <div
+                                className="
+                                    flex
+                                    items-center
+                                    gap-4
+                                    rounded-2xl
+                                    bg-slate-50
+                                    p-4
+                                "
+                            >
 
-                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#106A2E]">
-
+                                <div
+                                    className="
+                                        flex
+                                        h-11
+                                        w-11
+                                        shrink-0
+                                        items-center
+                                        justify-center
+                                        rounded-xl
+                                        bg-emerald-50
+                                        text-[#106A2E]
+                                    "
+                                >
                                     <User size={21} />
-
                                 </div>
 
                                 <div>
 
-                                    <p className="text-xs text-slate-400">
+                                    <p
+                                        className="
+                                            text-xs
+                                            text-slate-400
+                                        "
+                                    >
                                         Name
                                     </p>
 
-                                    <p className="font-semibold text-slate-800">
+                                    <p
+                                        className="
+                                            font-semibold
+                                            text-slate-800
+                                        "
+                                    >
                                         {result.name ||
                                             "N/A"}
                                     </p>
@@ -692,11 +887,31 @@ export default function Scanner() {
 
                             {/* ID + ROLE */}
 
-                            <div className="grid gap-3 sm:grid-cols-2">
+                            <div
+                                className="
+                                    grid
+                                    gap-3
+                                    sm:grid-cols-2
+                                "
+                            >
 
-                                <div className="rounded-2xl bg-slate-50 p-4">
+                                <div
+                                    className="
+                                        rounded-2xl
+                                        bg-slate-50
+                                        p-4
+                                    "
+                                >
 
-                                    <div className="mb-2 flex items-center gap-2 text-slate-400">
+                                    <div
+                                        className="
+                                            mb-2
+                                            flex
+                                            items-center
+                                            gap-2
+                                            text-slate-400
+                                        "
+                                    >
 
                                         <CreditCard
                                             size={16}
@@ -708,16 +923,35 @@ export default function Scanner() {
 
                                     </div>
 
-                                    <p className="font-semibold text-slate-800">
+                                    <p
+                                        className="
+                                            font-semibold
+                                            text-slate-800
+                                        "
+                                    >
                                         {result.idNumber ||
                                             "N/A"}
                                     </p>
 
                                 </div>
 
-                                <div className="rounded-2xl bg-slate-50 p-4">
+                                <div
+                                    className="
+                                        rounded-2xl
+                                        bg-slate-50
+                                        p-4
+                                    "
+                                >
 
-                                    <div className="mb-2 flex items-center gap-2 text-slate-400">
+                                    <div
+                                        className="
+                                            mb-2
+                                            flex
+                                            items-center
+                                            gap-2
+                                            text-slate-400
+                                        "
+                                    >
 
                                         <ShieldCheck
                                             size={16}
@@ -729,7 +963,12 @@ export default function Scanner() {
 
                                     </div>
 
-                                    <p className="font-semibold text-slate-800">
+                                    <p
+                                        className="
+                                            font-semibold
+                                            text-slate-800
+                                        "
+                                    >
                                         {result.role ||
                                             "N/A"}
                                     </p>
@@ -741,48 +980,133 @@ export default function Scanner() {
                             {/* INSTITUTE */}
 
                             {result.institute && (
+                                <div
+                                    className="
+                                        rounded-2xl
+                                        bg-slate-50
+                                        p-4
+                                    "
+                                >
 
-                                <div className="rounded-2xl bg-slate-50 p-4">
-
-                                    <p className="text-xs text-slate-400">
+                                    <p
+                                        className="
+                                            text-xs
+                                            text-slate-400
+                                        "
+                                    >
                                         Institute
                                     </p>
 
-                                    <p className="mt-1 font-semibold text-slate-800">
+                                    <p
+                                        className="
+                                            mt-1
+                                            font-semibold
+                                            text-slate-800
+                                        "
+                                    >
                                         {result.institute}
                                     </p>
 
                                 </div>
+                            )}
 
+                            {/* PROGRAM */}
+
+                            {result.program && (
+                                <div
+                                    className="
+                                        rounded-2xl
+                                        bg-slate-50
+                                        p-4
+                                    "
+                                >
+
+                                    <p
+                                        className="
+                                            text-xs
+                                            text-slate-400
+                                        "
+                                    >
+                                        Program
+                                    </p>
+
+                                    <p
+                                        className="
+                                            mt-1
+                                            font-semibold
+                                            text-slate-800
+                                        "
+                                    >
+                                        {result.program}
+                                    </p>
+
+                                </div>
                             )}
 
                             {/* BORROWING STATUS */}
 
-                            <div className="rounded-2xl border border-slate-200 p-5">
+                            <div
+                                className="
+                                    rounded-2xl
+                                    border
+                                    border-slate-200
+                                    p-5
+                                "
+                            >
 
-                                <div className="mb-4 flex items-center gap-2">
+                                <div
+                                    className="
+                                        mb-4
+                                        flex
+                                        items-center
+                                        gap-2
+                                    "
+                                >
 
                                     <BookOpen
                                         size={19}
                                         className="text-[#106A2E]"
                                     />
 
-                                    <h3 className="font-semibold text-slate-800">
+                                    <h3
+                                        className="
+                                            font-semibold
+                                            text-slate-800
+                                        "
+                                    >
                                         Borrowing Status
                                     </h3>
 
                                 </div>
 
-                                <div className="grid grid-cols-3 gap-3 text-center">
+                                <div
+                                    className="
+                                        grid
+                                        grid-cols-3
+                                        gap-3
+                                        text-center
+                                    "
+                                >
 
                                     <div>
 
-                                        <p className="text-2xl font-bold text-slate-800">
+                                        <p
+                                            className="
+                                                text-2xl
+                                                font-bold
+                                                text-slate-800
+                                            "
+                                        >
                                             {result.borrowedBooks ??
                                                 0}
                                         </p>
 
-                                        <p className="text-[11px] text-slate-400">
+                                        <p
+                                            className="
+                                                text-[11px]
+                                                text-slate-400
+                                            "
+                                        >
                                             Borrowed
                                         </p>
 
@@ -790,12 +1114,23 @@ export default function Scanner() {
 
                                     <div>
 
-                                        <p className="text-2xl font-bold text-slate-800">
+                                        <p
+                                            className="
+                                                text-2xl
+                                                font-bold
+                                                text-slate-800
+                                            "
+                                        >
                                             {result.borrowLimit ??
                                                 0}
                                         </p>
 
-                                        <p className="text-[11px] text-slate-400">
+                                        <p
+                                            className="
+                                                text-[11px]
+                                                text-slate-400
+                                            "
+                                        >
                                             Limit
                                         </p>
 
@@ -808,21 +1143,25 @@ export default function Scanner() {
                                                 text-2xl
                                                 font-bold
                                                 ${
-                                                    (result.remainingBooks ??
-                                                        0) >
-                                                    0
+                                                    (
+                                                        result.remainingBooks ??
+                                                        0
+                                                    ) > 0
                                                         ? "text-[#106A2E]"
                                                         : "text-red-600"
                                                 }
                                             `}
                                         >
-
                                             {result.remainingBooks ??
                                                 0}
-
                                         </p>
 
-                                        <p className="text-[11px] text-slate-400">
+                                        <p
+                                            className="
+                                                text-[11px]
+                                                text-slate-400
+                                            "
+                                        >
                                             Remaining
                                         </p>
 
@@ -847,11 +1186,24 @@ export default function Scanner() {
                                 `}
                             >
 
-                                <p className="text-xs font-medium uppercase tracking-wider">
+                                <p
+                                    className="
+                                        text-xs
+                                        font-medium
+                                        uppercase
+                                        tracking-wider
+                                    "
+                                >
                                     Account Status
                                 </p>
 
-                                <p className="mt-1 text-lg font-bold">
+                                <p
+                                    className="
+                                        mt-1
+                                        text-lg
+                                        font-bold
+                                    "
+                                >
                                     {result.status ||
                                         "N/A"}
                                 </p>
@@ -896,30 +1248,63 @@ export default function Scanner() {
 
                 ) : (
 
-                    /* ==================================
+                    /* ==================================================
                        SCANNER
-                    ================================== */
+                    ================================================== */
 
-                    <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+                    <div
+                        className="
+                            overflow-hidden
+                            rounded-3xl
+                            border
+                            border-slate-200
+                            bg-white
+                            shadow-sm
+                        "
+                    >
 
                         {/* HEADER */}
 
-                        <div className="border-b border-slate-100 px-5 py-4">
+                        <div
+                            className="
+                                border-b
+                                border-slate-100
+                                px-5
+                                py-4
+                            "
+                        >
 
-                            <div className="flex items-center gap-2">
+                            <div
+                                className="
+                                    flex
+                                    items-center
+                                    gap-2
+                                "
+                            >
 
                                 <Camera
                                     size={18}
                                     className="text-[#106A2E]"
                                 />
 
-                                <span className="font-semibold text-slate-800">
+                                <span
+                                    className="
+                                        font-semibold
+                                        text-slate-800
+                                    "
+                                >
                                     Scan QR Code
                                 </span>
 
                             </div>
 
-                            <p className="mt-1 text-xs text-slate-500">
+                            <p
+                                className="
+                                    mt-1
+                                    text-xs
+                                    text-slate-500
+                                "
+                            >
                                 Position the QR code inside
                                 the scanning area.
                             </p>
@@ -928,7 +1313,16 @@ export default function Scanner() {
 
                         {/* CAMERA AREA */}
 
-                        <div className="relative overflow-hidden bg-slate-950 p-4">
+                        <div
+                            className="
+                                relative
+                                overflow-hidden
+                                bg-slate-950
+                                p-4
+                            "
+                        >
+
+                            {/* HTML5 QR CONTAINER */}
 
                             <div
                                 id="library-qr-reader"
@@ -947,9 +1341,33 @@ export default function Scanner() {
                             {!scanning &&
                                 !loading && (
 
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 px-6 text-center">
+                                    <div
+                                        className="
+                                            absolute
+                                            inset-0
+                                            flex
+                                            flex-col
+                                            items-center
+                                            justify-center
+                                            bg-slate-950
+                                            px-6
+                                            text-center
+                                        "
+                                    >
 
-                                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-white">
+                                        <div
+                                            className="
+                                                mb-4
+                                                flex
+                                                h-16
+                                                w-16
+                                                items-center
+                                                justify-center
+                                                rounded-full
+                                                bg-white/10
+                                                text-white
+                                            "
+                                        >
 
                                             <QrCode
                                                 size={32}
@@ -957,11 +1375,24 @@ export default function Scanner() {
 
                                         </div>
 
-                                        <h2 className="text-lg font-semibold text-white">
+                                        <h2
+                                            className="
+                                                text-lg
+                                                font-semibold
+                                                text-white
+                                            "
+                                        >
                                             Ready to Scan
                                         </h2>
 
-                                        <p className="mt-2 max-w-xs text-sm text-slate-300">
+                                        <p
+                                            className="
+                                                mt-2
+                                                max-w-xs
+                                                text-sm
+                                                text-slate-300
+                                            "
+                                        >
                                             Use this device's
                                             camera to scan a
                                             CDM Library
@@ -1009,18 +1440,44 @@ export default function Scanner() {
 
                             {loading && (
 
-                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950/90">
+                                <div
+                                    className="
+                                        absolute
+                                        inset-0
+                                        flex
+                                        flex-col
+                                        items-center
+                                        justify-center
+                                        bg-slate-950/90
+                                    "
+                                >
 
                                     <Loader2
                                         size={42}
-                                        className="animate-spin text-white"
+                                        className="
+                                            animate-spin
+                                            text-white
+                                        "
                                     />
 
-                                    <p className="mt-4 text-lg font-semibold text-white">
+                                    <p
+                                        className="
+                                            mt-4
+                                            text-lg
+                                            font-semibold
+                                            text-white
+                                        "
+                                    >
                                         Checking account...
                                     </p>
 
-                                    <p className="mt-2 text-sm text-slate-300">
+                                    <p
+                                        className="
+                                            mt-2
+                                            text-sm
+                                            text-slate-300
+                                        "
+                                    >
                                         Please wait.
                                     </p>
 
@@ -1035,7 +1492,14 @@ export default function Scanner() {
                         {scanning &&
                             !loading && (
 
-                                <div className="flex justify-center px-5 py-4">
+                                <div
+                                    className="
+                                        flex
+                                        justify-center
+                                        px-5
+                                        py-4
+                                    "
+                                >
 
                                     <button
                                         type="button"
@@ -1066,10 +1530,20 @@ export default function Scanner() {
 
                         {error && (
 
-                            <div className="m-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-
+                            <div
+                                className="
+                                    m-4
+                                    rounded-2xl
+                                    border
+                                    border-red-200
+                                    bg-red-50
+                                    px-4
+                                    py-3
+                                    text-sm
+                                    text-red-700
+                                "
+                            >
                                 {error}
-
                             </div>
 
                         )}
