@@ -107,7 +107,39 @@ export default function Profile() {
 
     // Small reusable pulsing block for skeleton state
     const Bone = ({ className = "" }) => (
-        <div className={`animate-pulse bg-gray-300/90 rounded-lg ${className}`} />
+        <div className={`animate-pulse bg-slate-200/70 rounded-lg ${className}`} />
+    );
+
+
+    // ==========================================
+    // SHARED BACKGROUND (decorative blurs + grid)
+    // ==========================================
+
+    const PageBackground = () => (
+        <>
+            <div className="pointer-events-none fixed inset-0 overflow-hidden">
+                <div className="absolute -left-28 -top-28 h-96 w-96 rounded-full bg-emerald-400/10 blur-3xl" />
+                <div className="absolute right-[-140px] top-[30%] h-[32rem] w-[32rem] rounded-full bg-cyan-300/10 blur-3xl" />
+                <div className="absolute bottom-[-120px] left-[30%] h-[28rem] w-[28rem] rounded-full bg-amber-300/10 blur-3xl" />
+                <div className="absolute inset-0 opacity-[0.035] bg-[linear-gradient(rgba(16,106,46,.35)_1px,transparent_1px),linear-gradient(90deg,rgba(16,106,46,.35)_1px,transparent_1px)] bg-[size:40px_40px]" />
+            </div>
+
+            <style>{`
+                @keyframes profileReveal {
+                    from {
+                        opacity: 0;
+                        transform: translateY(15px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                .profile-reveal {
+                    animation: profileReveal .65s cubic-bezier(.2,.8,.2,1) both;
+                }
+            `}</style>
+        </>
     );
 
 
@@ -121,39 +153,17 @@ export default function Profile() {
 
             <div
                 className="
+                    relative
                     min-h-screen
+                    overflow-hidden
+                    bg-[#F7F5EF]
                     p-4
                     pb-24
-                    relative
-                    overflow-hidden
+                    md:pt-24
                 "
             >
 
-                {/* DECORATIVE BLOBS */}
-
-                <div
-                    className="
-                        absolute
-                        -top-20
-                        -right-20
-                        w-64
-                        h-64
-                        rounded-full
-                        bg-[#106A2E]/[0.06]
-                    "
-                />
-
-                <div
-                    className="
-                        absolute
-                        -bottom-24
-                        -left-16
-                        w-56
-                        h-56
-                        rounded-full
-                        bg-[#F4D35E]/[0.15]
-                    "
-                />
+                <PageBackground />
 
                 <div
                     className="
@@ -170,7 +180,7 @@ export default function Profile() {
                         className="
                             text-lg
                             font-semibold
-                            text-[#1F1F1F]
+                            text-slate-800
                             pt-4
                             mb-4
                         "
@@ -183,11 +193,10 @@ export default function Profile() {
                     <div
                         className="
                             bg-white
-                            rounded-3xl
-                            shadow-xl
-                            shadow-[#106A2E]/10
+                            rounded-[24px]
+                            shadow-sm
                             border
-                            border-[#106A2E]/[0.06]
+                            border-slate-200
                             overflow-hidden
                         "
                     >
@@ -199,7 +208,7 @@ export default function Profile() {
                                 h-20
                                 bg-gradient-to-r
                                 from-[#106A2E]
-                                to-[#0D7856]
+                                to-[#0E3B22]
                             "
                         />
 
@@ -214,7 +223,7 @@ export default function Profile() {
                             "
                         >
 
-                            <Bone className="w-24 h-24 rounded-full border-4 border-white shadow-md !bg-gray-300" />
+                            <Bone className="w-24 h-24 rounded-full border-4 border-white shadow-md !bg-slate-200" />
 
                             <Bone className="h-5 w-40 mt-4" />
 
@@ -231,11 +240,10 @@ export default function Profile() {
                     <div
                         className="
                             bg-white
-                            rounded-3xl
-                            shadow-xl
-                            shadow-[#106A2E]/10
+                            rounded-[24px]
+                            shadow-sm
                             border
-                            border-[#106A2E]/[0.06]
+                            border-slate-200
                             p-6
                             mt-4
                         "
@@ -284,45 +292,22 @@ export default function Profile() {
 
         <div
             className="
+                relative
                 min-h-screen
+                overflow-hidden
+                bg-[#F7F5EF]
                 p-4
                 pb-24
-                relative
-                overflow-hidden
+                md:pt-24
             "
         >
 
-            {/* ==========================================
-                DECORATIVE BLOBS
-            ========================================== */}
-
-            <div
-                className="
-                    absolute
-                    -top-20
-                    -right-20
-                    w-64
-                    h-64
-                    rounded-full
-                    bg-[#106A2E]/[0.06]
-                "
-            />
-
-            <div
-                className="
-                    absolute
-                    -bottom-24
-                    -left-16
-                    w-56
-                    h-56
-                    rounded-full
-                    bg-[#F4D35E]/[0.15]
-                "
-            />
+            <PageBackground />
 
 
             <div
                 className="
+                    profile-reveal
                     max-w-md
                     mx-auto
                     relative
@@ -339,7 +324,7 @@ export default function Profile() {
                     className="
                         text-lg
                         font-semibold
-                        text-[#1F1F1F]
+                        text-slate-800
                         pt-4
                         mb-4
                     "
@@ -355,11 +340,10 @@ export default function Profile() {
                 <div
                     className="
                         bg-white
-                        rounded-3xl
-                        shadow-xl
-                        shadow-[#106A2E]/10
+                        rounded-[24px]
+                        shadow-sm
                         border
-                        border-[#106A2E]/[0.06]
+                        border-slate-200
                         overflow-hidden
                     "
                 >
@@ -371,7 +355,7 @@ export default function Profile() {
                             h-20
                             bg-gradient-to-r
                             from-[#106A2E]
-                            to-[#0D7856]
+                            to-[#0E3B22]
                         "
                     />
 
@@ -416,7 +400,7 @@ export default function Profile() {
                             className="
                                 text-xl
                                 font-semibold
-                                text-[#1F1F1F]
+                                text-slate-800
                                 mt-3
                             "
                         >
@@ -429,7 +413,7 @@ export default function Profile() {
                         <p
                             className="
                                 text-sm
-                                text-gray-500
+                                text-slate-400
                                 mt-0.5
                             "
                         >
@@ -444,7 +428,7 @@ export default function Profile() {
                                 inline-flex
                                 items-center
                                 gap-1.5
-                                bg-[#106A2E]/10
+                                bg-emerald-50
                                 text-[#106A2E]
                                 text-xs
                                 font-medium
@@ -460,7 +444,7 @@ export default function Profile() {
                                     w-1.5
                                     h-1.5
                                     rounded-full
-                                    bg-[#106A2E]
+                                    bg-emerald-500
                                 "
                             />
 
@@ -482,11 +466,10 @@ export default function Profile() {
                 <div
                     className="
                         bg-white
-                        rounded-3xl
-                        shadow-xl
-                        shadow-[#106A2E]/10
+                        rounded-[24px]
+                        shadow-sm
                         border
-                        border-[#106A2E]/[0.06]
+                        border-slate-200
                         p-6
                         mt-4
                     "
@@ -499,7 +482,7 @@ export default function Profile() {
                         className="
                             text-sm
                             font-semibold
-                            text-[#1F1F1F]
+                            text-slate-800
                             mb-4
                         "
                     >
@@ -529,7 +512,7 @@ export default function Profile() {
                                     w-9
                                     h-9
                                     rounded-lg
-                                    bg-[#106A2E]/10
+                                    bg-emerald-50
                                     flex
                                     items-center
                                     justify-center
@@ -565,7 +548,7 @@ export default function Profile() {
 
                             <div>
 
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-slate-400">
                                     Email
                                 </p>
 
@@ -573,7 +556,7 @@ export default function Profile() {
                                     className="
                                         text-sm
                                         font-medium
-                                        text-[#1F1F1F]
+                                        text-slate-800
                                     "
                                 >
                                     {student.email || "Not Set"}
@@ -602,7 +585,7 @@ export default function Profile() {
                                     w-9
                                     h-9
                                     rounded-lg
-                                    bg-[#106A2E]/10
+                                    bg-emerald-50
                                     flex
                                     items-center
                                     justify-center
@@ -649,7 +632,7 @@ export default function Profile() {
 
                             <div>
 
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-slate-400">
                                     {isFaculty
                                         ? "Institute"
                                         : "Program"}
@@ -660,7 +643,7 @@ export default function Profile() {
                                     className="
                                         text-sm
                                         font-medium
-                                        text-[#1F1F1F]
+                                        text-slate-800
                                     "
                                 >
 
@@ -700,7 +683,7 @@ export default function Profile() {
                                         w-9
                                         h-9
                                         rounded-lg
-                                        bg-[#106A2E]/10
+                                        bg-emerald-50
                                         flex
                                         items-center
                                         justify-center
@@ -740,7 +723,7 @@ export default function Profile() {
 
                                 <div>
 
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-slate-400">
                                         Year Level
                                     </p>
 
@@ -749,7 +732,7 @@ export default function Profile() {
                                         className="
                                             text-sm
                                             font-medium
-                                            text-[#1F1F1F]
+                                            text-slate-800
                                         "
                                     >
                                         {student.yearLevel ||
@@ -782,7 +765,7 @@ export default function Profile() {
                                         w-9
                                         h-9
                                         rounded-lg
-                                        bg-[#106A2E]/10
+                                        bg-emerald-50
                                         flex
                                         items-center
                                         justify-center
@@ -816,7 +799,7 @@ export default function Profile() {
 
                                 <div>
 
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-slate-400">
                                         Student Status
                                     </p>
 
@@ -825,7 +808,7 @@ export default function Profile() {
                                         className="
                                             text-sm
                                             font-medium
-                                            text-[#1F1F1F]
+                                            text-slate-800
                                         "
                                     >
                                         {student.studentStatus ||
@@ -858,7 +841,7 @@ export default function Profile() {
                                         w-9
                                         h-9
                                         rounded-lg
-                                        bg-[#106A2E]/10
+                                        bg-emerald-50
                                         flex
                                         items-center
                                         justify-center
@@ -918,7 +901,7 @@ export default function Profile() {
 
                                 <div>
 
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-xs text-slate-400">
                                         Faculty Position
                                     </p>
 
@@ -927,7 +910,7 @@ export default function Profile() {
                                         className="
                                             text-sm
                                             font-medium
-                                            text-[#1F1F1F]
+                                            text-slate-800
                                         "
                                     >
                                         {student.position ||
@@ -958,7 +941,7 @@ export default function Profile() {
                                     w-9
                                     h-9
                                     rounded-lg
-                                    bg-[#106A2E]/10
+                                    bg-emerald-50
                                     flex
                                     items-center
                                     justify-center
@@ -996,7 +979,7 @@ export default function Profile() {
 
                             <div>
 
-                                <p className="text-xs text-gray-500">
+                                <p className="text-xs text-slate-400">
                                     Contact Number
                                 </p>
 
@@ -1005,7 +988,7 @@ export default function Profile() {
                                     className="
                                         text-sm
                                         font-medium
-                                        text-[#1F1F1F]
+                                        text-slate-800
                                     "
                                 >
                                     {student.contactNumber ||
@@ -1033,13 +1016,18 @@ export default function Profile() {
                     className="
                         w-full
                         mt-4
-                        bg-[#106A2E]
-                        hover:bg-[#0D7856]
+                        bg-gradient-to-br
+                        from-[#106A2E]
+                        to-[#0E3B22]
+                        hover:opacity-90
+                        active:scale-[0.98]
                         text-white
                         p-3
                         rounded-xl
                         font-semibold
                         transition-all
+                        shadow-lg
+                        shadow-emerald-900/20
                     "
                 >
                     Edit Profile

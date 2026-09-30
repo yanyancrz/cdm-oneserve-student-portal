@@ -1,6 +1,14 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 // ==========================================
+// PWA GUARD
+// ==========================================
+
+import PWAInstallGuard from "./components/PWAInstallGuard/PWAInstallGuard";
+
+import DeviceRestriction from "./components/DeviceRestriction/DeviceRestriction";
+
+// ==========================================
 // AUTH / PUBLIC PAGES
 // ==========================================
 
@@ -15,8 +23,6 @@ import ResetPassword from "./pages/Auth/ResetPassword";
 // ==========================================
 
 import Dashboard from "./pages/Dashboard/Dashboard";
-import RequestDigitalID from "./pages/RequestDigitalID/RequestDigitalID";
-import ViewDigitalID from "./pages/ViewDigitalID/ViewDigitalID";
 import Profile from "./pages/Profile/Profile";
 import SetupProfile from "./pages/Profile/SetupProfile";
 import EditProfile from "./pages/Profile/EditProfile";
@@ -35,17 +41,11 @@ import StudentLayout from "./layouts/StudentLayout";
 
 import LibraryDashboard from "./pages/Library/Dashboard";
 import BrowseBooks from "./pages/Library/BrowseBooks";
-import BorrowBook from "./pages/Library/BorrowBook";
 import ReserveBook from "./pages/Library/ReserveBook";
-import RenewBook from "./pages/Library/RenewBook";
 import BorrowHistory from "./pages/Library/BorrowHistory";
-import Favorites from "./pages/Library/Favorites";
-import LibraryClearance from "./pages/Library/LibraryClearance";
-import AskLibrarian from "./pages/Library/AskLibrarian";
-import Notifications from "./pages/Library/Notifications";
-import SuggestBook from "./pages/Library/SuggestBook";
 import BookDetails from "./pages/Library/BookDetails";
-import BorrowClaimPass from "./pages/Library/BorrowClaimPass";
+import AccessPass from "./pages/Library/AccessPass";
+import Scanner from "./pages/Library/Scanner";
 
 // ==========================================
 // LOST & FOUND - USER
@@ -54,19 +54,27 @@ import BorrowClaimPass from "./pages/Library/BorrowClaimPass";
 import LostFound from "./pages/LostFound/LostFound";
 
 // ==========================================
-// DIGITAL ID ADMIN LAYOUT
+// BUSINESS HUB - USER
+// ==========================================
+
+import BusinessHub from "./pages/BusinessHub/BusinessHub";
+
+// ==========================================
+// ADMIN LAYOUT
 // ==========================================
 
 import AdminLayout from "./layouts/AdminLayout";
 
 // ==========================================
-// DIGITAL ID ADMIN PAGES
+// ADMIN PAGES
 // ==========================================
 
 import AdminDashboard from "./pages/Admin/AdminDashboard";
-import DigitalIDRequests from "./pages/Admin/DigitalIDRequests";
+import RegistrationVerification from "./pages/Admin/RegistrationVerification";
 import Users from "./pages/Admin/Users";
 import AdminProfile from "./pages/Admin/AdminProfile";
+import SchoolRecords from "./pages/Admin/SchoolRecords";
+import Announcements from "./pages/Admin/Announcements";
 
 // ==========================================
 // LOST & FOUND ADMIN LAYOUT
@@ -83,10 +91,6 @@ import LostFoundReports from "./pages/Admin/Lost&FoundAdmin/LostFoundReports";
 import LostFoundMatches from "./pages/Admin/Lost&FoundAdmin/LostFoundMatches";
 import LostFoundClaims from "./pages/Admin/Lost&FoundAdmin/LostFoundClaims";
 
-// Future Lost & Found Admin pages
-// import LostFoundNotifications from "./pages/Admin/Lost&FoundAdmin/LostFoundNotifications";
-// import LostFoundAdminProfile from "./pages/Admin/Lost&FoundAdmin/AdminProfile";
-
 
 function App() {
     return (
@@ -95,63 +99,120 @@ function App() {
             <Routes>
 
                 {/* ==================================================
-                    PUBLIC PAGES
+                    PWA REQUIRED
+                    AUTH / PUBLIC PAGES
+                    ==================================================
+
+                    These pages are accessible only from the
+                    installed CDM OneServe PWA.
+
+                    Normal browser:
+                    ❌ BLOCKED
+
+                    Installed PWA:
+                    ✅ ALLOWED
                 ================================================== */}
 
                 <Route
                     path="/"
-                    element={<Login />}
+                    element={
+                        <PWAInstallGuard>
+                            <Login />
+                        </PWAInstallGuard>
+                    }
                 />
 
                 <Route
                     path="/register"
-                    element={<Register />}
+                    element={
+                        <PWAInstallGuard>
+                            <Register />
+                        </PWAInstallGuard>
+                    }
                 />
 
                 <Route
                     path="/otp"
-                    element={<OTPVerification />}
-                />
-
-                <Route
-                    path="/setup-profile"
-                    element={<SetupProfile />}
+                    element={
+                        <PWAInstallGuard>
+                            <OTPVerification />
+                        </PWAInstallGuard>
+                    }
                 />
 
                 <Route
                     path="/forgot-password"
-                    element={<ForgotPassword />}
+                    element={
+                        <PWAInstallGuard>
+                            <ForgotPassword />
+                        </PWAInstallGuard>
+                    }
                 />
 
                 <Route
                     path="/reset-password"
-                    element={<ResetPassword />}
-                />
-
-                <Route
-                    path="/edit-profile"
-                    element={<EditProfile />}
-                />
-
-                <Route
-                    path="/request-digital-id"
-                    element={<RequestDigitalID />}
-                />
-
-                <Route
-                    path="/library/ask-librarian"
-                    element={<AskLibrarian />}
+                    element={
+                        <PWAInstallGuard>
+                            <ResetPassword />
+                        </PWAInstallGuard>
+                    }
                 />
 
 
                 {/* ==================================================
-                    STUDENT / FACULTY PAGES
+                    LIBRARY STAFF / QR SCANNER
+                    ==================================================
+
+                    IMPORTANT:
+
+                    THIS IS THE ONLY MAIN EXCEPTION.
+
+                    Scanner can be opened from:
+
+                    Desktop browser       ✅
+                    Mobile browser        ✅
+                    Tablet browser        ✅
+                    Installed PWA         ✅
+
+                    No PWA restriction here.
+
+                    Later we can add ROLE protection so only
+                    Library Staff can actually use it.
                 ================================================== */}
 
-                <Route element={<StudentLayout />}>
+                <Route
+                    path="/library/scanner"
+                    element={<Scanner />}
+                />
+
+
+                {/* ==================================================
+                    STUDENT / FACULTY PORTAL
+                    ==================================================
+
+                    PWA REQUIRED
+
+                    Device restriction will be added here:
+
+                    Mobile / Tablet:
+                    ✅ ALLOW
+
+                    Desktop:
+                    ❌ BLOCK
+                ================================================== */}
+
+                <Route
+                    element={
+                        <PWAInstallGuard>
+                            <DeviceRestriction type="mobile">
+                                <StudentLayout />
+                            </DeviceRestriction>
+                        </PWAInstallGuard>
+                    }
+                >
 
                     {/* =========================
-                        DASHBOARD
+                        MAIN DASHBOARD
                     ========================= */}
 
                     <Route
@@ -181,32 +242,12 @@ function App() {
 
 
                     {/* =========================
-                        DIGITAL ID
-                    ========================= */}
-
-                    <Route
-                        path="/view-digital-id"
-                        element={<ViewDigitalID />}
-                    />
-
-                    <Route
-                        path="/request-digital-id"
-                        element={<RequestDigitalID />}
-                    />
-
-
-                    {/* =========================
                         SETUP PROFILE
                     ========================= */}
 
                     <Route
                         path="/setup-profile"
                         element={<SetupProfile />}
-                    />
-
-                    <Route
-                        path="/edit-profile"
-                        element={<EditProfile />}
                     />
 
 
@@ -225,7 +266,7 @@ function App() {
 
 
                     {/* ==================================================
-                        LIBRARY
+                        CDM LIBHUB
                     ================================================== */}
 
                     <Route
@@ -239,8 +280,8 @@ function App() {
                     />
 
                     <Route
-                        path="/library/borrow"
-                        element={<BorrowBook />}
+                        path="/library/book/:bookId"
+                        element={<BookDetails />}
                     />
 
                     <Route
@@ -249,48 +290,28 @@ function App() {
                     />
 
                     <Route
-                        path="/library/renew"
-                        element={<RenewBook />}
-                    />
-
-                    <Route
-                        path="/library/borrow-history"
+                        path="/library/loans"
                         element={<BorrowHistory />}
                     />
 
                     <Route
-                        path="/library/favorites"
-                        element={<Favorites />}
-                    />
-
-                    <Route
-                        path="/library/clearance"
-                        element={<LibraryClearance />}
-                    />
-
-                    <Route
-                        path="/library/notifications"
-                        element={<Notifications />}
-                    />
-
-                    <Route
-                        path="/library/suggest"
-                        element={<SuggestBook />}
-                    />
-
-                    <Route
-                        path="/library/book/:bookId"
-                        element={<BookDetails />}
-                    />
-
-                    <Route
-                        path="/library/borrow-pass/:borrowId"
-                        element={<BorrowClaimPass />}
+                        path="/library/access-pass"
+                        element={<AccessPass />}
                     />
 
 
                     {/* ==================================================
-                        LOST & FOUND - STUDENT / FACULTY
+                        BUSINESS HUB
+                    ================================================== */}
+
+                    <Route
+                        path="/business-hub"
+                        element={<BusinessHub />}
+                    />
+
+
+                    {/* ==================================================
+                        LOST & FOUND
                     ================================================== */}
 
                     <Route
@@ -302,36 +323,58 @@ function App() {
 
 
                 {/* ==================================================
-                    DIGITAL ID ADMIN PORTAL
+                    ADMIN PORTAL
+                    ==================================================
+
+                    PWA REQUIRED
+
+                    Device restriction will be added:
+
+                    Desktop:
+                    ✅ ALLOW
+
+                    Mobile / Tablet:
+                    ❌ BLOCK
                 ================================================== */}
 
                 <Route
-                    path="/admin"
-                    element={<AdminLayout />}
+                    element={
+                        <PWAInstallGuard>
+                            <DeviceRestriction type="desktop">
+                                <AdminLayout />
+                            </DeviceRestriction>
+                        </PWAInstallGuard>
+                    }
                 >
 
-                    {/* =========================
-                        DIGITAL ID ADMIN
-                    ========================= */}
-
                     <Route
-                        path="dashboard"
+                        path="/admin/dashboard"
                         element={<AdminDashboard />}
                     />
 
                     <Route
-                        path="requests"
-                        element={<DigitalIDRequests />}
+                        path="/admin/verification"
+                        element={<RegistrationVerification />}
                     />
 
                     <Route
-                        path="users"
+                        path="/admin/users"
                         element={<Users />}
                     />
 
                     <Route
-                        path="profile"
+                        path="/admin/profile"
                         element={<AdminProfile />}
+                    />
+
+                    <Route
+                        path="/admin/school-records"
+                        element={<SchoolRecords />}
+                    />
+
+                    <Route
+                        path="/admin/announcements"
+                        element={<Announcements />}
                     />
 
                 </Route>
@@ -339,46 +382,44 @@ function App() {
 
                 {/* ==================================================
                     LOST & FOUND ADMIN PORTAL
+                    ==================================================
+
+                    PWA REQUIRED
+
+                    Desktop:
+                    ✅ ALLOW
+
+                    Mobile / Tablet:
+                    ❌ BLOCK
                 ================================================== */}
 
                 <Route
-                    path="/admin/lost-found"
-                    element={<LostFoundAdminLayout />}
+                    element={
+                        <PWAInstallGuard>
+                            <LostFoundAdminLayout />
+                        </PWAInstallGuard>
+                    }
                 >
 
                     <Route
-                        path="dashboard"
+                        path="/admin/lost-found/dashboard"
                         element={<LostFoundAdminDashboard />}
                     />
 
                     <Route
-                        path="reports"
+                        path="/admin/lost-found/reports"
                         element={<LostFoundReports />}
                     />
 
                     <Route
-                        path="matches"
+                        path="/admin/lost-found/matches"
                         element={<LostFoundMatches />}
                     />
 
                     <Route
-                        path="claims"
+                        path="/admin/lost-found/claims"
                         element={<LostFoundClaims />}
                     />
-
-                    {/* Future pages */}
-
-                    {/*
-                    <Route
-                        path="notifications"
-                        element={<LostFoundNotifications />}
-                    />
-
-                    <Route
-                        path="profile"
-                        element={<LostFoundAdminProfile />}
-                    />
-                    */}
 
                 </Route>
 

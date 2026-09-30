@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CDM OneServe</string>
+    <string name="title_activity_main">CDM OneServe</string>
+    <string name="package_name">com.cdm.oneserve</string>
+    <string name="custom_url_scheme">com.cdm.oneserve</string>
+</resources>

@@ -1,710 +1,894 @@
-import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { API_URL } from "../../config/api";
-
-// Library-module components (each in its own file under components/Library/)
-import WelcomeCard from "../../components/Library/WelcomeCard";
-import QuickActions from "../../components/Library/QuickActions";
-import AnnouncementCarousel from "../../components/Library/AnnouncementCarousel";
-import RecentlyAddedBooks from "../../components/Library/RecentlyAddedBooks";
-import RecommendedBooks from "../../components/Library/RecommendedBooks";
-import ActivityCard from "../../components/Library/ActivityCard";
-import NotificationCard from "../../components/Library/NotificationCard";
-
-import { getCurrentBorrowedBooks } from "../../services/libraryService";
-import { getBooks } from "../../services/libraryService";
-import { getLibraryActivities } from "../../services/libraryService";
-import { getMyReservations } from "../../services/libraryService";
-import { getNotifications } from "../../services/libraryService";
-
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-    mockStudentLibraryStatus,
-    mockAnnouncements,
-} from "../../data/mockLibraryData";
+    BookOpen,
+    CalendarDays,
+    ChevronRight,
+    LibraryBig,
+    QrCode,
+    Search,
+    UserRound,
+    Clock3,
+} from "lucide-react";
+import toast from "react-hot-toast";
+
+import { API_URL } from "../../config/api";
+import LibraryBottomNav from "../../components/BottomNavigation/LibraryBottomNav";
+
+// IMPORTANT:
+// Kung nasa ibang folder ang curated_books.json,
+// palitan lang ang import path na ito.
+import curatedBooksList from "./curated_books.json";
 
 export default function Dashboard() {
-
     const navigate = useNavigate();
+
     const [user, setUser] = useState(null);
-    const [digitalIdStatus, setDigitalIdStatus] = useState(null);
-    const [isLoadingAccess, setIsLoadingAccess] = useState(true);
-    const [currentBorrowed, setCurrentBorrowed] = useState([]);
-    const [borrowedBooks, setBorrowedBooks] = useState([]);
-    const [books, setBooks] = useState([]);
-    const [loadingBooks, setLoadingBooks] = useState(true);
-    const [recentActivities, setRecentActivities] = useState([]);
-    const [loadingActivities, setLoadingActivities] = useState(true);    
-    const [reservations, setReservations] = useState([]);
-    const [notifications, setNotifications] = useState([]);
-    const [loadingNotifications, setLoadingNotifications] = useState(true);
+    const [accessPass, setAccessPass] = useState(null);
+    const [search, setSearch] = useState("");
+    const [selectedInstitute, setSelectedInstitute] = useState("ALL");
+    const [isLoading, setIsLoading] = useState(true);
+
+    // =========================================================
+    // LOAD USER
+    // =========================================================
 
     useEffect(() => {
-
-        const loadNotifications = async () => {
-
-            const userId = Number(localStorage.getItem("userId"));
-
-            if (!userId) {
-                setLoadingNotifications(false);
-                return;
-            }
-
-            try {
-
-                const data = await getNotifications(userId);
-
-                setNotifications(data.data ?? data);
-
-            } catch (error) {
-
-                console.error("Failed to load notifications:", error);
-
-            } finally {
-
-                setLoadingNotifications(false);
-
-            }
-
-        };
-
-        loadNotifications();
-
-    }, []);
-
-
-
-    useEffect(() => {
-
-    const loadReservations = async () => {
-
-        const userId = Number(localStorage.getItem("userId"));
-
-        if (!userId) return;
-
-        try {
-
-            const data = await getMyReservations(userId);
-
-            setReservations(data);
-
-        }
-        catch (error) {
-
-            console.error("Failed to load reservations:", error);
-
-        }
-
-    };
-
-    loadReservations();
-
-}, []);
-    
-    useEffect(() => {
-
-        const loadActivities = async () => {
-
-            const userId = Number(localStorage.getItem("userId"));
-
-            if (!userId) return;
-
-            try {
-
-                const data = await getLibraryActivities(userId);
-
-                setRecentActivities(data);
-
-            } catch (error) {
-
-                console.error(error);
-
-            } finally {
-
-                setLoadingActivities(false);
-
-            }
-
-        };
-
-        loadActivities();
-
-    }, []);
-
-    useEffect(() => {
-
         const email = localStorage.getItem("userEmail");
 
-        Promise.all([
-            fetch(`${API_URL}/api/profile/${email}`).then((res) => res.json()),
-            fetch(`${API_URL}/api/digitalid/${email}`).then((res) => res.json()),
-        ])
-            .then(([profileData, idData]) => {
-                setUser(profileData);
-                setDigitalIdStatus(idData);
-            })
-            .catch(console.error)
-            .finally(() => setIsLoadingAccess(false));
+        if (!email) {
+            navigate("/");
+            return;
+        }
 
-    }, []);
-    
-    useEffect(() => {
-
-        const loadBorrowedBooks = async () => {
-
-            const userId = Number(localStorage.getItem("userId"));
-
-            if (!userId) return;
-
+        const loadUser = async () => {
             try {
+                const response = await fetch(
+                    `${API_URL}/api/profile/${encodeURIComponent(email)}`
+                );
 
-                const data = await getCurrentBorrowedBooks(userId);
+                if (!response.ok) {
+                    throw new Error("Unable to load profile.");
+                }
 
-                setBorrowedBooks(data);
+                const data = await response.json();
+                setUser(data);
 
+                // Load access pass using the actual user ID
+                if (data?.id) {
+                    try {
+                        const passResponse = await fetch(
+                            `${API_URL}/api/library/access-pass/${data.id}`
+                        );
+
+                        if (passResponse.ok) {
+                            const passData = await passResponse.json();
+
+                            if (passData?.success) {
+                                setAccessPass(passData.data);
+                            }
+                        }
+                    } catch (error) {
+                        console.error(
+                            "Access pass loading error:",
+                            error
+                        );
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+                toast.error("Unable to load your library profile.");
+            } finally {
+                setIsLoading(false);
             }
-            catch (error) {
-
-                console.error("Failed to load borrowed books:", error);
-
-            }
-
         };
 
-        loadBorrowedBooks();
+        loadUser();
+    }, [navigate]);
 
-    }, []);
+    // =========================================================
+    // USER DATA
+    // =========================================================
 
-    const hasDigitalId = digitalIdStatus?.hasDigitalId ?? false;
+    const userName =
+        user?.fullName ||
+        localStorage.getItem("userName") ||
+        "Student";
 
-    // NOTE: confirm the actual field name for the ID number against the
-    // /api/digitalid/:email response — falling back gracefully until then.
-    const digitalIdNumber =
-        digitalIdStatus?.idNumber ||
-        digitalIdStatus?.digitalIdNumber ||
-        digitalIdStatus?.studentNumber ||
-        "—";
+    const firstName =
+        userName.split(" ")[0] || "Student";
 
-    const studentName = user?.fullName || localStorage.getItem("userName") || "Student";
+    const userId =
+        user?.id ||
+        Number(localStorage.getItem("userId")) ||
+        null;
 
-   const activeBorrowTransactions = borrowedBooks.filter(
-    (book) =>
-        book.status === "Borrowed" ||
-        book.status === "ForClaiming"
-);
+    const institute =
+        user?.institute ||
+        accessPass?.institute ||
+        "";
 
-    const todayLabel = new Date().toLocaleDateString("en-US", {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-    });
+    const program =
+        user?.course ||
+        accessPass?.program ||
+        "";
 
-    // Recently added: newest additions first, top 6
-    const recentlyAddedBooks = books.slice(0, 6);
+    // =========================================================
+    // CURATED BOOKS
+    // =========================================================
 
-    // Recommended books: available and in stock, top 4 
-    const borrowedIds = borrowedBooks.map(book => book.bookId);
+    const books = Array.isArray(curatedBooksList)
+        ? curatedBooksList
+        : [];
 
-   const recommendedBooks = books
-    .filter(book =>
-        book.status === "Available" &&
-        book.availableCopies > 0 &&
-        !borrowedIds.includes(book.bookId)
-    )
-    .slice(0, 5);
+    const institutes = [
+        {
+            id: "ALL",
+            label: "All",
+        },
+        {
+            id: "ICS",
+            label: "ICS",
+        },
+        {
+            id: "ITE",
+            label: "ITE",
+        },
+        {
+            id: "IBE",
+            label: "IBE",
+        },
+        {
+            id: "CAS",
+            label: "CAS",
+        },
+    ];
 
-    // Only the latest few notifications preview on the dashboard;
-    // the full list lives on /library/notifications
-    const notificationPreview = notifications.slice(0, 3);
-    
-    const latestActivities = recentActivities.slice(0, 5);
+    const filteredBooks = useMemo(() => {
+        const keyword = search.trim().toLowerCase();
 
-    const loadBooks = async () => {
+        return books.filter((book) => {
+            const matchesInstitute =
+                selectedInstitute === "ALL" ||
+                String(book.institute || "")
+                    .toUpperCase()
+                    .includes(selectedInstitute);
 
-        try {
+            const searchableText = [
+                book.title,
+                book.author,
+                book.category,
+                book.institute,
+                book.program,
+                book.isbn,
+            ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
 
-            const response = await getBooks();
+            const matchesSearch =
+                !keyword ||
+                searchableText.includes(keyword);
 
-            setBooks(response.data);
+            return matchesInstitute && matchesSearch;
+        });
+    }, [
+        books,
+        search,
+        selectedInstitute,
+    ]);
 
+    // Show a small selection on dashboard.
+    const featuredBooks = filteredBooks.slice(0, 6);
+
+    // =========================================================
+    // DATE
+    // =========================================================
+
+    const today = new Date().toLocaleDateString(
+        "en-US",
+        {
+            weekday: "long",
+            month: "long",
+            day: "numeric",
+            year: "numeric",
         }
-        catch (error) {
+    );
 
-            console.error("Failed to load books:", error);
+    // =========================================================
+    // BOOK AVAILABILITY
+    // =========================================================
 
+    const getAvailability = (book) => {
+        const available =
+            Number(book.availableCopies ?? 0);
+
+        const total =
+            Number(book.totalCopies ?? 0);
+
+        if (available <= 0) {
+            return {
+                label: "Unavailable",
+                className:
+                    "bg-red-50 text-red-600",
+            };
         }
-        finally {
 
-            setLoadingBooks(false);
-
+        if (
+            total > 0 &&
+            available <= Math.ceil(total * 0.25)
+        ) {
+            return {
+                label: `${available} left`,
+                className:
+                    "bg-amber-50 text-amber-700",
+            };
         }
 
+        return {
+            label: `${available} available`,
+            className:
+                "bg-emerald-50 text-emerald-700",
+        };
     };
 
-    useEffect(() => {
+    // =========================================================
+    // NAVIGATION
+    // =========================================================
 
-        loadBooks();
+    const goToBooks = () => {
+        navigate("/library/books");
+    };
 
-    }, []);
+    const goToAccessPass = () => {
+        navigate("/library/access-pass");
+    };
 
-    // Small reusable pulsing block for skeleton state
-    const Bone = ({ className = "" }) => (
-        <div className={`animate-pulse bg-gray-300/90 rounded-lg ${className}`} />
+    const goToLoans = () => {
+        navigate("/library/loans");
+    };
+
+    const goToReservations = () => {
+        navigate("/library/reserve");
+    };
+
+    // =========================================================
+    // SKELETON
+    // =========================================================
+
+    const Skeleton = ({ className = "" }) => (
+        <div
+            className={`animate-pulse rounded-xl bg-slate-200 ${className}`}
+        />
     );
 
-    // A single skeleton "book cover" card, used for both book rows below
-    const BookSkeletonCard = ({ skeletonKey }) => (
-        <div key={skeletonKey} className="bg-white/80 rounded-2xl shadow-sm p-3 flex-shrink-0 w-32">
-            <Bone className="w-full h-36 rounded-xl mb-3" />
-            <Bone className="h-3 w-full mb-1.5" />
-            <Bone className="h-2.5 w-2/3" />
-        </div>
-    );
-
-    if (isLoadingAccess) {
-        return (
-
-            <div
-                className="min-h-screen p-4 sm:p-6 pb-24"
-                style={{
-                    background: "linear-gradient(160deg, #d7ead9 0%, #cfe9de 45%, #fcf0c8 100%)"
-                }}
-            >
-
-                <div className="max-w-md sm:max-w-2xl lg:max-w-5xl mx-auto">
-
-                    {/* PAGE TITLE */}
-                    <div className="flex items-center justify-between mb-6">
-                        <div>
-                            <h1 className="text-2xl sm:text-3xl font-semibold text-[#1F1F1F] tracking-tight">
-                                Library
-                            </h1>
-                            <p className="text-gray-500 text-sm mt-0.5">
-                                CDM: OneServe
-                            </p>
-                        </div>
-                        <Bone className="w-11 h-11 rounded-full !bg-white/60 flex-shrink-0" />
-                    </div>
-
-                    {/* WELCOME CARD */}
-                    <Bone className="w-full h-32 rounded-[24px] mb-7" />
-
-                    {/* QUICK ACTIONS */}
-                    <div className="mb-7">
-                        <Bone className="h-4 w-32 mb-3.5" />
-                        <div className="grid grid-cols-4 gap-3">
-                            {Array.from({ length: 4 }).map((_, i) => (
-                                <Bone key={`qa-skeleton-${i}`} className="h-20 rounded-2xl" />
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* STATISTICS */}
-                    <div className="mb-7">
-                        <Bone className="h-4 w-48 mb-3.5" />
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            {Array.from({ length: 4 }).map((_, i) => (
-                                <div key={`stat-skeleton-${i}`} className="bg-white/80 rounded-2xl shadow-sm p-4">
-                                    <Bone className="w-9 h-9 rounded-xl mb-3" />
-                                    <Bone className="h-5 w-8 mb-2" />
-                                    <Bone className="h-2.5 w-20" />
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* ANNOUNCEMENTS */}
-                    <Bone className="w-full h-24 rounded-[24px] mb-7" />
-
-                    {/* RECENTLY ADDED BOOKS */}
-                    <div className="mb-7">
-                        <Bone className="h-4 w-36 mb-3.5" />
-                        <div className="flex gap-3 overflow-hidden">
-                            {Array.from({ length: 4 }).map((_, i) => (
-                                <BookSkeletonCard key={`recent-book-skeleton-${i}`} />
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* RECOMMENDED BOOKS */}
-                    <div className="mb-7">
-                        <Bone className="h-4 w-40 mb-3.5" />
-                        <div className="flex gap-3 overflow-hidden">
-                            {Array.from({ length: 4 }).map((_, i) => (
-                                <BookSkeletonCard key={`rec-book-skeleton-${i}`} />
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* RECENT ACTIVITY */}
-                    <div className="mb-7">
-                        <Bone className="h-4 w-32 mb-3.5" />
-                        <div className="bg-white/80 rounded-2xl shadow-sm p-2">
-                            {Array.from({ length: 3 }).map((_, i) => (
-                                <div key={`activity-skeleton-${i}`} className="flex items-center gap-3 p-3">
-                                    <Bone className="w-9 h-9 rounded-lg flex-shrink-0" />
-                                    <div className="flex-1">
-                                        <Bone className="h-3 w-3/4 mb-1.5" />
-                                        <Bone className="h-2.5 w-1/3" />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* NOTIFICATIONS PREVIEW */}
-                    <div>
-                        <Bone className="h-4 w-32 mb-3.5" />
-                        <div className="space-y-2.5">
-                            {Array.from({ length: 3 }).map((_, i) => (
-                                <div key={`notif-skeleton-${i}`} className="bg-white/80 rounded-2xl shadow-sm p-3 flex items-center gap-3">
-                                    <Bone className="w-9 h-9 rounded-lg flex-shrink-0" />
-                                    <div className="flex-1">
-                                        <Bone className="h-3 w-3/4 mb-1.5" />
-                                        <Bone className="h-2.5 w-1/2" />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                </div>
-
-            </div>
-
-        );
-    }
-
-    if (!hasDigitalId) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-[#F7FAF8] p-6">
-                <div className="max-w-sm w-full bg-white rounded-[24px] shadow-sm p-7 text-center">
-                    <div className="w-14 h-14 rounded-2xl bg-[#106A2E]/10 text-[#106A2E] flex items-center justify-center mx-auto mb-4">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <rect x="3" y="4" width="18" height="16" rx="2" />
-                            <circle cx="9" cy="10" r="2" />
-                            <path d="M15 8h2M15 12h2M7 16h10" />
-                        </svg>
-                    </div>
-                    <h1 className="text-lg font-semibold text-[#1F1F1F] mb-2">
-                        Digital ID required
-                    </h1>
-                    <p className="text-sm text-gray-500 mb-6 leading-relaxed">
-                        You need an approved Digital Student ID to access the Library Module.
-                    </p>
-                    <button
-                        onClick={() => navigate("/request-digital-id")}
-                        className="w-full bg-[#106A2E] text-white p-3.5 rounded-xl font-semibold text-sm hover:brightness-105 active:scale-[0.99] transition-all"
-                    >
-                        Request Digital ID
-                    </button>
-                </div>
-            </div>
-        );
-    }
+    // =========================================================
+    // RENDER
+    // =========================================================
 
     return (
+        <div className="min-h-screen bg-[#F7F8F5] text-slate-800">
 
-        <div
-            className="min-h-screen p-4 sm:p-6 pb-24"
-            style={{
-                background: "linear-gradient(160deg, #d7ead9 0%, #cfe9de 45%, #fcf0c8 100%)"
-            }}
-        >
+            {/* =====================================================
+                BACKGROUND
+            ===================================================== */}
 
-            <style>{`
-                .scrollbar-hide::-webkit-scrollbar {
-                    display: none;
-                }
-            `}</style>
+            <div className="pointer-events-none fixed inset-0 overflow-hidden">
+                <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-emerald-200/30 blur-3xl" />
 
-            <div className="max-w-md sm:max-w-2xl lg:max-w-5xl mx-auto">
+                <div className="absolute right-[-180px] top-[25%] h-[32rem] w-[32rem] rounded-full bg-teal-100/30 blur-3xl" />
 
-                {/* PAGE TITLE */}
-
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-2xl sm:text-3xl font-semibold text-[#1F1F1F] tracking-tight">
-                            Library
-                        </h1>
-                        <p className="text-gray-500 text-sm mt-0.5">
-                            CDM: OneServe
-                        </p>
-                        <button
-                            onClick={() => navigate("/library/books")}
-                        >
-                            Browse Books
-                        </button>
-                    </div>
-                    <Link
-                        to="/library/notifications"
-                        aria-label="Notifications"
-                        className="relative w-11 h-11 rounded-full bg-white/80 shadow-sm flex items-center justify-center text-[#1F1F1F] hover:bg-white transition-colors"
-                    >
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-                            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-                        </svg>
-                       {notifications.some((n) => !n.read) && (
-                            <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-[#F4D35E] border border-white" />
-                        )}
-                    </Link>
-                </div>
-
-                {/* WELCOME CARD */}
-
-                <div className="mb-7">
-                    <WelcomeCard
-                        studentName={studentName}
-                        digitalId={digitalIdNumber}
-                        libraryStatus={mockStudentLibraryStatus.libraryStatus}
-                        dateLabel={todayLabel}
-                    />
-                </div>
-
-                {/* QUICK ACTIONS */}
-
-                <div className="mb-7">
-                    <h2 className="font-semibold text-base text-[#1F1F1F] mb-3.5">
-                        Quick Actions
-                    </h2>
-                    <QuickActions />
-                </div>
-
-                {/* STATISTICS */}
-
-                <div className="mb-7">
-                    <h2 className="font-semibold text-base text-[#1F1F1F] mb-3.5">
-                        Your Library at a Glance
-                    </h2>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-
-                        <Link
-                            to="/library/borrow-history"
-                            className="bg-white/80 rounded-2xl shadow-sm p-4 flex flex-col gap-2 hover:bg-white hover:shadow-md active:scale-[0.98] transition-all"
-                        >
-                            <div className="w-9 h-9 rounded-xl bg-[#E1F5EE] text-[#106A2E] flex items-center justify-center">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-                                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
-                                </svg>
-                            </div>
-                            <p className="text-xl font-semibold text-[#1F1F1F]">
-                                {activeBorrowTransactions.length}
-                            </p>
-
-                            <p className="text-xs text-gray-500">
-                                My Borrow Transactions
-                            </p>
-                        </Link>
-
-                        <Link
-                            to="/library/reserve"
-                            className="bg-white/80 rounded-2xl shadow-sm p-4 flex flex-col gap-2 hover:bg-white hover:shadow-md active:scale-[0.98] transition-all"
-                        >
-                            <div className="w-9 h-9 rounded-xl bg-[#FAEEDA] text-[#633806] flex items-center justify-center">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="12" cy="12" r="9" />
-                                    <path d="M12 7v5l3 3" />
-                                </svg>
-                            </div>
-                            <p className="text-xl font-semibold text-[#1F1F1F]">{reservations.length}</p>
-                            <p className="text-xs text-gray-500">My Reservations</p>
-                        </Link>
-
-                        <Link
-                            to="/library/favorites"
-                            className="bg-white/80 rounded-2xl shadow-sm p-4 flex flex-col gap-2 hover:bg-white hover:shadow-md active:scale-[0.98] transition-all"
-                        >
-                            <div className="w-9 h-9 rounded-xl bg-[#FAECE7] text-[#712B13] flex items-center justify-center">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M12 21s-6.7-4.35-9.33-8.2C.86 10.28 1.4 6.86 4.1 5.1 6.02 3.86 8.42 4.3 10 6.1c.36.4.68.86.94 1.3.26-.44.58-.9.94-1.3 1.58-1.8 3.98-2.24 5.9-1 2.7 1.76 3.24 5.18 1.43 7.7C18.7 16.65 12 21 12 21Z" />
-                                </svg>
-                            </div>
-                            <p className="text-xl font-semibold text-[#1F1F1F]">{mockStudentLibraryStatus.favoritesCount}</p>
-                            <p className="text-xs text-gray-500">Favorites</p>
-                        </Link>
-
-                        <Link
-                            to="/library/renew"
-                            className="bg-white/80 rounded-2xl shadow-sm p-4 flex flex-col gap-2 hover:bg-white hover:shadow-md active:scale-[0.98] transition-all"
-                        >
-                            <div className="w-9 h-9 rounded-xl bg-red-50 text-red-500 flex items-center justify-center">
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <circle cx="12" cy="12" r="9" />
-                                    <path d="M12 8v5M12 16h.01" />
-                                </svg>
-                            </div>
-                            <p className="text-xl font-semibold text-[#1F1F1F]">{mockStudentLibraryStatus.overdueCount}</p>
-                            <p className="text-xs text-gray-500">Overdue</p>
-                        </Link>
-
-                    </div>
-                </div>
-
-                {/* ANNOUNCEMENTS */}
-
-                <div className="mb-7">
-                    <AnnouncementCarousel announcements={mockAnnouncements} />
-                </div>
-
-                {/* RECENTLY ADDED BOOKS */}
-
-                <div className="mb-7">
-                    <div className="flex items-center justify-between mb-3.5">
-                        <h2 className="font-semibold text-base text-[#1F1F1F]">
-                            Recently Added
-                        </h2>
-                        <Link to="/library/books" className="text-xs font-medium text-[#106A2E] hover:underline">
-                            See all
-                        </Link>
-                    </div>
-                    {
-                        loadingBooks ? (
-
-                            <div className="flex gap-3 overflow-hidden">
-                                {Array.from({ length: 4 }).map((_, i) => (
-                                    <BookSkeletonCard key={`recent-book-loading-${i}`} />
-                                ))}
-                            </div>
-
-                        ) : (
-
-                            <RecentlyAddedBooks
-                                books={recentlyAddedBooks}
-                            />
-
-                        )
-                    }
-                </div>
-
-                {/* RECOMMENDED BOOKS */}
-
-                <div className="mb-7">
-                    <div className="flex items-center justify-between mb-3.5">
-                        <h2 className="font-semibold text-base text-[#1F1F1F]">
-                            Recommended for You
-                        </h2>
-                        <Link to="/library/books" className="text-xs font-medium text-[#106A2E] hover:underline">
-                            See all
-                        </Link>
-                    </div>
-                    {
-                        loadingBooks ? (
-
-                            <div className="flex gap-3 overflow-hidden">
-                                {Array.from({ length: 4 }).map((_, i) => (
-                                    <BookSkeletonCard key={`rec-book-loading-${i}`} />
-                                ))}
-                            </div>
-
-                        ) : (
-
-                            <RecommendedBooks books={recommendedBooks} />
-
-                        )
-                    }
-                </div>
-
-                {/* RECENT ACTIVITY */}
-
-                <div className="mb-7">
-                    <div className="flex items-center justify-between mb-3.5">
-                        <h2 className="font-semibold text-base text-[#1F1F1F]">
-                            Recent Activity
-                        </h2>
-                        <Link to="/library/history" className="text-xs font-medium text-[#106A2E] hover:underline">
-                            View all
-                        </Link>
-                    </div>
-                    <div className="bg-white/80 rounded-2xl shadow-sm p-2">
-                       {
-                            loadingActivities ? (
-
-                                Array.from({ length: 3 }).map((_, i) => (
-                                    <div key={`activity-loading-${i}`} className="flex items-center gap-3 p-3">
-                                        <Bone className="w-9 h-9 rounded-lg flex-shrink-0" />
-                                        <div className="flex-1">
-                                            <Bone className="h-3 w-3/4 mb-1.5" />
-                                            <Bone className="h-2.5 w-1/3" />
-                                        </div>
-                                    </div>
-                                ))
-
-                            ) : latestActivities.length === 0 ? (
-
-                                <p className="text-sm text-gray-500 p-5 text-center">
-                                    No recent activity.
-                                </p>
-
-                            ) : (
-
-                                latestActivities.map((activity) => (
-                                    <ActivityCard
-                                        key={activity.activityId}
-                                        activity={activity}
-                                    />
-            ))
-
-                            )
-                        }
-                    </div>
-                </div>
-
-                {/* NOTIFICATIONS PREVIEW */}
-
-                <div>
-                    <div className="flex items-center justify-between mb-3.5">
-                        <h2 className="font-semibold text-base text-[#1F1F1F]">
-                            Notifications
-                        </h2>
-
-                        <Link
-                            to="/library/notifications"
-                            className="text-xs font-medium text-[#106A2E] hover:underline"
-                        >
-                            View all
-                        </Link>
-                    </div>
-
-                    <div className="space-y-2.5">
-
-                        {loadingNotifications ? (
-
-                            Array.from({ length: 3 }).map((_, i) => (
-                                <div key={`notif-loading-${i}`} className="bg-white/80 rounded-2xl shadow-sm p-3 flex items-center gap-3">
-                                    <Bone className="w-9 h-9 rounded-lg flex-shrink-0" />
-                                    <div className="flex-1">
-                                        <Bone className="h-3 w-3/4 mb-1.5" />
-                                        <Bone className="h-2.5 w-1/2" />
-                                    </div>
-                                </div>
-                            ))
-
-                        ) : notificationPreview.length === 0 ? (
-
-                            <p className="text-sm text-gray-500 text-center py-4">
-                                No notifications yet.
-                            </p>
-
-                        ) : (
-
-                            notificationPreview.map((notification) => (
-                                <NotificationCard
-                                    key={notification.id}
-                                    notification={notification}
-                                />
-                            ))
-
-                        )}
-
-                    </div>
-                </div>
-
+                <div className="absolute bottom-[-160px] left-[30%] h-[30rem] w-[30rem] rounded-full bg-amber-100/30 blur-3xl" />
             </div>
 
+            {/* =====================================================
+                LIBRARY TOP NAVBAR
+            ===================================================== */}
+
+            <header className="sticky top-0 z-40 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl">
+
+                <div className="mx-auto flex h-[72px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+
+                    {/* BRAND */}
+
+                    <button
+                        type="button"
+                        onClick={() =>
+                            navigate("/library")
+                        }
+                        className="flex items-center gap-3"
+                    >
+                        <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-200 bg-emerald-50 text-[#106A2E]">
+                            <LibraryBig size={21} />
+                        </div>
+
+                        <div className="text-left">
+                            <p className="text-[9px] font-semibold uppercase tracking-[0.24em] text-emerald-700/70">
+                                CDM OneServe
+                            </p>
+
+                            <p className="text-sm font-medium text-slate-500">
+                                Library
+                            </p>
+                        </div>
+                    </button>
+
+                    {/* DESKTOP NAV */}
+
+                    <nav className="hidden items-center gap-1 md:flex">
+
+                        <button
+                            type="button"
+                            onClick={() =>
+                                navigate("/library")
+                            }
+                            className="rounded-xl bg-emerald-50 px-4 py-2 text-xs font-semibold text-[#106A2E]"
+                        >
+                            Home
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={goToBooks}
+                            className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-medium text-slate-500 transition hover:bg-slate-50 hover:text-[#106A2E]"
+                        >
+                            <BookOpen size={15} />
+                            Books
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={goToAccessPass}
+                            className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-medium text-slate-500 transition hover:bg-slate-50 hover:text-[#106A2E]"
+                        >
+                            <QrCode size={15} />
+                            Pass
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={goToLoans}
+                            className="flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-medium text-slate-500 transition hover:bg-slate-50 hover:text-[#106A2E]"
+                        >
+                            <LibraryBig size={15} />
+                            Loans
+                        </button>
+
+                        <div className="mx-2 h-6 w-px bg-slate-200" />
+
+                        <button
+                            type="button"
+                            onClick={() =>
+                                navigate("/dashboard")
+                            }
+                            className="rounded-xl px-4 py-2 text-xs font-medium text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+                        >
+                            ← Portal
+                        </button>
+
+                    </nav>
+
+                    {/* USER */}
+
+                    <button
+                        type="button"
+                        onClick={() =>
+                            navigate("/profile")
+                        }
+                        className="flex items-center gap-2"
+                    >
+                        <div className="hidden text-right sm:block">
+                            <p className="text-xs font-semibold text-slate-700">
+                                {userName}
+                            </p>
+
+                            <p className="text-[10px] text-slate-400">
+                                {institute || "CDM Student"}
+                            </p>
+                        </div>
+
+                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-[#106A2E]">
+                            <UserRound size={17} />
+                        </div>
+                    </button>
+
+                </div>
+            </header>
+
+            {/* =====================================================
+                MAIN
+            ===================================================== */}
+
+            <main className="relative z-10 mx-auto max-w-7xl px-4 pb-28 pt-7 sm:px-6 lg:px-8">
+
+                {/* =================================================
+                    HEADER
+                ================================================= */}
+
+                <section className="mb-6">
+
+                    <p className="text-xs font-medium text-slate-400">
+                        {today}
+                    </p>
+
+                    <div className="mt-1 flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+
+                        <div>
+                            <h1 className="text-3xl font-semibold tracking-tight text-slate-800 sm:text-4xl">
+                                Welcome, {firstName}
+                            </h1>
+
+                            <p className="mt-1 text-sm text-slate-500">
+                                Your CDM Library at your fingertips.
+                            </p>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={goToAccessPass}
+                            className="inline-flex items-center justify-center gap-2 self-start rounded-xl bg-[#106A2E] px-4 py-2.5 text-xs font-semibold text-white shadow-lg shadow-emerald-900/10 transition hover:bg-[#0D5B28] sm:self-auto"
+                        >
+                            <QrCode size={16} />
+                            Access Pass
+                        </button>
+
+                    </div>
+
+                </section>
+
+                {/* =================================================
+                    DIGITAL ACCESS PASS
+                ================================================= */}
+
+                <section className="relative mb-7 overflow-hidden rounded-[26px] bg-[#106A2E] p-5 shadow-xl shadow-emerald-900/10 sm:p-7">
+
+                    <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-white/10" />
+
+                    <div className="pointer-events-none absolute -bottom-24 left-20 h-60 w-60 rounded-full bg-emerald-300/10 blur-3xl" />
+
+                    <div className="relative">
+
+                        <div className="flex items-start justify-between gap-4">
+
+                            <div>
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-100/70">
+                                    Digital Student Access
+                                </p>
+
+                                <h2 className="mt-2 text-xl font-semibold text-white">
+                                    Library Access Pass
+                                </h2>
+
+                                <p className="mt-1 max-w-lg text-xs leading-5 text-emerald-50/70">
+                                    Use your dynamic QR code when checking in at the library kiosk.
+                                </p>
+                            </div>
+
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white">
+                                <QrCode size={20} />
+                            </div>
+
+                        </div>
+
+                        <div className="mt-5 flex flex-col gap-4 rounded-2xl border border-white/10 bg-white/[0.08] p-4 sm:flex-row sm:items-center sm:justify-between">
+
+                            <div>
+                                <p className="text-[9px] uppercase tracking-wider text-emerald-100/50">
+                                    Student
+                                </p>
+
+                                {isLoading ? (
+                                    <Skeleton className="mt-2 h-5 w-40 bg-white/20" />
+                                ) : (
+                                    <p className="mt-1 text-sm font-semibold text-white">
+                                        {accessPass?.studentName ||
+                                            userName}
+                                    </p>
+                                )}
+
+                                <p className="mt-1 text-xs text-emerald-100/60">
+                                    {accessPass?.studentNumber ||
+                                        user?.idNumber ||
+                                        "—"}
+                                </p>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={goToAccessPass}
+                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-bold text-[#106A2E] transition hover:bg-emerald-50"
+                            >
+                                View QR Pass
+                                <ChevronRight size={15} />
+                            </button>
+
+                        </div>
+
+                    </div>
+                </section>
+
+                {/* =================================================
+                    QUICK LIBRARY ACTIONS
+                ================================================= */}
+
+                <section className="mb-7">
+
+                    <div className="mb-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700/60">
+                            Library Services
+                        </p>
+
+                        <h2 className="mt-1 text-lg font-semibold text-slate-800">
+                            Quick Access
+                        </h2>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+
+                        <button
+                            type="button"
+                            onClick={goToBooks}
+                            className="group rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md"
+                        >
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-[#106A2E]">
+                                <BookOpen size={19} />
+                            </div>
+
+                            <p className="mt-4 text-sm font-semibold text-slate-800">
+                                Browse Books
+                            </p>
+
+                            <p className="mt-1 text-[11px] leading-4 text-slate-400">
+                                Search the catalog
+                            </p>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={goToAccessPass}
+                            className="group rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md"
+                        >
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-[#106A2E]">
+                                <QrCode size={19} />
+                            </div>
+
+                            <p className="mt-4 text-sm font-semibold text-slate-800">
+                                Access Pass
+                            </p>
+
+                            <p className="mt-1 text-[11px] leading-4 text-slate-400">
+                                Show your QR code
+                            </p>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={goToLoans}
+                            className="group rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md"
+                        >
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                                <LibraryBig size={19} />
+                            </div>
+
+                            <p className="mt-4 text-sm font-semibold text-slate-800">
+                                My Loans
+                            </p>
+
+                            <p className="mt-1 text-[11px] leading-4 text-slate-400">
+                                View borrowed books
+                            </p>
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={goToReservations}
+                            className="group rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md"
+                        >
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                                <CalendarDays size={19} />
+                            </div>
+
+                            <p className="mt-4 text-sm font-semibold text-slate-800">
+                                Reservations
+                            </p>
+
+                            <p className="mt-1 text-[11px] leading-4 text-slate-400">
+                                Manage book holds
+                            </p>
+                        </button>
+
+                    </div>
+                </section>
+
+                {/* =================================================
+                    CATALOG
+                ================================================= */}
+
+                <section>
+
+                    <div className="mb-4 flex items-end justify-between gap-3">
+
+                        <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-700/60">
+                                Academic Collection
+                            </p>
+
+                            <h2 className="mt-1 text-xl font-semibold text-slate-800">
+                                Curated Books
+                            </h2>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={goToBooks}
+                            className="flex items-center gap-1 text-xs font-semibold text-[#106A2E]"
+                        >
+                            View all
+                            <ChevronRight size={15} />
+                        </button>
+
+                    </div>
+
+                    {/* SEARCH */}
+
+                    <div className="mb-4 flex items-center rounded-2xl border border-slate-200 bg-white shadow-sm">
+
+                        <Search
+                            size={18}
+                            className="ml-4 shrink-0 text-slate-400"
+                        />
+
+                        <input
+                            type="text"
+                            value={search}
+                            onChange={(event) =>
+                                setSearch(event.target.value)
+                            }
+                            placeholder="Search title, author, ISBN..."
+                            className="min-w-0 flex-1 bg-transparent px-3 py-3.5 text-sm outline-none placeholder:text-slate-400"
+                        />
+
+                        {search && (
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    setSearch("")
+                                }
+                                className="mr-3 text-slate-400 hover:text-slate-700"
+                            >
+                                ×
+                            </button>
+                        )}
+
+                    </div>
+
+                    {/* INSTITUTE FILTER */}
+
+                    <div className="mb-5 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+
+                        {institutes.map((item) => (
+                            <button
+                                key={item.id}
+                                type="button"
+                                onClick={() =>
+                                    setSelectedInstitute(
+                                        item.id
+                                    )
+                                }
+                                className={`
+                                    shrink-0 rounded-full
+                                    px-4 py-2
+                                    text-xs font-semibold
+                                    transition
+                                    ${
+                                        selectedInstitute ===
+                                        item.id
+                                            ? "bg-[#106A2E] text-white shadow-sm"
+                                            : "border border-slate-200 bg-white text-slate-500 hover:border-emerald-200 hover:text-[#106A2E]"
+                                    }
+                                `}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+
+                    </div>
+
+                    {/* BOOK GRID */}
+
+                    {isLoading ? (
+                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+
+                            {Array.from({
+                                length: 6,
+                            }).map((_, index) => (
+                                <div
+                                    key={index}
+                                    className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
+                                >
+                                    <Skeleton className="h-52 rounded-none bg-slate-200" />
+
+                                    <div className="p-3">
+                                        <Skeleton className="h-3 w-full" />
+                                        <Skeleton className="mt-2 h-3 w-2/3" />
+                                    </div>
+                                </div>
+                            ))}
+
+                        </div>
+                    ) : featuredBooks.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+
+                            {featuredBooks.map((book) => {
+                                const availability =
+                                    getAvailability(book);
+
+                                return (
+                                    <button
+                                        key={book.id}
+                                        type="button"
+                                        onClick={() =>
+                                            navigate(
+                                                `/library/book/${book.id}`
+                                            )
+                                        }
+                                        className="group overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition hover:-translate-y-1 hover:border-emerald-200 hover:shadow-lg"
+                                    >
+
+                                        {/* COVER */}
+
+                                        <div className="relative aspect-[3/4] overflow-hidden bg-slate-100">
+
+                                            {book.coverUrl ? (
+                                                <img
+                                                    src={book.coverUrl}
+                                                    alt={book.title}
+                                                    className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                                                    loading="lazy"
+                                                />
+                                            ) : (
+                                                <div className="flex h-full w-full items-center justify-center text-slate-300">
+                                                    <BookOpen
+                                                        size={42}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            <span
+                                                className={`
+                                                    absolute
+                                                    left-2
+                                                    top-2
+                                                    rounded-full
+                                                    px-2
+                                                    py-1
+                                                    text-[9px]
+                                                    font-semibold
+                                                    shadow-sm
+                                                    ${availability.className}
+                                                `}
+                                            >
+                                                {
+                                                    availability.label
+                                                }
+                                            </span>
+
+                                        </div>
+
+                                        {/* BOOK INFO */}
+
+                                        <div className="p-3">
+
+                                            <p className="line-clamp-2 text-xs font-semibold leading-4 text-slate-800">
+                                                {book.title}
+                                            </p>
+
+                                            <p className="mt-1 line-clamp-1 text-[10px] text-slate-400">
+                                                {book.author}
+                                            </p>
+
+                                            <div className="mt-2 flex items-center justify-between">
+
+                                                <span className="text-[9px] font-semibold uppercase tracking-wider text-emerald-700">
+                                                    {book.institute ||
+                                                        book.category ||
+                                                        "Library"}
+                                                </span>
+
+                                                <ChevronRight
+                                                    size={13}
+                                                    className="text-slate-300 transition group-hover:text-[#106A2E]"
+                                                />
+
+                                            </div>
+
+                                        </div>
+                                    </button>
+                                );
+                            })}
+
+                        </div>
+                    ) : (
+                        <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center">
+
+                            <BookOpen
+                                size={32}
+                                className="mx-auto text-slate-300"
+                            />
+
+                            <p className="mt-3 text-sm font-semibold text-slate-600">
+                                No books found
+                            </p>
+
+                            <p className="mt-1 text-xs text-slate-400">
+                                Try another search or institute.
+                            </p>
+
+                        </div>
+                    )}
+
+                </section>
+
+                {/* =================================================
+                    LIBRARY INFO
+                ================================================= */}
+
+                <section className="mt-7 grid gap-4 sm:grid-cols-2">
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5">
+
+                        <div className="flex items-center gap-3">
+
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-[#106A2E]">
+                                <Clock3 size={18} />
+                            </div>
+
+                            <div>
+                                <p className="text-xs font-semibold text-slate-700">
+                                    Library Access
+                                </p>
+
+                                <p className="mt-0.5 text-[11px] text-slate-400">
+                                    Scan your Digital Access Pass at the kiosk.
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-200 bg-white p-5">
+
+                        <div className="flex items-center gap-3">
+
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                                <BookOpen size={18} />
+                            </div>
+
+                            <div>
+                                <p className="text-xs font-semibold text-slate-700">
+                                    Academic Collection
+                                </p>
+
+                                <p className="mt-0.5 text-[11px] text-slate-400">
+                                    {books.length} curated books in the catalog.
+                                </p>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+            </main>
+
+            {/* =====================================================
+                LIBRARY BOTTOM NAV
+            ===================================================== */}
+
+            <LibraryBottomNav />
+
         </div>
-
     );
-
 }

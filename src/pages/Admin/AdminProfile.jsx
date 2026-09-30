@@ -653,10 +653,10 @@ export default function AdminProfile() {
                                 <div className="flex items-start justify-between gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 card-transition">
                                     <div className="flex-1">
                                         <p className="text-sm font-medium text-[#1F1F1F]">
-                                            New Request Alerts
+                                            New Registration Alerts
                                         </p>
                                         <p className="text-xs text-gray-500 mt-0.5">
-                                            Receive email notifications when a new Digital ID request is submitted
+                                            Receive email notifications when a new student or faculty registration is submitted for verification
                                         </p>
                                     </div>
                                     <button
@@ -705,10 +705,10 @@ export default function AdminProfile() {
                                 <div className="flex items-start justify-between gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 card-transition">
                                     <div className="flex-1">
                                         <p className="text-sm font-medium text-[#1F1F1F]">
-                                            Pending Request Threshold
+                                            Pending Verification Threshold
                                         </p>
                                         <p className="text-xs text-gray-500 mt-0.5">
-                                            Receive notifications when pending requests exceed the specified threshold
+                                            Receive notifications when pending registration verifications reach the selected threshold
                                         </p>
                                     </div>
                                     <button
@@ -771,7 +771,7 @@ export default function AdminProfile() {
                                             className="w-32 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-sm outline-none focus:border-[#106A2E] input-transition"
                                         />
                                         <p className="text-xs text-gray-400 mt-1.5">
-                                            You will be notified when pending requests reach this number
+                                            You will be notified when pending verification requests reach this number
                                         </p>
                                     </div>
                                 )}

@@ -191,3 +191,82 @@ export function clearLibraryNotifications(userId) {
         method: "DELETE",
     });
 }
+
+
+// ---------------------------------------------------------------------------
+// CDM LIBHUB — OFFICIAL INTEGRATION API
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch the Library OPAC catalog.
+ *
+ * Official LibHub endpoint:
+ * GET /api/books
+ */
+export function getLibHubBooks(params = {}) {
+    const query = new URLSearchParams(params).toString();
+
+    return request(
+        `/books${query ? `?${query}` : ""}`
+    );
+}
+
+/**
+ * Submit a book reservation.
+ *
+ * Official LibHub endpoint:
+ * POST /api/reservations
+ */
+export function createLibHubReservation({
+    bookId,
+    studentId,
+    studentNumber,
+    studentName,
+    pickupDate,
+}) {
+    return request("/reservations", {
+        method: "POST",
+        body: JSON.stringify({
+            bookId,
+            studentId,
+            studentNumber,
+            studentName,
+            pickupDate,
+        }),
+    });
+}
+
+/**
+ * Record Library kiosk attendance.
+ *
+ * Official LibHub endpoint:
+ * POST /api/attendance
+ */
+export function recordLibraryAttendance({
+    studentNumber,
+    studentName,
+    institute,
+    purpose,
+    timestamp,
+}) {
+    return request("/attendance", {
+        method: "POST",
+        body: JSON.stringify({
+            studentNumber,
+            studentName,
+            institute,
+            purpose,
+            timestamp,
+        }),
+    });
+}
+
+/**
+ * Get the student's active loans and penalty information.
+ *
+ * Official LibHub endpoint:
+ * GET /api/students/:id/loans
+ */
+export function getLibHubStudentLoans(studentId) {
+    return request(`/students/${studentId}/loans`);
+}
