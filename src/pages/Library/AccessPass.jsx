@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
-const API_URL = "http://localhost:5212";
+const API_URL = "https://api.cdmconnect.online";
 
 export default function AccessPass() {
     const navigate = useNavigate();
