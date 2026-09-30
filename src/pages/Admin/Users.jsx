@@ -63,7 +63,7 @@ const STATUS_STYLES = {
     Deleted: "bg-gray-100 text-gray-600 ring-gray-300",
 };
 
-const API_BASE = "http://localhost:5212/api/auth/users";
+const API_BASE = "https://api.cdmconnect.online/api/auth/users";
 
 const isAdminRole = (role) => {
     if (!role) return false;

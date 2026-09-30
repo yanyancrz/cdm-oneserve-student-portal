@@ -1,3 +1,4 @@
+import { API_URL } from "../../config/api";
 import { useEffect, useRef, useState } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import {
@@ -12,8 +13,6 @@ import {
     ShieldCheck,
     Loader2,
 } from "lucide-react";
-
-const API_URL = "http://localhost:5212";
 
 export default function Scanner() {
     const scannerRef = useRef(null);
@@ -85,14 +84,11 @@ export default function Scanner() {
                 `${API_URL}/api/library/scanner/verify`,
                 {
                     method: "POST",
-
                     headers: {
-                        "Content-Type":
-                            "application/json",
+                        "Content-Type": "application/json",
                     },
-
                     body: JSON.stringify({
-                        qrData: qrText,
+                        qrData,
                     }),
                 }
             );
