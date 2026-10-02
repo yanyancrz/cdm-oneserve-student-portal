@@ -15,7 +15,7 @@ import {
 import LibraryBottomNav from "../../components/BottomNavigation/LibraryBottomNav";
 
 // const API_URL = "http://localhost:5212";
-const API_BASE = "http://api.cdmconnect.online/api/auth/users";
+const API_BASE = "http://api.cdmconnect.online";
 
 const ACTIVE_RESERVATION_STATUSES = ["Reserved", "Pending", "Approved"];
 
