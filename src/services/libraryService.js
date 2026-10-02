@@ -3,21 +3,35 @@ import { API_URL } from "../config/api";
 
 const BASE = `${API_URL}/api/library`;
 
+const getToken = () =>
+    localStorage.getItem("token") ||
+    localStorage.getItem("authToken") ||
+    "";
+
 async function request(path, options = {}) {
+
+    const token = getToken();
 
     const res = await fetch(`${BASE}${path}`, {
         ...options,
         headers: {
             "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
             ...(options.headers || {})
         }
     });
 
-    const data = await res.json();
+    let data = null;
+
+    try {
+        data = await res.json();
+    } catch {
+        data = null;
+    }
 
     if (!res.ok) {
         throw new Error(
-            data.message || `Library API error (${res.status})`
+            data?.message || `Library API error (${res.status})`
         );
     }
 
@@ -46,8 +60,8 @@ export function borrowBook(userId, bookId) {
     return request("/borrow", {
         method: "POST",
         body: JSON.stringify({
-            userId,
-            bookId,
+            userId: Number(userId),
+            bookId: Number(bookId),
         }),
     });
 }
@@ -55,7 +69,10 @@ export function borrowBook(userId, bookId) {
 export function reserveBook(userId, bookId) {
     return request("/reservations", {
         method: "POST",
-        body: JSON.stringify({ userId, bookId })
+        body: JSON.stringify({
+            userId: Number(userId),
+            bookId: Number(bookId),
+        }),
     });
 }
 
@@ -197,12 +214,6 @@ export function clearLibraryNotifications(userId) {
 // CDM LIBHUB — OFFICIAL INTEGRATION API
 // ---------------------------------------------------------------------------
 
-/**
- * Fetch the Library OPAC catalog.
- *
- * Official LibHub endpoint:
- * GET /api/books
- */
 export function getLibHubBooks(params = {}) {
     const query = new URLSearchParams(params).toString();
 
@@ -211,12 +222,6 @@ export function getLibHubBooks(params = {}) {
     );
 }
 
-/**
- * Submit a book reservation.
- *
- * Official LibHub endpoint:
- * POST /api/reservations
- */
 export function createLibHubReservation({
     bookId,
     studentId,
@@ -236,12 +241,6 @@ export function createLibHubReservation({
     });
 }
 
-/**
- * Record Library kiosk attendance.
- *
- * Official LibHub endpoint:
- * POST /api/attendance
- */
 export function recordLibraryAttendance({
     studentNumber,
     studentName,
@@ -261,12 +260,19 @@ export function recordLibraryAttendance({
     });
 }
 
-/**
- * Get the student's active loans and penalty information.
- *
- * Official LibHub endpoint:
- * GET /api/students/:id/loans
- */
-export function getLibHubStudentLoans(studentId) {
-    return request(`/students/${studentId}/loans`);
-}
+export const getCurrentLoans = async (userId) => {
+    const response = await fetch(
+        `${API_URL}/api/library/borrow/current/${userId}`,
+        {
+            headers: getToken()
+                ? { Authorization: `Bearer ${getToken()}` }
+                : {},
+        }
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to load current borrowed books.");
+    }
+
+    return response.json();
+};

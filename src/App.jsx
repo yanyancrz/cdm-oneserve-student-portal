@@ -48,12 +48,6 @@ import AccessPass from "./pages/Library/AccessPass";
 import Scanner from "./pages/Library/Scanner";
 
 // ==========================================
-// LOST & FOUND - USER
-// ==========================================
-
-import LostFound from "./pages/LostFound/LostFound";
-
-// ==========================================
 // BUSINESS HUB - USER
 // ==========================================
 
@@ -75,21 +69,6 @@ import Users from "./pages/Admin/Users";
 import AdminProfile from "./pages/Admin/AdminProfile";
 import SchoolRecords from "./pages/Admin/SchoolRecords";
 import Announcements from "./pages/Admin/Announcements";
-
-// ==========================================
-// LOST & FOUND ADMIN LAYOUT
-// ==========================================
-
-import LostFoundAdminLayout from "./layouts/LostFoundAdminLayout";
-
-// ==========================================
-// LOST & FOUND ADMIN PAGES
-// ==========================================
-
-import LostFoundAdminDashboard from "./pages/Admin/Lost&FoundAdmin/AdminDashboard";
-import LostFoundReports from "./pages/Admin/Lost&FoundAdmin/LostFoundReports";
-import LostFoundMatches from "./pages/Admin/Lost&FoundAdmin/LostFoundMatches";
-import LostFoundClaims from "./pages/Admin/Lost&FoundAdmin/LostFoundClaims";
 
 
 function App() {
@@ -309,16 +288,6 @@ function App() {
                         element={<BusinessHub />}
                     />
 
-
-                    {/* ==================================================
-                        LOST & FOUND
-                    ================================================== */}
-
-                    <Route
-                        path="/lost-found"
-                        element={<LostFound />}
-                    />
-
                 </Route>
 
 
@@ -375,50 +344,6 @@ function App() {
                     <Route
                         path="/admin/announcements"
                         element={<Announcements />}
-                    />
-
-                </Route>
-
-
-                {/* ==================================================
-                    LOST & FOUND ADMIN PORTAL
-                    ==================================================
-
-                    PWA REQUIRED
-
-                    Desktop:
-                    ✅ ALLOW
-
-                    Mobile / Tablet:
-                    ❌ BLOCK
-                ================================================== */}
-
-                <Route
-                    element={
-                        <PWAInstallGuard>
-                            <LostFoundAdminLayout />
-                        </PWAInstallGuard>
-                    }
-                >
-
-                    <Route
-                        path="/admin/lost-found/dashboard"
-                        element={<LostFoundAdminDashboard />}
-                    />
-
-                    <Route
-                        path="/admin/lost-found/reports"
-                        element={<LostFoundReports />}
-                    />
-
-                    <Route
-                        path="/admin/lost-found/matches"
-                        element={<LostFoundMatches />}
-                    />
-
-                    <Route
-                        path="/admin/lost-found/claims"
-                        element={<LostFoundClaims />}
                     />
 
                 </Route>

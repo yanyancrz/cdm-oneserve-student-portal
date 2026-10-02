@@ -15,7 +15,7 @@ export default function PageHeader({ title, subtitle, showBack = true }) {
     return (
         <div className="flex items-center gap-3 mb-5">
 
-            {showBack && (
+            {/* {showBack && (
                 <button
                     onClick={() => navigate(-1)}
                     aria-label="Go back"
@@ -31,7 +31,7 @@ export default function PageHeader({ title, subtitle, showBack = true }) {
                         <path d="m15 18-6-6 6-6" />
                     </svg>
                 </button>
-            )}
+            )} */}
 
             <div className="min-w-0">
                 <h1 className="text-xl sm:text-2xl font-semibold text-[#1F1F1F] tracking-tight truncate">

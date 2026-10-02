@@ -48,6 +48,10 @@ export default function Scanner() {
     const [result, setResult] = useState(null);
     const [error, setError] = useState("");
 
+    // Claim state
+    const [claimingId, setClaimingId] = useState(null);
+    const [claimMessage, setClaimMessage] = useState(null);
+
     // =========================================================
     // GET AUTH TOKEN
     // =========================================================
@@ -80,19 +84,13 @@ export default function Scanner() {
                 await scanner.stop();
             }
         } catch (err) {
-            console.warn(
-                "Scanner stop warning:",
-                err
-            );
+            console.warn("Scanner stop warning:", err);
         }
 
         try {
             await scanner.clear();
         } catch (err) {
-            console.warn(
-                "Scanner clear warning:",
-                err
-            );
+            console.warn("Scanner clear warning:", err);
         }
 
         scannerRef.current = null;
@@ -128,30 +126,17 @@ export default function Scanner() {
 
         setLoading(true);
         setError("");
+        setClaimMessage(null);
 
         try {
-            console.log(
-                "================================="
-            );
-
-            console.log(
-                "QR DATA:",
-                qrText
-            );
-
-            console.log(
-                "API URL:",
-                API_URL
-            );
-
+            console.log("=================================");
+            console.log("QR DATA:", qrText);
+            console.log("API URL:", API_URL);
             console.log(
                 "VERIFY ENDPOINT:",
                 `${API_URL}/api/library/scanner/verify`
             );
-
-            console.log(
-                "================================="
-            );
+            console.log("=================================");
 
             // =================================================
             // GET TOKEN
@@ -165,12 +150,7 @@ export default function Scanner() {
                 );
             }
 
-            console.log(
-                "AUTH TOKEN FOUND:",
-                token
-                    ? "YES"
-                    : "NO"
-            );
+            console.log("AUTH TOKEN FOUND:", token ? "YES" : "NO");
 
             // =================================================
             // STOP CAMERA
@@ -183,9 +163,7 @@ export default function Scanner() {
             // =================================================
 
             if (!API_URL) {
-                throw new Error(
-                    "API URL is not configured."
-                );
+                throw new Error("API URL is not configured.");
             }
 
             // =================================================
@@ -198,11 +176,8 @@ export default function Scanner() {
                     method: "POST",
 
                     headers: {
-                        "Content-Type":
-                            "application/json",
-
-                        Authorization:
-                            `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${token}`,
                     },
 
                     body: JSON.stringify({
@@ -215,18 +190,10 @@ export default function Scanner() {
             // READ RESPONSE AS TEXT FIRST
             // =================================================
 
-            const responseText =
-                await response.text();
+            const responseText = await response.text();
 
-            console.log(
-                "HTTP STATUS:",
-                response.status
-            );
-
-            console.log(
-                "SERVER RESPONSE:",
-                responseText
-            );
+            console.log("HTTP STATUS:", response.status);
+            console.log("SERVER RESPONSE:", responseText);
 
             // =================================================
             // PARSE JSON
@@ -236,15 +203,9 @@ export default function Scanner() {
 
             if (responseText) {
                 try {
-                    data =
-                        JSON.parse(
-                            responseText
-                        );
+                    data = JSON.parse(responseText);
                 } catch (jsonError) {
-                    console.warn(
-                        "Response is not JSON:",
-                        responseText
-                    );
+                    console.warn("Response is not JSON:", responseText);
                 }
             }
 
@@ -252,17 +213,10 @@ export default function Scanner() {
             // UNAUTHORIZED
             // =================================================
 
-            if (
-                response.status === 401
-            ) {
+            if (response.status === 401) {
                 // Remove expired/invalid token
-                localStorage.removeItem(
-                    "token"
-                );
-
-                localStorage.removeItem(
-                    "authToken"
-                );
+                localStorage.removeItem("token");
+                localStorage.removeItem("authToken");
 
                 throw new Error(
                     "Your login session has expired or is invalid. Please log in again."
@@ -273,9 +227,7 @@ export default function Scanner() {
             // FORBIDDEN
             // =================================================
 
-            if (
-                response.status === 403
-            ) {
+            if (response.status === 403) {
                 throw new Error(
                     data?.message ||
                         data?.error ||
@@ -302,32 +254,20 @@ export default function Scanner() {
             // =================================================
 
             if (!data) {
-                throw new Error(
-                    "The server returned an empty response."
-                );
+                throw new Error("The server returned an empty response.");
             }
 
-            console.log(
-                "Scanner verification:",
-                data
-            );
+            console.log("Scanner verification:", data);
 
             // =================================================
             // GET RESULT
             // =================================================
 
-            const verificationResult =
-                data?.data ??
-                data;
+            const verificationResult = data?.data ?? data;
 
-            setResult(
-                verificationResult
-            );
+            setResult(verificationResult);
         } catch (err) {
-            console.error(
-                "QR verification error:",
-                err
-            );
+            console.error("QR verification error:", err);
 
             setError(
                 err?.message ||
@@ -336,8 +276,75 @@ export default function Scanner() {
         } finally {
             setLoading(false);
 
-            processingRef.current =
-                false;
+            processingRef.current = false;
+        }
+    };
+
+    // =========================================================
+    // CLAIM RESERVED BOOK
+    // =========================================================
+
+    const handleClaim = async (reservationId) => {
+        setClaimingId(reservationId);
+        setClaimMessage(null);
+
+        try {
+            const token = getAuthToken();
+
+            if (!token) {
+                throw new Error(
+                    "Your login session is missing. Please log in again."
+                );
+            }
+
+            const response = await fetch(
+                `${API_URL}/api/library/reservations/claim/${reservationId}`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (response.status === 401 || response.status === 403) {
+                throw new Error(
+                    "You do not have permission to claim reservations."
+                );
+            }
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok || data?.success === false) {
+                throw new Error(
+                    data?.message || "Failed to claim the reservation."
+                );
+            }
+
+            // Update the scan result without rescanning
+            setResult((prev) => ({
+                ...prev,
+                borrowedBooks: (prev.borrowedBooks ?? 0) + 1,
+                remainingBooks: Math.max(
+                    0,
+                    (prev.remainingBooks ?? 0) - 1
+                ),
+                reservedBooks: (prev.reservedBooks ?? []).filter(
+                    (r) => r.reservationId !== reservationId
+                ),
+            }));
+
+            setClaimMessage({
+                type: "success",
+                text: data?.message || "Book claimed successfully.",
+            });
+        } catch (err) {
+            setClaimMessage({
+                type: "error",
+                text: err.message,
+            });
+        } finally {
+            setClaimingId(null);
         }
     };
 
@@ -348,6 +355,7 @@ export default function Scanner() {
     const startScanner = async () => {
         setResult(null);
         setError("");
+        setClaimMessage(null);
 
         processingRef.current = false;
 
@@ -359,9 +367,7 @@ export default function Scanner() {
             const token = getAuthToken();
 
             if (!token) {
-                setError(
-                    "No login session found. Please log in again."
-                );
+                setError("No login session found. Please log in again.");
 
                 return;
             }
@@ -372,8 +378,7 @@ export default function Scanner() {
 
             if (
                 !window.isSecureContext &&
-                window.location.hostname !==
-                    "localhost"
+                window.location.hostname !== "localhost"
             ) {
                 setError(
                     "Camera access requires HTTPS. Please open the secure CDM OneServe website."
@@ -390,9 +395,7 @@ export default function Scanner() {
                 !navigator.mediaDevices ||
                 !navigator.mediaDevices.getUserMedia
             ) {
-                setError(
-                    "Camera access is not supported by this browser."
-                );
+                setError("Camera access is not supported by this browser.");
 
                 return;
             }
@@ -409,13 +412,9 @@ export default function Scanner() {
 
             setScanning(true);
 
-            const scanner =
-                new Html5Qrcode(
-                    "library-qr-reader"
-                );
+            const scanner = new Html5Qrcode("library-qr-reader");
 
-            scannerRef.current =
-                scanner;
+            scannerRef.current = scanner;
 
             // =================================================
             // CAMERA CONFIG
@@ -431,17 +430,13 @@ export default function Scanner() {
 
                 aspectRatio: 1,
 
-                rememberLastUsedCamera:
-                    true,
+                rememberLastUsedCamera: true,
 
-                showTorchButtonIfSupported:
-                    true,
+                showTorchButtonIfSupported: true,
 
-                showZoomSliderIfSupported:
-                    true,
+                showZoomSliderIfSupported: true,
 
-                defaultZoomValueIfSupported:
-                    2,
+                defaultZoomValueIfSupported: 2,
             };
 
             // =================================================
@@ -458,23 +453,14 @@ export default function Scanner() {
 
                     config,
 
-                    async (
-                        decodedText
-                    ) => {
-                        console.log(
-                            "QR detected:",
-                            decodedText
-                        );
+                    async (decodedText) => {
+                        console.log("QR detected:", decodedText);
 
-                        if (
-                            processingRef.current
-                        ) {
+                        if (processingRef.current) {
                             return;
                         }
 
-                        await verifyQr(
-                            decodedText
-                        );
+                        await verifyQr(decodedText);
                     },
 
                     () => {
@@ -483,16 +469,11 @@ export default function Scanner() {
                     }
                 );
 
-                console.log(
-                    "Environment camera started."
-                );
+                console.log("Environment camera started.");
 
                 return;
             } catch (cameraError) {
-                console.warn(
-                    "Primary camera error:",
-                    cameraError
-                );
+                console.warn("Primary camera error:", cameraError);
             }
 
             // =================================================
@@ -501,25 +482,14 @@ export default function Scanner() {
 
             await stopScanner();
 
-            console.log(
-                "Trying fallback camera..."
-            );
+            console.log("Trying fallback camera...");
 
-            const cameras =
-                await Html5Qrcode.getCameras();
+            const cameras = await Html5Qrcode.getCameras();
 
-            console.log(
-                "Available cameras:",
-                cameras
-            );
+            console.log("Available cameras:", cameras);
 
-            if (
-                !cameras ||
-                cameras.length === 0
-            ) {
-                throw new Error(
-                    "No camera was detected."
-                );
+            if (!cameras || cameras.length === 0) {
+                throw new Error("No camera was detected.");
             }
 
             // =================================================
@@ -527,89 +497,43 @@ export default function Scanner() {
             // Prefer environment/back camera
             // =================================================
 
-            let selectedCamera =
-                cameras[0];
+            let selectedCamera = cameras[0];
 
-            const backCamera =
-                cameras.find((camera) => {
-                    const label =
-                        camera.label ||
-                        "";
+            const backCamera = cameras.find((camera) => {
+                const label = camera.label || "";
 
-                    return (
-                        /back|rear|environment/i.test(
-                            label
-                        )
-                    );
-                });
+                return /back|rear|environment/i.test(label);
+            });
 
             if (backCamera) {
-                selectedCamera =
-                    backCamera;
+                selectedCamera = backCamera;
             }
 
-            console.log(
-                "Selected camera:",
-                selectedCamera
-            );
+            console.log("Selected camera:", selectedCamera);
 
             // =================================================
             // CREATE FALLBACK SCANNER
             // =================================================
 
-            const fallbackScanner =
-                new Html5Qrcode(
-                    "library-qr-reader"
-                );
+            const fallbackScanner = new Html5Qrcode("library-qr-reader");
 
-            scannerRef.current =
-                fallbackScanner;
+            scannerRef.current = fallbackScanner;
 
             setScanning(true);
 
             await fallbackScanner.start(
                 selectedCamera.id,
 
-                {
-                    fps: 10,
+                config,
 
-                    qrbox: {
-                        width: 250,
-                        height: 250,
-                    },
+                async (decodedText) => {
+                    console.log("QR detected:", decodedText);
 
-                    aspectRatio: 1,
-
-                    rememberLastUsedCamera:
-                        true,
-
-                    showTorchButtonIfSupported:
-                        true,
-
-                    showZoomSliderIfSupported:
-                        true,
-
-                    defaultZoomValueIfSupported:
-                        2,
-                },
-
-                async (
-                    decodedText
-                ) => {
-                    console.log(
-                        "QR detected:",
-                        decodedText
-                    );
-
-                    if (
-                        processingRef.current
-                    ) {
+                    if (processingRef.current) {
                         return;
                     }
 
-                    await verifyQr(
-                        decodedText
-                    );
+                    await verifyQr(decodedText);
                 },
 
                 () => {
@@ -618,14 +542,9 @@ export default function Scanner() {
                 }
             );
 
-            console.log(
-                "Fallback camera started."
-            );
+            console.log("Fallback camera started.");
         } catch (err) {
-            console.error(
-                "Camera scanner error:",
-                err
-            );
+            console.error("Camera scanner error:", err);
 
             await stopScanner();
 
@@ -647,10 +566,10 @@ export default function Scanner() {
 
         setResult(null);
         setError("");
+        setClaimMessage(null);
         setLoading(false);
 
-        processingRef.current =
-            false;
+        processingRef.current = false;
 
         setTimeout(() => {
             startScanner();
@@ -687,13 +606,10 @@ export default function Scanner() {
                         <div className="flex items-center gap-3">
 
                             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#106A2E] text-white shadow-sm">
-
                                 <QrCode size={23} />
-
                             </div>
 
                             <div>
-
                                 <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#106A2E]">
                                     CDM LibHub
                                 </p>
@@ -701,7 +617,6 @@ export default function Scanner() {
                                 <h1 className="text-2xl font-bold text-slate-800">
                                     Library Scanner
                                 </h1>
-
                             </div>
 
                         </div>
@@ -733,19 +648,16 @@ export default function Scanner() {
                                 active:scale-[0.98]
                             "
                         >
-
                             <LogOut size={15} />
-
                             Logout
-
                         </button>
 
                     </div>
 
                     <p className="mt-2 text-sm leading-6 text-slate-500">
-                        Scan a student's or faculty
-                        member's QR code to verify
-                        their borrowing eligibility.
+                        Scan a student's or faculty member's QR code to
+                        verify their borrowing eligibility and claim
+                        their reserved books.
                     </p>
 
                 </div>
@@ -790,23 +702,17 @@ export default function Scanner() {
                                 <div className="mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/15">
 
                                     {result.cleared ? (
-                                        <CheckCircle2
-                                            size={38}
-                                        />
+                                        <CheckCircle2 size={38} />
                                     ) : (
-                                        <XCircle
-                                            size={38}
-                                        />
+                                        <XCircle size={38} />
                                     )}
 
                                 </div>
 
                                 <h2 className="text-2xl font-bold">
-
                                     {result.cleared
                                         ? "CLEARED"
                                         : "NOT CLEARED"}
-
                                 </h2>
 
                                 <p className="mt-1 text-sm text-white/80">
@@ -827,22 +733,17 @@ export default function Scanner() {
                             <div className="flex items-center gap-4 rounded-2xl bg-slate-50 p-4">
 
                                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#106A2E]">
-
                                     <User size={21} />
-
                                 </div>
 
                                 <div>
-
                                     <p className="text-xs text-slate-400">
                                         Name
                                     </p>
 
                                     <p className="font-semibold text-slate-800">
-                                        {result.name ||
-                                            "N/A"}
+                                        {result.name || "N/A"}
                                     </p>
-
                                 </div>
 
                             </div>
@@ -854,20 +755,14 @@ export default function Scanner() {
                                 <div className="rounded-2xl bg-slate-50 p-4">
 
                                     <div className="mb-2 flex items-center gap-2 text-slate-400">
-
-                                        <CreditCard
-                                            size={16}
-                                        />
-
+                                        <CreditCard size={16} />
                                         <span className="text-xs">
                                             ID Number
                                         </span>
-
                                     </div>
 
                                     <p className="font-semibold text-slate-800">
-                                        {result.idNumber ||
-                                            "N/A"}
+                                        {result.idNumber || "N/A"}
                                     </p>
 
                                 </div>
@@ -875,20 +770,14 @@ export default function Scanner() {
                                 <div className="rounded-2xl bg-slate-50 p-4">
 
                                     <div className="mb-2 flex items-center gap-2 text-slate-400">
-
-                                        <ShieldCheck
-                                            size={16}
-                                        />
-
+                                        <ShieldCheck size={16} />
                                         <span className="text-xs">
                                             Role
                                         </span>
-
                                     </div>
 
                                     <p className="font-semibold text-slate-800">
-                                        {result.role ||
-                                            "N/A"}
+                                        {result.role || "N/A"}
                                     </p>
 
                                 </div>
@@ -933,59 +822,182 @@ export default function Scanner() {
                                 <div className="grid grid-cols-3 gap-3 text-center">
 
                                     <div>
-
                                         <p className="text-2xl font-bold text-slate-800">
-                                            {result.borrowedBooks ??
-                                                0}
+                                            {result.borrowedBooks ?? 0}
                                         </p>
 
                                         <p className="text-[11px] text-slate-400">
                                             Borrowed
                                         </p>
-
                                     </div>
 
                                     <div>
-
                                         <p className="text-2xl font-bold text-slate-800">
-                                            {result.borrowLimit ??
-                                                0}
+                                            {result.borrowLimit ?? 0}
                                         </p>
 
                                         <p className="text-[11px] text-slate-400">
                                             Limit
                                         </p>
-
                                     </div>
 
                                     <div>
-
                                         <p
                                             className={`
                                                 text-2xl
                                                 font-bold
                                                 ${
                                                     (result.remainingBooks ??
-                                                        0) >
-                                                    0
+                                                        0) > 0
                                                         ? "text-[#106A2E]"
                                                         : "text-red-600"
                                                 }
                                             `}
                                         >
-                                            {result.remainingBooks ??
-                                                0}
+                                            {result.remainingBooks ?? 0}
                                         </p>
 
                                         <p className="text-[11px] text-slate-400">
                                             Remaining
                                         </p>
-
                                     </div>
 
                                 </div>
 
                             </div>
+
+                            {/* RESERVED BOOKS */}
+
+                            {(result.reservedBooks?.length > 0 ||
+                                claimMessage) && (
+
+                                <div className="rounded-2xl border border-slate-200 p-5">
+
+                                    <div className="mb-4 flex items-center gap-2">
+
+                                        <BookOpen
+                                            size={19}
+                                            className="text-[#106A2E]"
+                                        />
+
+                                        <h3 className="font-semibold text-slate-800">
+                                            Reserved Books
+                                        </h3>
+
+                                    </div>
+
+                                    {claimMessage && (
+                                        <div
+                                            className={`mb-3 rounded-xl px-4 py-3 text-sm ${
+                                                claimMessage.type ===
+                                                "success"
+                                                    ? "bg-emerald-50 text-emerald-700"
+                                                    : "bg-red-50 text-red-700"
+                                            }`}
+                                        >
+                                            {claimMessage.text}
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-3">
+
+                                        {(result.reservedBooks ?? []).map(
+                                            (r) => {
+                                                const noSlots =
+                                                    (result.remainingBooks ??
+                                                        0) <= 0;
+
+                                                const noCopies =
+                                                    r.availableCopies <= 0;
+
+                                                const disabled =
+                                                    claimingId !== null ||
+                                                    noSlots ||
+                                                    noCopies;
+
+                                                return (
+                                                    <div
+                                                        key={r.reservationId}
+                                                        className="flex items-center gap-3 rounded-2xl bg-slate-50 p-3"
+                                                    >
+                                                        {r.coverImage ? (
+                                                            <img
+                                                                src={
+                                                                    r.coverImage
+                                                                }
+                                                                alt={
+                                                                    r.bookTitle
+                                                                }
+                                                                className="h-16 w-12 shrink-0 rounded-lg object-cover"
+                                                            />
+                                                        ) : (
+                                                            <div className="flex h-16 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-[#106A2E]">
+                                                                <BookOpen
+                                                                    size={20}
+                                                                />
+                                                            </div>
+                                                        )}
+
+                                                        <div className="min-w-0 flex-1">
+
+                                                            <p className="truncate text-sm font-semibold text-slate-800">
+                                                                {r.bookTitle}
+                                                            </p>
+
+                                                            <p className="truncate text-xs text-slate-500">
+                                                                {r.author}
+                                                            </p>
+
+                                                            <p className="mt-1 text-[11px] text-slate-400">
+                                                                Expires{" "}
+                                                                {new Date(
+                                                                    r.expirationDate
+                                                                ).toLocaleString()}
+                                                            </p>
+
+                                                            {noCopies && (
+                                                                <p className="text-[11px] text-red-500">
+                                                                    No available
+                                                                    copies
+                                                                </p>
+                                                            )}
+
+                                                            {!noCopies &&
+                                                                noSlots && (
+                                                                    <p className="text-[11px] text-red-500">
+                                                                        Borrowing
+                                                                        limit
+                                                                        reached
+                                                                    </p>
+                                                                )}
+
+                                                        </div>
+
+                                                        <button
+                                                            type="button"
+                                                            disabled={disabled}
+                                                            onClick={() =>
+                                                                handleClaim(
+                                                                    r.reservationId
+                                                                )
+                                                            }
+                                                            className="shrink-0 rounded-xl bg-[#106A2E] px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-[#0d5927] disabled:cursor-not-allowed disabled:opacity-50"
+                                                        >
+                                                            {claimingId ===
+                                                            r.reservationId
+                                                                ? "Claiming..."
+                                                                : "Claimed"}
+                                                        </button>
+                                                    </div>
+                                                );
+                                            }
+                                        )}
+
+                                    </div>
+
+                                </div>
+
+                            )}
 
                             {/* ACCOUNT STATUS */}
 
@@ -1007,8 +1019,7 @@ export default function Scanner() {
                                 </p>
 
                                 <p className="mt-1 text-lg font-bold">
-                                    {result.status ||
-                                        "N/A"}
+                                    {result.status || "N/A"}
                                 </p>
 
                             </div>
@@ -1017,9 +1028,7 @@ export default function Scanner() {
 
                             <button
                                 type="button"
-                                onClick={
-                                    scanAgain
-                                }
+                                onClick={scanAgain}
                                 className="
                                     flex
                                     w-full
@@ -1038,13 +1047,8 @@ export default function Scanner() {
                                     active:scale-[0.98]
                                 "
                             >
-
-                                <RotateCcw
-                                    size={18}
-                                />
-
+                                <RotateCcw size={18} />
                                 Scan Another QR
-
                             </button>
 
                         </div>
@@ -1077,8 +1081,8 @@ export default function Scanner() {
                             </div>
 
                             <p className="mt-1 text-xs text-slate-500">
-                                Position the QR code inside
-                                the scanning area.
+                                Position the QR code inside the scanning
+                                area.
                             </p>
 
                         </div>
@@ -1101,66 +1105,52 @@ export default function Scanner() {
 
                             {/* READY STATE */}
 
-                            {!scanning &&
-                                !loading && (
+                            {!scanning && !loading && (
 
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 px-6 text-center">
+                                <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-950 px-6 text-center">
 
-                                        <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-white">
-
-                                            <QrCode
-                                                size={32}
-                                            />
-
-                                        </div>
-
-                                        <h2 className="text-lg font-semibold text-white">
-                                            Ready to Scan
-                                        </h2>
-
-                                        <p className="mt-2 max-w-xs text-sm text-slate-300">
-                                            Use this device's
-                                            camera to scan a
-                                            CDM Library
-                                            Access Pass.
-                                        </p>
-
-                                        <button
-                                            type="button"
-                                            onClick={
-                                                startScanner
-                                            }
-                                            className="
-                                                mt-6
-                                                flex
-                                                items-center
-                                                justify-center
-                                                gap-2
-                                                rounded-xl
-                                                bg-[#106A2E]
-                                                px-6
-                                                py-3
-                                                text-sm
-                                                font-semibold
-                                                text-white
-                                                shadow-lg
-                                                transition
-                                                hover:bg-[#0d5927]
-                                                active:scale-[0.98]
-                                            "
-                                        >
-
-                                            <Camera
-                                                size={20}
-                                            />
-
-                                            Start Camera
-
-                                        </button>
-
+                                    <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/10 text-white">
+                                        <QrCode size={32} />
                                     </div>
 
-                                )}
+                                    <h2 className="text-lg font-semibold text-white">
+                                        Ready to Scan
+                                    </h2>
+
+                                    <p className="mt-2 max-w-xs text-sm text-slate-300">
+                                        Use this device's camera to scan a
+                                        CDM Library Access Pass.
+                                    </p>
+
+                                    <button
+                                        type="button"
+                                        onClick={startScanner}
+                                        className="
+                                            mt-6
+                                            flex
+                                            items-center
+                                            justify-center
+                                            gap-2
+                                            rounded-xl
+                                            bg-[#106A2E]
+                                            px-6
+                                            py-3
+                                            text-sm
+                                            font-semibold
+                                            text-white
+                                            shadow-lg
+                                            transition
+                                            hover:bg-[#0d5927]
+                                            active:scale-[0.98]
+                                        "
+                                    >
+                                        <Camera size={20} />
+                                        Start Camera
+                                    </button>
+
+                                </div>
+
+                            )}
 
                             {/* LOADING */}
 
@@ -1189,44 +1179,39 @@ export default function Scanner() {
 
                         {/* STOP BUTTON */}
 
-                        {scanning &&
-                            !loading && (
+                        {scanning && !loading && (
 
-                                <div className="flex justify-center px-5 py-4">
+                            <div className="flex justify-center px-5 py-4">
 
-                                    <button
-                                        type="button"
-                                        onClick={
-                                            stopScanner
-                                        }
-                                        className="
-                                            rounded-xl
-                                            border
-                                            border-slate-200
-                                            px-5
-                                            py-2.5
-                                            text-sm
-                                            font-semibold
-                                            text-slate-600
-                                            transition
-                                            hover:bg-slate-50
-                                        "
-                                    >
-                                        Stop Camera
-                                    </button>
+                                <button
+                                    type="button"
+                                    onClick={stopScanner}
+                                    className="
+                                        rounded-xl
+                                        border
+                                        border-slate-200
+                                        px-5
+                                        py-2.5
+                                        text-sm
+                                        font-semibold
+                                        text-slate-600
+                                        transition
+                                        hover:bg-slate-50
+                                    "
+                                >
+                                    Stop Camera
+                                </button>
 
-                                </div>
+                            </div>
 
-                            )}
+                        )}
 
                         {/* ERROR */}
 
                         {error && (
 
                             <div className="m-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-
                                 {error}
-
                             </div>
 
                         )}

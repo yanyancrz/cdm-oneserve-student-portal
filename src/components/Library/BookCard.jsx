@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import noCover from "../../assets/images/no-cover.png";
-import { API_URL } from "../../config/api";
 
 const STATUS_STYLES = {
     Available: {
@@ -18,55 +17,98 @@ const STATUS_STYLES = {
 };
 
 const HEART_OUTLINE = (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    >
         <path d="M12 21s-6.7-4.35-9.33-8.2C.86 10.28 1.4 6.86 4.1 5.1 6.02 3.86 8.42 4.3 10 6.1c.36.4.68.86.94 1.3.26-.44.58-.9.94-1.3 1.58-1.8 3.98-2.24 5.9-1 2.7 1.76 3.24 5.18 1.43 7.7C18.7 16.65 12 21 12 21Z" />
     </svg>
 );
 
 const HEART_FILLED = (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+    <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="currentColor"
+    >
         <path d="M12 21s-6.7-4.35-9.33-8.2C.86 10.28 1.4 6.86 4.1 5.1 6.02 3.86 8.42 4.3 10 6.1c.36.4.68.86.94 1.3.26-.44.58-.9.94-1.3 1.58-1.8 3.98-2.24 5.9-1 2.7 1.76 3.24 5.18 1.43 7.7C18.7 16.65 12 21 12 21Z" />
     </svg>
 );
 
+/*
+|--------------------------------------------------------------------------
+| SAME IMAGE LOGIC AS DASHBOARD
+|--------------------------------------------------------------------------
+|
+| Dashboard:
+|
+| const getCover = (book) =>
+|     book.coverUrl ??
+|     book.cover ??
+|     book.coverImage ??
+|     book.imageUrl ??
+|     "";
+|
+| Kaya ito rin ang gagamitin natin dito.
+|
+*/
+const getDashboardCover = (book) =>
+    book?.coverUrl ??
+    book?.cover ??
+    book?.coverImage ??
+    book?.imageUrl ??
+    "";
+
 export default function BookCard({
-
     book,
-
     onClick,
-
     className = "",
-
     isFavorite = false,
-
     onToggleFavorite,
-
 }) {
-
     const navigate = useNavigate();
 
-   const status = book.status ?? "Available";
+    const status = book?.status ?? "Available";
 
     const statusStyle =
         STATUS_STYLES[status] ??
         STATUS_STYLES.Available;
 
-   const image =
-    book.coverImage || noCover;
+    /*
+    |--------------------------------------------------------------------------
+    | BOOK IMAGE
+    |--------------------------------------------------------------------------
+    */
+
+    const image = getDashboardCover(book) || noCover;
+
+    /*
+    |--------------------------------------------------------------------------
+    | BOOK CLICK
+    |--------------------------------------------------------------------------
+    */
 
     const handleClick = () => {
-
         if (onClick) {
-
             onClick(book);
-
             return;
-
         }
 
         navigate(`/library/book/${book.bookId}`);
-
     };
+
+    /*
+    |--------------------------------------------------------------------------
+    | KEYBOARD ACCESS
+    |--------------------------------------------------------------------------
+    */
 
     const handleKeyDown = (e) => {
         if (e.key === "Enter" || e.key === " ") {
@@ -75,26 +117,28 @@ export default function BookCard({
         }
     };
 
-    const handleFavoriteClick = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
+    /*
+    |--------------------------------------------------------------------------
+    | FAVORITE
+    |--------------------------------------------------------------------------
+    */
 
-    if (onToggleFavorite) {
-        onToggleFavorite(book.bookId);
-    }
-};
+    const handleFavoriteClick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (onToggleFavorite) {
+            onToggleFavorite(book.bookId);
+        }
+    };
 
     return (
-
         <div
-
             role="button"
             tabIndex={0}
             onClick={handleClick}
             onKeyDown={handleKeyDown}
-
             data-book-id={book.bookId}
-
             className={`
                 group
                 relative
@@ -112,103 +156,96 @@ export default function BookCard({
                 text-left
                 ${className}
             `}
-
         >
 
-            {/* BOOK COVER */}
+            {/* =====================================================
+                BOOK COVER
+            ===================================================== */}
 
             <div className="relative aspect-[3/4] bg-gray-100 overflow-hidden">
 
-                   <img
-                        src={
-                            book.coverImage
-                                ? `${API_URL}/${book.coverImage}?v=2`
-                                : noCover
-                        }
-                        alt={book.title}
-                        onError={(e) => {
-                            e.currentTarget.src = noCover;
-                        }}
+                <img
+                    src={image}
+                    alt={book?.title || "Book cover"}
+                    onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = noCover;
+                    }}
+                    className="
+                        w-full
+                        h-full
+                        object-cover
+                        transition-transform
+                        duration-300
+                        group-hover:scale-105
+                    "
+                />
+
+                {/* NEW ARRIVAL */}
+
+                {book?.isNewArrival && (
+                    <span
                         className="
-                            w-full
-                            h-full
-                            object-cover
-                            transition-transform
-                            duration-300
-                            group-hover:scale-105
+                            absolute
+                            top-2
+                            left-2
+                            bg-[#F4D35E]
+                            text-[#633806]
+                            text-[10px]
+                            font-bold
+                            px-2
+                            py-1
+                            rounded-full
+                            shadow
                         "
-                    />
+                    >
+                        NEW
+                    </span>
+                )}
 
-                    
+                {/* FAVORITE */}
 
-                
-
-                {
-
-                    book.isNewArrival && (
-
-                        <span
-                            className="
-                                absolute
-                                top-2
-                                left-2
-                                bg-[#F4D35E]
-                                text-[#633806]
-                                text-[10px]
-                                font-bold
-                                px-2
-                                py-1
-                                rounded-full
-                                shadow
-                            "
-                        >
-
-                            NEW
-
-                        </span>
-
-                    )
-
-                }
-
-                {
-
-                    onToggleFavorite && (
-
-                        <button
-                            type="button"
-                            onClick={handleFavoriteClick}
-                            aria-label={isFavorite ? `Remove ${book.title} from favorites` : `Add ${book.title} to favorites`}
-                            className={`
-                                absolute
-                                top-2
-                                right-2
-                                w-8
-                                h-8
-                                rounded-full
-                                flex
-                                items-center
-                                justify-center
-                                shadow-sm
-                                transition-all
-                                hover:scale-105
-                                active:scale-95
-                                ${isFavorite
+                {onToggleFavorite && (
+                    <button
+                        type="button"
+                        onClick={handleFavoriteClick}
+                        aria-label={
+                            isFavorite
+                                ? `Remove ${book.title} from favorites`
+                                : `Add ${book.title} to favorites`
+                        }
+                        className={`
+                            absolute
+                            top-2
+                            right-2
+                            w-8
+                            h-8
+                            rounded-full
+                            flex
+                            items-center
+                            justify-center
+                            shadow-sm
+                            transition-all
+                            hover:scale-105
+                            active:scale-95
+                            ${
+                                isFavorite
                                     ? "bg-white/90 text-[#106A2E]"
                                     : "bg-white/70 text-gray-400 hover:text-[#106A2E]"
-                                }
-                            `}
-                        >
-                            {isFavorite ? HEART_FILLED : HEART_OUTLINE}
-                        </button>
-
-                    )
-
-                }
+                            }
+                        `}
+                    >
+                        {isFavorite
+                            ? HEART_FILLED
+                            : HEART_OUTLINE}
+                    </button>
+                )}
 
             </div>
 
-            {/* CONTENT */}
+            {/* =====================================================
+                BOOK INFORMATION
+            ===================================================== */}
 
             <div className="p-4">
 
@@ -221,13 +258,10 @@ export default function BookCard({
                             truncate
                         "
                     >
-
-                        {book.category}
-
+                        {book?.category || "Library"}
                     </span>
 
                     <span
-
                         className="
                             text-[10px]
                             font-semibold
@@ -236,19 +270,12 @@ export default function BookCard({
                             rounded-full
                             flex-shrink-0
                         "
-
                         style={{
-
                             background: statusStyle.bg,
-
                             color: statusStyle.color,
-
                         }}
-
                     >
-
                         {status}
-
                     </span>
 
                 </div>
@@ -262,9 +289,7 @@ export default function BookCard({
                         min-h-[48px]
                     "
                 >
-
-                    {book.title}
-
+                    {book?.title || "Untitled Book"}
                 </h3>
 
                 <p
@@ -275,15 +300,11 @@ export default function BookCard({
                         truncate
                     "
                 >
-
-                    {book.author}
-
+                    {book?.author || "Unknown Author"}
                 </p>
 
             </div>
 
         </div>
-
     );
-
 }

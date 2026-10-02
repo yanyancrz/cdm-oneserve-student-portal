@@ -171,10 +171,6 @@ export default function Login() {
                 "super_admin",
                 "super-admin",
 
-                "lostfoundadmin",
-                "lost_found_admin",
-                "lost-found-admin",
-
                 "clinicadmin",
                 "clinic_admin",
                 "clinic-admin",
@@ -383,39 +379,6 @@ export default function Login() {
             }
 
             // =================================================
-            // LOST & FOUND ADMIN
-            //
-            // DESKTOP ONLY
-            // =================================================
-
-            if (
-                role === "lostfoundadmin" ||
-                role === "lost_found_admin" ||
-                role === "lost-found-admin"
-            ) {
-                if (!isDesktop) {
-                    toast.error(
-                        "Lost & Found Admin accounts can only be used on a desktop device."
-                    );
-
-                    return;
-                }
-
-                toast.success(
-                    "Welcome, Lost & Found Admin!"
-                );
-
-                navigate(
-                    "/admin/lost-found/dashboard",
-                    {
-                        replace: true,
-                    }
-                );
-
-                return;
-            }
-
-            // =================================================
             // OTHER ADMIN MODULES
             //
             // DESKTOP ONLY
@@ -463,19 +426,19 @@ export default function Login() {
             // =================================================
 
             if (
-                    role === "student" ||
-                    role === "faculty"
-                ) {
-                    // DEV MODE:
-                    // Allow Student/Faculty testing on desktop.
-                    // Production will still require a mobile phone.
-                    if (!isMobile && !import.meta.env.DEV) {
-                        toast.error(
-                            "Student and Faculty accounts can only be used on a mobile phone."
-                        );
+                role === "student" ||
+                role === "faculty"
+            ) {
+                // DEV MODE:
+                // Allow Student/Faculty testing on desktop.
+                // Production will still require a mobile phone.
+                if (!isMobile && !import.meta.env.DEV) {
+                    toast.error(
+                        "Student and Faculty accounts can only be used on a mobile phone."
+                    );
 
-                        return;
-                    }
+                    return;
+                }
 
                 // =============================================
                 // PROFILE CHECK
