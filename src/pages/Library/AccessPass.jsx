@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { API_URL } from "../../config/api";
 import { QRCodeSVG } from "qrcode.react";
 import {
     QrCode,
@@ -13,9 +14,6 @@ import {
 } from "lucide-react";
 
 import LibraryBottomNav from "../../components/BottomNavigation/LibraryBottomNav";
-
-// const API_URL = "http://localhost:5212";
-const API_URL = "http://api.cdmconnect.online";
 
 const ACTIVE_RESERVATION_STATUSES = ["Reserved", "Pending", "Approved"];
 
