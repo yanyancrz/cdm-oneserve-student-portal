@@ -820,6 +820,77 @@ export default function Dashboard() {
                     </div>
                 </section>
 
+                {/* METRICS */}
+
+                <section className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {[
+                        {
+                            label: "Borrowed",
+                            value: loans === null ? "–" : borrowedLoans.length,
+                            sub: `of ${borrowLimit} limit`,
+                            icon: LibraryBig,
+                            tone: "bg-blue-50 text-blue-600",
+                            onClick: goToLoans,
+                        },
+                        {
+                            label: "Reserved",
+                            value: reservationsLoading ? "–" : activeReservations.length,
+                            sub: "books on hold",
+                            icon: BookMarked,
+                            tone: "bg-amber-50 text-amber-600",
+                            onClick: scrollToReservations,
+                        },
+                        {
+                            label: "Overdue",
+                            value: loans === null ? "–" : overdueLoans.length,
+                            sub: overdueLoans.length > 0 ? "return now" : "all good",
+                            icon: AlertTriangle,
+                            tone:
+                                overdueLoans.length > 0
+                                    ? "bg-red-50 text-red-600"
+                                    : "bg-emerald-50 text-[#106A2E]",
+                            onClick: goToLoans,
+                        },
+                        {
+                            label: "Slots left",
+                            value: loans === null || reservationsLoading ? "–" : slotsLeft,
+                            sub: "can still borrow/reserve",
+                            icon: CheckCircle2,
+                            tone: "bg-emerald-50 text-[#106A2E]",
+                            onClick: goToBooks,
+                        },
+                    ].map((item) => {
+                        const Icon = item.icon;
+
+                        return (
+                            <button
+                                key={item.label}
+                                type="button"
+                                onClick={item.onClick}
+                                className="rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:border-emerald-200 hover:shadow-md"
+                            >
+                                <div
+                                    className={`flex h-9 w-9 items-center justify-center rounded-xl ${item.tone}`}
+                                >
+                                    <Icon size={17} />
+                                </div>
+
+                                <p className="mt-3 text-2xl font-bold text-slate-800">
+                                    {item.value}
+                                </p>
+
+                                <p className="text-xs font-semibold text-slate-600">
+                                    {item.label}
+                                </p>
+
+                                <p className="mt-0.5 text-[11px] text-slate-400">
+                                    {item.sub}
+                                </p>
+                            </button>
+                        );
+                    })}
+                </section>
+
                 {/* QUICK ACCESS */}
 
                 <section className="mb-8">

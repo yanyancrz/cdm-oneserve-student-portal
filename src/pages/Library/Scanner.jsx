@@ -52,6 +52,10 @@ export default function Scanner() {
     const [claimingId, setClaimingId] = useState(null);
     const [claimMessage, setClaimMessage] = useState(null);
 
+    // Return state
+    const [returningId, setReturningId] = useState(null);
+    const [returnMessage, setReturnMessage] = useState(null);
+
     // =========================================================
     // GET AUTH TOKEN
     // =========================================================
@@ -127,6 +131,7 @@ export default function Scanner() {
         setLoading(true);
         setError("");
         setClaimMessage(null);
+        setReturnMessage(null);
 
         try {
             console.log("=================================");
@@ -349,6 +354,71 @@ export default function Scanner() {
     };
 
     // =========================================================
+    // RETURN BORROWED BOOK
+    // =========================================================
+
+    const handleReturn = async (borrowId) => {
+        setReturningId(borrowId);
+        setReturnMessage(null);
+
+        try {
+            const token = getAuthToken();
+
+            if (!token) {
+                throw new Error(
+                    "Your login session is missing. Please log in again."
+                );
+            }
+
+            const response = await fetch(
+                `${API_URL}/api/library/borrow/return/${borrowId}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    },
+                }
+            );
+
+            if (response.status === 401 || response.status === 403) {
+                throw new Error(
+                    "You do not have permission to confirm returns."
+                );
+            }
+
+            const data = await response.json().catch(() => null);
+
+            if (!response.ok || data?.success === false) {
+                throw new Error(
+                    data?.message || "Failed to confirm the return."
+                );
+            }
+
+            // Update the scan result without rescanning
+            setResult((prev) => ({
+                ...prev,
+                borrowedBooks: Math.max(0, (prev.borrowedBooks ?? 0) - 1),
+                remainingBooks: (prev.remainingBooks ?? 0) + 1,
+                activeLoans: (prev.activeLoans ?? []).filter(
+                    (l) => l.borrowId !== borrowId
+                ),
+            }));
+
+            setReturnMessage({
+                type: "success",
+                text: data?.message || "Book returned successfully.",
+            });
+        } catch (err) {
+            setReturnMessage({
+                type: "error",
+                text: err.message,
+            });
+        } finally {
+            setReturningId(null);
+        }
+    };
+
+    // =========================================================
     // START CAMERA
     // =========================================================
 
@@ -356,6 +426,7 @@ export default function Scanner() {
         setResult(null);
         setError("");
         setClaimMessage(null);
+        setReturnMessage(null);
 
         processingRef.current = false;
 
@@ -567,6 +638,7 @@ export default function Scanner() {
         setResult(null);
         setError("");
         setClaimMessage(null);
+        setReturnMessage(null);
         setLoading(false);
 
         processingRef.current = false;
@@ -991,6 +1063,120 @@ export default function Scanner() {
                                                     </div>
                                                 );
                                             }
+                                        )}
+
+                                    </div>
+
+                                </div>
+
+                            )}
+
+                            {/* BOOKS TO RETURN */}
+
+                            {(result.activeLoans?.length > 0 ||
+                                returnMessage) && (
+
+                                <div className="rounded-2xl border border-slate-200 p-5">
+
+                                    <div className="mb-4 flex items-center gap-2">
+
+                                        <BookOpen
+                                            size={19}
+                                            className="text-[#106A2E]"
+                                        />
+
+                                        <h3 className="font-semibold text-slate-800">
+                                            Books to Return
+                                        </h3>
+
+                                    </div>
+
+                                    {returnMessage && (
+                                        <div
+                                            className={`mb-3 rounded-xl px-4 py-3 text-sm ${
+                                                returnMessage.type ===
+                                                "success"
+                                                    ? "bg-emerald-50 text-emerald-700"
+                                                    : "bg-red-50 text-red-700"
+                                            }`}
+                                        >
+                                            {returnMessage.text}
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-3">
+
+                                        {(result.activeLoans ?? []).map(
+                                            (loan) => (
+                                                <div
+                                                    key={loan.borrowId}
+                                                    className="flex items-center gap-3 rounded-2xl bg-slate-50 p-3"
+                                                >
+                                                    {loan.coverImage ? (
+                                                        <img
+                                                            src={
+                                                                loan.coverImage
+                                                            }
+                                                            alt={
+                                                                loan.bookTitle
+                                                            }
+                                                            className="h-16 w-12 shrink-0 rounded-lg object-cover"
+                                                        />
+                                                    ) : (
+                                                        <div className="flex h-16 w-12 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-[#106A2E]">
+                                                            <BookOpen
+                                                                size={20}
+                                                            />
+                                                        </div>
+                                                    )}
+
+                                                    <div className="min-w-0 flex-1">
+
+                                                        <p className="truncate text-sm font-semibold text-slate-800">
+                                                            {loan.bookTitle}
+                                                        </p>
+
+                                                        <p className="truncate text-xs text-slate-500">
+                                                            {loan.author}
+                                                        </p>
+
+                                                        <p
+                                                            className={`mt-1 text-[11px] ${
+                                                                loan.isOverdue
+                                                                    ? "font-semibold text-red-600"
+                                                                    : "text-slate-400"
+                                                            }`}
+                                                        >
+                                                            {loan.isOverdue
+                                                                ? "Overdue since "
+                                                                : "Due "}
+                                                            {new Date(
+                                                                loan.dueDate
+                                                            ).toLocaleDateString()}
+                                                        </p>
+
+                                                    </div>
+
+                                                    <button
+                                                        type="button"
+                                                        disabled={
+                                                            returningId !==
+                                                            null
+                                                        }
+                                                        onClick={() =>
+                                                            handleReturn(
+                                                                loan.borrowId
+                                                            )
+                                                        }
+                                                        className="shrink-0 rounded-xl bg-slate-800 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+                                                    >
+                                                        {returningId ===
+                                                        loan.borrowId
+                                                            ? "Returning..."
+                                                            : "Returned"}
+                                                    </button>
+                                                </div>
+                                            )
                                         )}
 
                                     </div>
