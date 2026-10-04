@@ -4,6 +4,7 @@ import {
     Bookmark,
     Clock3,
     CheckCircle2,
+    FileText,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -121,6 +122,20 @@ export default function BookDetailsModal({
             ? coverImage
             : `${API_URL}/${String(coverImage).replace(/^\/+/, "")}`
         : noCover;
+
+    // =====================================================
+    // E-BOOK (PDF)
+    // pdfFile = "library/ebooks/<file>.pdf", served by the API.
+    // Opened in a new tab: phone browsers cannot show PDFs inside a modal.
+    // =====================================================
+
+    const pdfFile = book.pdfFile || null;
+
+    const pdfSrc = pdfFile
+        ? String(pdfFile).startsWith("http")
+            ? pdfFile
+            : `${API_URL}/${String(pdfFile).replace(/^\/+/, "")}`
+        : null;
 
     // =====================================================
     // CAN RESERVE?
@@ -514,11 +529,45 @@ export default function BookDetailsModal({
 
                 <div
                     className="
+                        flex
+                        flex-col
+                        gap-2
                         border-t
                         border-slate-100
                         p-3
                     "
                 >
+
+                    {/* E-BOOK (only when a PDF was uploaded) */}
+
+                    {pdfSrc && (
+                        <a
+                            href={pdfSrc}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="
+                                flex
+                                h-10
+                                w-full
+                                items-center
+                                justify-center
+                                gap-2
+                                rounded-lg
+                                border
+                                border-[#106A2E]/30
+                                bg-white
+                                px-3
+                                text-xs
+                                font-bold
+                                text-[#106A2E]
+                                transition
+                                hover:bg-emerald-50
+                            "
+                        >
+                            <FileText size={14} />
+                            Read E-Book (PDF)
+                        </a>
+                    )}
 
                     <button
                         type="button"

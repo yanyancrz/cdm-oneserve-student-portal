@@ -15,6 +15,7 @@ export default function AdminDashboard() {
     });
 
     const [isLoading, setIsLoading] = useState(true);
+    const [loadError, setLoadError] = useState("");
 
     const adminName =
         localStorage.getItem("adminName") ||
@@ -60,9 +61,32 @@ export default function AdminDashboard() {
     useEffect(() => {
         const loadDashboard = async () => {
             try {
+                // Kailangan na ng token dahil may [Authorize]
+                // na ang /api/admin/dashboard
+                const token =
+                    localStorage.getItem("token") ||
+                    localStorage.getItem("authToken");
+
                 const response = await fetch(
-                    `${API_URL}/api/admin/dashboard`
+                    `${API_URL}/api/admin/dashboard`,
+                    {
+                        headers: token
+                            ? { Authorization: `Bearer ${token}` }
+                            : {},
+                    }
                 );
+
+                if (response.status === 401) {
+                    throw new Error(
+                        "Session expired. Please log in again."
+                    );
+                }
+
+                if (response.status === 403) {
+                    throw new Error(
+                        "Your account doesn't have permission to view the dashboard."
+                    );
+                }
 
                 if (!response.ok) {
                     throw new Error("Failed to load admin dashboard.");
@@ -81,8 +105,14 @@ export default function AdminDashboard() {
                             ? data.modules
                             : defaultModules,
                 });
+
+                setLoadError("");
             } catch (error) {
                 console.error("Admin dashboard error:", error);
+
+                setLoadError(
+                    error.message || "Failed to load admin dashboard."
+                );
 
                 // Keep dashboard usable even if backend
                 // endpoint is not ready yet.
@@ -369,6 +399,23 @@ export default function AdminDashboard() {
                 </div>
 
                 {/* ==================================================
+                    LOAD ERROR
+                ================================================== */}
+
+                {loadError && (
+                    <div className="mb-6 px-4 py-3 rounded-xl bg-red-50 text-red-700 text-sm flex items-center justify-between gap-4">
+                        <span>{loadError}</span>
+
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="font-semibold underline whitespace-nowrap"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                )}
+
+                {/* ==================================================
                     SYSTEM OVERVIEW
                 ================================================== */}
 
@@ -623,11 +670,11 @@ export default function AdminDashboard() {
 
                         </div>
 
-                        <div className="px-5 sm:px-6 pb-5">
+                        <div className="px-5 sm:px-6 pb-5 max-h-[420px] overflow-y-auto">
 
                             {dashboard.recentActivity.length > 0 ? (
                                 dashboard.recentActivity
-                                    .slice(0, 5)
+                                    .slice(0, 20)
                                     .map((activity, index) => (
                                         <div
                                             key={activity.id || index}

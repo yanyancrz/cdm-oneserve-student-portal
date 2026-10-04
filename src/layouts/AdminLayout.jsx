@@ -3,9 +3,46 @@ import { Megaphone } from "lucide-react";
 import Logo from "../assets/images/lightlogo.png";
 import BackgroundImage from "../assets/images/admin-bg.png";
 
+// Route ng Login page. Palitan kung iba ang path.
+const LOGIN_PATH = "/";
+
+// Lahat ng keys na sine-save ng Login.jsx (same list as the Library Scanner).
+const SESSION_KEYS = [
+    "token",
+    "authToken",
+    "userId",
+    "idNumber",
+    "userName",
+    "userEmail",
+    "userRole",
+    "role",
+    "course",
+    "yearLevel",
+    "contactNumber",
+    "profilePicture",
+    "isProfileComplete",
+];
+
 export default function AdminLayout() {
     const navigate = useNavigate();
     const location = useLocation();
+
+    // =====================================================
+    // LOGOUT
+    // Dati, "/" lang ang pinupuntahan at naiiwan ang token sa
+    // localStorage, kaya naka-login pa rin ang admin. Ngayon, binubura
+    // muna ang session bago bumalik sa Login.
+    // =====================================================
+
+    const handleLogout = () => {
+        SESSION_KEYS.forEach((key) => {
+            localStorage.removeItem(key);
+            sessionStorage.removeItem(key);
+        });
+
+        // replace: true para hindi makabalik sa admin page gamit ang Back button.
+        navigate(LOGIN_PATH, { replace: true });
+    };
 
     const navItems = [
         {
@@ -91,26 +128,6 @@ export default function AdminLayout() {
                 >
                     <circle cx="12" cy="8" r="4" />
                     <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
-                </svg>
-            ),
-        },
-
-        {
-            label: "School Records",
-            path: "/admin/school-records",
-            icon: (
-                <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                >
-                    <path d="M4 5h16v14H4z" />
-                    <path d="M8 9h8M8 13h5" />
                 </svg>
             ),
         },
@@ -305,7 +322,7 @@ export default function AdminLayout() {
                 >
                     <button
                         type="button"
-                        onClick={() => navigate("/")}
+                        onClick={handleLogout}
                         title="Log out"
                         className="
                             flex
@@ -349,7 +366,6 @@ export default function AdminLayout() {
 
             {/* =====================================================
                 RIGHT SIDE
-                Sidebar stays fixed; this side handles scrolling
             ===================================================== */}
 
             <div

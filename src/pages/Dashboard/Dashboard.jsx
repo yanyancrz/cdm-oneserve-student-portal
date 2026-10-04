@@ -9,10 +9,6 @@ export default function Dashboard() {
     const [user, setUser] = useState(null);
     const [search, setSearch] = useState("");
 
-    // =========================================================
-    // ANNOUNCEMENTS
-    // =========================================================
-
     const [announcements, setAnnouncements] = useState([]);
     const [announcementsLoading, setAnnouncementsLoading] =
         useState(true);
@@ -25,20 +21,14 @@ export default function Dashboard() {
 
     const touchStartX = useRef(null);
 
-    // =========================================================
-    // RECENT ACTIVITY
-    // =========================================================
-
+    
     const [recentActivity, setRecentActivity] =
         useState([]);
 
     const [activityLoading, setActivityLoading] =
         useState(true);
 
-    // =========================================================
-    // LOAD USER PROFILE
-    // =========================================================
-
+    
     useEffect(() => {
         const email =
             localStorage.getItem("userEmail");
@@ -78,10 +68,7 @@ export default function Dashboard() {
         loadProfile();
     }, [navigate]);
 
-    // =========================================================
-    // LOAD ANNOUNCEMENTS
-    // =========================================================
-
+   
     useEffect(() => {
         const loadAnnouncements = async () => {
             try {
@@ -125,10 +112,7 @@ export default function Dashboard() {
         loadAnnouncements();
     }, []);
 
-    // =========================================================
-    // LOAD RECENT ACTIVITY
-    // =========================================================
-
+    
     useEffect(() => {
         const email =
             user?.email ||
@@ -181,10 +165,7 @@ export default function Dashboard() {
         loadRecentActivity();
     }, [user?.email]);
 
-    // =========================================================
-    // BASIC USER DATA
-    // =========================================================
-
+   
     const isLoading = !user;
 
     const userName =
@@ -211,9 +192,7 @@ export default function Dashboard() {
     const isStudent =
         userRole.toLowerCase() === "student";
 
-    // =========================================================
-    // CAMPUS SERVICES
-    // =========================================================
+   
 
     const services = [
         {
@@ -360,9 +339,7 @@ export default function Dashboard() {
                 )
         );
 
-    // =========================================================
-    // ANNOUNCEMENT FALLBACK
-    // =========================================================
+   
 
     const fallbackAnnouncement = {
         id: "empty-announcement",
@@ -383,10 +360,7 @@ export default function Dashboard() {
               ]
             : fallbackAnnouncement;
 
-    // =========================================================
-    // ANNOUNCEMENT CONTROLS
-    // =========================================================
-
+    
     const goToNextAnnouncement = () => {
         if (announcements.length <= 1) {
             return;
@@ -473,10 +447,6 @@ export default function Dashboard() {
         setIsAnnouncementPaused(false);
     };
 
-    // =========================================================
-    // FORMAT RECENT ACTIVITY TIME
-    // =========================================================
-
     const formatRelativeTime = (
         dateValue
     ) => {
@@ -546,9 +516,6 @@ export default function Dashboard() {
         );
     };
 
-    // =========================================================
-    // USER STATUS
-    // =========================================================
 
     const accountStatus =
         user?.accountStatus ||
@@ -560,10 +527,6 @@ export default function Dashboard() {
 
     const profileComplete =
         user?.isProfileComplete;
-
-    // =========================================================
-    // SKELETON
-    // =========================================================
 
     const Bone = ({
         className = ""
@@ -581,16 +544,8 @@ export default function Dashboard() {
         />
     );
 
-    // =========================================================
-    // RENDER
-    // =========================================================
-
     return (
         <div className="relative min-h-screen overflow-x-hidden bg-[#F7F5EF] md:pt-24">
-
-            {/* =====================================================
-                BACKGROUND
-            ===================================================== */}
 
             <div className="pointer-events-none fixed inset-0 overflow-hidden">
 
@@ -603,11 +558,6 @@ export default function Dashboard() {
                 <div className="absolute inset-0 opacity-[0.035] bg-[linear-gradient(rgba(16,106,46,.35)_1px,transparent_1px),linear-gradient(90deg,rgba(16,106,46,.35)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
             </div>
-
-
-            {/* =====================================================
-                ANIMATIONS
-            ===================================================== */}
 
             <style>{`
 

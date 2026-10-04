@@ -3,15 +3,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 // ==========================================
 // PWA GUARD
 // ==========================================
-
 import PWAInstallGuard from "./components/PWAInstallGuard/PWAInstallGuard";
-
 import DeviceRestriction from "./components/DeviceRestriction/DeviceRestriction";
 
 // ==========================================
 // AUTH / PUBLIC PAGES
 // ==========================================
-
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
 import OTPVerification from "./pages/OTPVerification/OTPVerification";
@@ -21,7 +18,6 @@ import ResetPassword from "./pages/Auth/ResetPassword";
 // ==========================================
 // STUDENT / USER PAGES
 // ==========================================
-
 import Dashboard from "./pages/Dashboard/Dashboard";
 import Profile from "./pages/Profile/Profile";
 import SetupProfile from "./pages/Profile/SetupProfile";
@@ -32,13 +28,11 @@ import ProtectedRoute from "./pages/ProtectedRoute";
 // ==========================================
 // STUDENT LAYOUT
 // ==========================================
-
 import StudentLayout from "./layouts/StudentLayout";
 
 // ==========================================
-// LIBRARY PAGES
+// LIBRARY PAGES (student side)
 // ==========================================
-
 import LibraryDashboard from "./pages/Library/Dashboard";
 import BrowseBooks from "./pages/Library/BrowseBooks";
 import ReserveBook from "./pages/Library/ReserveBook";
@@ -50,48 +44,32 @@ import Scanner from "./pages/Library/Scanner";
 // ==========================================
 // BUSINESS HUB - USER
 // ==========================================
-
 import BusinessHub from "./pages/BusinessHub/BusinessHub";
 
 // ==========================================
 // ADMIN LAYOUT
 // ==========================================
-
 import AdminLayout from "./layouts/AdminLayout";
 
 // ==========================================
 // ADMIN PAGES
 // ==========================================
-
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import RegistrationVerification from "./pages/Admin/RegistrationVerification";
 import Users from "./pages/Admin/Users";
 import AdminProfile from "./pages/Admin/AdminProfile";
-import SchoolRecords from "./pages/Admin/SchoolRecords";
 import Announcements from "./pages/Admin/Announcements";
 
+// ==========================================
+// LIBRARY ADMINISTRATION MODULE (Head / Staff)
+// ==========================================
+import { libraryRoutes } from "./library-admin/routes/LibraryRoutes";
 
 function App() {
     return (
         <BrowserRouter>
-
             <Routes>
-
-                {/* ==================================================
-                    PWA REQUIRED
-                    AUTH / PUBLIC PAGES
-                    ==================================================
-
-                    These pages are accessible only from the
-                    installed CDM OneServe PWA.
-
-                    Normal browser:
-                    ❌ BLOCKED
-
-                    Installed PWA:
-                    ✅ ALLOWED
-                ================================================== */}
-
+                {/* ================= AUTH / PUBLIC (PWA required) ================= */}
                 <Route
                     path="/"
                     element={
@@ -100,7 +78,6 @@ function App() {
                         </PWAInstallGuard>
                     }
                 />
-
                 <Route
                     path="/register"
                     element={
@@ -109,7 +86,6 @@ function App() {
                         </PWAInstallGuard>
                     }
                 />
-
                 <Route
                     path="/otp"
                     element={
@@ -118,7 +94,6 @@ function App() {
                         </PWAInstallGuard>
                     }
                 />
-
                 <Route
                     path="/forgot-password"
                     element={
@@ -127,7 +102,6 @@ function App() {
                         </PWAInstallGuard>
                     }
                 />
-
                 <Route
                     path="/reset-password"
                     element={
@@ -137,49 +111,10 @@ function App() {
                     }
                 />
 
+                {/* ================= LIBRARY QR SCANNER (no PWA restriction) ================= */}
+                <Route path="/library/scanner" element={<Scanner />} />
 
-                {/* ==================================================
-                    LIBRARY STAFF / QR SCANNER
-                    ==================================================
-
-                    IMPORTANT:
-
-                    THIS IS THE ONLY MAIN EXCEPTION.
-
-                    Scanner can be opened from:
-
-                    Desktop browser       ✅
-                    Mobile browser        ✅
-                    Tablet browser        ✅
-                    Installed PWA         ✅
-
-                    No PWA restriction here.
-
-                    Later we can add ROLE protection so only
-                    Library Staff can actually use it.
-                ================================================== */}
-
-                <Route
-                    path="/library/scanner"
-                    element={<Scanner />}
-                />
-
-
-                {/* ==================================================
-                    STUDENT / FACULTY PORTAL
-                    ==================================================
-
-                    PWA REQUIRED
-
-                    Device restriction will be added here:
-
-                    Mobile / Tablet:
-                    ✅ ALLOW
-
-                    Desktop:
-                    ❌ BLOCK
-                ================================================== */}
-
+                {/* ================= STUDENT / FACULTY PORTAL (PWA + mobile) ================= */}
                 <Route
                     element={
                         <PWAInstallGuard>
@@ -189,51 +124,12 @@ function App() {
                         </PWAInstallGuard>
                     }
                 >
+                    <Route path="/dashboard" element={<Dashboard />} />
 
-                    {/* =========================
-                        MAIN DASHBOARD
-                    ========================= */}
-
-                    <Route
-                        path="/dashboard"
-                        element={<Dashboard />}
-                    />
-
-
-                    {/* =========================
-                        PROFILE
-                    ========================= */}
-
-                    <Route
-                        path="/profile"
-                        element={<Profile />}
-                    />
-
-                    <Route
-                        path="/verify-email-change"
-                        element={<VerifyEmailChange />}
-                    />
-
-                    <Route
-                        path="/profile/edit"
-                        element={<EditProfile />}
-                    />
-
-
-                    {/* =========================
-                        SETUP PROFILE
-                    ========================= */}
-
-                    <Route
-                        path="/setup-profile"
-                        element={<SetupProfile />}
-                    />
-
-
-                    {/* =========================
-                        PROTECTED PROFILE
-                    ========================= */}
-
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/verify-email-change" element={<VerifyEmailChange />} />
+                    <Route path="/edit-profile" element={<EditProfile />} />
+                    <Route path="/setup-profile" element={<SetupProfile />} />
                     <Route
                         path="/protected-profile"
                         element={
@@ -243,69 +139,19 @@ function App() {
                         }
                     />
 
+                    {/* CDM LibHub (student side) */}
+                    <Route path="/library" element={<LibraryDashboard />} />
+                    <Route path="/library/books" element={<BrowseBooks />} />
+                    <Route path="/library/book/:bookId" element={<BookDetails />} />
+                    <Route path="/library/reserve" element={<ReserveBook />} />
+                    <Route path="/library/loans" element={<BorrowHistory />} />
+                    <Route path="/library/access-pass" element={<AccessPass />} />
 
-                    {/* ==================================================
-                        CDM LIBHUB
-                    ================================================== */}
-
-                    <Route
-                        path="/library"
-                        element={<LibraryDashboard />}
-                    />
-
-                    <Route
-                        path="/library/books"
-                        element={<BrowseBooks />}
-                    />
-
-                    <Route
-                        path="/library/book/:bookId"
-                        element={<BookDetails />}
-                    />
-
-                    <Route
-                        path="/library/reserve"
-                        element={<ReserveBook />}
-                    />
-
-                    <Route
-                        path="/library/loans"
-                        element={<BorrowHistory />}
-                    />
-
-                    <Route
-                        path="/library/access-pass"
-                        element={<AccessPass />}
-                    />
-
-
-                    {/* ==================================================
-                        BUSINESS HUB
-                    ================================================== */}
-
-                    <Route
-                        path="/business-hub"
-                        element={<BusinessHub />}
-                    />
-
+                    {/* Business Hub */}
+                    <Route path="/business-hub" element={<BusinessHub />} />
                 </Route>
 
-
-                {/* ==================================================
-                    ADMIN PORTAL
-                    ==================================================
-
-                    PWA REQUIRED
-
-                    Device restriction will be added:
-
-                    Desktop:
-                    ✅ ALLOW
-
-                    Mobile / Tablet:
-                    ❌ BLOCK
-                ================================================== */}
-
+                {/* ================= ADMIN PORTAL (PWA + desktop) ================= */}
                 <Route
                     element={
                         <PWAInstallGuard>
@@ -315,41 +161,16 @@ function App() {
                         </PWAInstallGuard>
                     }
                 >
-
-                    <Route
-                        path="/admin/dashboard"
-                        element={<AdminDashboard />}
-                    />
-
-                    <Route
-                        path="/admin/verification"
-                        element={<RegistrationVerification />}
-                    />
-
-                    <Route
-                        path="/admin/users"
-                        element={<Users />}
-                    />
-
-                    <Route
-                        path="/admin/profile"
-                        element={<AdminProfile />}
-                    />
-
-                    <Route
-                        path="/admin/school-records"
-                        element={<SchoolRecords />}
-                    />
-
-                    <Route
-                        path="/admin/announcements"
-                        element={<Announcements />}
-                    />
-
+                    <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                    <Route path="/admin/verification" element={<RegistrationVerification />} />
+                    <Route path="/admin/users" element={<Users />} />
+                    <Route path="/admin/profile" element={<AdminProfile />} />
+                    <Route path="/admin/announcements" element={<Announcements />} />
                 </Route>
 
+                {/* ================= LIBRARY ADMINISTRATION (Head / Staff) ================= */}
+                {libraryRoutes}
             </Routes>
-
         </BrowserRouter>
     );
 }

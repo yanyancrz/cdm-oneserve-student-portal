@@ -7,6 +7,8 @@ import LibraryBottomNav from "../../components/BottomNavigation/LibraryBottomNav
 
 import useLibrary from "../../hooks/useLibrary";
 
+import { API_URL } from "../../config/api";
+
 // =========================================================
 // CONSTANTS
 // =========================================================
@@ -34,12 +36,26 @@ const getBookKey = (book, index) =>
     book.bookId ??
     `${book.isbn ?? "book"}-${index}`;
 
+// The API stores covers as a relative path ("library/covers/abc.jpg"),
+// so it must be loaded from the API server, not from the Vite dev server.
+const toApiUrl = (path) => {
+    if (!path) return "";
+
+    const value = String(path);
+
+    if (/^(https?:|data:|blob:)/i.test(value)) return value;
+
+    return `${API_URL}/${value.replace(/^\/+/, "")}`;
+};
+
 const getCover = (book) =>
-    book.coverUrl ??
-    book.cover ??
-    book.coverImage ??
-    book.imageUrl ??
-    "";
+    toApiUrl(
+        book.coverUrl ??
+        book.cover ??
+        book.coverImage ??
+        book.imageUrl ??
+        ""
+    );
 
 const isBookAvailable = (book) =>
     Number(book.availableCopies ?? 0) > 0 &&
@@ -91,6 +107,9 @@ function BrowseBookCard({
     const availability = getAvailability(book);
     const cover = getCover(book);
 
+    // Show the placeholder icon if the image fails to load.
+    const [coverFailed, setCoverFailed] = useState(false);
+
     return (
         <div
             role="button"
@@ -108,15 +127,12 @@ function BrowseBookCard({
             className="group w-full cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition hover:border-emerald-200 hover:shadow-lg active:scale-[0.99]"
         >
             <div className="relative aspect-[3/4] overflow-hidden bg-slate-100">
-                {cover ? (
+                {cover && !coverFailed ? (
                     <img
                         src={cover}
                         alt={book.title}
                         loading="lazy"
-                        onError={(event) => {
-                            event.currentTarget.style.display =
-                                "none";
-                        }}
+                        onError={() => setCoverFailed(true)}
                         className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                     />
                 ) : (
