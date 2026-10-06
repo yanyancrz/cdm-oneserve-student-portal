@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { BookOpen, Plus } from "lucide-react";
+import { AlertCircle, BookOpen, Loader2, Plus, RefreshCw } from "lucide-react";
 
 import LibraryPageHeader from "../components/layout/LibraryPageHeader";
 import BookFilters from "../components/books/BookFilters";
@@ -10,6 +10,7 @@ import DeleteBookModal from "../components/books/DeleteBookModal";
 import BookPreviewModal from "../components/books/BookPreviewModal";
 import Pagination from "../components/common/Pagination";
 import EmptyState from "../components/common/EmptyState";
+import { SkeletonCountBar, SkeletonPagination } from "../components/common/Skeleton";
 
 import { useLibrary } from "../context/LibraryContext";
 import { bookService } from "../services/bookService";
@@ -105,22 +106,32 @@ export default function BooksPage() {
         ([key, value]) => key !== "sortBy" && value
     );
 
+    const totalBooks = Number(result?.totalItems ?? books.length);
+
+    // Add Book now lives in the page header (top right).
+    const addBookButton = (
+        <button
+            type="button"
+            onClick={() => setModal({ type: "add" })}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#106A2E] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0d5a27] hover:shadow active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#106A2E]/40 focus-visible:ring-offset-2"
+        >
+            <Plus size={16} aria-hidden="true" /> Add Book
+        </button>
+    );
+
     return (
         <>
-            <LibraryPageHeader title="Books" description="Manage the library catalog and book copies." />
+            <LibraryPageHeader
+                eyebrow="Catalog"
+                icon={BookOpen}
+                title="Books"
+                description="Manage the library catalog and book copies."
+                actions={addBookButton}
+            />
 
-            <div className="space-y-4">
-                <div className="flex justify-end">
-                    <button
-                        type="button"
-                        onClick={() => setModal({ type: "add" })}
-                        className="inline-flex items-center gap-2 rounded-lg bg-[#106A2E] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-                    >
-                        <Plus size={16} /> Add Book
-                    </button>
-                </div>
-
+            <div className="space-y-5">
                 <BookFilters
+                    loading={firstLoad}
                     search={search}
                     onSearchChange={setSearch}
                     filters={filters}
@@ -130,21 +141,26 @@ export default function BooksPage() {
 
                 <section className="rounded-2xl border border-black/[0.05] bg-white shadow-sm">
                     {firstLoad ? (
-                        <div className="space-y-3 p-5" aria-busy="true" aria-label="Loading books">
-                            {[0, 1, 2, 3, 4].map((n) => (
-                                <div key={n} className="h-14 animate-pulse rounded-lg bg-gray-100" />
-                            ))}
-                        </div>
+                        <>
+                            <SkeletonCountBar />
+                            <BookTable books={[]} canDelete={canDelete} loading />
+                            <SkeletonPagination />
+                        </>
                     ) : error && !result ? (
-                        <div className="px-5 py-12 text-center">
-                            <p className="text-sm font-medium text-gray-700">Unable to load books.</p>
-                            <p className="mt-1 text-xs text-gray-400">{error}</p>
+                        <div className="flex flex-col items-center px-5 py-14 text-center">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-500">
+                                <AlertCircle size={22} aria-hidden="true" />
+                            </div>
+
+                            <p className="mt-4 text-sm font-semibold text-gray-800">Unable to load books</p>
+                            <p className="mt-1 max-w-sm text-xs text-gray-500">{error}</p>
+
                             <button
                                 type="button"
                                 onClick={reload}
-                                className="mt-4 rounded-lg bg-[#106A2E] px-4 py-2 text-sm font-semibold text-white hover:opacity-90"
+                                className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#106A2E] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0d5a27] active:scale-[0.98]"
                             >
-                                Try again
+                                <RefreshCw size={14} aria-hidden="true" /> Try again
                             </button>
                         </div>
                     ) : books.length === 0 ? (
@@ -158,29 +174,52 @@ export default function BooksPage() {
                             }
                         />
                     ) : (
-                        <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
-                            {error && (
-                                <p className="border-b border-amber-100 bg-amber-50 px-5 py-2 text-xs text-amber-800">
-                                    Could not refresh: {error}
-                                </p>
-                            )}
+                        <>
+                            {/* Count bar. Stays sharp while the table refreshes. */}
+                            <div className="flex items-center justify-between gap-3 border-b border-black/[0.05] px-5 py-3.5">
+                                <div className="flex items-center gap-2.5">
+                                    <h2 className="text-sm font-semibold text-gray-800">Catalog</h2>
 
-                            <BookTable
-                                books={books}
-                                canDelete={canDelete}
-                                onView={(book) => setModal({ type: "view", book })}
-                                onEdit={(book) => setModal({ type: "edit", book })}
-                                onDelete={(book) => setModal({ type: "delete", book })}
-                            />
+                                    <span className="rounded-full bg-[#E1F0E4] px-2.5 py-0.5 text-xs font-semibold text-[#106A2E]">
+                                        {totalBooks} {totalBooks === 1 ? "book" : "books"}
+                                    </span>
+                                </div>
 
-                            <Pagination
-                                page={result.page}
-                                totalPages={result.totalPages}
-                                totalItems={result.totalItems}
-                                pageSize={result.pageSize}
-                                onChange={setPage}
-                            />
-                        </div>
+                                {loading && (
+                                    <span
+                                        role="status"
+                                        className="inline-flex items-center gap-1.5 text-xs text-gray-400"
+                                    >
+                                        <Loader2 size={13} aria-hidden="true" className="animate-spin" />
+                                        Updating...
+                                    </span>
+                                )}
+                            </div>
+
+                            <div className={loading ? "opacity-60 transition-opacity" : "transition-opacity"}>
+                                {error && (
+                                    <p className="border-b border-amber-100 bg-amber-50 px-5 py-2 text-xs text-amber-800">
+                                        Could not refresh: {error}
+                                    </p>
+                                )}
+
+                                <BookTable
+                                    books={books}
+                                    canDelete={canDelete}
+                                    onView={(book) => setModal({ type: "view", book })}
+                                    onEdit={(book) => setModal({ type: "edit", book })}
+                                    onDelete={(book) => setModal({ type: "delete", book })}
+                                />
+
+                                <Pagination
+                                    page={result.page}
+                                    totalPages={result.totalPages}
+                                    totalItems={result.totalItems}
+                                    pageSize={result.pageSize}
+                                    onChange={setPage}
+                                />
+                            </div>
+                        </>
                     )}
                 </section>
             </div>

@@ -65,6 +65,13 @@ import Announcements from "./pages/Admin/Announcements";
 // ==========================================
 import { libraryRoutes } from "./library-admin/routes/LibraryRoutes";
 
+// ==========================================
+// GUIDANCE COUNSELING MODULE (Student / Faculty + Counselor)
+// ==========================================
+import { guidanceStudentRoutes, guidanceCounselorRoutes } from "./modules/guidance/routes/GuidanceRoutes";
+import BlockRoles from "./components/RoleGuard/BlockRoles";
+import { GUIDANCE_COUNSELOR_HOME } from "./modules/guidance/config/guidanceRoutes";
+
 function App() {
     return (
         <BrowserRouter>
@@ -119,7 +126,10 @@ function App() {
                     element={
                         <PWAInstallGuard>
                             <DeviceRestriction type="mobile">
-                                <StudentLayout />
+                                {/* Counselors never see the OneServe dashboard / modules */}
+                                <BlockRoles roles={["Counselor"]} redirectTo={GUIDANCE_COUNSELOR_HOME}>
+                                    <StudentLayout />
+                                </BlockRoles>
                             </DeviceRestriction>
                         </PWAInstallGuard>
                     }
@@ -149,7 +159,13 @@ function App() {
 
                     {/* Business Hub */}
                     <Route path="/business-hub" element={<BusinessHub />} />
+
+                    {/* Guidance Counseling (student side) - opened from the dashboard */}
+                    {guidanceStudentRoutes}
                 </Route>
+
+                {/* ================= GUIDANCE COUNSELOR (mobile) ================= */}
+                {guidanceCounselorRoutes}
 
                 {/* ================= ADMIN PORTAL (PWA + desktop) ================= */}
                 <Route

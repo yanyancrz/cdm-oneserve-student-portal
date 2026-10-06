@@ -279,7 +279,7 @@ export default function Dashboard() {
             key: "guidance",
             title: "Guidance",
             subtitle: "Counseling support",
-            url: "https://guidance.cdmoneserve.vercel.app",
+            route: "/guidance",
             accent: "#D9578F",
             glow: "rgba(217,87,143,.14)",
             icon: (

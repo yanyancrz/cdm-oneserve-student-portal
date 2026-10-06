@@ -18,8 +18,46 @@ import EmptyState from "../../components/Library/EmptyState";
 import noCover from "../../assets/images/no-cover.png";
 
 
-const STUDENT_BORROW_LIMIT = 3;
-const DEFAULT_LOAN_DAYS = 7;
+// Used only until the Library Settings arrive (or if they cannot be loaded).
+const FALLBACK_STUDENT_LIMIT = 3;
+const FALLBACK_FACULTY_LIMIT = 5;
+const FALLBACK_LOAN_DAYS = 7;
+
+
+// Borrow limits and loan period set by the Library Head.
+// Returns null if the server cannot be reached, so the page keeps working.
+async function fetchPolicySettings() {
+
+    try {
+
+        const token =
+            localStorage.getItem("token") ||
+            localStorage.getItem("authToken");
+
+        const response = await fetch(
+            `${API_URL}/api/library/policy`,
+            {
+                headers: token
+                    ? { Authorization: `Bearer ${token}` }
+                    : {},
+            }
+        );
+
+        if (!response.ok) {
+            return null;
+        }
+
+        const payload = await response.json();
+
+        return (payload?.data ?? payload)?.settings ?? null;
+
+    } catch {
+
+        return null;
+
+    }
+
+}
 
 
 function addDays(date, days) {
@@ -95,6 +133,11 @@ export default function BookDetails() {
 
     const [favoriteLoading, setFavoriteLoading] =
         useState(false);
+
+
+    // Library Settings (borrow limit, loan period)
+    const [settings, setSettings] =
+        useState(null);
 
 
     // =========================================================
@@ -195,6 +238,29 @@ export default function BookDetails() {
 
 
     // =========================================================
+    // LOAD LIBRARY SETTINGS
+    // =========================================================
+
+    useEffect(() => {
+
+        let cancelled = false;
+
+        fetchPolicySettings().then((data) => {
+
+            if (!cancelled) {
+                setSettings(data);
+            }
+
+        });
+
+        return () => {
+            cancelled = true;
+        };
+
+    }, []);
+
+
+    // =========================================================
     // LOADING
     // =========================================================
 
@@ -287,6 +353,23 @@ export default function BookDetails() {
 
 
     // =========================================================
+    // BORROWING RULES (from the Library Settings)
+    // =========================================================
+
+    const isFaculty =
+        String(localStorage.getItem("userRole") || "")
+            .trim()
+            .toLowerCase() === "faculty";
+
+    const borrowLimit = isFaculty
+        ? settings?.facultyBorrowLimit ?? FALLBACK_FACULTY_LIMIT
+        : settings?.studentBorrowLimit ?? FALLBACK_STUDENT_LIMIT;
+
+    const loanDays =
+        settings?.defaultLoanDays ?? FALLBACK_LOAN_DAYS;
+
+
+    // =========================================================
     // ACTIVE TRANSACTIONS
     // =========================================================
 
@@ -330,7 +413,7 @@ export default function BookDetails() {
 
     const reachedBorrowLimit =
         activeBorrowCount >=
-        STUDENT_BORROW_LIMIT;
+        borrowLimit;
 
 
     const canBorrow =
@@ -347,7 +430,7 @@ export default function BookDetails() {
     const expectedDueDate =
         addDays(
             new Date(),
-            DEFAULT_LOAN_DAYS
+            loanDays
         );
 
 
@@ -428,7 +511,7 @@ export default function BookDetails() {
         if (reachedBorrowLimit) {
 
             toast.error(
-                `You can only borrow up to ${STUDENT_BORROW_LIMIT} books at a time.`
+                `You can only borrow up to ${borrowLimit} books at a time.`
             );
 
             return;
@@ -986,7 +1069,7 @@ export default function BookDetails() {
                                         font-semibold
                                         text-[#1F1F1F]
                                     ">
-                                        {activeBorrowCount} of {STUDENT_BORROW_LIMIT} books
+                                        {activeBorrowCount} of {borrowLimit} books
                                     </p>
 
                                 </div>
@@ -1570,7 +1653,7 @@ export default function BookDetails() {
 
                 message={
                     `Borrow "${book.title}"?\n\n` +
-                    `Current borrowing: ${activeBorrowCount} of ${STUDENT_BORROW_LIMIT}\n` +
+                    `Current borrowing: ${activeBorrowCount} of ${borrowLimit}\n` +
                     `Expected due date: ${formatDate(expectedDueDate)}`
                 }
 

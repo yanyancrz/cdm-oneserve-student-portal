@@ -35,6 +35,45 @@ export default function BookDetailsModal({
 }) {
     const [isReserving, setIsReserving] = useState(false);
 
+    // How many days a reserved book is held. Follows the Library Settings;
+    // HOLD_DAYS is only used until they arrive (or if they cannot be loaded).
+    const [holdDays, setHoldDays] = useState(HOLD_DAYS);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadHoldDays = async () => {
+            try {
+                const token =
+                    localStorage.getItem("token") ||
+                    localStorage.getItem("authToken");
+
+                const response = await fetch(`${API_URL}/api/library/policy`, {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                });
+
+                if (!response.ok) return;
+
+                const payload = await response.json();
+                const days = Number(
+                    (payload?.data ?? payload)?.settings?.reservationPickupDays
+                );
+
+                if (!cancelled && Number.isFinite(days) && days > 0) {
+                    setHoldDays(days);
+                }
+            } catch {
+                // Keep the default.
+            }
+        };
+
+        loadHoldDays();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     // Isara gamit ang Escape key
     useEffect(() => {
         const onKeyDown = (event) => {
@@ -513,7 +552,7 @@ export default function BookDetailsModal({
                         />
 
                         <p className="text-[10px] leading-4">
-                            Reserved books are held for {HOLD_DAYS} days.
+                            Reserved books are held for {holdDays} days.
                             Pick them up at the circulation desk
                             and show your Access Pass. The librarian
                             will confirm the claim.

@@ -36,7 +36,14 @@ const ENDPOINTS = {
     loans: (userId) =>
         `${API_URL}/api/library/borrow/current/${userId}`,
     expireReservations: `${API_URL}/api/library/reservations/expire`,
+
+    // Library Settings numbers + the Terms & Guidelines written by the Library Head.
+    // Response: { success, data: { settings: {...}, terms: [{ id, title, content }] } }
+    policy: `${API_URL}/api/library/policy`,
 };
+
+// How many terms show before "Show all".
+const TERMS_PREVIEW = 3;
 
 // Mga status na binibilang ng backend bilang "active reservation"
 const ACTIVE_RESERVATION_STATUSES = ["reserved", "pending", "approved"];
@@ -134,6 +141,12 @@ const getAvailability = (book) => {
         className: "bg-emerald-50 text-emerald-700",
     };
 };
+
+const formatPeso = (value) =>
+    Number(value || 0).toLocaleString("en-PH", {
+        style: "currency",
+        currency: "PHP",
+    });
 
 const Skeleton = ({ className = "" }) => (
     <div
@@ -392,6 +405,11 @@ export default function Dashboard() {
     const [selectedBook, setSelectedBook] = useState(null);
     const [profileLoading, setProfileLoading] = useState(true);
 
+    // Library Settings + Terms & Guidelines (set by the Library Head)
+    const [policy, setPolicy] = useState(null);
+    const [policyLoading, setPolicyLoading] = useState(true);
+    const [showAllTerms, setShowAllTerms] = useState(false);
+
     // =====================================================
     // LOAD RESERVATIONS (API)
     //
@@ -507,6 +525,47 @@ export default function Dashboard() {
     }, [navigate, loadReservations]);
 
     // =====================================================
+    // LOAD TERMS & GUIDELINES + SETTINGS
+    //
+    // If this fails, the page falls back to the default rules
+    // below, so it never breaks.
+    // =====================================================
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadPolicy = async () => {
+            try {
+                const response = await fetch(ENDPOINTS.policy, {
+                    headers: authHeaders(),
+                });
+
+                if (!response.ok) throw new Error("No policy.");
+
+                const payload = await response.json();
+                const data = payload?.data ?? payload;
+
+                if (cancelled) return;
+
+                setPolicy({
+                    settings: data?.settings ?? null,
+                    terms: toArray(data?.terms),
+                });
+            } catch {
+                if (!cancelled) setPolicy(null);
+            } finally {
+                if (!cancelled) setPolicyLoading(false);
+            }
+        };
+
+        loadPolicy();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    // =====================================================
     // USER DATA
     // =====================================================
 
@@ -527,7 +586,33 @@ export default function Dashboard() {
     // BORROWING + RESERVATION COUNTS
     // =====================================================
 
-    const borrowLimit = role.toLowerCase() === "faculty" ? 5 : 3;
+    // The numbers follow the Library Settings. 3 / 5 / 7 / 3 are only used
+    // until the settings arrive (or if they cannot be loaded).
+    const settings = policy?.settings ?? null;
+    const isFaculty = role.toLowerCase() === "faculty";
+
+    const borrowLimit = isFaculty
+        ? settings?.facultyBorrowLimit ?? 5
+        : settings?.studentBorrowLimit ?? 3;
+
+    const loanDays = settings?.defaultLoanDays ?? 7;
+    const holdDays = settings?.reservationPickupDays ?? 3;
+    const finePerDay = Number(settings?.overdueFinePerDay ?? 0) || 0;
+
+    const terms = policy?.terms ?? [];
+    const visibleTerms = showAllTerms ? terms : terms.slice(0, TERMS_PREVIEW);
+
+    // Quick facts (only when the real settings were loaded).
+    const ruleFacts = settings
+        ? [
+              { label: "Borrow limit", value: `${borrowLimit} books` },
+              { label: "Loan period", value: `${loanDays} days` },
+              { label: "Reservation hold", value: `${holdDays} days` },
+              ...(finePerDay > 0
+                  ? [{ label: "Overdue fine", value: `${formatPeso(finePerDay)} / day` }]
+                  : []),
+          ]
+        : [];
 
     // Borrowed lang ang binibilang (hindi ForClaiming)
     const borrowedLoans = useMemo(
@@ -1157,39 +1242,118 @@ export default function Dashboard() {
                     )}
                 </section>
 
-                {/* POLICY */}
+                {/* TERMS & GUIDELINES */}
 
-                <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-5">
+                <section
+                    id="terms"
+                    className="mt-8 rounded-2xl border border-slate-200 bg-white p-5"
+                >
                     <div className="flex items-start gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
                             <Clock3 size={18} />
                         </div>
 
-                        <div>
+                        <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold text-slate-800">
-                                Borrowing rules
+                                Terms &amp; guidelines
                             </p>
 
-                            <ul className="mt-2 space-y-1.5 text-xs leading-5 text-slate-500">
-                                <li>
-                                    You can borrow and reserve up to{" "}
-                                    {borrowLimit} books in total. The loan
-                                    period is 7 days.
-                                </li>
-                                <li>
-                                    Reserved books are held for 3 days at the
-                                    circulation desk.
-                                </li>
-                                <li>
-                                    Overdue books trigger an SMS notice. There
-                                    is no daily cash fine.
-                                </li>
-                                <li>
-                                    For a lost or damaged book, bring an
-                                    identical replacement copy (same ISBN and
-                                    edition).
-                                </li>
-                            </ul>
+                            <p className="mt-0.5 text-[11px] text-slate-400">
+                                Set by the Library Head. These apply every
+                                time you borrow or reserve.
+                            </p>
+
+                            {/* QUICK FACTS */}
+
+                            {ruleFacts.length > 0 && (
+                                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                                    {ruleFacts.map((fact) => (
+                                        <div
+                                            key={fact.label}
+                                            className="rounded-xl bg-slate-50 px-3 py-2"
+                                        >
+                                            <p className="text-[10px] text-slate-400">
+                                                {fact.label}
+                                            </p>
+
+                                            <p className="mt-0.5 text-xs font-semibold text-slate-700">
+                                                {fact.value}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* TERMS */}
+
+                            {policyLoading ? (
+                                <div className="mt-4 space-y-2.5">
+                                    <Skeleton className="h-3 w-1/3" />
+                                    <Skeleton className="h-3 w-full" />
+                                    <Skeleton className="h-3 w-5/6" />
+                                </div>
+                            ) : terms.length > 0 ? (
+                                <>
+                                    <ul className="mt-4 space-y-3">
+                                        {visibleTerms.map((term, index) => (
+                                            <li
+                                                key={term.id ?? index}
+                                                className="text-xs leading-5 text-slate-500"
+                                            >
+                                                {term.title && (
+                                                    <p className="text-[13px] font-semibold text-slate-700">
+                                                        {term.title}
+                                                    </p>
+                                                )}
+
+                                                {term.content && (
+                                                    <p className="whitespace-pre-line">
+                                                        {term.content}
+                                                    </p>
+                                                )}
+                                            </li>
+                                        ))}
+                                    </ul>
+
+                                    {terms.length > TERMS_PREVIEW && (
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setShowAllTerms((value) => !value)
+                                            }
+                                            aria-expanded={showAllTerms}
+                                            className="mt-3 text-xs font-semibold text-[#106A2E]"
+                                        >
+                                            {showAllTerms
+                                                ? "Show less"
+                                                : `Show all ${terms.length} terms`}
+                                        </button>
+                                    )}
+                                </>
+                            ) : (
+                                // Nothing from the Library Head yet: default rules.
+                                <ul className="mt-3 space-y-1.5 text-xs leading-5 text-slate-500">
+                                    <li>
+                                        You can borrow and reserve up to{" "}
+                                        {borrowLimit} books in total. The loan
+                                        period is {loanDays} days.
+                                    </li>
+                                    <li>
+                                        Reserved books are held for {holdDays}{" "}
+                                        days at the circulation desk.
+                                    </li>
+                                    <li>
+                                        {finePerDay > 0
+                                            ? `Overdue books are charged ${formatPeso(finePerDay)} per day.`
+                                            : "There is no daily cash fine."}
+                                    </li>
+                                    <li>
+                                        For a lost or damaged book, bring an
+                                        identical replacement copy (same ISBN
+                                        and edition).
+                                    </li>
+                                </ul>
+                            )}
                         </div>
                     </div>
                 </section>

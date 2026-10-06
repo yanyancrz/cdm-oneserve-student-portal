@@ -2,7 +2,7 @@ import { Navigate, Outlet } from "react-router-dom";
 
 import AccessDenied from "../common/AccessDenied";
 import ErrorMessage from "../common/ErrorMessage";
-import LoadingSpinner from "../common/LoadingSpinner";
+import { SkeletonLibraryShell } from "../common/Skeleton";
 import { useLibrary } from "../../context/LibraryContext";
 
 // Blocks the whole Library module until the server confirms the signed-in
@@ -11,7 +11,8 @@ export default function LibraryAccessGate() {
     const { status, error, refresh, logout } = useLibrary();
 
     if (status === "loading") {
-        return <LoadingSpinner fullScreen label="Checking your access..." />;
+        // Whole layout (sidebar, topbar, content) as a skeleton while /me loads.
+        return <SkeletonLibraryShell label="Checking your access..." />;
     }
 
     if (status === "unauthenticated") {

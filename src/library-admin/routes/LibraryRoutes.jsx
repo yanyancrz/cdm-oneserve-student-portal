@@ -1,4 +1,4 @@
-import { Navigate, Route } from "react-router-dom";
+import { Route } from "react-router-dom";
 
 import PWAInstallGuard from "../../components/PWAInstallGuard/PWAInstallGuard";
 import DeviceRestriction from "../../components/DeviceRestriction/DeviceRestriction";
@@ -8,7 +8,7 @@ import LibraryAccessGate from "../components/layout/LibraryAccessGate";
 import LibraryLayout from "../components/layout/LibraryLayout";
 import RequirePermission from "../components/layout/RequirePermission";
 import LibraryPlaceholderPage from "../pages/LibraryPlaceholderPage";
-import LibraryDashboard from "../pages/LibraryDashboard";
+import LibraryDashboard from "../components/dashboard/LibraryDashboard";
 import BooksPage from "../pages/BooksPage";
 import StudentsPage from "../pages/StudentsPage";
 import FacultyPage from "../pages/FacultyPage";
@@ -17,6 +17,8 @@ import ReservationsPage from "../pages/ReservationsPage";
 import ReturnsPage from "../pages/ReturnsPage";
 import ReportsPage from "../pages/ReportsPage";
 import LibrariansPage from "../pages/LibrariansPage";
+import TermsPage from "../pages/TermsPage";
+import LibrarySettingsPage from "../pages/LibrarySettingsPage";
 
 import { LIBRARY_BASE } from "../config/navigation";
 
@@ -45,15 +47,21 @@ export const libraryRoutes = (
         }
     >
         <Route element={<LibraryLayout />}>
+            {/*
+                The dashboard answers on BOTH /admin/library and /admin/library/dashboard.
+                There is no redirect in between, so the sidebar's Dashboard link,
+                the login redirect, and a typed URL all land on the page,
+                whichever of the two paths they use.
+            */}
             <Route
                 path={LIBRARY_BASE}
-                element={<Navigate to={`${LIBRARY_BASE}/dashboard`} replace />}
+                element={<LibraryDashboard />}
             />
-
             <Route
                 path={`${LIBRARY_BASE}/dashboard`}
                 element={<LibraryDashboard />}
             />
+
             <Route
                 path={`${LIBRARY_BASE}/books`}
                 element={<BooksPage />}
@@ -78,13 +86,13 @@ export const libraryRoutes = (
                 path={`${LIBRARY_BASE}/returns`}
                 element={<ReturnsPage />}
             />
-           <Route
+            <Route
                 path={`${LIBRARY_BASE}/reports`}
                 element={<ReportsPage />}
             />
             <Route
                 path={`${LIBRARY_BASE}/terms`}
-                element={placeholder("Terms & Guidelines", "Library borrowing rules and policies.")}
+                element={<TermsPage />}
             />
 
             {/* Library Head only */}
@@ -96,7 +104,7 @@ export const libraryRoutes = (
             <Route element={<RequirePermission permission="canManageSettings" />}>
                 <Route
                     path={`${LIBRARY_BASE}/settings`}
-                    element={placeholder("Library Settings", "Fines, borrowing limits, and loan durations.")}
+                    element={<LibrarySettingsPage />}
                 />
             </Route>
         </Route>

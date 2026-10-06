@@ -14,17 +14,17 @@ import {
     UserRound,
 } from "lucide-react";
 
-import LibraryPageHeader from "../components/layout/LibraryPageHeader";
-import StatCard from "../components/dashboard/StatCard";
-import QuickActionCard from "../components/dashboard/QuickActionCard";
-import OverdueTable from "../components/dashboard/OverdueTable";
-import RecentActivity from "../components/dashboard/RecentActivity";
-import ReservationAlert from "../components/dashboard/ReservationAlert";
+import LibraryPageHeader from "../layout/LibraryPageHeader";
+import StatCard from "./StatCard";
+import QuickActionCard from "./QuickActionCard";
+import OverdueTable from "./OverdueTable";
+import RecentActivity from "./RecentActivity";
+import ReservationAlert from "./ReservationAlert";
 
-import { LIBRARY_BASE } from "../config/navigation";
-import { useLibrary } from "../context/LibraryContext";
-import { usePolling } from "../hooks/usePolling";
-import { libraryDashboardService } from "../services/libraryDashboardService";
+import { LIBRARY_BASE } from "../../config/navigation";
+import { useLibrary } from "../../context/LibraryContext";
+import { usePolling } from "../../hooks/usePolling";
+import { libraryDashboardService } from "../../services/libraryDashboardService";
 
 const POLL_INTERVAL_MS = 3000;
 

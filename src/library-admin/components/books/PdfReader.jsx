@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { ExternalLink, FileX2 } from "lucide-react";
 
 import { API_URL } from "../../../config/api";
+import { SkeletonPdf } from "../common/Skeleton";
 
 // Turns the stored relative path (e.g. "library/ebooks/abc.pdf" or
 // "/library/ebooks/abc.pdf") into a full URL on the API server.
@@ -113,13 +114,7 @@ export default function PdfReader({
     // ---------------------------------------------------------
 
     if (checking) {
-        return (
-            <div
-                className={`flex items-center justify-center rounded-2xl border border-gray-200 bg-gray-50 ${className}`}
-            >
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#106A2E]/20 border-t-[#106A2E]" />
-            </div>
-        );
+        return <SkeletonPdf className={className} label="Checking e-book..." />;
     }
 
     // ---------------------------------------------------------
@@ -178,8 +173,8 @@ export default function PdfReader({
         <div className="space-y-2">
             <div className={`relative overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 ${className}`}>
                 {!loaded && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="h-8 w-8 animate-spin rounded-full border-4 border-[#106A2E]/20 border-t-[#106A2E]" />
+                    <div className="absolute inset-0 z-10">
+                        <SkeletonPdf bare className="h-full w-full" label="Loading e-book..." />
                     </div>
                 )}
 

@@ -21,6 +21,77 @@ import {
 
 import { API_URL } from "../../config/api";
 
+// How often the alerts refresh in the background (only while the tab is visible).
+const NOTIFICATION_POLL_MS = 30 * 1000;
+
+// =========================================================
+// WHICH MODULE A NOTIFICATION IS FROM
+//
+// Decided by the first word of its Type, e.g. GUIDANCE_APPOINTMENT_REQUEST
+// is Guidance. Every module should start its notification Types with its
+// own name (GUIDANCE_, LIBRARY_, CLINIC_, LOSTFOUND_, BUSINESSHUB_).
+// "match" also lists the older Library names (reservation-created, ...).
+// =========================================================
+
+const NOTIFICATION_MODULES = [
+    {
+        key: "guidance",
+        label: "Guidance",
+        icon: faCommentDots,
+        chip: "bg-pink-50 text-[#B13C70]",
+        match: ["GUIDANCE"],
+    },
+    {
+        key: "library",
+        label: "Library",
+        icon: faBookOpen,
+        chip: "bg-emerald-50 text-emerald-700",
+        match: ["LIBRARY", "RESERVATION", "BORROW", "BOOK"],
+    },
+    {
+        key: "clinic",
+        label: "Clinic",
+        icon: faStethoscope,
+        chip: "bg-sky-50 text-sky-700",
+        match: ["CLINIC"],
+    },
+    {
+        key: "lost-found",
+        label: "Lost & Found",
+        icon: faMagnifyingGlass,
+        chip: "bg-violet-50 text-violet-700",
+        match: ["LOST", "LOSTFOUND", "FOUND"],
+    },
+    {
+        key: "business-hub",
+        label: "Business Hub",
+        icon: faBriefcase,
+        chip: "bg-amber-50 text-amber-700",
+        match: ["BUSINESS", "BUSINESSHUB"],
+    },
+];
+
+// Shown for notices that belong to no module (INFO, SUCCESS, ...).
+const GENERAL_MODULE = {
+    key: "general",
+    label: "OneServe",
+    icon: faCircleInfo,
+    chip: "bg-slate-100 text-slate-500",
+};
+
+const getNotificationModule = (type) => {
+    // "reservation-created" and "RESERVATION_CREATED" both give "RESERVATION".
+    const firstWord = String(type || "")
+        .toUpperCase()
+        .split(/[^A-Z]+/)[0];
+
+    return (
+        NOTIFICATION_MODULES.find((module) =>
+            module.match.includes(firstWord)
+        ) || GENERAL_MODULE
+    );
+};
+
 export default function BottomNavigation() {
     const navigate = useNavigate();
     const location = useLocation();
@@ -65,7 +136,7 @@ export default function BottomNavigation() {
             key: "guidance",
             label: "Guidance",
             icon: faCommentDots,
-            url: "https://guidance.cdmoneserve.vercel.app",
+            path: "/guidance",
         },
 
         {
@@ -106,9 +177,15 @@ export default function BottomNavigation() {
             return;
         }
 
-        const loadNotifications = async () => {
+        let cancelled = false;
+
+        // silent = background refresh: no skeleton, and a failed refresh keeps
+        // the notifications that are already on screen.
+        const loadNotifications = async (silent = false) => {
             try {
-                setNotificationsLoading(true);
+                if (!silent) {
+                    setNotificationsLoading(true);
+                }
 
                 const response = await fetch(
                     `${API_URL}/api/notifications/${encodeURIComponent(
@@ -125,24 +202,59 @@ export default function BottomNavigation() {
                 const data =
                     await response.json();
 
-                setNotifications(
-                    Array.isArray(data)
-                        ? data
-                        : []
-                );
+                if (!cancelled) {
+                    setNotifications(
+                        Array.isArray(data)
+                            ? data
+                            : []
+                    );
+                }
             } catch (error) {
                 console.error(
                     "Notification loading error:",
                     error
                 );
 
-                setNotifications([]);
+                if (!cancelled && !silent) {
+                    setNotifications([]);
+                }
             } finally {
-                setNotificationsLoading(false);
+                if (!cancelled && !silent) {
+                    setNotificationsLoading(false);
+                }
             }
         };
 
         loadNotifications();
+
+        // New alerts (an appointment confirmed or rescheduled, for example) show up
+        // without the user having to change page.
+        const refreshIfVisible = () => {
+            if (!document.hidden) {
+                loadNotifications(true);
+            }
+        };
+
+        const timer = setInterval(
+            refreshIfVisible,
+            NOTIFICATION_POLL_MS
+        );
+
+        document.addEventListener(
+            "visibilitychange",
+            refreshIfVisible
+        );
+
+        return () => {
+            cancelled = true;
+
+            clearInterval(timer);
+
+            document.removeEventListener(
+                "visibilitychange",
+                refreshIfVisible
+            );
+        };
     }, [location.pathname]);
 
     // =========================================================
@@ -272,6 +384,11 @@ export default function BottomNavigation() {
                 type || "INFO"
             ).toUpperCase();
 
+        // Guidance notifications use the Guidance icon
+        if (normalized.startsWith("GUIDANCE_")) {
+            return faCommentDots;
+        }
+
         switch (normalized) {
             case "SUCCESS":
                 return faCircleCheck;
@@ -311,6 +428,18 @@ export default function BottomNavigation() {
             String(
                 type || "INFO"
             ).toUpperCase();
+
+        // Guidance notifications are pink, like the Guidance module
+        if (normalized.startsWith("GUIDANCE_")) {
+            return {
+                wrapper:
+                    "bg-pink-50/40",
+                icon:
+                    "bg-pink-50 text-[#D9578F] border-pink-100",
+                dot:
+                    "bg-[#D9578F]",
+            };
+        }
 
         switch (normalized) {
             case "SUCCESS":
@@ -362,6 +491,30 @@ export default function BottomNavigation() {
 
     const handleNotificationClick =
         async (notification) => {
+            // Guidance notification: open the Guidance appointments page of this
+            // user's side (a counselor and a student have different pages).
+            if (
+                String(notification.type || "")
+                    .toUpperCase()
+                    .startsWith("GUIDANCE_")
+            ) {
+                const role = String(
+                    localStorage.getItem("role") ||
+                        localStorage.getItem("userRole") ||
+                        ""
+                )
+                    .trim()
+                    .toLowerCase();
+
+                closeMenu();
+
+                navigate(
+                    role === "counselor"
+                        ? "/guidance/counselor/appointments"
+                        : "/guidance/appointments"
+                );
+            }
+
             if (notification.isRead) {
                 return;
             }
@@ -588,6 +741,11 @@ export default function BottomNavigation() {
                                 item.isRead
                             );
 
+                        const moduleInfo =
+                            getNotificationModule(
+                                item.type
+                            );
+
                         return (
                             <button
                                 key={
@@ -648,6 +806,40 @@ export default function BottomNavigation() {
 
 
                                 <div className="min-w-0 flex-1">
+
+                                    <span
+                                        className={`
+                                            mb-1
+                                            inline-flex
+                                            items-center
+                                            gap-1
+                                            rounded-full
+                                            px-1.5
+                                            py-0.5
+                                            text-[9px]
+                                            font-semibold
+                                            uppercase
+                                            tracking-wide
+                                            ${moduleInfo.chip}
+                                            ${
+                                                item.isRead
+                                                    ? "opacity-60"
+                                                    : ""
+                                            }
+                                        `}
+                                    >
+                                        <FontAwesomeIcon
+                                            icon={
+                                                moduleInfo.icon
+                                            }
+                                            className="text-[8px]"
+                                        />
+
+                                        {
+                                            moduleInfo.label
+                                        }
+                                    </span>
+
 
                                     <p
                                         className={`

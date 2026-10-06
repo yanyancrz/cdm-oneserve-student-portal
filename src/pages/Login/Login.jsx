@@ -215,6 +215,19 @@ export default function Login() {
                 return;
             }
 
+            // ---------- COUNSELOR: mobile, straight to the Counselor page ----------
+            // Same shared login. Counselors never go through the student dashboard.
+            if (role === "counselor") {
+                if (!isMobile && !import.meta.env.DEV) {
+                    rejectLogin("Counselor accounts can only be used on a mobile phone.");
+                    return;
+                }
+
+                toast.success("Welcome, Counselor!");
+                navigate("/guidance/counselor", { replace: true });
+                return;
+            }
+
             // ---------- STUDENT / FACULTY: mobile only ----------
             if (role === "student" || role === "faculty") {
                 // DEV MODE: allow testing on desktop. Production requires a phone.
