@@ -66,6 +66,11 @@ import Announcements from "./pages/Admin/Announcements";
 import { libraryRoutes } from "./library-admin/routes/LibraryRoutes";
 
 // ==========================================
+// GUIDANCE ADMINISTRATION (Guidance Head / desktop)
+// ==========================================
+import { guidanceHeadRoutes } from "./guidance-admin/routes/GuidanceHeadRoutes";
+
+// ==========================================
 // GUIDANCE COUNSELING MODULE (Student / Faculty + Counselor)
 // ==========================================
 import { guidanceStudentRoutes, guidanceCounselorRoutes } from "./modules/guidance/routes/GuidanceRoutes";
@@ -186,6 +191,9 @@ function App() {
 
                 {/* ================= LIBRARY ADMINISTRATION (Head / Staff) ================= */}
                 {libraryRoutes}
+
+                {/* ================= GUIDANCE ADMINISTRATION (Guidance Head) ================= */}
+                {guidanceHeadRoutes}
             </Routes>
         </BrowserRouter>
     );

@@ -1471,7 +1471,7 @@ export default function BottomNavigation() {
 
                     {/* NOTIFICATIONS */}
 
-                    <div className="relative flex-1">
+                    <div className="flex-1">
 
                         <button
                             type="button"
@@ -1527,11 +1527,10 @@ export default function BottomNavigation() {
                                 className="
                                     absolute
                                     bottom-[calc(100%+10px)]
-                                    right-0
+                                    inset-x-0
                                     z-50
-                                    w-80
-                                    max-w-[calc(100vw-24px)]
-                                    overflow-hidden
+                                    max-h-[70vh]
+                                    overflow-y-auto
                                     rounded-2xl
                                     border
                                     border-slate-200

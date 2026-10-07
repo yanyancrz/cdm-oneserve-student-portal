@@ -2,7 +2,7 @@ import { ACCENTS } from "./GuidanceUi";
 
 // Page title block with a soft curve at the bottom.
 //   accent: "pink" (student, default) | "green" (counselor)
-export default function PageHeader({ title, subtitle, right, accent = "pink" }) {
+export default function PageHeader({ title, subtitle, right, accent = "green" }) {
     return (
         <header
             className={`relative overflow-hidden rounded-b-[28px] bg-gradient-to-br ${ACCENTS[accent].gradient} px-4 pb-7 text-white shadow-sm`}

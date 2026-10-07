@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
-    ArrowLeft,
     CalendarCheck2,
     CalendarPlus,
     ChevronRight,
@@ -11,10 +10,12 @@ import {
 } from "lucide-react";
 
 import { useGuidanceMe } from "../components/GuidanceGate";
+import RoleBadge from "../components/RoleBadge";
 import StatusBadge from "../components/StatusBadge";
 import { Skeleton } from "../components/GuidanceStates";
 import { Avatar, DateBadge } from "../components/GuidanceUi";
-import { ONESERVE_STUDENT_HOME } from "../config/guidanceRoutes";
+import { useUnreadChats } from "../hooks/useUnreadChats";
+import { personDetails } from "../utils/people";
 import { guidanceApi } from "../services/guidanceApi";
 import { formatYMD, slotToMinutes, todayISO } from "../utils/dateTime";
 
@@ -29,7 +30,9 @@ const byWhen = (a, b) => a.date.localeCompare(b.date) || slotToMinutes(a.timeSlo
 
 export default function GuidanceStudentHome() {
     const { me } = useGuidanceMe();
-    const navigate = useNavigate();
+
+    // Live unread chat count for the Messages card.
+    const unreadChats = useUnreadChats("student");
 
     // The student's next booking. undefined = still loading, null = none.
     const [next, setNext] = useState(undefined);
@@ -54,59 +57,95 @@ export default function GuidanceStudentHome() {
     const firstName = String(me.fullName || "").split(" ")[0];
 
     return (
-        <>
-            <header
-                className="relative overflow-hidden rounded-b-[28px] bg-gradient-to-br from-[#D9578F] to-[#B13C70] px-4 pb-14 text-white shadow-sm"
-                style={{ paddingTop: "calc(1.5rem + env(safe-area-inset-top))" }}
-            >
-                <span aria-hidden="true" className="pointer-events-none absolute -right-10 -top-12 h-44 w-44 rounded-full bg-white/10" />
-                <span aria-hidden="true" className="pointer-events-none absolute -bottom-20 left-6 h-36 w-36 rounded-full bg-white/5" />
+        <div className="relative overflow-x-hidden">
+            <style>{`
+                @keyframes dashboardReveal {
+                    from { opacity: 0; transform: translateY(15px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .dashboard-reveal {
+                    animation: dashboardReveal .65s cubic-bezier(.2,.8,.2,1) both;
+                }
+                .dashboard-delay-1 { animation-delay: .08s; }
+                .dashboard-delay-2 { animation-delay: .16s; }
+                .dashboard-delay-3 { animation-delay: .24s; }
+            `}</style>
 
-                <div className="relative flex items-center gap-3">
-                    <button
-                        type="button"
-                        onClick={() => navigate(ONESERVE_STUDENT_HOME)}
-                        aria-label="Back to OneServe dashboard"
-                        className="rounded-full bg-white/20 p-2 transition active:scale-95"
-                    >
-                        <ArrowLeft size={18} />
-                    </button>
+            <main className="relative z-10 px-3 pt-3 pb-24 sm:px-5 sm:pt-5">
+                {/* HERO */}
+                <section className="dashboard-reveal relative mb-5 overflow-hidden rounded-[28px] border border-[#0E3B22]/10 bg-gradient-to-br from-[#10B981] via-[#0E3B22] to-[#052E16] px-5 py-6 shadow-xl shadow-emerald-900/20 sm:px-7 sm:py-8">
+                    <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-emerald-300/20 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-24 right-1/3 h-72 w-72 rounded-full bg-cyan-300/10 blur-3xl" />
+                    <div className="pointer-events-none absolute inset-0 opacity-[0.06] bg-[linear-gradient(rgba(255,255,255,.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.6)_1px,transparent_1px)] bg-[size:32px_32px]" />
 
-                    <div className="min-w-0">
-                        <p className="text-xs text-white/80">CDM OneServe</p>
-                        <h1 className="text-lg font-semibold tracking-tight">Guidance Counseling</h1>
-                    </div>
+                    <div className="relative">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5">
+                                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,.8)]" />
+                                <span className="text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-200">
+                                    Guidance Counseling
+                                </span>
+                            </div>
 
-                    <HeartHandshake className="ml-auto text-white/80" size={26} aria-hidden="true" />
-                </div>
+                            <HeartHandshake className="text-emerald-200/80" size={26} aria-hidden="true" />
+                        </div>
 
-                <p className="relative mt-5 text-2xl font-semibold tracking-tight">
-                    Hello{firstName ? `, ${firstName}` : ""}!
-                </p>
-                <p className="relative mt-0.5 text-xs text-white/85">How can we support you today?</p>
-            </header>
+                        <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                            Hello,
+                            <span className="block bg-gradient-to-r from-emerald-300 to-cyan-200 bg-clip-text text-transparent">
+                                {firstName || "Student"}
+                            </span>
+                        </h1>
 
-            <main className="-mt-8 space-y-4 px-4">
-                {/* WHO IS SIGNED IN */}
-                <section className="flex items-center gap-3 rounded-2xl border border-black/[0.05] bg-white p-4 shadow-sm">
-                    <Avatar name={me.fullName} size="lg" />
+                        <p className="mt-2 max-w-xl text-sm leading-6 text-white/60 sm:text-base">
+                            How can we support you today?
+                        </p>
 
-                    <div className="min-w-0">
-                        <p className="text-[11px] text-slate-400">Signed in as</p>
-                        <p className="truncate text-base font-semibold text-slate-800">{me.fullName}</p>
-                        <p className="truncate text-xs text-slate-500">
-                            {[me.idNumber, me.course, me.yearLevel].filter(Boolean).join(" • ")}
+                        <p className="mt-4 text-xs uppercase tracking-[.14em] text-white/35">
+                            {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
                         </p>
                     </div>
                 </section>
 
+                {/* SIGNED IN */}
+                <section className="dashboard-reveal dashboard-delay-1 mb-5 flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <Avatar name={me.fullName} size="lg" accent="green" />
+
+                    <div className="min-w-0 flex-1">
+                        <p className="text-[11px] text-slate-400">Signed in as</p>
+                        <p className="truncate text-base font-semibold text-slate-800">{me.fullName}</p>
+                        <p className="truncate text-xs text-slate-500">
+                            {personDetails(me)}
+                        </p>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-1.5">
+                        <RoleBadge role={me.role} />
+                        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            Active
+                        </span>
+                    </div>
+                </section>
+
                 {/* NEXT APPOINTMENT */}
-                <section aria-label="Next appointment">
+                <div className="dashboard-reveal dashboard-delay-2 mb-5">
+                    <div className="mb-3 flex items-end justify-between">
+                        <div>
+                            <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#106A2E]/60">
+                                Schedule
+                            </p>
+                            <h2 className="mt-1 text-lg font-semibold text-slate-800 sm:text-xl">
+                                Next Appointment
+                            </h2>
+                        </div>
+                    </div>
+
                     {next === undefined ? (
                         <div
                             role="status"
                             aria-busy="true"
-                            className="flex items-center gap-3 rounded-2xl border border-black/[0.05] bg-white p-4 shadow-sm"
+                            className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
                         >
                             <span className="sr-only">Loading your next appointment...</span>
                             <Skeleton className="h-14 w-12 rounded-xl" />
@@ -118,13 +157,13 @@ export default function GuidanceStudentHome() {
                     ) : next ? (
                         <Link
                             to="/guidance/appointments"
-                            className="flex items-center gap-3 rounded-2xl border border-pink-100 bg-white p-4 shadow-sm transition active:scale-[0.99]"
+                            className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition active:scale-[0.99]"
                         >
-                            <DateBadge date={next.date} />
+                            <DateBadge date={next.date} accent="green" />
 
                             <div className="min-w-0 flex-1">
-                                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#B13C70]">
-                                    Next appointment
+                                <p className="text-[11px] font-semibold uppercase tracking-wide text-[#106A2E]">
+                                    Upcoming
                                 </p>
                                 <p className="truncate text-sm font-semibold text-slate-800">
                                     {formatYMD(next.date)} · {next.timeSlot}
@@ -137,9 +176,9 @@ export default function GuidanceStudentHome() {
                     ) : (
                         <Link
                             to="/guidance/book"
-                            className="flex items-center gap-3 rounded-2xl border border-dashed border-pink-200 bg-pink-50/50 p-4 transition active:scale-[0.99]"
+                            className="flex items-center gap-3 rounded-2xl border border-dashed border-emerald-200 bg-white p-4 transition active:scale-[0.99]"
                         >
-                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white text-[#D9578F] shadow-sm">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-[#106A2E]">
                                 <CalendarPlus size={20} aria-hidden="true" />
                             </div>
 
@@ -148,48 +187,74 @@ export default function GuidanceStudentHome() {
                                 <p className="text-xs text-slate-500">Book a session with a counselor.</p>
                             </div>
 
-                            <ChevronRight size={18} className="text-[#D9578F]" aria-hidden="true" />
+                            <ChevronRight size={18} className="text-[#106A2E]" aria-hidden="true" />
                         </Link>
                     )}
-                </section>
+                </div>
 
                 {/* WHERE TO GO */}
-                <section className="space-y-2">
-                    {ACTIONS.map(({ to, icon: Icon, label, note }) => (
+                <section className="dashboard-reveal dashboard-delay-3">
+                    <div className="mb-3">
+                        <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#106A2E]/60">
+                            OneServe Modules
+                        </p>
+                        <h2 className="mt-1 text-lg font-semibold text-slate-800 sm:text-xl">
+                            What would you like to do?
+                        </h2>
+                    </div>
+
+                    <div className="space-y-3">
+                        {ACTIONS.map(({ to, icon: Icon, label, note }) => (
+                            <Link
+                                key={to}
+                                to={to}
+                                className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md active:scale-[0.99]"
+                            >
+                                <div className="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-emerald-200/20 opacity-0 blur-2xl transition group-hover:opacity-100" />
+
+                                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-emerald-50 text-[#106A2E] transition duration-300 group-hover:scale-110">
+                                    <Icon size={19} aria-hidden="true" />
+                                </div>
+
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-semibold text-slate-800">{label}</p>
+                                    <p className="truncate text-xs text-slate-400">{note}</p>
+                                </div>
+
+                                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition group-hover:text-slate-700">
+                                    →
+                                </span>
+                            </Link>
+                        ))}
+
                         <Link
-                            key={to}
-                            to={to}
-                            className="flex items-center gap-3 rounded-2xl border border-black/[0.05] bg-white p-3.5 shadow-sm transition active:scale-[0.99]"
+                            to="/guidance/chat"
+                            className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition active:scale-[0.99]"
                         >
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-[#D9578F]">
-                                <Icon size={19} aria-hidden="true" />
+                            <div className="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-emerald-200/20 opacity-0 blur-2xl transition group-hover:opacity-100" />
+
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-emerald-50 text-[#106A2E]">
+                                <MessageCircle size={19} aria-hidden="true" />
                             </div>
 
                             <div className="min-w-0 flex-1">
-                                <p className="text-sm font-semibold text-slate-800">{label}</p>
-                                <p className="truncate text-xs text-slate-500">{note}</p>
+                                <p className="text-sm font-semibold text-slate-800">Messages</p>
+                                <p className="truncate text-xs text-slate-400">Chat with your counselor</p>
                             </div>
 
-                            <ChevronRight size={16} className="shrink-0 text-slate-300" aria-hidden="true" />
+                            {unreadChats > 0 && (
+                                <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#D9578F] px-1.5 text-[10px] font-bold text-white" aria-label={`${unreadChats} unread messages`}>
+                                    {unreadChats > 9 ? "9+" : unreadChats}
+                                </span>
+                            )}
+
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition group-hover:text-slate-700">
+                                →
+                            </span>
                         </Link>
-                    ))}
-
-                    <div className="flex items-center gap-3 rounded-2xl border border-black/[0.05] bg-white p-3.5 opacity-60">
-                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-[#D9578F]">
-                            <MessageCircle size={19} aria-hidden="true" />
-                        </div>
-
-                        <div className="min-w-0 flex-1">
-                            <p className="text-sm font-semibold text-slate-800">Messages</p>
-                            <p className="truncate text-xs text-slate-500">Chat with your counselor</p>
-                        </div>
-
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-500">
-                            Soon
-                        </span>
                     </div>
                 </section>
             </main>
-        </>
+        </div>
     );
 }

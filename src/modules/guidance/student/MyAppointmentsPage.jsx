@@ -25,6 +25,8 @@ export default function MyAppointmentsPage() {
     const [filter, setFilter] = useState("All");
     const [cancelling, setCancelling] = useState(null);
     const [openSched, setOpenSched] = useState(null);
+    const [followUps, setFollowUps] = useState([]);
+    const [responding, setResponding] = useState(null);
     const [hidden, setHidden] = useState(() => {
         try {
             return new Set(JSON.parse(localStorage.getItem(hiddenKey(me.userId)) || "[]"));
@@ -42,6 +44,7 @@ export default function MyAppointmentsPage() {
         setLoading(true);
         try {
             setItems(await guidanceApi.getMyAppointments(signal));
+            setFollowUps(await guidanceApi.getMyFollowUps(signal));
         } catch (e) {
             if (e?.name !== "AbortError") setError(e.message || "Could not load appointments.");
         } finally {
@@ -67,6 +70,20 @@ export default function MyAppointmentsPage() {
             load(); // state may have changed on the server
         } finally {
             setCancelling(null);
+        }
+    };
+
+    const respond = async (id, status) => {
+        setResponding(id);
+        try {
+            await guidanceApi.respondFollowUp(id, status);
+            setFollowUps((prev) => prev.map((f) => (f.id === id ? { ...f, status } : f)));
+            toast.success(`Follow-up ${status.toLowerCase()}.`);
+        } catch (e) {
+            toast.error(e.message || "Could not respond.");
+            load();
+        } finally {
+            setResponding(null);
         }
     };
 
@@ -119,7 +136,7 @@ export default function MyAppointmentsPage() {
                 </div>
 
                 {a.concernType && (
-                    <span className="mt-3 inline-block rounded-full bg-pink-50 px-2.5 py-0.5 text-[10px] font-semibold text-[#B13C70]">
+                    <span className="mt-3 inline-block rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold text-[#0E3B22]">
                         {a.concernType}
                     </span>
                 )}
@@ -201,12 +218,57 @@ export default function MyAppointmentsPage() {
                         action={
                             <Link
                                 to="/guidance/book"
-                                className="inline-flex rounded-xl bg-[#D9578F] px-4 py-2 text-xs font-semibold text-white shadow-sm active:scale-95"
+                                className="inline-flex rounded-xl bg-[#106A2E] px-4 py-2 text-xs font-semibold text-white shadow-sm active:scale-95"
                             >
                                 Book an appointment
                             </Link>
                         }
                     />
+                )}
+
+                {followUps.length > 0 && (
+                    <>
+                        <SectionTitle>Follow-ups</SectionTitle>
+
+                        {followUps.map((f) => (
+                            <article key={f.id} className="rounded-2xl border border-black/[0.05] bg-white p-4 shadow-sm">
+                                <div className="flex items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-semibold text-slate-800">
+                                            {formatYMD(f.followUpDate)}{f.followUpTime ? ` · ${f.followUpTime}` : ""}
+                                        </p>
+                                        <p className="mt-0.5 text-xs text-slate-500">with {f.counselorName || "your counselor"}</p>
+                                    </div>
+
+                                    <StatusBadge status={f.status} />
+                                </div>
+
+                                {f.reason && <p className="mt-2 text-xs leading-5 text-slate-600">{f.reason}</p>}
+                                {f.notes && <p className="mt-1 text-[11px] text-slate-400">{f.notes}</p>}
+
+                                {f.status === "Pending" && (
+                                    <div className="mt-3 flex gap-2 border-t border-slate-100 pt-3">
+                                        <button
+                                            type="button"
+                                            disabled={responding === f.id}
+                                            onClick={() => respond(f.id, "Accepted")}
+                                            className="flex-1 rounded-lg bg-[#106A2E] py-2 text-xs font-semibold text-white disabled:opacity-60"
+                                        >
+                                            Accept
+                                        </button>
+                                        <button
+                                            type="button"
+                                            disabled={responding === f.id}
+                                            onClick={() => respond(f.id, "Declined")}
+                                            className="flex-1 rounded-lg border border-red-200 bg-red-50 py-2 text-xs font-semibold text-red-700 disabled:opacity-60"
+                                        >
+                                            Decline
+                                        </button>
+                                    </div>
+                                )}
+                            </article>
+                        ))}
+                    </>
                 )}
 
                 {upcoming.length > 0 && (

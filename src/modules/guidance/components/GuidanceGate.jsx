@@ -19,6 +19,9 @@ export function useGuidanceMe() {
 // audience="student"   -> Student / Faculty only
 // audience="counselor" -> Counselor only
 // The wrong role is bounced to its own home (counselor <-> OneServe dashboard).
+const loadMe = (audience, signal) =>
+    audience === "counselor" ? guidanceApi.getCounselorMe(signal) : guidanceApi.getStudentMe(signal);
+
 export default function GuidanceGate({ audience }) {
     const [state, setState] = useState(() =>
         getToken() ? { status: "loading" } : { status: "unauthenticated" }
@@ -28,9 +31,8 @@ export default function GuidanceGate({ audience }) {
         if (!getToken()) return undefined;
 
         const controller = new AbortController();
-        const call = audience === "counselor" ? guidanceApi.getCounselorMe : guidanceApi.getStudentMe;
 
-        call(controller.signal)
+        loadMe(audience, controller.signal)
             .then((me) => setState({ status: "ready", me }))
             .catch((error) => {
                 if (error?.name === "AbortError") return;
@@ -48,10 +50,21 @@ export default function GuidanceGate({ audience }) {
         };
     }, [audience]);
 
+    // Re-pulls /me without unmounting the tree (e.g. after an email change).
+    const refreshMe = async () => {
+        try {
+            const me = await loadMe(audience);
+            setState({ status: "ready", me });
+            return me;
+        } catch {
+            return null;
+        }
+    };
+
     if (state.status === "unauthenticated") return <Navigate to="/" replace />;
 
     if (state.status === "loading") {
-        const accent = audience === "counselor" ? ACCENTS.green : ACCENTS.pink;
+        const accent = audience === "counselor" ? ACCENTS.green : ACCENTS.green;
 
         return (
             <div
@@ -103,7 +116,7 @@ export default function GuidanceGate({ audience }) {
     }
 
     return (
-        <GuidanceContext.Provider value={{ me: state.me }}>
+        <GuidanceContext.Provider value={{ me: state.me, refreshMe }}>
             <Outlet />
         </GuidanceContext.Provider>
     );

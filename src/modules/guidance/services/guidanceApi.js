@@ -40,7 +40,7 @@ export async function guidanceFetch(path, { method = "GET", body, signal } = {})
     try {
         data = await response.json();
     } catch {
-        data = null;
+        /* no / non-JSON body - leave data as null */
     }
 
     if (response.status === 401) {
@@ -65,6 +65,10 @@ export const guidanceApi = {
     // ---- student: counselors, availability, appointments ----
     getCounselors: (signal) =>
         guidanceFetch("/student/counselors", { signal }).then((d) => d.counselors || []),
+
+    // Rules the Book screen needs BEFORE it draws the form, e.g. whether today
+    // is bookable at all (Guidance Head > Settings > "Same-day bookings").
+    getBookingRules: (signal) => guidanceFetch("/student/booking-rules", { signal }),
 
     getAvailability: (counselorId, date, signal) =>
         guidanceFetch(
@@ -92,6 +96,12 @@ export const guidanceApi = {
     getCounselorStats: (signal) =>
         guidanceFetch("/counselor/stats", { signal }).then((d) => d.stats),
 
+    getCounselorReport: (signal) =>
+        guidanceFetch("/counselor/reports", { signal }).then((d) => d.report),
+
+    updateCounselorProfile: (payload) =>
+        guidanceFetch("/counselor/profile", { method: "PUT", body: payload }),
+
     updateAppointmentStatus: (id, status) =>
         guidanceFetch(`/counselor/appointments/${id}/status`, { method: "PATCH", body: { status } }),
 
@@ -116,6 +126,59 @@ export const guidanceApi = {
         guidanceFetch(`/counselor/availability/${id}`, { method: "PATCH", body }),
 
     deleteAvailability: (id) => guidanceFetch(`/counselor/availability/${id}`, { method: "DELETE" }),
+
+    // ---- counselor: session records, follow-ups, student records ----
+    getRecords: (studentId, signal) => {
+        const q = studentId ? `?studentId=${studentId}` : "";
+        return guidanceFetch(`/counselor/records${q}`, { signal }).then((d) => d.records || []);
+    },
+
+    getSessionRecord: (appointmentId, signal) =>
+        guidanceFetch(`/counselor/appointments/${appointmentId}/record`, { signal }).then((d) => d.record || null),
+
+    saveSessionRecord: (appointmentId, payload) =>
+        guidanceFetch(`/counselor/appointments/${appointmentId}/record`, { method: "PUT", body: payload }),
+
+    getCounselorFollowUps: (signal) =>
+        guidanceFetch("/counselor/follow-ups", { signal }).then((d) => d.followUps || []),
+
+    createFollowUp: (payload) =>
+        guidanceFetch("/counselor/follow-ups", { method: "POST", body: payload }),
+
+    cancelFollowUp: (id) =>
+        guidanceFetch(`/counselor/follow-ups/${id}/cancel`, { method: "POST" }),
+
+    getStudentCases: (signal) =>
+        guidanceFetch("/counselor/students", { signal }).then((d) => d.students || []),
+
+    getStudentCase: (studentId, signal) =>
+        guidanceFetch(`/counselor/students/${studentId}`, { signal }),
+
+    // ---- student: follow-ups ----
+    getMyFollowUps: (signal) =>
+        guidanceFetch("/student/follow-ups", { signal }).then((d) => d.followUps || []),
+
+    respondFollowUp: (id, status) =>
+        guidanceFetch(`/student/follow-ups/${id}`, { method: "PATCH", body: { status } }),
+
+    // ---- chat (audience = "student" | "counselor") ----
+    getConversations: (audience, signal) =>
+        guidanceFetch(`/${audience}/conversations`, { signal }).then((d) => d.conversations || []),
+
+    startConversation: (counselorId) =>
+        guidanceFetch("/student/conversations", { method: "POST", body: { counselorId } }),
+
+    getMessages: (audience, conversationId, signal) =>
+        guidanceFetch(`/${audience}/conversations/${conversationId}/messages`, { signal }).then((d) => d.messages || []),
+
+    sendMessage: (audience, conversationId, body, clientId) =>
+        guidanceFetch(`/${audience}/conversations/${conversationId}/messages`, {
+            method: "POST",
+            body: { body, clientId },
+        }),
+
+    markChatRead: (audience, conversationId) =>
+        guidanceFetch(`/${audience}/conversations/${conversationId}/read`, { method: "POST" }),
 
     // ---- alerts (student, faculty and counselor) ----
     // -> { notifications: [{ id, title, message, type, isRead, createdAt }], unreadCount }

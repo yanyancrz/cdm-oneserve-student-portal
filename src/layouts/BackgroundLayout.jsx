@@ -2,7 +2,7 @@ export default function BackgroundLayout({ children }) {
     return (
         <div
             className="
-                min-h-screen
+                min-h-dvh
                 relative
                 overflow-hidden
                 bg-gradient-to-br

@@ -5,6 +5,8 @@ const STYLE = {
     Cancelled: { bg: "#f1f5f9", fg: "#475569", dot: "#94a3b8" },
     Rejected:  { bg: "#fee2e2", fg: "#991b1b", dot: "#ef4444" },
     Expired:   { bg: "#f1f5f9", fg: "#64748b", dot: "#cbd5e1" },
+    Accepted:  { bg: "#dcfce7", fg: "#166534", dot: "#22c55e" },
+    Declined:  { bg: "#fee2e2", fg: "#991b1b", dot: "#ef4444" },
 };
 
 export default function StatusBadge({ status }) {

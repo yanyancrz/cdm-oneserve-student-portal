@@ -135,7 +135,7 @@ export default function CounselorsPage() {
                                     {c.specializations.slice(0, expanded ? undefined : 3).map((s) => (
                                         <span
                                             key={s}
-                                            className="rounded-full bg-pink-50 px-2 py-0.5 text-[10px] font-medium text-[#B13C70]"
+                                            className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-[#0E3B22]"
                                         >
                                             {s}
                                         </span>
@@ -189,7 +189,7 @@ export default function CounselorsPage() {
                                 type="button"
                                 disabled={!c.schedule?.length}
                                 onClick={() => navigate(`/guidance/book?counselorId=${c.id}`)}
-                                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#D9578F] py-2.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99] disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+                                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-[#106A2E] py-2.5 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99] disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
                             >
                                 <CalendarPlus size={16} aria-hidden="true" />
                                 Book appointment

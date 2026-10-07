@@ -20,6 +20,7 @@ import BackgroundLayout from "../../layouts/BackgroundLayout";
 import { API_URL } from "../../config/api";
 import { isPWAInstalled } from "../../utils/pwa";
 import { LIBRARY_HOME_ROUTE, clearSession } from "../../library-admin/utils/session";
+import { GUIDANCE_HEAD_HOME_ROUTE } from "../../guidance-admin/utils/session";
 
 // =====================================================
 // CAMPUS SERVICES SHOWN ON THE LOGIN PAGE
@@ -193,6 +194,24 @@ export default function Login() {
                 return;
             }
 
+            // ---------- GUIDANCE HEAD: desktop only, straight to its own portal ----------
+            // Same shared login page. The Guidance Administration dashboard is a
+            // separate, desktop-only module - never the student OneServe dashboard.
+            if (
+                role === "guidanceadmin" ||
+                role === "guidance_admin" ||
+                role === "guidance-admin"
+            ) {
+                if (!isDesktop) {
+                    rejectLogin("Guidance Head accounts can only be used on a desktop device.");
+                    return;
+                }
+
+                toast.success("Welcome, Guidance Head!");
+                navigate(GUIDANCE_HEAD_HOME_ROUTE, { replace: true });
+                return;
+            }
+
             // ---------- OTHER ADMIN MODULES: desktop only ----------
             if (
                 role === "clinicadmin" ||
@@ -200,10 +219,7 @@ export default function Login() {
                 role === "clinic-admin" ||
                 role === "businesshubadmin" ||
                 role === "business_hub_admin" ||
-                role === "business-hub-admin" ||
-                role === "guidanceadmin" ||
-                role === "guidance_admin" ||
-                role === "guidance-admin"
+                role === "business-hub-admin"
             ) {
                 if (!isDesktop) {
                     rejectLogin("Staff and Admin accounts can only be used on a desktop device.");
@@ -235,6 +251,11 @@ export default function Login() {
                     rejectLogin("Student and Faculty accounts can only be used on a mobile phone.");
                     return;
                 }
+
+                // if (!isMobile) {
+                //     rejectLogin("Student and Faculty accounts can only be used on a mobile phone.");
+                //     return;
+                // }
 
                 if (!user.isProfileComplete) {
                     toast.success("Login successful. Please complete your profile.");

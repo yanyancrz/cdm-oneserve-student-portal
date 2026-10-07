@@ -8,17 +8,19 @@ import {
     CalendarX2,
     X,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 import { guidanceApi } from "../services/guidanceApi";
+import { onGuidanceEvent } from "../services/realtime";
 
-const POLL_MS = 30 * 1000;
+const POLL_MS = 45 * 1000;
 
 // =========================================================
 // HOOK: the signed-in user's Guidance alerts
 //
-// Loads once, then every 30 seconds while the tab is visible
-// (and again the moment the tab comes back), so a new request
-// shows up without the counselor changing page.
+// Loads once, then updates LIVE whenever the API pushes a
+// "Notification" event over SignalR. The 45s poll + tab
+// focus refresh is only a safety net for missed pushes.
 // =========================================================
 
 export function useGuidanceNotifications() {
@@ -56,10 +58,48 @@ export function useGuidanceNotifications() {
         const timer = setInterval(refreshIfVisible, POLL_MS);
         document.addEventListener("visibilitychange", refreshIfVisible);
 
+        // Live push from the API: prepend + toast.
+        const offEvent = onGuidanceEvent("Notification", (payload) => {
+            if (!payload) return;
+
+            const item = {
+                id: payload.id,
+                title: payload.title,
+                message: payload.message,
+                type: payload.type,
+                isRead: payload.isRead,
+                createdAt: payload.createdAt,
+            };
+
+            setItems((prev) =>
+                prev.some((n) => n.id === item.id) ? prev : [item, ...prev].slice(0, 30)
+            );
+
+            if (!item.isRead) setUnreadCount((count) => count + 1);
+
+            toast(
+                () => (
+                    <span className="flex items-center gap-2.5">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#106A2E]">
+                            <Bell size={14} aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0">
+                            <span className="block text-sm font-semibold">{item.title}</span>
+                            <span className="block max-w-60 truncate text-xs opacity-80">
+                                {item.message}
+                            </span>
+                        </span>
+                    </span>
+                ),
+                { duration: 4000 }
+            );
+        });
+
         return () => {
             controller.abort();
             clearInterval(timer);
             document.removeEventListener("visibilitychange", refreshIfVisible);
+            offEvent();
         };
     }, [refresh]);
 
@@ -158,8 +198,8 @@ export function AlertsSheet({ open, onClose, alerts, onOpenItem }) {
             <section
                 role="dialog"
                 aria-label="Alerts"
-                className="fixed inset-x-3 z-50 mx-auto max-h-[70vh] max-w-xl overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-black/15"
-                style={{ bottom: "calc(64px + env(safe-area-inset-bottom))" }}
+                className="fixed left-1/2 z-50 w-[calc(100%-1.5rem)] max-w-xl -translate-x-1/2 overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-2xl shadow-black/15"
+                style={{ bottom: "calc(64px + env(safe-area-inset-bottom))", maxHeight: "70vh" }}
             >
                 <div className="sticky top-0 flex items-center justify-between gap-2 border-b border-slate-100 bg-white px-3.5 py-2.5">
                     <span className="text-xs font-semibold text-slate-700">Alerts</span>
@@ -167,7 +207,7 @@ export function AlertsSheet({ open, onClose, alerts, onOpenItem }) {
                     <div className="flex items-center gap-2">
                         {unreadCount > 0 && (
                             <>
-                                <span className="rounded-full bg-pink-50 px-2 py-0.5 text-[10px] font-semibold text-[#B13C70]">
+                                <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-[#0E3B22]">
                                     {unreadCount} new
                                 </span>
 
@@ -232,12 +272,12 @@ export function AlertsSheet({ open, onClose, alerts, onOpenItem }) {
                                         type="button"
                                         onClick={() => handleItem(item)}
                                         className={`flex w-full items-start gap-3 px-3.5 py-3 text-left transition hover:bg-slate-50 ${
-                                            item.isRead ? "bg-white" : "bg-pink-50/40"
+                                            item.isRead ? "bg-white" : "bg-emerald-50/40"
                                         }`}
                                     >
                                         <span
                                             className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${
-                                                item.isRead ? "bg-slate-200" : "bg-[#D9578F]"
+                                                item.isRead ? "bg-slate-200" : "bg-[#106A2E]"
                                             }`}
                                         />
 
@@ -245,7 +285,7 @@ export function AlertsSheet({ open, onClose, alerts, onOpenItem }) {
                                             className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border ${
                                                 item.isRead
                                                     ? "border-slate-100 bg-slate-50 text-slate-400"
-                                                    : "border-pink-100 bg-pink-50 text-[#D9578F]"
+                                                    : "border-emerald-100 bg-emerald-50 text-[#106A2E]"
                                             }`}
                                         >
                                             <Icon size={14} />

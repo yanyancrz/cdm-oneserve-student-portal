@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { CalendarCheck2, CheckCircle2, Loader2 } from "lucide-react";
+import { CalendarCheck2, CalendarDays, CalendarX2, CheckCircle2, Loader2 } from "lucide-react";
 
 import PageHeader from "../components/PageHeader";
 import { ErrorBox, Note, Skeleton } from "../components/GuidanceStates";
@@ -10,7 +10,7 @@ import { guidanceApi } from "../services/guidanceApi";
 import { CONCERN_TYPES } from "../utils/concernTypes";
 import { formatYMD, isPastSlot, todayISO } from "../utils/dateTime";
 
-const A = ACCENTS.pink;
+const A = ACCENTS.green;
 
 const draftKey = (userId) => `gp_book_draft_${userId}`;
 
@@ -30,6 +30,11 @@ export default function BookAppointmentPage() {
     const [counselors, setCounselors] = useState([]);
     const [loadingC, setLoadingC] = useState(true);
     const [loadError, setLoadError] = useState("");
+
+    // Booking rules from Guidance Head > Settings (same-day allowed? date range?).
+    // null = still loading. Treated as "allowed" until it arrives so the form
+    // never blinks off for a hiccup.
+    const [rules, setRules] = useState(null);
 
     const [counselorId, setCounselorId] = useState(params.get("counselorId") || "");
     const [date, setDate] = useState("");
@@ -60,18 +65,36 @@ export default function BookAppointmentPage() {
             setLoadingC(false);
         }
     }, []);
-    useEffect(() => { loadCounselors(); }, [loadCounselors]);
+    // Deferred so the effect body itself never sets state synchronously.
+    useEffect(() => { queueMicrotask(loadCounselors); }, [loadCounselors]);
+
+    // booking rules (same-day bookable? how far ahead?) - one call, no retry loop
+    useEffect(() => {
+        const c = new AbortController();
+        guidanceApi
+            .getBookingRules(c.signal)
+            .then((r) => { if (!c.signal.aborted) setRules(r); })
+            .catch(() => { /* keep the permissive default */ });
+        return () => c.abort();
+    }, []);
 
     // restore the saved draft once (a counselor chosen from the Counselors page wins)
     useEffect(() => {
         if (restored.current) return;
         restored.current = true;
+
+        // Read NOW: the auto-save effect below would otherwise clear it first.
         const d = readDraft(me.userId);
         if (!d) return;
-        if (!params.get("counselorId") && d.counselorId) setCounselorId(d.counselorId);
-        if (d.date && d.date >= todayISO()) setDate(d.date);
-        if (d.concern) setConcern(d.concern);
-        if (d.notes) setNotes(d.notes);
+
+        // Applying the values is deferred so this effect never sets state
+        // synchronously.
+        queueMicrotask(() => {
+            if (!params.get("counselorId") && d.counselorId) setCounselorId(d.counselorId);
+            if (d.date && d.date >= todayISO()) setDate(d.date);
+            if (d.concern) setConcern(d.concern);
+            if (d.notes) setNotes(d.notes);
+        });
     }, [me.userId, params]);
 
     // auto-save the draft
@@ -106,12 +129,18 @@ export default function BookAppointmentPage() {
     }, []);
 
     useEffect(() => {
-        if (!counselorId || !date) {
-            setDay(null);
-            return undefined;
-        }
         const c = new AbortController();
-        loadSlots(counselorId, date, c.signal);
+
+        // Deferred so the effect body never sets state synchronously.
+        queueMicrotask(() => {
+            if (c.signal.aborted) return;
+            if (!counselorId || !date) {
+                setDay(null);
+                return;
+            }
+            loadSlots(counselorId, date, c.signal);
+        });
+
         return () => c.abort();
     }, [counselorId, date, loadSlots]);
 
@@ -119,7 +148,7 @@ export default function BookAppointmentPage() {
     useEffect(() => {
         if (!slot || !day) return;
         if (day.offDay || day.bookedSlots.includes(slot) || !day.allSlots.includes(slot) || isPastSlot(date, slot))
-            setSlot("");
+            queueMicrotask(() => setSlot(""));
     }, [day, slot, date]);
 
     const clearDraft = () => {
@@ -132,6 +161,10 @@ export default function BookAppointmentPage() {
         setError("");
         if (!counselorId) return setError("Please select a counselor.");
         if (!date) return setError("Please select a date.");
+        if (sameDayBlocked) {
+            setSlot("");
+            return setError("Same-day appointments are currently turned off. Please choose a later date.");
+        }
         if (!slot) return setError("Please select a time slot.");
         if (!concern) return setError("Please select a concern type.");
         if (isPastSlot(date, slot)) {
@@ -164,6 +197,10 @@ export default function BookAppointmentPage() {
     const free = day ? day.availableSlots.filter((s) => !isPastSlot(date, s)) : [];
     const today = todayISO();
 
+    // Same-day bookings turned off by the Guidance Head and this date is today
+    // -> replace the whole form with a warning instead of letting them fill it in.
+    const sameDayBlocked = Boolean(rules) && rules.allowSameDay === false && date === today;
+
     return (
         <>
             <PageHeader title="Book an Appointment" subtitle="Choose a counselor, date and time for your session." />
@@ -187,6 +224,42 @@ export default function BookAppointmentPage() {
                     </div>
                 )}
 
+                {sameDayBlocked ? (
+                    /* Same-day bookings are off and this date is today: show ONLY
+                       the warning - the form stays hidden until another date is picked. */
+                    <section className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
+                        <div role="alert" className="flex items-start gap-3">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-amber-600 shadow-sm">
+                                <CalendarX2 size={22} aria-hidden="true" />
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                                <p className="text-sm font-semibold text-amber-900">
+                                    Hindi po pwede magpa-appoint ngayong araw.
+                                </p>
+
+                                <p className="mt-1 text-xs leading-5 text-amber-800">
+                                    Naka-off ang same-day appointments ngayon, kaya hindi tinatanggap ang
+                                    booking para sa <strong>{formatYMD(today)}</strong>. Pumili ng mas
+                                    malayong petsa.
+                                </p>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setDate("");
+                                        setSlot("");
+                                        setDay(null);
+                                        setError("");
+                                    }}
+                                    className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-white px-3.5 py-2 text-xs font-semibold text-amber-800 shadow-sm transition active:scale-95"
+                                >
+                                    <CalendarDays size={14} aria-hidden="true" /> Pumili ng ibang petsa
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+                ) : (
                 <section className="space-y-5 rounded-2xl border border-black/[0.05] bg-white p-4 shadow-sm">
                     {/* 1. COUNSELOR */}
                     <div>
@@ -199,7 +272,7 @@ export default function BookAppointmentPage() {
                                 aria-label="Counselor"
                                 value={counselorId}
                                 onChange={(e) => { setCounselorId(e.target.value); setSlot(""); }}
-                                className={fieldClass("pink")}
+                                className={fieldClass("green")}
                             >
                                 <option value="">Select a counselor…</option>
                                 {counselors.map((c) => (
@@ -211,7 +284,7 @@ export default function BookAppointmentPage() {
                         )}
 
                         {selected && (
-                            <div className="mt-2 flex items-center gap-2.5 rounded-xl bg-pink-50/60 p-2.5">
+                            <div className="mt-2 flex items-center gap-2.5 rounded-xl bg-emerald-50/60 p-2.5">
                                 <Avatar name={selected.fullName} size="sm" />
 
                                 <div className="min-w-0">
@@ -226,15 +299,21 @@ export default function BookAppointmentPage() {
 
                     {/* 2. DATE */}
                     <div>
-                        <StepLabel n={2}>Preferred date</StepLabel>
+                        <StepLabel
+                            n={2}
+                            hint={rules && !rules.allowSameDay ? "no same-day bookings" : undefined}
+                        >
+                            Preferred date
+                        </StepLabel>
 
                         <input
                             type="date"
                             aria-label="Preferred date"
                             min={today}
+                            max={rules?.latestDate || undefined}
                             value={date}
                             onChange={(e) => { setDate(e.target.value); setSlot(""); }}
-                            className={fieldClass("pink")}
+                            className={fieldClass("green")}
                         />
                     </div>
 
@@ -286,7 +365,7 @@ export default function BookAppointmentPage() {
                                                             ? A.slotOn
                                                             : disabled
                                                               ? "border-slate-100 bg-slate-50 text-slate-300"
-                                                              : "border-slate-200 bg-white text-slate-700 hover:border-[#D9578F]/50"
+                                                              : "border-slate-200 bg-white text-slate-700 hover:border-[#106A2E]/50"
                                                     }`}
                                                 >
                                                     {s}
@@ -342,20 +421,20 @@ export default function BookAppointmentPage() {
                             value={notes}
                             onChange={(e) => setNotes(e.target.value)}
                             placeholder="Anything you'd like your counselor to know beforehand"
-                            className={`${fieldClass("pink")} resize-none`}
+                            className={`${fieldClass("green")} resize-none`}
                         />
 
                         <p className="mt-1 text-right text-[10px] text-slate-400">{notes.length}/1000</p>
                     </div>
 
                     {slot && date && selected && (
-                        <div className="flex items-center gap-3 rounded-xl border border-pink-100 bg-pink-50/60 p-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#D9578F] shadow-sm">
+                        <div className="flex items-center gap-3 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-[#106A2E] shadow-sm">
                                 <CalendarCheck2 size={18} aria-hidden="true" />
                             </div>
 
                             <div className="min-w-0">
-                                <p className="text-[10px] font-bold uppercase tracking-wider text-[#B13C70]">Your booking</p>
+                                <p className="text-[10px] font-bold uppercase tracking-wider text-[#0E3B22]">Your booking</p>
                                 <p className="truncate text-sm font-semibold text-slate-800">{selected.fullName}</p>
                                 <p className="text-xs text-slate-600">{formatYMD(date)} · {slot}</p>
                             </div>
@@ -368,7 +447,7 @@ export default function BookAppointmentPage() {
                         type="button"
                         onClick={submit}
                         disabled={submitting || !!success}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#D9578F] py-3 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99] disabled:opacity-60"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#106A2E] py-3 text-sm font-semibold text-white shadow-sm transition active:scale-[0.99] disabled:opacity-60"
                     >
                         {submitting && <Loader2 className="animate-spin" size={16} aria-hidden="true" />}
                         {submitting ? "Booking…" : "Book appointment"}
@@ -380,6 +459,7 @@ export default function BookAppointmentPage() {
                         </button>
                     )}
                 </section>
+                )}
             </main>
         </>
     );
