@@ -41,10 +41,6 @@ import BookDetails from "./pages/Library/BookDetails";
 import AccessPass from "./pages/Library/AccessPass";
 import Scanner from "./pages/Library/Scanner";
 
-// ==========================================
-// BUSINESS HUB - USER
-// ==========================================
-import BusinessHub from "./pages/BusinessHub/BusinessHub";
 
 // ==========================================
 // ADMIN LAYOUT
@@ -76,6 +72,16 @@ import { guidanceHeadRoutes } from "./guidance-admin/routes/GuidanceHeadRoutes";
 import { guidanceStudentRoutes, guidanceCounselorRoutes } from "./modules/guidance/routes/GuidanceRoutes";
 import BlockRoles from "./components/RoleGuard/BlockRoles";
 import { GUIDANCE_COUNSELOR_HOME } from "./modules/guidance/config/guidanceRoutes";
+
+// =====================================================
+// CAMPUSMARKET (marketplace)
+// A module INSIDE OneServe. Three portals that stay apart:
+//   /marketplace/*        buyer  - Student / Faculty (inside StudentLayout)
+//   /marketplace/staff/*  staff  - the ONE Marketplace Staff account (desktop)
+//   /marketplace/admin/*  admin  - the OneServe Admin, monitoring only (desktop)
+// There is no marketplace login: the shared one above issues the single JWT.
+// =====================================================
+import { marketBuyerRoutes, marketStaffRoutes, marketAdminRoutes } from "./marketplace/MarketRoutes";
 
 function App() {
     return (
@@ -162,8 +168,9 @@ function App() {
                     <Route path="/library/loans" element={<BorrowHistory />} />
                     <Route path="/library/access-pass" element={<AccessPass />} />
 
-                    {/* Business Hub */}
-                    <Route path="/business-hub" element={<BusinessHub />} />
+
+                    {/* CampusMarket (buyer side) - Student / Faculty */}
+                    {marketBuyerRoutes}
 
                     {/* Guidance Counseling (student side) - opened from the dashboard */}
                     {guidanceStudentRoutes}
@@ -194,6 +201,12 @@ function App() {
 
                 {/* ================= GUIDANCE ADMINISTRATION (Guidance Head) ================= */}
                 {guidanceHeadRoutes}
+
+                {/* ================= CAMPUSMARKET STAFF (the one staff account) ================= */}
+                {marketStaffRoutes}
+
+                {/* ================= CAMPUSMARKET MONITORING (OneServe Admin, read-only) ================= */}
+                {marketAdminRoutes}
             </Routes>
         </BrowserRouter>
     );

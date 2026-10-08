@@ -14,6 +14,7 @@ import GuidanceStudentsPage from "../pages/GuidanceStudentsPage";
 import GuidanceStudentDetailPage from "../pages/GuidanceStudentDetailPage";
 import GuidanceReportsPage from "../pages/GuidanceReportsPage";
 import GuidanceSettingsPage from "../pages/GuidanceSettingsPage";
+import GuidanceAccountPage from "../pages/GuidanceAccountPage";
 
 import { GUIDANCE_HEAD_BASE } from "../config/navigation";
 
@@ -79,6 +80,14 @@ export const guidanceHeadRoutes = (
                     element={<GuidanceSettingsPage />}
                 />
             </Route>
+
+            {/* Own account - deliberately outside the permission wrapper: it is
+                reachable by every signed-in Guidance Head and never leaks data
+                about anybody else (the API reads the user from the JWT). */}
+            <Route
+                path={`${GUIDANCE_HEAD_BASE}/account`}
+                element={<GuidanceAccountPage />}
+            />
         </Route>
     </Route>
 );

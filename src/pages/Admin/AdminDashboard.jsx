@@ -47,11 +47,6 @@ export default function AdminDashboard() {
             icon: "🔎",
             status: "Online",
         },
-        {
-            name: "Business Hub",
-            icon: "🏪",
-            status: "Online",
-        },
     ];
 
     // --------------------------------------------------

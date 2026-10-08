@@ -200,7 +200,7 @@ export default function Dashboard() {
             title: "Library",
             subtitle: "Books & resources",
             route: "/library",
-            accent: "#106A2E",
+            accent: "#173F2C",
             glow: "rgba(16,106,46,.16)",
             icon: (
                 <svg
@@ -299,12 +299,12 @@ export default function Dashboard() {
         },
 
         {
-            key: "business-hub",
-            title: "Business Hub",
-            subtitle: "Student ventures",
-            route: "/business-hub",
-            accent: "#3B7DD8",
-            glow: "rgba(59,125,216,.14)",
+            key: "marketplace",
+            title: "Marketplace",
+            subtitle: "Campus store",
+            route: "/marketplace",
+            accent: "#173F2C",
+            glow: "rgba(23,63,44,.14)",
             icon: (
                 <svg
                     width="22"
@@ -316,18 +316,13 @@ export default function Dashboard() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                 >
-                    <rect
-                        x="3"
-                        y="7"
-                        width="18"
-                        height="13"
-                        rx="2"
-                    />
-                    <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                    <path d="M3 12h18" />
+                    <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
+                    <path d="M3 6h18" />
+                    <path d="M16 10a4 4 0 0 1-8 0" />
                 </svg>
             )
-        }
+        },
+
     ];
 
     const filteredServices =
@@ -545,11 +540,11 @@ export default function Dashboard() {
     );
 
     return (
-        <div className="relative min-h-screen overflow-x-hidden bg-[#F7F5EF] md:pt-24">
+        <div className="relative min-h-screen overflow-x-hidden bg-[#F6F2E6] md:pt-24">
 
             <div className="pointer-events-none fixed inset-0 overflow-hidden">
 
-                <div className="absolute -left-28 -top-28 h-96 w-96 rounded-full bg-emerald-400/10 blur-3xl" />
+                <div className="absolute -left-28 -top-28 h-96 w-96 rounded-full bg-amber-400/10 blur-3xl" />
 
                 <div className="absolute right-[-140px] top-[30%] h-[32rem] w-[32rem] rounded-full bg-cyan-300/10 blur-3xl" />
 
@@ -622,9 +617,9 @@ export default function Dashboard() {
                         HERO
                     ================================================= */}
 
-                    <section className="dashboard-reveal relative mb-5 overflow-hidden rounded-[28px] border border-[#0E3B22]/10 bg-gradient-to-br from-[#106A2E] via-[#0E3B22] to-[#0A2818] px-5 py-6 shadow-xl shadow-emerald-900/10 sm:px-7 sm:py-8">
+                    <section className="dashboard-reveal relative mb-5 overflow-hidden rounded-[28px] border border-[#0E2C1E]/10 bg-gradient-to-br from-[#173F2C] via-[#0E2C1E] to-[#0A2818] px-5 py-6 shadow-xl shadow-amber-900/10 sm:px-7 sm:py-8">
 
-                        <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-emerald-300/10 blur-3xl" />
+                        <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-amber-300/10 blur-3xl" />
 
                         <div className="pointer-events-none absolute -bottom-24 right-1/3 h-72 w-72 rounded-full bg-cyan-300/5 blur-3xl" />
 
@@ -632,11 +627,11 @@ export default function Dashboard() {
 
                             <div>
 
-                                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5">
+                                <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1.5">
 
-                                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,.8)]" />
+                                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-300 shadow-[0_0_12px_rgba(110,231,183,.8)]" />
 
-                                    <span className="text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-200">
+                                    <span className="text-[10px] font-semibold uppercase tracking-[.18em] text-amber-200">
                                         Welcome!
                                     </span>
 
@@ -647,7 +642,7 @@ export default function Dashboard() {
 
                                     Good Morning,
 
-                                    <span className="block text-emerald-300">
+                                    <span className="block text-amber-300">
 
                                         {isLoading ? (
                                             <BoneOnDark className="mt-1 h-9 w-40 sm:h-10 sm:w-52" />
@@ -688,9 +683,9 @@ export default function Dashboard() {
                                             Account Status
                                         </span>
 
-                                        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-emerald-300">
+                                        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-amber-300">
 
-                                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300" />
+                                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-300" />
 
                                             LIVE
 
@@ -729,7 +724,7 @@ export default function Dashboard() {
                                         </div>
 
 
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-300/10 text-emerald-300">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-300/10 text-amber-300">
 
                                             <svg
                                                 width="18"
@@ -810,7 +805,7 @@ export default function Dashboard() {
 
                         <div className="group relative">
 
-                            <div className="pointer-events-none absolute inset-0 rounded-2xl bg-emerald-300/10 blur-xl opacity-0 transition group-focus-within:opacity-100" />
+                            <div className="pointer-events-none absolute inset-0 rounded-2xl bg-amber-300/10 blur-xl opacity-0 transition group-focus-within:opacity-100" />
 
                             <div className="relative flex items-center rounded-2xl border border-slate-200 bg-white shadow-md shadow-black/5">
 
@@ -881,7 +876,7 @@ export default function Dashboard() {
 
                             <div>
 
-                                <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#106A2E]/60">
+                                <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#173F2C]/60">
                                     OneServe Modules
                                 </p>
 
@@ -956,7 +951,7 @@ export default function Dashboard() {
                                                     );
                                                 }
                                             }}
-                                            className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
+                                            className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
                                         >
 
                                             <div
@@ -1141,7 +1136,7 @@ export default function Dashboard() {
 
                                     <div>
 
-                                        <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-700/50">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-amber-700/50">
                                             Connected Record
                                         </p>
 
@@ -1152,9 +1147,9 @@ export default function Dashboard() {
                                     </div>
 
 
-                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold text-amber-700">
 
-                                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
 
                                         Synced
 
@@ -1249,7 +1244,7 @@ export default function Dashboard() {
                                                 Status
                                             </p>
 
-                                            <p className="mt-1.5 text-sm font-semibold text-emerald-700">
+                                            <p className="mt-1.5 text-sm font-semibold text-amber-700">
                                                 {isStudent
                                                     ? "Enrolled"
                                                     : "Active"}
@@ -1271,7 +1266,7 @@ export default function Dashboard() {
 
                                     <div>
 
-                                        <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-[#106A2E]/50">
+                                        <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-[#173F2C]/50">
                                             Account Timeline
                                         </p>
 
@@ -1330,9 +1325,9 @@ export default function Dashboard() {
                                                     className="flex items-center gap-3 py-3.5"
                                                 >
 
-                                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-emerald-600">
+                                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-100 bg-amber-50 text-amber-600">
 
-                                                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
 
                                                     </div>
 

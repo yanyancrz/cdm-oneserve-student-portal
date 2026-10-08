@@ -3,6 +3,7 @@ import {
     BarChart3,
     GraduationCap,
     Settings,
+    UserCog,
     UsersRound,
 } from "lucide-react";
 
@@ -38,6 +39,14 @@ export const GUIDANCE_HEAD_NAV = [
                 icon: Settings,
                 permission: "canManageSettings",
             },
+        ],
+    },
+    {
+        heading: "Account",
+        items: [
+            // No permission: every signed-in Guidance Head can reach their own
+            // account, whatever role they hold.
+            { label: "My account", to: `${GUIDANCE_HEAD_BASE}/account`, icon: UserCog },
         ],
     },
 ];

@@ -50,6 +50,13 @@ export const guidanceHeadService = {
             .then((r) => ({ ...(r.data || {}), message: r.message }));
     },
 
+    // POST /api/admin/guidance/change-password
+    changePassword(body, options) {
+        return api
+            .post("/api/admin/guidance/change-password", body, options)
+            .then((r) => ({ ...(r.data || {}), message: r.message }));
+    },
+
     // GET /api/admin/guidance/students
     listStudents(params, options) {
         return api.get("/api/admin/guidance/students", { ...options, params }).then((r) => r.data);

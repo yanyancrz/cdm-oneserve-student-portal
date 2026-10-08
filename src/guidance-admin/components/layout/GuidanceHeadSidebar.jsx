@@ -28,7 +28,7 @@ const needsExactMatch = (to) =>
     ALL_PATHS.some((other) => other !== to && other.startsWith(`${to}/`));
 
 // Menu placeholder: the number of items in each group.
-const NAV_SKELETON_GROUPS = [1, 2, 1, 1];
+const NAV_SKELETON_GROUPS = [1, 2, 1, 1, 1];
 
 function SidebarNavSkeleton() {
     return (

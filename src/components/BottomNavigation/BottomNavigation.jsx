@@ -9,7 +9,6 @@ import {
     faStethoscope,
     faMagnifyingGlass,
     faCommentDots,
-    faBriefcase,
     faBell,
     faTableCellsLarge,
     faChevronDown,
@@ -29,7 +28,7 @@ const NOTIFICATION_POLL_MS = 30 * 1000;
 //
 // Decided by the first word of its Type, e.g. GUIDANCE_APPOINTMENT_REQUEST
 // is Guidance. Every module should start its notification Types with its
-// own name (GUIDANCE_, LIBRARY_, CLINIC_, LOSTFOUND_, BUSINESSHUB_).
+// own name (GUIDANCE_, LIBRARY_, CLINIC_, LOSTFOUND_, MARKETPLACE_).
 // "match" also lists the older Library names (reservation-created, ...).
 // =========================================================
 
@@ -61,13 +60,6 @@ const NOTIFICATION_MODULES = [
         icon: faMagnifyingGlass,
         chip: "bg-violet-50 text-violet-700",
         match: ["LOST", "LOSTFOUND", "FOUND"],
-    },
-    {
-        key: "business-hub",
-        label: "Business Hub",
-        icon: faBriefcase,
-        chip: "bg-amber-50 text-amber-700",
-        match: ["BUSINESS", "BUSINESSHUB"],
     },
 ];
 
@@ -139,12 +131,6 @@ export default function BottomNavigation() {
             path: "/guidance",
         },
 
-        {
-            key: "business-hub",
-            label: "Business Hub",
-            icon: faBriefcase,
-            path: "/business-hub",
-        },
     ];
 
     const coreTabs = [
