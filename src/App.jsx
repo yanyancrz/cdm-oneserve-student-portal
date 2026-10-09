@@ -83,6 +83,16 @@ import { GUIDANCE_COUNSELOR_HOME } from "./modules/guidance/config/guidanceRoute
 // =====================================================
 import { marketBuyerRoutes, marketStaffRoutes, marketAdminRoutes } from "./marketplace/MarketRoutes";
 
+// =====================================================
+// LOST & FOUND (FIND, integrated)
+// A module INSIDE OneServe:
+//   /lost-found/*        user      - Student / Faculty (inside StudentLayout)
+//   /lost-found/admin/*  console   - the module owner (LostFoundAdmin)
+//                                    and the OneServe Admin, desktop only
+// There is no lost-and-found login: the shared one above issues the single JWT.
+// =====================================================
+import { lostFoundUserRoutes, lostFoundAdminRoutes } from "./lost-found/LfRoutes";
+
 function App() {
     return (
         <BrowserRouter>
@@ -174,6 +184,9 @@ function App() {
 
                     {/* Guidance Counseling (student side) - opened from the dashboard */}
                     {guidanceStudentRoutes}
+
+                    {/* Lost & Found (student side) - report, claim, recover */}
+                    {lostFoundUserRoutes}
                 </Route>
 
                 {/* ================= GUIDANCE COUNSELOR (mobile) ================= */}
@@ -207,6 +220,9 @@ function App() {
 
                 {/* ================= CAMPUSMARKET MONITORING (OneServe Admin, read-only) ================= */}
                 {marketAdminRoutes}
+
+                {/* ================= LOST & FOUND CONSOLE (module owner, desktop) ================= */}
+                {lostFoundAdminRoutes}
             </Routes>
         </BrowserRouter>
     );

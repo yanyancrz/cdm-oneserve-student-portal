@@ -10,6 +10,7 @@ import {
     Mail,
     MessageCircleHeart,
     SearchCheck,
+    ShoppingBag,
     Stethoscope,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -21,6 +22,7 @@ import { isPWAInstalled } from "../../utils/pwa";
 import { LIBRARY_HOME_ROUTE, clearSession } from "../../library-admin/utils/session";
 import { GUIDANCE_HEAD_HOME_ROUTE } from "../../guidance-admin/utils/session";
 import { MARKET_STAFF_HOME_ROUTE } from "../../marketplace/session";
+import { LOST_FOUND_ADMIN_HOME_ROUTE } from "../../lost-found/session";
 
 // =====================================================
 // CAMPUS SERVICES SHOWN ON THE LOGIN PAGE
@@ -31,6 +33,7 @@ const SERVICES = [
     { name: "Library", description: "Books, reservations, and e-resources", icon: BookOpen },
     { name: "Guidance", description: "Counseling and student support", icon: MessageCircleHeart },
     { name: "Lost & Found", description: "Report and claim lost items", icon: SearchCheck },
+    { name: "Marketplace", description: "Campus store and supplies", icon: ShoppingBag },
 ];
 
 /**
@@ -285,6 +288,24 @@ export default function Login() {
 
                 toast.success("Welcome, Guidance Head!");
                 navigate(GUIDANCE_HEAD_HOME_ROUTE, { replace: true });
+                return;
+            }
+
+            // ---------- LOST & FOUND ADMIN (module owner): desktop only ----------
+            // Same shared login page. The Lost & Found console is a
+            // separate, desktop-only module - never the student dashboard.
+            if (
+                role === "lostfoundadmin" ||
+                role === "lostfound_admin" ||
+                role === "lostfound-admin"
+            ) {
+                if (!isDesktop) {
+                    rejectLogin("Lost & Found Admin accounts can only be used on a desktop device.");
+                    return;
+                }
+
+                toast.success("Welcome, Lost & Found Admin!");
+                navigate(LOST_FOUND_ADMIN_HOME_ROUTE, { replace: true });
                 return;
             }
 

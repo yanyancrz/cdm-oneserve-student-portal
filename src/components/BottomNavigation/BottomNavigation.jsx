@@ -11,6 +11,7 @@ import {
     faCommentDots,
     faBell,
     faTableCellsLarge,
+    faStore,
     faChevronDown,
     faCircleCheck,
     faTriangleExclamation,
@@ -129,6 +130,13 @@ export default function BottomNavigation() {
             label: "Guidance",
             icon: faCommentDots,
             path: "/guidance",
+        },
+
+        {
+            key: "marketplace",
+            label: "Marketplace",
+            icon: faStore,
+            path: "/marketplace",
         },
 
     ];
@@ -251,6 +259,17 @@ export default function BottomNavigation() {
         notifications.filter(
             (item) => !item.isRead
         ).length;
+
+    // The newest unread notification's module, for the text preview
+    // below the bell (e.g. "New from Library").
+    const newestUnreadModule = (() => {
+        const unread = notifications.filter(
+            (item) => !item.isRead
+        );
+        if (unread.length === 0) return null;
+        // Notifications are ordered newest-first by the API.
+        return getNotificationModule(unread[0].type);
+    })();
 
     // =========================================================
     // HELPERS
@@ -1162,6 +1181,29 @@ export default function BottomNavigation() {
                                     />
                                 )}
 
+                                {unreadCount >
+                                    0 &&
+                                    newestUnreadModule && (
+                                    <span
+                                        className="
+                                            absolute
+                                            left-1/2
+                                            top-full
+                                            mt-0.5
+                                            -translate-x-1/2
+                                            whitespace-nowrap
+                                            text-[8px]
+                                            font-semibold
+                                            text-emerald-600
+                                        "
+                                    >
+                                        New from{" "}
+                                        {
+                                            newestUnreadModule.label
+                                        }
+                                    </span>
+                                )}
+
                             </button>
 
 
@@ -1498,6 +1540,16 @@ export default function BottomNavigation() {
                                 Alerts
                             </span>
 
+                            {unreadCount >
+                                0 &&
+                                newestUnreadModule && (
+                                <span className="max-w-[60px] truncate text-[7px] font-semibold leading-tight text-emerald-600">
+                                    New from{" "}
+                                    {
+                                        newestUnreadModule.label
+                                    }
+                                </span>
+                                )}
 
                             {unreadCount >
                                 0 && (

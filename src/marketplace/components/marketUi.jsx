@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 
 import { BRAND, RADIUS, SHADOW } from "../config/marketTheme";
+import { marketImageUrl } from "../config/marketImage";
 
 /**
  * The ambient background: three blurred orbs and a faint grid, taken from the
@@ -187,13 +188,17 @@ export function MarketNotice({ tone = "info", title, children, icon }) {
 export function MarketImage({ src, alt, initials, className = "", rounded = "rounded-xl" }) {
     const [failed, setFailed] = useState(false);
 
+    // The resolver runs at render, not on a state copy, so a new src always gets
+    // a fresh attempt thanks to the effect below.
+    const resolvedSrc = marketImageUrl(src);
+
     // A new src deserves a fresh attempt - the previous failure was about the
     // old one.
     useEffect(() => {
         setFailed(false);
-    }, [src]);
+    }, [resolvedSrc]);
 
-    if (!src || failed) {
+    if (!resolvedSrc || failed) {
         return (
             <div
                 className={`flex items-center justify-center bg-gradient-to-br from-[#106A2E]/5 to-[#106A2E]/10 ${rounded} ${className}`}
@@ -207,7 +212,7 @@ export function MarketImage({ src, alt, initials, className = "", rounded = "rou
 
     return (
         <img
-            src={src}
+            src={resolvedSrc}
             alt={alt}
             loading="lazy"
             onError={() => setFailed(true)}

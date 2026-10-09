@@ -1118,15 +1118,12 @@ export default function Dashboard() {
 
                     {/* =================================================
                         LOWER GRID
+                        Announcements render first (full width) via
+                        lg:order-first, then School Info and Recent
+                        Activity side by side below.
                     ================================================= */}
 
-                    <div className="grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-[1.45fr_.8fr]">
-
-                        {/* =================================================
-                            LEFT COLUMN
-                        ================================================= */}
-
-                        <div className="space-y-5 sm:space-y-6">
+                    <div className="grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-2">
 
                             {/* SCHOOL INFORMATION */}
 
@@ -1404,21 +1401,16 @@ export default function Dashboard() {
 
                             </section>
 
-                        </div>
-
-
-                        {/* =================================================
-                            RIGHT COLUMN
-                        ================================================= */}
-
-                        <aside className="space-y-5 sm:space-y-6">
+                            {/* =================================================
+                                ANNOUNCEMENTS (rendered first via order-first)
+                            ================================================= */}
 
                             {/* =================================================
                                 ANNOUNCEMENTS
                             ================================================= */}
 
                             <section
-                                className="dashboard-reveal dashboard-delay-3 relative overflow-hidden rounded-[24px] p-5 shadow-lg shadow-black/5 sm:p-6"
+                                className="dashboard-reveal dashboard-delay-3 relative overflow-hidden rounded-[24px] p-5 shadow-lg shadow-black/5 sm:p-6 order-first lg:col-span-2"
                                 style={{
                                     background:
                                         `linear-gradient(135deg, ${
@@ -1633,8 +1625,6 @@ export default function Dashboard() {
                                 )}
 
                             </section>
-
-                        </aside>
 
                     </div>
 

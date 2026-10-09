@@ -1,8 +1,9 @@
-import { useLayoutEffect, useRef, useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useRef, useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
 import {
     Bell,
     CalendarCheck2,
+    HeartHandshake,
     LayoutDashboard,
     MessageCircle,
     UserRound,
@@ -13,9 +14,11 @@ import { AlertsSheet, useGuidanceNotifications } from "../components/GuidanceAle
 import { ACCENTS } from "../components/GuidanceUi";
 import { useGuidanceRealtime } from "../hooks/useGuidanceRealtime";
 import { useUnreadChats } from "../hooks/useUnreadChats";
+import { useGuidanceChrome } from "../hooks/useGuidanceChrome";
+import ModuleBottomNav from "../../../components/BottomNavigation/ModuleBottomNav";
 
-// The counselor bottom bar: Dashboard, Appointments, Messages,
-// Alerts, Profile. (Sign out lives inside the Profile tab.)
+// Dashboard, Appointments, Messages, plus Alerts (a sheet, not a page) and
+// Profile (where sign-out lives).
 const TABS = [
     { to: "/guidance/counselor", label: "Dashboard", icon: LayoutDashboard, end: true },
     { to: "/guidance/counselor/appointments", label: "Appointments", icon: CalendarCheck2 },
@@ -27,40 +30,27 @@ const ALERT_DESTINATION = "/guidance/counselor/appointments";
 
 const A = ACCENTS.green;
 
-// Counselor shell. Counselors have no OneServe dashboard, so the
-// Profile tab carries the sign-out action.
+// Counselor shell. Uses the shared <ModuleBottomNav>, the same bar the
+// Library, Marketplace, and the student side of Guidance use: a floating pill
+// on mobile, a fixed top bar on desktop, and a "Portal" tab. It previously
+// had its own bottom bar, separate from the other modules. Counselors have no
+// OneServe dashboard, so sign-out stays inside the Profile tab.
 export default function CounselorLayout() {
     const { me } = useGuidanceMe();
     const navigate = useNavigate();
 
-    // Measure the real header + nav heights so full-height pages
-    // (the chat thread) can sit exactly on top of the bottom nav
-    // instead of leaving a gap under the composer.
+    // Measure the header + the shared nav's two bars so the chat thread sits
+    // flush against whichever nav is showing.
     const rootRef = useRef(null);
     const headerRef = useRef(null);
-    const navRef = useRef(null);
+    const navWrapRef = useRef(null);
 
-    useLayoutEffect(() => {
-        const root = rootRef.current;
-        const nav = navRef.current;
-        if (!root || !nav) return undefined;
-
-        const sync = () => {
-            root.style.setProperty("--guidance-nav-h", `${nav.offsetHeight}px`);
-            root.style.setProperty(
-                "--guidance-header-h",
-                `${headerRef.current?.offsetHeight ?? 0}px`
-            );
-        };
-
-        sync();
-
-        const ro = new ResizeObserver(sync);
-        ro.observe(nav);
-        if (headerRef.current) ro.observe(headerRef.current);
-
-        return () => ro.disconnect();
-    }, []);
+    useGuidanceChrome({
+        rootRef,
+        navWrapRef,
+        headerRef,
+        brandSubtitle: "Counselor",
+    });
 
     // Real-time channel (chat + notification pushes).
     useGuidanceRealtime();
@@ -70,17 +60,40 @@ export default function CounselorLayout() {
 
     const [alertsOpen, setAlertsOpen] = useState(false);
 
-    // --guidance-nav-h / --guidance-header-h let full-height pages
-    // (the chat thread) sit exactly on top of the bottom nav, instead
-    // of leaving a fixed gap under the composer.
+    const items = [
+        ...TABS.map((tab) => ({
+            label: tab.label,
+            path: tab.to,
+            icon: tab.icon,
+            end: tab.end,
+            badge: tab.to === "/guidance/counselor/chat" ? unreadChats : 0,
+        })),
+        // ALERTS opens a sheet in place, it does not navigate.
+        {
+            label: "Alerts",
+            icon: Bell,
+            onClick: () => setAlertsOpen((open) => !open),
+            active: alertsOpen,
+            badge: alerts.unreadCount,
+        },
+        // PROFILE (sign-out lives here).
+        {
+            label: "Profile",
+            path: "/guidance/counselor/profile",
+            icon: UserRound,
+        },
+    ];
+
     return (
         <div
             ref={rootRef}
             className="min-h-dvh bg-[#F7F5EF]"
             style={{
                 "--guidance-nav-h": "4rem",
+                "--guidance-top-h": "0px",
                 "--guidance-header-h": "0px",
-                paddingBottom: "var(--guidance-nav-h)",
+                paddingTop: "var(--guidance-top-h, 0px)",
+                paddingBottom: "var(--guidance-nav-h, 4rem)",
             }}
         >
             <div className="mx-auto w-full max-w-xl">
@@ -110,105 +123,17 @@ export default function CounselorLayout() {
                 <Outlet />
             </div>
 
-            <nav
-                ref={navRef}
-                aria-label="Counselor"
-                className="fixed inset-x-0 bottom-0 z-40 border-t border-black/[0.06] bg-white/95 backdrop-blur"
-                style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-            >
-                <div className="mx-auto flex max-w-xl px-2">
-                    {TABS.map(({ to, label, icon: Icon, end }) => {
-                        // Unread mark on the Messages icon.
-                        const badge = to === "/guidance/counselor/chat" ? unreadChats : 0;
-
-                        return (
-                            <NavLink
-                                key={to}
-                                to={to}
-                                end={end}
-                                aria-label={
-                                    badge > 0 ? `${label}, ${badge} unread` : label
-                                }
-                                className={({ isActive }) =>
-                                    `flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-semibold transition ${
-                                        isActive ? A.tabOn : "text-slate-400"
-                                    }`
-                                }
-                            >
-                                {({ isActive }) => (
-                                    <>
-                                        <span
-                                            className={`relative flex h-7 w-12 items-center justify-center rounded-full transition ${
-                                                isActive ? A.tabPill : ""
-                                            }`}
-                                        >
-                                            <Icon size={20} aria-hidden="true" />
-
-                                            {badge > 0 && (
-                                                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#D9578F] px-1 text-[9px] font-bold text-white ring-2 ring-white">
-                                                    {badge > 9 ? "9+" : badge}
-                                                </span>
-                                            )}
-                                        </span>
-                                        {label}
-                                    </>
-                                )}
-                            </NavLink>
-                        );
-                    })}
-
-                    {/* ALERTS: new appointment requests and cancellations */}
-                    <button
-                        type="button"
-                        onClick={() => setAlertsOpen((open) => !open)}
-                        aria-expanded={alertsOpen}
-                        aria-label={
-                            alerts.unreadCount > 0 ? `Alerts, ${alerts.unreadCount} unread` : "Alerts"
-                        }
-                        className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-semibold transition ${
-                            alertsOpen ? A.tabOn : "text-slate-400"
-                        }`}
-                    >
-                        <span
-                            className={`relative flex h-7 w-12 items-center justify-center rounded-full transition ${
-                                alertsOpen ? A.tabPill : ""
-                            }`}
-                        >
-                            <Bell size={20} aria-hidden="true" />
-
-                            {alerts.unreadCount > 0 && (
-                                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#D9578F] px-1 text-[9px] font-bold text-white ring-2 ring-white">
-                                    {alerts.unreadCount > 9 ? "9+" : alerts.unreadCount}
-                                </span>
-                            )}
-                        </span>
-                        Alerts
-                    </button>
-
-                    {/* PROFILE (sign out lives here) */}
-                    <NavLink
-                        to="/guidance/counselor/profile"
-                        className={({ isActive }) =>
-                            `flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-semibold transition ${
-                                isActive ? A.tabOn : "text-slate-400"
-                            }`
-                        }
-                    >
-                        {({ isActive }) => (
-                            <>
-                                <span
-                                    className={`flex h-7 w-12 items-center justify-center rounded-full transition ${
-                                        isActive ? A.tabPill : ""
-                                    }`}
-                                >
-                                    <UserRound size={20} aria-hidden="true" />
-                                </span>
-                                Profile
-                            </>
-                        )}
-                    </NavLink>
-                </div>
-            </nav>
+            {/* The two bars ModuleBottomNav renders are found by aria-label
+                inside this wrapper by useGuidanceChrome. */}
+            <div ref={navWrapRef}>
+                <ModuleBottomNav
+                    items={items}
+                    brandIcon={HeartHandshake}
+                    brandTitle="CDM OneServe"
+                    brandSubtitle="Counselor"
+                    homePath="/guidance/counselor"
+                />
+            </div>
 
             <AlertsSheet
                 open={alertsOpen}

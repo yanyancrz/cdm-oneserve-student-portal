@@ -1,11 +1,18 @@
-import { useLayoutEffect, useRef } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { CalendarCheck2, CalendarPlus, LayoutDashboard, LayoutGrid, MessageCircle, Users } from "lucide-react";
+import { useRef } from "react";
+import { Outlet } from "react-router-dom";
+import {
+    CalendarCheck2,
+    CalendarPlus,
+    HeartHandshake,
+    LayoutDashboard,
+    MessageCircle,
+    Users,
+} from "lucide-react";
 
-import { ACCENTS } from "../components/GuidanceUi";
 import { useGuidanceRealtime } from "../hooks/useGuidanceRealtime";
 import { useUnreadChats } from "../hooks/useUnreadChats";
-import { ONESERVE_STUDENT_HOME } from "../config/guidanceRoutes";
+import { useGuidanceChrome } from "../hooks/useGuidanceChrome";
+import ModuleBottomNav from "../../../components/BottomNavigation/ModuleBottomNav";
 
 const TABS = [
     { to: "/guidance", label: "Home", icon: LayoutDashboard, end: true },
@@ -15,43 +22,38 @@ const TABS = [
     { to: "/guidance/chat", label: "Messages", icon: MessageCircle },
 ];
 
-const A = ACCENTS.green;
-
-// Shell for every student Guidance page: content + bottom tabs.
-// On a wide screen the content stays in a phone-width column.
+// Student Guidance shell. Uses the shared <ModuleBottomNav>, the same bar the
+// Library and Marketplace use: a floating pill on mobile, a fixed top bar on
+// desktop, and a "Portal" tab that leaves the module for OneServe. It
+// previously had its own full-width fixed bottom bar, which put Guidance at
+// its own third style - one system, so one bar.
 export default function GuidanceStudentLayout() {
-    const navigate = useNavigate();
-
     // Real-time channel: live chat toasts + unread marks.
     useGuidanceRealtime();
 
     // Unread chat count for the Messages tab.
     const unreadChats = useUnreadChats("student");
 
-    // Measure the real nav height so full-height pages (the chat
-    // thread) end exactly at the top of the bottom nav instead of
-    // leaving a fixed gap under the composer. The student shell has
-    // no header, so its height is 0.
+    // Measure the shared nav's two bars so the chat thread sits flush above
+    // whatever is showing, with no dead space.
     const rootRef = useRef(null);
-    const navRef = useRef(null);
+    const navWrapRef = useRef(null);
 
-    useLayoutEffect(() => {
-        const root = rootRef.current;
-        const nav = navRef.current;
-        if (!root || !nav) return undefined;
+    useGuidanceChrome({
+        rootRef,
+        navWrapRef,
+        headerRef: null,
+        brandSubtitle: "Guidance",
+    });
 
-        const sync = () => {
-            root.style.setProperty("--guidance-nav-h", `${nav.offsetHeight}px`);
-            root.style.setProperty("--guidance-header-h", "0px");
-        };
-
-        sync();
-
-        const ro = new ResizeObserver(sync);
-        ro.observe(nav);
-
-        return () => ro.disconnect();
-    }, []);
+    const items = TABS.map((tab) => ({
+        label: tab.label,
+        path: tab.to,
+        icon: tab.icon,
+        end: tab.end,
+        // Unread mark on the Messages icon.
+        badge: tab.to === "/guidance/chat" ? unreadChats : 0,
+    }));
 
     return (
         <div
@@ -59,8 +61,10 @@ export default function GuidanceStudentLayout() {
             className="relative min-h-dvh bg-[#F7F5EF]"
             style={{
                 "--guidance-nav-h": "4rem",
+                "--guidance-top-h": "0px",
                 "--guidance-header-h": "0px",
-                paddingBottom: "var(--guidance-nav-h)",
+                paddingTop: "var(--guidance-top-h, 0px)",
+                paddingBottom: "var(--guidance-nav-h, 4rem)",
             }}
         >
             <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -74,63 +78,17 @@ export default function GuidanceStudentLayout() {
                 <Outlet />
             </div>
 
-            <nav
-                ref={navRef}
-                aria-label="Guidance"
-                className="fixed inset-x-0 bottom-0 z-40 border-t border-black/[0.06] bg-white/95 backdrop-blur"
-                style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-            >
-                <div className="mx-auto flex max-w-xl px-2">
-                    {TABS.map(({ to, label, icon: Icon, end }) => {
-                        // Unread mark on the Messages icon.
-                        const badge = to === "/guidance/chat" ? unreadChats : 0;
-
-                        return (
-                            <NavLink
-                                key={to}
-                                to={to}
-                                end={end}
-                                aria-label={badge > 0 ? `${label}, ${badge} unread` : label}
-                                className={({ isActive }) =>
-                                    `flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-semibold transition ${
-                                        isActive ? A.tabOn : "text-slate-400"
-                                    }`
-                                }
-                            >
-                                {({ isActive }) => (
-                                    <>
-                                        <span
-                                            className={`relative flex h-7 w-12 items-center justify-center rounded-full transition ${
-                                                isActive ? A.tabPill : ""
-                                            }`}
-                                        >
-                                            <Icon size={20} aria-hidden="true" />
-
-                                            {badge > 0 && (
-                                                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#D9578F] px-1 text-[9px] font-bold text-white ring-2 ring-white">
-                                                    {badge > 9 ? "9+" : badge}
-                                                </span>
-                                            )}
-                                        </span>
-                                        {label}
-                                    </>
-                                )}
-                            </NavLink>
-                        );
-                    })}
-
-                    <button
-                        type="button"
-                        onClick={() => navigate(ONESERVE_STUDENT_HOME)}
-                        className="flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-semibold text-slate-400 transition hover:text-[#106A2E]"
-                    >
-                        <span className="flex h-7 w-12 items-center justify-center rounded-full">
-                            <LayoutGrid size={20} aria-hidden="true" />
-                        </span>
-                        Portal
-                    </button>
-                </div>
-            </nav>
+            {/* The two bars ModuleBottomNav renders are found by aria-label
+                inside this wrapper by useGuidanceChrome. */}
+            <div ref={navWrapRef}>
+                <ModuleBottomNav
+                    items={items}
+                    brandIcon={HeartHandshake}
+                    brandTitle="CDM OneServe"
+                    brandSubtitle="Guidance"
+                    homePath="/guidance"
+                />
+            </div>
         </div>
     );
 }

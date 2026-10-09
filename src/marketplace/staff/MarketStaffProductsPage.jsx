@@ -3,6 +3,7 @@ import { ImageOff, Package, Plus, RotateCcw, Search, Trash2, Upload, X } from "l
 import toast from "react-hot-toast";
 
 import { staffApi } from "../services/marketApi";
+import { marketImageUrl } from "../config/marketImage";
 import {
     CATEGORIES,
     STOCK_STATE,
@@ -574,7 +575,7 @@ function ProductModal({ initial, onClose, onSaved }) {
                             <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-white">
                                 {shownPhoto ? (
                                     <img
-                                        src={shownPhoto}
+                                        src={marketImageUrl(shownPhoto)}
                                         alt=""
                                         className="h-full w-full object-cover"
                                     />
