@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { useIsMarketHead } from "./MarketStaffGate";
+import { logout } from "../session";
 import ModuleBottomNav from "../../components/BottomNavigation/ModuleBottomNav";
 
 // =====================================================
@@ -65,6 +66,16 @@ function useVisibleNav() {
 export default function MarketStaffLayout() {
     const nav = useVisibleNav();
 
+    // Staff end the session here. The old Portal tab led to /dashboard, which a
+    // market operator has no business in - they are on the Student/Faculty
+    // account underneath, so the link was a door into somebody else's portal.
+    // logout() clears the SHARED OneServe session, matching the marketplace
+    // admin portal's own control.
+    const handleSignOut = () => {
+        logout();
+        window.location.replace("/");
+    };
+
     const items = nav.map((item) => ({
         label: item.label,
         path: item.to,
@@ -80,6 +91,8 @@ export default function MarketStaffLayout() {
                 brandTitle="CDM OneServe"
                 brandSubtitle="Staff"
                 homePath="/marketplace/staff"
+                portalLabel="Sign out"
+                portalOnClick={handleSignOut}
             />
 
             {/* pb-28 clears the floating pill on mobile; md:pt-24 clears the
