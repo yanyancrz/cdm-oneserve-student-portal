@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye, EyeOff, Check, X, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Modal } from "../common";
@@ -7,6 +8,91 @@ import guidanceHeadService from "../../services/guidanceHeadService";
 const input =
     "w-full rounded-lg border border-black/[0.08] bg-white px-3 py-2 text-sm text-gray-700 outline-none transition focus:border-[#106A2E]";
 const label = "mb-1.5 block text-xs font-medium text-gray-500";
+
+const SYMBOLS = "!@#$%^&*()-_=+[]{};:,.?";
+
+const passwordRules = (pw, idNumber = "", email = "") => {
+    const emailName = email.split("@")[0].trim().toLowerCase();
+    const lower = pw.toLowerCase();
+    return [
+        { key: "len", label: "At least 12 characters", ok: pw.length >= 12 },
+        { key: "upper", label: "An uppercase letter (A-Z)", ok: /[A-Z]/.test(pw) },
+        { key: "lower", label: "A lowercase letter (a-z)", ok: /[a-z]/.test(pw) },
+        { key: "digit", label: "A number (0-9)", ok: /\d/.test(pw) },
+        { key: "symbol", label: "A symbol (! @ # $ % ...)", ok: /[^A-Za-z0-9\s]/.test(pw) },
+        { key: "space", label: "No spaces", ok: pw.length > 0 && !/\s/.test(pw) },
+        {
+            key: "personal",
+            label: "Does not contain the email name or ID number",
+            ok:
+                pw.length > 0 &&
+                !(emailName.length >= 3 && lower.includes(emailName)) &&
+                !(idNumber.trim().length >= 3 && lower.includes(idNumber.trim().toLowerCase())),
+        },
+    ];
+};
+
+// Cryptographically random password that always passes every rule above.
+const generatePassword = (length = 14) => {
+    const sets = ["ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnopqrstuvwxyz", "23456789", SYMBOLS];
+    const all = sets.join("");
+    const rand = (n) => {
+        const buf = new Uint32Array(1);
+        const limit = Math.floor(0x100000000 / n) * n;
+        do crypto.getRandomValues(buf);
+        while (buf[0] >= limit);
+        return buf[0] % n;
+    };
+    const chars = sets.map((s) => s[rand(s.length)]);
+    while (chars.length < length) chars.push(all[rand(all.length)]);
+    for (let i = chars.length - 1; i > 0; i--) {
+        const j = rand(i + 1);
+        [chars[i], chars[j]] = [chars[j], chars[i]];
+    }
+    return chars.join("");
+};
+
+const STRENGTH = [
+    { label: "Too weak", bar: "bg-red-500", text: "text-red-600" },
+    { label: "Weak", bar: "bg-orange-500", text: "text-orange-600" },
+    { label: "Fair", bar: "bg-amber-500", text: "text-amber-600" },
+    { label: "Good", bar: "bg-lime-500", text: "text-lime-600" },
+    { label: "Strong", bar: "bg-emerald-600", text: "text-emerald-700" },
+];
+
+function PasswordMeter({ rules, password }) {
+    const passed = rules.filter((r) => r.ok).length;
+    const level = !password ? -1 : passed >= rules.length ? 4 : Math.min(3, Math.floor((passed / rules.length) * 4));
+    const info = STRENGTH[Math.max(level, 0)];
+    const filled = !password ? 0 : level === 4 ? 4 : Math.max(1, Math.min(3, level));
+
+    return (
+        <div className="mt-2" aria-live="polite">
+            <div className="flex gap-1">
+                {[0, 1, 2, 3].map((i) => (
+                    <span
+                        key={i}
+                        className={`h-1.5 flex-1 rounded-full transition-colors ${
+                            i < filled ? info.bar : "bg-gray-200"
+                        }`}
+                    />
+                ))}
+            </div>
+            {password && <p className={`mt-1 text-[11px] font-semibold ${info.text}`}>{info.label}</p>}
+            <ul className="mt-1.5 space-y-0.5">
+                {rules.map((r) => (
+                    <li
+                        key={r.key}
+                        className={`flex items-center gap-1.5 text-[11px] ${r.ok ? "text-emerald-700" : "text-gray-400"}`}
+                    >
+                        {r.ok ? <Check size={12} aria-hidden="true" /> : <X size={12} aria-hidden="true" />}
+                        {r.label}
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
 
 function Field({ children, className = "" }) {
     return <div className={className}>{children}</div>;
@@ -24,6 +110,7 @@ export default function CounselorFormModal({ counselor, onClose, onSaved }) {
     const [email, setEmail] = useState(counselor?.email || "");
     const [idNumber, setIdNumber] = useState(counselor?.idNumber || "");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [title, setTitle] = useState(counselor?.title || "");
     const [room, setRoom] = useState(counselor?.room || "");
     const [department, setDepartment] = useState(counselor?.department || "");
@@ -38,7 +125,10 @@ export default function CounselorFormModal({ counselor, onClose, onSaved }) {
         if (!email.trim()) return "Email is required.";
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return "Enter a valid email address.";
         if (!isEdit && !idNumber.trim()) return "ID number is required.";
-        if (!isEdit && password.length < 8) return "Password must be at least 8 characters.";
+        if (!isEdit) {
+            const failed = passwordRules(password, idNumber, email).find((r) => !r.ok);
+            if (failed) return `Password is not strong enough: ${failed.label.toLowerCase()}.`;
+        }
         return null;
     };
 
@@ -174,16 +264,41 @@ export default function CounselorFormModal({ counselor, onClose, onSaved }) {
                                 <label className={label} htmlFor="c-password">
                                     Temporary password *
                                 </label>
-                                <input
-                                    id="c-password"
-                                    type="password"
-                                    autoComplete="new-password"
-                                    className={input}
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="At least 8 characters"
-                                    required
-                                />
+                                <div className="relative">
+                                    <input
+                                        id="c-password"
+                                        type={showPassword ? "text" : "password"}
+                                        autoComplete="new-password"
+                                        className={`${input} pr-10`}
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="At least 12 characters"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword((v) => !v)}
+                                        aria-label={showPassword ? "Hide password" : "Show password"}
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:text-gray-600"
+                                    >
+                                        {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setPassword(generatePassword());
+                                        setShowPassword(true);
+                                    }}
+                                    className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[#106A2E] hover:underline"
+                                >
+                                    <RefreshCw size={12} aria-hidden="true" />
+                                    Generate strong password
+                                </button>
+
+                                <PasswordMeter rules={passwordRules(password, idNumber, email)} password={password} />
+
                                 <p className="mt-1 text-[11px] text-gray-400">
                                     Share this with the counselor - they can change it after signing in.
                                 </p>

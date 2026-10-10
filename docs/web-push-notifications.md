@@ -19,7 +19,7 @@ Two options were considered. **This implementation uses the dedicated Node servi
  MySQL PushSubscriptions ───────────────────────────────┐
                                                         │
  Business event (Lost&Found / Library / Guidance /      │ readable
- Marketplace / Account verification)                   │
+ Marketplace / Account verification / Announcements)    │
    │ PushDispatcher.EnqueueAsync(...)                   │
    ▼                                                    │
  MySQL PushOutbox   (Pending, deduped)                 │

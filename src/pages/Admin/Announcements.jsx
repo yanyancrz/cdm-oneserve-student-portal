@@ -12,6 +12,7 @@ import {
     Clock3,
     Radio,
     Search,
+    Bell,
 } from "lucide-react";
 import { API_URL } from "../../config/api";
 
@@ -35,6 +36,7 @@ const EMPTY_FORM = {
     tag: "CAMPUS",
     accent: DEFAULT_ACCENT,
     isActive: true,
+    notifyUsers: true,
 };
 
 const TAG_PRESETS = ["CAMPUS", "ACADEMIC", "EVENT", "URGENT", "REMINDER"];
@@ -482,7 +484,8 @@ export default function Announcements() {
             form.message !== formBaseline.message ||
             form.tag !== formBaseline.tag ||
             form.accent !== formBaseline.accent ||
-            form.isActive !== formBaseline.isActive,
+            form.isActive !== formBaseline.isActive ||
+            form.notifyUsers !== formBaseline.notifyUsers,
         [form, formBaseline]
     );
 
@@ -520,6 +523,9 @@ export default function Announcements() {
             tag: announcement.tag || "CAMPUS",
             accent: announcement.accent || DEFAULT_ACCENT,
             isActive: announcement.isActive ?? true,
+            // Editing something that is already live must not spam every
+            // device; publishing from hidden is the case that should.
+            notifyUsers: !(announcement.isActive ?? true),
         };
 
         setEditingId(announcement.id);
@@ -585,6 +591,7 @@ export default function Announcements() {
                     tag: form.tag.trim(),
                     accent: form.accent,
                     isActive: form.isActive,
+                    notifyUsers: form.isActive && form.notifyUsers,
                 }),
             });
 
@@ -594,11 +601,17 @@ export default function Announcements() {
                 throw new Error(data.message || "Unable to save announcement.");
             }
 
+            const notified = form.isActive && form.notifyUsers;
+
             toast.success(
                 editingId
-                    ? "Announcement updated successfully."
+                    ? notified
+                        ? "Announcement updated successfully. Push notification sent."
+                        : "Announcement updated successfully."
                     : form.isActive
-                    ? "Announcement published successfully."
+                    ? notified
+                        ? "Announcement published successfully. Push notification sent."
+                        : "Announcement published successfully."
                     : "Announcement saved as hidden."
             );
 
@@ -636,6 +649,9 @@ export default function Announcements() {
                     tag: announcement.tag,
                     accent: announcement.accent || DEFAULT_ACCENT,
                     isActive: nextActive,
+                    // Publishing from the list is the only way a hidden
+                    // announcement goes out on its own.
+                    notifyUsers: nextActive,
                 }),
             });
 
@@ -646,7 +662,9 @@ export default function Announcements() {
             }
 
             toast.success(
-                nextActive ? "Announcement published to users." : "Announcement hidden from users."
+                nextActive
+                    ? "Announcement published to users. Push notification sent."
+                    : "Announcement hidden from users."
             );
 
             await loadAnnouncements({ silent: true });
@@ -1071,6 +1089,37 @@ export default function Announcements() {
                                             label="Publish immediately"
                                         />
                                     </div>
+
+                                    {/* Push notification toggle */}
+                                    {form.isActive && (
+                                        <div className="flex items-start justify-between gap-4 rounded-2xl border border-[#106A2E]/20 bg-[#106A2E]/[0.04] p-4">
+                                            <div className="flex gap-3">
+                                                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E1F0E4] text-[#106A2E]">
+                                                    <Bell size={15} />
+                                                </span>
+                                                <div>
+                                                    <p
+                                                        id="ann-notify-label"
+                                                        className="text-sm font-medium text-gray-800"
+                                                    >
+                                                        Send push notification
+                                                    </p>
+                                                    <p className="mt-0.5 text-xs leading-5 text-gray-500">
+                                                        Sends a browser notification to every user who
+                                                        turned notifications on, even while the app is
+                                                        closed. Only when publishing.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Switch
+                                                checked={form.notifyUsers}
+                                                onChange={() =>
+                                                    updateField("notifyUsers", !form.notifyUsers)
+                                                }
+                                                label="Send push notification"
+                                            />
+                                        </div>
+                                    )}
 
                                     {/* Buttons */}
                                     <div className="flex flex-wrap items-center gap-3 pt-1">
