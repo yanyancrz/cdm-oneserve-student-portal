@@ -40,6 +40,12 @@ export default function MarketShopPage() {
     const [subCategory, setSubCategory] = useState("");
     const [search, setSearch] = useState("");
 
+    // Stall filter: the shop groups the catalog by workspace (BusinessHub vs
+    // each food stall). Client-side over the loaded catalog, so switching
+    // stalls is instant and never refetches.
+    const [workspaces, setWorkspaces] = useState([]);
+    const [workspaceId, setWorkspaceId] = useState("");
+
     // Size selection for the tapped product. Uniforms have their own stock per
     // size, so a size must be chosen before anything can be added.
     const [selectedVariantId, setSelectedVariantId] = useState(null);
@@ -71,6 +77,23 @@ export default function MarketShopPage() {
         };
     }, [search]);
 
+    useEffect(() => {
+        let cancelled = false;
+
+        buyerApi
+            .workspaces()
+            .then((response) => {
+                if (!cancelled) setWorkspaces(response.data || []);
+            })
+            .catch(() => {
+                // The shop works without the grouping; the filter just hides.
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     // Changing the category resets the subcategory: a subcategory from another
     // category would return nothing and look like an empty catalog.
     const onCategoryChange = (value) => {
@@ -79,9 +102,17 @@ export default function MarketShopPage() {
     };
 
     const visible = useMemo(() => {
-        if (!category) return products;
-        return products.filter((product) => product.category === category);
-    }, [products, category]);
+        let list = products;
+
+        if (workspaceId) {
+            list = list.filter(
+                (product) => String(product.workspaceId ?? "") === String(workspaceId)
+            );
+        }
+
+        if (!category) return list;
+        return list.filter((product) => product.category === category);
+    }, [products, category, workspaceId]);
 
     const visibleSub = useMemo(() => {
         if (!subCategory) return visible;
@@ -188,6 +219,27 @@ export default function MarketShopPage() {
                 ))}
             </div>
 
+            {/* Stall filter: BusinessHub vs each food stall, so a buyer shops
+                one counter at a time. Checkout still splits by stall whatever
+                is in the cart. */}
+            {workspaces.length > 0 && (
+                <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <CategoryChip
+                        label="All stalls"
+                        active={!workspaceId}
+                        onClick={() => setWorkspaceId("")}
+                    />
+                    {workspaces.map((workspace) => (
+                        <CategoryChip
+                            key={workspace.workspaceId}
+                            label={workspace.name}
+                            active={String(workspaceId) === String(workspace.workspaceId)}
+                            onClick={() => setWorkspaceId(String(workspace.workspaceId))}
+                        />
+                    ))}
+                </div>
+            )}
+
             {category && subCategoriesFor(category).length > 0 && (
                 <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     <CategoryChip
@@ -288,6 +340,12 @@ function ProductCard({ product, onOpen, onAdd, adding }) {
                 <p className="mt-0.5 line-clamp-2 text-xs font-semibold leading-4 text-slate-800">
                     {product.name}
                 </p>
+
+                {product.workspaceName && (
+                    <p className="mt-0.5 truncate text-[10px] text-slate-400">
+                        {product.workspaceName}
+                    </p>
+                )}
 
                 <p className="mt-1 text-sm font-semibold text-[#106A2E]">
                     {formatPeso(product.priceCentavos)}

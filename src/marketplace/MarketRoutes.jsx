@@ -24,6 +24,8 @@ import MarketStaffChatPage from "./staff/MarketStaffChatPage";
 import MarketStaffTransactionsPage from "./staff/MarketStaffTransactionsPage";
 import MarketStaffSettingsPage from "./staff/MarketStaffSettingsPage";
 import MarketStaffAccountsPage from "./staff/MarketStaffAccountsPage";
+import MarketStaffWorkspacesPage from "./staff/MarketStaffWorkspacesPage";
+import MarketStaffAuditPage from "./staff/MarketStaffAuditPage";
 import { useIsMarketHead } from "./staff/MarketStaffGate";
 import MarketAdminGate from "./admin/MarketAdminGate";
 import MarketAdminLayout from "./admin/MarketAdminLayout";
@@ -111,6 +113,14 @@ export const marketStaffRoutes = (
                 <Route
                     path="/marketplace/staff/accounts"
                     element={<MarketStaffAccountsPage />}
+                />
+                <Route
+                    path="/marketplace/staff/workspaces"
+                    element={<MarketStaffWorkspacesPage />}
+                />
+                <Route
+                    path="/marketplace/staff/audit"
+                    element={<MarketStaffAuditPage />}
                 />
             </Route>
         </Route>

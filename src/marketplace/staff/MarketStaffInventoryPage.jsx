@@ -41,6 +41,13 @@ export default function MarketStaffInventoryPage() {
     const [search, setSearch] = useState("");
     const [editing, setEditing] = useState(null);
 
+    // Stock vs History: the history is this workspace's audit trail - every
+    // movement with the operator on duty - while Stock is the live counts.
+    const [tab, setTab] = useState("stock");
+    const [history, setHistory] = useState([]);
+    const [historyLoading, setHistoryLoading] = useState(false);
+    const [historyError, setHistoryError] = useState("");
+
     useEffect(() => {
         let cancelled = false;
 
@@ -84,6 +91,33 @@ export default function MarketStaffInventoryPage() {
         setSearchParams(next);
     };
 
+    useEffect(() => {
+        if (tab !== "history") return undefined;
+
+        let cancelled = false;
+
+        const loadHistory = async () => {
+            try {
+                setHistoryLoading(true);
+                setHistoryError("");
+
+                const response = await staffApi.inventoryHistory({ take: 100 });
+                if (cancelled) return;
+
+                setHistory(response.data || []);
+            } catch (err) {
+                if (!cancelled) setHistoryError(err.message);
+            } finally {
+                if (!cancelled) setHistoryLoading(false);
+            }
+        };
+
+        loadHistory();
+        return () => {
+            cancelled = true;
+        };
+    }, [tab]);
+
     return (
         <div className="space-y-4">
             <StaffPageHeader
@@ -97,6 +131,34 @@ export default function MarketStaffInventoryPage() {
                 is released on cancel, consumed on complete.
             </MarketNotice>
 
+            <div className="flex gap-1.5 rounded-xl bg-slate-100 p-1">
+                {[
+                    { value: "stock", label: "Stock" },
+                    { value: "history", label: "History" },
+                ].map((item) => (
+                    <button
+                        key={item.value}
+                        type="button"
+                        onClick={() => setTab(item.value)}
+                        className={`flex-1 rounded-lg px-3 py-2 text-xs font-semibold transition ${
+                            tab === item.value
+                                ? "bg-white text-[#106A2E] shadow-sm"
+                                : "text-slate-500 hover:text-slate-700"
+                        }`}
+                    >
+                        {item.label}
+                    </button>
+                ))}
+            </div>
+
+            {tab === "history" ? (
+                <HistoryList
+                    rows={history}
+                    loading={historyLoading}
+                    error={historyError}
+                />
+            ) : (
+            <>
             <div className="flex flex-wrap items-center gap-2">
                 <div className="relative min-w-[180px] flex-1">
                     <Search
@@ -291,6 +353,8 @@ export default function MarketStaffInventoryPage() {
                     </ul>
                 </MarketPanel>
             )}
+            </>
+            )}
 
             {editing && (
                 <InventoryModal
@@ -312,6 +376,83 @@ export default function MarketStaffInventoryPage() {
 }
 
 /**
+ * This workspace's audit trail: every stock movement with the operator on
+ * duty. Read-only - history is written by the workflows, never edited here.
+ */
+function HistoryList({ rows, loading, error }) {
+    if (loading) {
+        return (
+            <MarketPanel>
+                <MarketSkeleton rows={6} />
+            </MarketPanel>
+        );
+    }
+
+    if (error) {
+        return (
+            <MarketNotice tone="error" title="Could not load history">
+                {error}
+            </MarketNotice>
+        );
+    }
+
+    if (rows.length === 0) {
+        return (
+            <MarketPanel>
+                <MarketEmpty
+                    icon={<Boxes size={20} />}
+                    title="No movements yet"
+                    hint="Restocks, adjustments, sales and cancellations appear here with the operator's name."
+                />
+            </MarketPanel>
+        );
+    }
+
+    return (
+        <MarketPanel
+            title={`${rows.length} movement${rows.length === 1 ? "" : "s"}`}
+            subtitle="Newest first"
+        >
+            <ul className="divide-y divide-slate-100">
+                {rows.map((row) => (
+                    <li key={row.transactionId} className="py-3">
+                        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                            <span className="text-xs font-bold text-slate-800">
+                                {row.productName}
+                                {row.variantName ? ` (${row.variantName})` : ""}
+                            </span>
+                            <span
+                                className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${
+                                    row.quantityChanged > 0
+                                        ? "bg-emerald-50 text-[#106A2E]"
+                                        : "bg-rose-50 text-rose-600"
+                                }`}
+                            >
+                                {row.quantityChanged > 0
+                                    ? `+${row.quantityChanged}`
+                                    : row.quantityChanged}
+                            </span>
+                            <span className="text-[11px] text-slate-400">
+                                {row.previousQuantity} → {row.newQuantity}
+                            </span>
+                        </div>
+                        <p className="mt-1 text-[11px] leading-5 text-slate-500">
+                            {row.actionType}
+                            {row.operatorName ? ` · ${row.operatorName}` : ""}
+                            {row.orderReference ? ` · ${row.orderReference}` : ""}
+                            {row.reason ? ` · ${row.reason}` : ""}
+                        </p>
+                        <p className="text-[10px] text-slate-400">
+                            {new Date(row.createdAt).toLocaleString()}
+                        </p>
+                    </li>
+                ))}
+            </ul>
+        </MarketPanel>
+    );
+}
+
+/**
  * Two separate actions, never merged into one ambiguous field.
  *
  * SET is for a recount. It is refused when the new count is below what open
@@ -319,11 +460,14 @@ export default function MarketStaffInventoryPage() {
  *
  * RESTOCK is additive, so a mistyped addition tops the shelf up instead of
  * replacing it with a wrong number.
+ *
+ * Both carry a reason: it lands in the audit trail next to the operator's name.
  */
 function InventoryModal({ row, onClose, onSaved }) {
     const [quantity, setQuantity] = useState(String(row.stockQuantity));
     const [threshold, setThreshold] = useState(String(row.lowStockThreshold));
     const [restockAmount, setRestockAmount] = useState("");
+    const [reason, setReason] = useState("");
     const [saving, setSaving] = useState(false);
     const [restocking, setRestocking] = useState(false);
     const [error, setError] = useState("");
@@ -336,6 +480,7 @@ function InventoryModal({ row, onClose, onSaved }) {
             const response = await staffApi.saveInventory(row.inventoryId, {
                 stockQuantity: Number(quantity) || 0,
                 lowStockThreshold: Number(threshold) || 0,
+                reason: reason.trim(),
             });
 
             toast.success(response.message || "Inventory updated.");
@@ -356,7 +501,10 @@ function InventoryModal({ row, onClose, onSaved }) {
         setError("");
 
         try {
-            const response = await staffApi.restock(row.inventoryId, amount);
+            const response = await staffApi.restock(row.inventoryId, {
+                quantity: amount,
+                reason: reason.trim(),
+            });
             toast.success(response.message || "Stock added.");
             onSaved(response.data);
             setRestockAmount("");
@@ -461,6 +609,21 @@ function InventoryModal({ row, onClose, onSaved }) {
                         >
                             {saving ? "Saving..." : "Save count"}
                         </MarketButton>
+                    </div>
+
+                    {/* REASON - recorded in the audit trail with the operator's name. */}
+                    <div>
+                        <span className="mb-1 block text-[9px] uppercase tracking-wider text-slate-400">
+                            Reason (shown in the history)
+                        </span>
+                        <input
+                            type="text"
+                            value={reason}
+                            onChange={(event) => setReason(event.target.value)}
+                            placeholder="e.g. Delivery received, recount, damaged items"
+                            maxLength={500}
+                            className={marketInputClass}
+                        />
                     </div>
 
                     {/* RESTOCK */}

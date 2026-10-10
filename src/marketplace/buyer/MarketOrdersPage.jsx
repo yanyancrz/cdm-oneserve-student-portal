@@ -161,6 +161,9 @@ export default function MarketOrdersPage() {
                                     {formatDateTime(order.createdAt)} &middot;{" "}
                                     {order.items.length} item
                                     {order.items.length === 1 ? "" : "s"}
+                                    {order.workspaceName
+                                        ? ` · ${order.workspaceName}`
+                                        : ""}
                                 </p>
 
                                 <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">

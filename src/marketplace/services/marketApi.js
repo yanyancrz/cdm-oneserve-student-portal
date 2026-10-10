@@ -53,14 +53,39 @@ function extractMessage(status, payload) {
     }
 }
 
+const OPERATOR_SESSION_KEY = "marketplace:operatorSessionId";
+
+/** The active duty-shift session id, set by the session setup screen. */
+export function getOperatorSessionId() {
+    try {
+        return localStorage.getItem(OPERATOR_SESSION_KEY);
+    } catch {
+        return null;
+    }
+}
+
+export function setOperatorSessionId(sessionId) {
+    try {
+        if (sessionId) localStorage.setItem(OPERATOR_SESSION_KEY, sessionId);
+        else localStorage.removeItem(OPERATOR_SESSION_KEY);
+    } catch {
+        // Storage unavailable - mutations will ask for a session instead.
+    }
+}
+
 async function request(path, { method = "GET", body, params, signal } = {}) {
     const token = getToken();
+    const operatorSession = getOperatorSessionId();
 
     const isForm = typeof FormData !== "undefined" && body instanceof FormData;
 
     const headers = {
         Accept: "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        // Every staff call carries the duty-shift session when one is open.
+        // The server validates it belongs to the caller; reads cope without
+        // one, mutations refuse without one.
+        ...(operatorSession ? { "X-Operator-Session": operatorSession } : {}),
         // A FormData body must NOT get an explicit Content-Type: the boundary is
         // appended by the browser, and overriding it makes the server see an
         // empty body.
@@ -104,6 +129,7 @@ async function request(path, { method = "GET", body, params, signal } = {}) {
     if (!response.ok) {
         if (response.status === 401) {
             clearSession();
+            setOperatorSessionId(null);
             window.dispatchEvent(new Event(MARKET_UNAUTHORIZED_EVENT));
         }
 
@@ -145,6 +171,9 @@ export const buyerApi = {
     products: (params) => http.get("/api/marketplace/products", { params }),
     product: (productId) => http.get(`/api/marketplace/products/${productId}`),
 
+    workspaces: () => http.get("/api/marketplace/workspaces"),
+    stallLocations: () => http.get("/api/marketplace/stall-locations"),
+
     campusLocations: () => http.get("/api/marketplace/campus-locations"),
     checkoutInfo: () => http.get("/api/marketplace/checkout-info"),
 
@@ -173,7 +202,12 @@ export const buyerApi = {
 export const staffApi = {
     me: () => http.get("/api/marketplace/staff/me"),
 
-    dashboard: () => http.get("/api/marketplace/staff/dashboard"),
+    session: () => http.get("/api/marketplace/staff/session"),
+    sessionContext: () => http.get("/api/marketplace/staff/session/context"),
+    startSession: (body) => http.post("/api/marketplace/staff/session", body),
+    endSession: () => http.post("/api/marketplace/staff/session/end"),
+
+    dashboard: (params) => http.get("/api/marketplace/staff/dashboard", { params }),
 
     orders: (params) => http.get("/api/marketplace/staff/orders", { params }),
     deliveries: (params) => http.get("/api/marketplace/staff/deliveries", { params }),
@@ -204,11 +238,13 @@ export const staffApi = {
         http.delete(`/api/marketplace/staff/products/${productId}/image`),
 
     inventory: (params) => http.get("/api/marketplace/staff/inventory", { params }),
-    lowStock: () => http.get("/api/marketplace/staff/inventory/low-stock"),
+    lowStock: (params) => http.get("/api/marketplace/staff/inventory/low-stock", { params }),
     saveInventory: (inventoryId, body) =>
         http.put(`/api/marketplace/staff/inventory/${inventoryId}`, body),
-    restock: (inventoryId, quantity) =>
-        http.post(`/api/marketplace/staff/inventory/${inventoryId}/restock`, { quantity }),
+    restock: (inventoryId, body) =>
+        http.post(`/api/marketplace/staff/inventory/${inventoryId}/restock`, body),
+    inventoryHistory: (params) =>
+        http.get("/api/marketplace/staff/inventory/history", { params }),
 
     locations: () => http.get("/api/marketplace/staff/locations"),
     saveLocation: (body) =>
@@ -248,6 +284,24 @@ export const headApi = {
         http.post(`/api/marketplace/head/staff/${staffUserId}/deactivate`),
     reactivateStaff: (staffUserId) =>
         http.post(`/api/marketplace/head/staff/${staffUserId}/reactivate`),
+
+    stallLocations: () => http.get("/api/marketplace/head/stall-locations"),
+    saveStallLocation: (body) =>
+        body.stallLocationId
+            ? http.put(`/api/marketplace/head/stall-locations/${body.stallLocationId}`, body)
+            : http.post("/api/marketplace/head/stall-locations", body),
+
+    workspaces: () => http.get("/api/marketplace/head/workspaces"),
+    saveWorkspace: (body) => http.post("/api/marketplace/head/workspaces/save", body),
+
+    createStallAccount: (workspaceId, body) =>
+        http.post(`/api/marketplace/head/workspaces/${workspaceId}/account`, body),
+    deactivateStallAccount: (workspaceId) =>
+        http.delete(`/api/marketplace/head/workspaces/${workspaceId}/account`),
+    resetStallAccountPassword: (workspaceId, password) =>
+        http.post(`/api/marketplace/head/workspaces/${workspaceId}/account/password`, { password }),
+
+    audit: (params) => http.get("/api/marketplace/head/audit", { params }),
 };
 
 // =====================================================
@@ -255,8 +309,10 @@ export const headApi = {
 // =====================================================
 
 export const adminApi = {
-    overview: () => http.get("/api/marketplace/admin/overview"),
+    overview: (params) => http.get("/api/marketplace/admin/overview", { params }),
     accounts: (params) => http.get("/api/marketplace/admin/accounts", { params }),
     transactions: (params) => http.get("/api/marketplace/admin/transactions", { params }),
-    analytics: (days = 30) => http.get("/api/marketplace/admin/analytics", { params: { days } }),
+    analytics: (days = 30, workspaceId) =>
+        http.get("/api/marketplace/admin/analytics", { params: { days, workspaceId } }),
+    workspaces: () => http.get("/api/marketplace/workspaces"),
 };

@@ -163,6 +163,12 @@ export default function MarketCartPage() {
                                     {item.productName}
                                 </p>
 
+                                {item.workspaceName && (
+                                    <p className="mt-0.5 truncate text-[10px] text-slate-400">
+                                        {item.workspaceName}
+                                    </p>
+                                )}
+
                                 {item.variantName && (
                                     <p className="text-[11px] text-slate-400">
                                         Size: {item.variantName}

@@ -59,6 +59,11 @@ export function clearSession() {
  */
 export function logout() {
     clearSession();
+    try {
+        localStorage.removeItem("marketplace:operatorSessionId");
+    } catch {
+        // Storage unavailable - nothing to clear.
+    }
 }
 
 export function getUserId() {

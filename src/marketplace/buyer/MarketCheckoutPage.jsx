@@ -104,10 +104,28 @@ export default function MarketCheckoutPage() {
             });
     }, []);
 
-    const subtotal = useMemo(
-        () => cart.reduce((sum, item) => sum + item.subtotalCentavos, 0),
-        [cart]
-    );
+    // The cart grouped by stall: each stall fulfils its own order, so the
+    // buyer sees one total per counter before confirming.
+    const groups = useMemo(() => {
+        const map = new Map();
+
+        for (const item of cart) {
+            const key = item.workspaceId ?? 0;
+            if (!map.has(key)) map.set(key, []);
+            map.get(key).push(item);
+        }
+
+        return [...map.entries()].map(([workspaceId, items]) => ({
+            workspaceId,
+            workspaceName:
+                items.find((item) => item.workspaceName)?.workspaceName ||
+                "Marketplace",
+            items,
+            subtotal: items.reduce((sum, item) => sum + item.subtotalCentavos, 0),
+        }));
+    }, [cart]);
+
+    const subtotal = groups.reduce((sum, group) => sum + group.subtotal, 0);
 
     const deliveryEnabled = info?.deliveryEnabled !== false;
     const isDelivery = method === FULFILLMENT.CAMPUS_DELIVERY;
@@ -152,14 +170,28 @@ export default function MarketCheckoutPage() {
                 notes: notes.trim() || null,
             });
 
-            const order = response.data;
+            const placed = response.data?.orders || [];
 
-            // The cart became an order, so the header badge is now zero.
+            // The cart became order(s), so the header badge is now zero.
             setCount(0);
 
-            toast.success(`Order ${order.orderReference} placed.`);
+            if (placed.length === 0) {
+                toast.success("Order placed.");
+            } else if (placed.length === 1) {
+                toast.success(`Order ${placed[0].orderReference} placed.`);
+            } else {
+                toast.success(
+                    `${placed.length} orders placed - one per stall (${placed
+                        .map((order) => order.orderReference)
+                        .join(", ")}).`
+                );
+            }
 
-            navigate(`/marketplace/orders/${order.orderId}`, { replace: true });
+            if (placed.length === 1) {
+                navigate(`/marketplace/orders/${placed[0].orderId}`, { replace: true });
+            } else {
+                navigate("/marketplace/orders", { replace: true });
+            }
         } catch (err) {
             toast.error(err.message);
         } finally {
@@ -325,26 +357,42 @@ export default function MarketCheckoutPage() {
 
             <MarketPanel title="Order summary">
                 <div className="space-y-2.5 p-3.5">
-                    {cart.map((item) => (
-                        <div
-                            key={item.cartItemId}
-                            className="flex items-start justify-between gap-3 text-xs"
-                        >
-                            <div className="min-w-0">
-                                <p className="truncate font-medium text-slate-700">
-                                    {item.productName}
-                                    {item.variantName
-                                        ? ` (${item.variantName})`
-                                        : ""}
+                    {/* One fulfillment per stall: a cart spanning counters
+                        becomes one order each, tracked separately. */}
+                    {groups.map((group) => (
+                        <div key={group.workspaceId}>
+                            {groups.length > 1 && (
+                                <p className="mb-1.5 mt-1 text-[10px] font-bold uppercase tracking-[.14em] text-[#106A2E]/70 first:mt-0">
+                                    {group.workspaceName}
                                 </p>
-                                <p className="text-[10px] text-slate-400">
-                                    {item.quantity} x{" "}
-                                    {formatPeso(item.unitPriceCentavos)}
+                            )}
+                            {group.items.map((item) => (
+                                <div
+                                    key={item.cartItemId}
+                                    className="flex items-start justify-between gap-3 text-xs"
+                                >
+                                    <div className="min-w-0">
+                                        <p className="truncate font-medium text-slate-700">
+                                            {item.productName}
+                                            {item.variantName
+                                                ? ` (${item.variantName})`
+                                                : ""}
+                                        </p>
+                                        <p className="text-[10px] text-slate-400">
+                                            {item.quantity} x{" "}
+                                            {formatPeso(item.unitPriceCentavos)}
+                                        </p>
+                                    </div>
+                                    <span className="shrink-0 font-semibold text-slate-700">
+                                        {formatPeso(item.subtotalCentavos)}
+                                    </span>
+                                </div>
+                            ))}
+                            {groups.length > 1 && (
+                                <p className="mt-1 text-right text-[11px] font-semibold text-slate-500">
+                                    Stall subtotal: {formatPeso(group.subtotal)}
                                 </p>
-                            </div>
-                            <span className="shrink-0 font-semibold text-slate-700">
-                                {formatPeso(item.subtotalCentavos)}
-                            </span>
+                            )}
                         </div>
                     ))}
 
@@ -357,6 +405,12 @@ export default function MarketCheckoutPage() {
                             label={`${fulfillmentLabel(method)} fee`}
                             value={deliveryFee === 0 ? "Free" : formatPeso(deliveryFee)}
                         />
+                        {isDelivery && groups.length > 1 && deliveryFee > 0 && (
+                            <p className="text-[10px] leading-4 text-slate-400">
+                                Each stall delivers on its own, so the fee
+                                applies once per stall order.
+                            </p>
+                        )}
                         <div className="mt-2 flex items-center justify-between">
                             <span className="text-sm font-semibold text-slate-800">
                                 Total

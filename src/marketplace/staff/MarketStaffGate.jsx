@@ -2,18 +2,28 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { ShieldAlert } from "lucide-react";
 
-import { headApi, staffApi } from "../services/marketApi";
+import { headApi, setOperatorSessionId, staffApi } from "../services/marketApi";
 import { MARKET_STAFF_HOME_ROUTE, getToken } from "../session";
 import { MarketNotice } from "../components/marketUi";
+import MarketStaffSessionSetup from "./MarketStaffSessionSetup";
 
 /**
  * Who is using the staff portal, so the layout can render the Staff Accounts
- * link for the Head and hide it from an operator.
+ * link for the Head and hide it from an operator. The session is the active
+ * duty shift (operator name + workspace), refreshed whenever one starts.
  */
-export const MarketStaffRoleContext = createContext({ isHead: false });
+export const MarketStaffRoleContext = createContext({
+    isHead: false,
+    session: null,
+    refreshSession: () => {},
+});
 
 export function useIsMarketHead() {
     return useContext(MarketStaffRoleContext).isHead;
+}
+
+export function useMarketSession() {
+    return useContext(MarketStaffRoleContext);
 }
 
 /**
@@ -38,6 +48,27 @@ export function useIsMarketHead() {
 export default function MarketStaffGate({ children }) {
     const [state, setState] = useState("loading");
     const [isHead, setIsHead] = useState(false);
+    const [context, setContext] = useState(null);
+
+    const loadSessionContext = async () => {
+        try {
+            const response = await staffApi.sessionContext();
+            const data = response?.data ?? null;
+            setContext(data);
+
+            // The server is the source of truth: a stale id in storage is
+            // replaced, and an ended shift drops back to the setup screen.
+            setOperatorSessionId(data?.session?.sessionId ?? null);
+
+            if (data?.hasActiveSession) {
+                setState("allowed");
+            } else {
+                setState("setup");
+            }
+        } catch {
+            setState("setup");
+        }
+    };
 
     useEffect(() => {
         let cancelled = false;
@@ -56,7 +87,7 @@ export default function MarketStaffGate({ children }) {
 
                 if (response?.data?.isStaff) {
                     setIsHead(false);
-                    setState("allowed");
+                    await loadSessionContext();
                     return;
                 }
             } catch {
@@ -69,7 +100,7 @@ export default function MarketStaffGate({ children }) {
 
                 if (head?.data?.isHead) {
                     setIsHead(true);
-                    setState("allowed");
+                    await loadSessionContext();
                     return;
                 }
 
@@ -137,8 +168,27 @@ export default function MarketStaffGate({ children }) {
         );
     }
 
+    if (state === "setup") {
+        return (
+            <MarketStaffSessionSetup
+                context={context}
+                onStarted={() => {
+                    setState("allowed");
+                    loadSessionContext();
+                }}
+            />
+        );
+    }
+
     return (
-        <MarketStaffRoleContext.Provider value={{ isHead }}>
+        <MarketStaffRoleContext.Provider
+            value={{
+                isHead,
+                session: context?.session ?? null,
+                workspace: context?.workspace ?? null,
+                refreshSession: loadSessionContext,
+            }}
+        >
             {children}
         </MarketStaffRoleContext.Provider>
     );

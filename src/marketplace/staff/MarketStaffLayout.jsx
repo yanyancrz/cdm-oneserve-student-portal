@@ -2,18 +2,21 @@ import { Outlet } from "react-router-dom";
 import {
     Boxes,
     ClipboardList,
+    History,
     LayoutDashboard,
     MapPin,
     MessageCircle,
     Package,
     Receipt,
     Settings,
+    Store,
     Truck,
     Users,
 } from "lucide-react";
 
-import { useIsMarketHead } from "./MarketStaffGate";
+import { useIsMarketHead, useMarketSession } from "./MarketStaffGate";
 import { logout } from "../session";
+import { setOperatorSessionId, staffApi } from "../services/marketApi";
 import ModuleBottomNav from "../../components/BottomNavigation/ModuleBottomNav";
 
 // =====================================================
@@ -55,6 +58,8 @@ const NAV = [
     { to: "/marketplace/staff/settings", label: "Settings", icon: Settings },
     // Head only.
     { to: "/marketplace/staff/accounts", label: "Staff Accounts", icon: Users, headOnly: true },
+    { to: "/marketplace/staff/workspaces", label: "Workspaces", icon: Store, headOnly: true },
+    { to: "/marketplace/staff/audit", label: "Activity Log", icon: History, headOnly: true },
 ];
 
 /** Drops the Head-only entries when the caller is an operator. */
@@ -65,6 +70,7 @@ function useVisibleNav() {
 
 export default function MarketStaffLayout() {
     const nav = useVisibleNav();
+    const { session, workspace } = useMarketSession();
 
     // Staff end the session here. The old Portal tab led to /dashboard, which a
     // market operator has no business in - they are on the Student/Faculty
@@ -74,6 +80,23 @@ export default function MarketStaffLayout() {
     const handleSignOut = () => {
         logout();
         window.location.replace("/");
+    };
+
+    // Ends the duty shift (the login stays). The gate remounts onto the setup
+    // screen, so the next operator enters their own name.
+    const handleEndShift = async () => {
+        if (!window.confirm("End this shift? The next operator will enter their own name.")) {
+            return;
+        }
+
+        try {
+            await staffApi.endSession();
+        } catch {
+            // The session may already be over - either way the counter closes.
+        }
+
+        setOperatorSessionId(null);
+        window.location.replace("/marketplace/staff");
     };
 
     const items = nav.map((item) => ({
@@ -99,6 +122,29 @@ export default function MarketStaffLayout() {
                 fixed top bar on desktop. Same spacing the Library, guidance and
                 buyer store pages use. */}
             <main className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-28 pt-6 sm:px-6 md:pb-12 md:pt-24 lg:px-8">
+                {session && (
+                    <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-2xl border border-[#106A2E]/20 bg-white px-4 py-2.5 shadow-sm">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#106A2E] text-white">
+                            <Store size={15} aria-hidden="true" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                            <span className="block truncate text-xs font-bold text-slate-800">
+                                {workspace?.name ?? session.workspaceName}
+                            </span>
+                            <span className="block text-[11px] text-slate-500">
+                                On duty: {session.operatorName}
+                            </span>
+                        </span>
+                        <button
+                            type="button"
+                            onClick={handleEndShift}
+                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                        >
+                            End shift
+                        </button>
+                    </div>
+                )}
+
                 <Outlet />
             </main>
         </div>

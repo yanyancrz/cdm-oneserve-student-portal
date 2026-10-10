@@ -39,6 +39,17 @@ export default function MarketAdminTransactions() {
     const [accountType, setAccountType] = useState("");
     const [from, setFrom] = useState("");
     const [to, setTo] = useState("");
+    const [workspaces, setWorkspaces] = useState([]);
+    const [workspaceId, setWorkspaceId] = useState("");
+
+    useEffect(() => {
+        adminApi
+            .workspaces()
+            .then((response) => setWorkspaces(response.data || []))
+            .catch(() => {
+                // The table works without the filter; it just hides.
+            });
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -52,6 +63,7 @@ export default function MarketAdminTransactions() {
                     method,
                     status,
                     accountType,
+                    workspaceId: workspaceId || undefined,
                     from: from ? new Date(from).toISOString() : undefined,
                     to: to ? new Date(`${to}T23:59:59`).toISOString() : undefined,
                 });
@@ -69,7 +81,7 @@ export default function MarketAdminTransactions() {
         return () => {
             cancelled = true;
         };
-    }, [method, status, accountType, from, to]);
+    }, [method, status, accountType, from, to, workspaceId]);
 
     const visible = search
         ? rows.filter((row) =>
@@ -142,6 +154,21 @@ export default function MarketAdminTransactions() {
                     <option value="Student">Student</option>
                     <option value="Faculty">Faculty</option>
                 </select>
+
+                {workspaces.length > 0 && (
+                    <select
+                        value={workspaceId}
+                        onChange={(event) => setWorkspaceId(event.target.value)}
+                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600"
+                    >
+                        <option value="">All stalls</option>
+                        {workspaces.map((workspace) => (
+                            <option key={workspace.workspaceId} value={workspace.workspaceId}>
+                                {workspace.name}
+                            </option>
+                        ))}
+                    </select>
+                )}
 
                 <input
                     type="date"

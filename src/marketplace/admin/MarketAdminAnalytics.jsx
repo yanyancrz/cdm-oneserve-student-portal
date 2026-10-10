@@ -22,9 +22,20 @@ import { AdminPageHeader } from "./MarketAdminLayout";
  */
 export default function MarketAdminAnalytics() {
     const [days, setDays] = useState(30);
+    const [workspaceId, setWorkspaceId] = useState("");
+    const [workspaces, setWorkspaces] = useState([]);
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+
+    useEffect(() => {
+        adminApi
+            .workspaces()
+            .then((response) => setWorkspaces(response.data || []))
+            .catch(() => {
+                // The charts work without the filter; it just hides.
+            });
+    }, []);
 
     useEffect(() => {
         let cancelled = false;
@@ -34,7 +45,10 @@ export default function MarketAdminAnalytics() {
                 setLoading(true);
                 setError("");
 
-                const response = await adminApi.analytics(days);
+                const response = await adminApi.analytics(
+                    days,
+                    workspaceId || undefined
+                );
                 if (cancelled) return;
 
                 setData(response.data);
@@ -49,7 +63,7 @@ export default function MarketAdminAnalytics() {
         return () => {
             cancelled = true;
         };
-    }, [days]);
+    }, [days, workspaceId]);
 
     // Bar height is relative to the busiest day in the window, so the chart reads
     // correctly whatever the absolute numbers are.
@@ -61,16 +75,32 @@ export default function MarketAdminAnalytics() {
                 title="Analytics"
                 subtitle="Sales by day, category and account type"
                 action={
-                    <select
-                        value={days}
-                        onChange={(event) => setDays(Number(event.target.value))}
-                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600"
-                    >
-                        <option value={7}>Last 7 days</option>
-                        <option value={30}>Last 30 days</option>
-                        <option value={90}>Last 90 days</option>
-                        <option value={365}>Last 365 days</option>
-                    </select>
+                    <div className="flex gap-2">
+                        {workspaces.length > 0 && (
+                            <select
+                                value={workspaceId}
+                                onChange={(event) => setWorkspaceId(event.target.value)}
+                                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600"
+                            >
+                                <option value="">All stalls</option>
+                                {workspaces.map((workspace) => (
+                                    <option key={workspace.workspaceId} value={workspace.workspaceId}>
+                                        {workspace.name}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                        <select
+                            value={days}
+                            onChange={(event) => setDays(Number(event.target.value))}
+                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600"
+                        >
+                            <option value={7}>Last 7 days</option>
+                            <option value={30}>Last 30 days</option>
+                            <option value={90}>Last 90 days</option>
+                            <option value={365}>Last 365 days</option>
+                        </select>
+                    </div>
                 }
             />
 
