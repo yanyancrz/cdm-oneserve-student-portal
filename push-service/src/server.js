@@ -22,6 +22,17 @@ let cycle = 0;
 let running = true;
 
 async function loop() {
+    // Reclaim anything a previous process abandoned mid-delivery, so a
+    // restart alone always recovers stuck notifications.
+    const reclaimed = await db.requeueStuckMessages().catch((error) => {
+        log.warn("Could not reclaim stuck messages.", { error: error?.message });
+        return 0;
+    });
+
+    if (reclaimed > 0) {
+        log.info(`Reclaimed ${reclaimed} notification(s) stuck from a previous run.`);
+    }
+
     log.info(`Polling every ${config.worker.pollIntervalMs}ms.`);
 
     while (running) {

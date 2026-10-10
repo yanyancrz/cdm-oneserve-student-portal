@@ -35,6 +35,15 @@ export async function runCycle() {
         try {
             const outcome = await deliverMessage(message);
 
+            // THE OUTCOME MUST BE PERSISTED. Writing it is what:
+            //   - records every attempt in PushDeliveryLogs
+            //   - clears the claim (Sent / Failed), or re-queues with backoff
+            //   - deactivates a subscription the push service no longer knows
+            // Skipping this leaves the row stuck in 'Processing', and because
+            // claimDueMessages only ever picks up 'Pending', it would never be
+            // delivered at all.
+            await db.finishMessage(message.PushOutboxId, outcome);
+
             if (outcome.result === "sent") sent += 1;
             else if (outcome.result === "retry") deferred += 1;
             else failed += 1;
@@ -182,14 +191,17 @@ function nextRetryDelayMs(attempts) {
 
 /** Housekeeping that is safe to run from the worker too. */
 export async function runMaintenance() {
+    // Reclaim anything an earlier run (or a previous process) abandoned
+    // before it wrote an outcome back.
+    const reclaimed = await db.requeueStuckMessages().catch(() => 0);
     const dropped = await db.dropUnsubscribableMessages().catch(() => 0);
     const pruned = await db
         .pruneDeliveryLog(config.worker.deliveryLogRetentionDays)
         .catch(() => 0);
 
-    if (dropped > 0 || pruned > 0) {
-        log.info("Maintenance.", { dropped, pruned });
+    if (reclaimed > 0 || dropped > 0 || pruned > 0) {
+        log.info("Maintenance.", { reclaimed, dropped, pruned });
     }
 
-    return { dropped, pruned };
+    return { reclaimed, dropped, pruned };
 }

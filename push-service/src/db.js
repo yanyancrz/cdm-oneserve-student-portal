@@ -233,6 +233,28 @@ export async function finishMessage(outboxId, outcome) {
     }
 }
 
+/**
+ * Gives back rows this (or a previous) worker claimed but never resolved.
+ *
+ * A crash between claim and finishMessage leaves a row in 'Processing' with
+ * no way back: claimDueMessages only ever picks up 'Pending', so the
+ * notification would be lost until the API's 24-hour maintenance job ran.
+ * Called on startup so a restart is always enough to recover.
+ */
+export async function requeueStuckMessages(minutesStuck = 10) {
+    const [result] = await pool.query(
+        `UPDATE PushOutbox
+            SET Status = 'Pending',
+                ScheduledAt = NOW(),
+                LastError = 'Reclaimed: previous worker did not finish the delivery.'
+          WHERE Status = 'Processing'
+            AND ScheduledAt < (NOW() - INTERVAL ? MINUTE)`,
+        [minutesStuck]
+    );
+
+    return result.affectedRows ?? 0;
+}
+
 /** Drops messages whose targets all died before delivery could start. */
 export async function dropUnsubscribableMessages() {
     // Broadcasts (PushSubscriptionId IS NULL) with no live subscription left.
