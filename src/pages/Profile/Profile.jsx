@@ -3,6 +3,11 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
 import { PushNotificationCard } from "../../push/PushNotificationCard";
+import { signOutEverywhere } from "../../session/deviceSession";
+import {
+    AlertTriangle,
+    LogOut,
+} from "lucide-react";
 
 export default function Profile() {
 
@@ -11,6 +16,10 @@ export default function Profile() {
     const [student, setStudent] = useState(null);
 
     const [logoutLoading, setLogoutLoading] = useState(false);
+
+    // "Log out on all devices" confirmation + in-flight flag.
+    const [showEverywhereConfirm, setShowEverywhereConfirm] = useState(false);
+    const [everywhereLoading, setEverywhereLoading] = useState(false);
 
 
     // ==========================================
@@ -103,6 +112,53 @@ export default function Profile() {
 
         }, 1000);
 
+    };
+
+
+    // ==========================================
+    // LOG OUT ON ALL DEVICES
+    // ==========================================
+
+    // Destroys the session on every device, this one included: the API
+    // kills this token too, so the local session has to go immediately.
+
+    const confirmSignOutEverywhere = async () => {
+
+        setEverywhereLoading(true);
+
+        try {
+
+            const result = await signOutEverywhere();
+
+            if (!result.ok) {
+                throw new Error(result.error);
+            }
+
+            toast.success(
+                "Signed out on all devices"
+            );
+
+            setShowEverywhereConfirm(false);
+
+            localStorage.clear();
+
+            navigate("/", {
+                replace: true
+            });
+        }
+        catch (error) {
+
+            console.error(error);
+
+            toast.error(
+                error.message ||
+                "Could not sign out on all devices."
+            );
+        }
+        finally {
+
+            setEverywhereLoading(false);
+        }
     };
 
 
@@ -1048,7 +1104,7 @@ export default function Profile() {
 
                 <button
                     onClick={handleLogout}
-                    disabled={logoutLoading}
+                    disabled={logoutLoading || everywhereLoading}
                     className="
                         w-full
                         mt-4
@@ -1072,7 +1128,129 @@ export default function Profile() {
                 </button>
 
 
+                {/* ==========================================
+                    LOG OUT ON ALL DEVICES
+                ========================================== */}
+
+                <button
+                    onClick={() => setShowEverywhereConfirm(true)}
+                    disabled={logoutLoading || everywhereLoading}
+                    className="
+                        w-full
+                        mt-3
+                        bg-white
+                        hover:bg-slate-50
+                        text-slate-700
+                        border
+                        border-slate-200
+                        p-3
+                        rounded-xl
+                        font-semibold
+                        transition-all
+                        disabled:opacity-70
+                    "
+                >
+
+                    {everywhereLoading
+                        ? "Signing Out Everywhere..."
+                        : "Log Out on All Devices"}
+
+                </button>
+
+                <p className="mt-2 text-center text-xs text-slate-400">
+                    Ends the session on every phone, tablet and browser
+                    signed in to this account, including this one.
+                </p>
+
+
             </div>
+
+
+            {/* ==========================================
+                LOG OUT EVERYWHERE CONFIRMATION
+            ========================================== */}
+
+            {showEverywhereConfirm && (
+
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+
+                    <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
+
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 text-red-500">
+                            <AlertTriangle size={22} />
+                        </div>
+
+                        <h2 className="mt-4 text-center text-lg font-semibold text-slate-900">
+                            Log out on all devices?
+                        </h2>
+
+                        <p className="mt-2 text-center text-sm leading-6 text-slate-500">
+                            Every phone, tablet and browser signed in to this
+                            account will be signed out, <strong>including
+                            this one</strong>. You will need to log in again
+                            everywhere.
+                        </p>
+
+                        <div className="mt-6 flex flex-col gap-2">
+
+                            <button
+                                onClick={confirmSignOutEverywhere}
+                                disabled={everywhereLoading}
+                                className="
+                                    w-full
+                                    flex
+                                    items-center
+                                    justify-center
+                                    gap-2
+                                    bg-red-600
+                                    hover:bg-red-700
+                                    text-white
+                                    p-3
+                                    rounded-xl
+                                    font-semibold
+                                    transition-all
+                                    disabled:opacity-70
+                                "
+                            >
+
+                                <LogOut size={16} />
+
+                                {everywhereLoading
+                                    ? "Signing Out..."
+                                    : "Log Out Everywhere"}
+
+                            </button>
+
+                            <button
+                                onClick={() => setShowEverywhereConfirm(false)}
+                                disabled={everywhereLoading}
+                                className="
+                                    w-full
+                                    bg-white
+                                    hover:bg-slate-50
+                                    text-slate-600
+                                    border
+                                    border-slate-200
+                                    p-3
+                                    rounded-xl
+                                    font-semibold
+                                    transition-all
+                                    disabled:opacity-70
+                                "
+                            >
+
+                                Cancel
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            )}
+
 
         </div>
 

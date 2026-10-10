@@ -1,21 +1,120 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { Eye, EyeOff, Check, X } from "lucide-react";
 import LoadingModal from "../../components/LoadingModal/LoadingModal";
 import { API_URL } from "../../config/api";
 import BackgroundLayout from "../../layouts/BackgroundLayout";
+
+// =========================================================
+// STRONG PASSWORD RULES
+// =========================================================
+
+const getPasswordRules = (pw, email = "") => {
+    const emailName = (email || "").split("@")[0].trim().toLowerCase();
+    const lower = pw.toLowerCase();
+
+    return [
+        { key: "len", label: "At least 8 characters", ok: pw.length >= 8 },
+        { key: "upper", label: "An uppercase letter (A-Z)", ok: /[A-Z]/.test(pw) },
+        { key: "lower", label: "A lowercase letter (a-z)", ok: /[a-z]/.test(pw) },
+        { key: "digit", label: "A number (0-9)", ok: /\d/.test(pw) },
+        { key: "symbol", label: "A symbol (! @ # $ % ...)", ok: /[^A-Za-z0-9\s]/.test(pw) },
+        { key: "space", label: "No spaces", ok: pw.length > 0 && !/\s/.test(pw) },
+        {
+            key: "personal",
+            label: "Not your email name",
+            ok: pw.length > 0 && !(emailName.length >= 3 && lower.includes(emailName)),
+        },
+    ];
+};
+
+const STRENGTH = [
+    { label: "Too weak", bar: "bg-red-500", text: "text-red-600" },
+    { label: "Weak", bar: "bg-orange-500", text: "text-orange-600" },
+    { label: "Fair", bar: "bg-amber-500", text: "text-amber-600" },
+    { label: "Good", bar: "bg-lime-500", text: "text-lime-600" },
+    { label: "Strong", bar: "bg-emerald-600", text: "text-emerald-700" },
+];
+
+function PasswordStrength({ rules, password }) {
+    if (!password) return null;
+
+    const passed = rules.filter((r) => r.ok).length;
+    const level =
+        passed >= rules.length
+            ? 4
+            : Math.min(3, Math.floor((passed / rules.length) * 4));
+    const filled = level === 4 ? 4 : Math.max(1, level);
+    const info = STRENGTH[level];
+
+    return (
+        <div className="mt-2.5" aria-live="polite">
+            <div className="flex gap-1">
+                {[0, 1, 2, 3].map((i) => (
+                    <span
+                        key={i}
+                        className={`h-1.5 flex-1 rounded-full transition-colors ${
+                            i < filled ? info.bar : "bg-slate-200"
+                        }`}
+                    />
+                ))}
+            </div>
+
+            <p className={`mt-1 text-[11px] font-semibold ${info.text}`}>
+                {info.label}
+            </p>
+
+            <ul className="mt-1.5 grid grid-cols-1 gap-y-0.5 sm:grid-cols-2 sm:gap-x-3">
+                {rules.map((r) => (
+                    <li
+                        key={r.key}
+                        className={`flex items-center gap-1.5 text-[11px] ${
+                            r.ok ? "text-emerald-700" : "text-slate-400"
+                        }`}
+                    >
+                        {r.ok ? (
+                            <Check size={12} aria-hidden="true" />
+                        ) : (
+                            <X size={12} aria-hidden="true" />
+                        )}
+                        {r.label}
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
+
+function EyeToggle({ shown, onToggle }) {
+    return (
+        <button
+            type="button"
+            onClick={onToggle}
+            aria-label={shown ? "Hide password" : "Show password"}
+            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600"
+        >
+            {shown ? <EyeOff size={18} /> : <Eye size={18} />}
+        </button>
+    );
+}
 
 export default function ResetPassword() {
 
     const [otpCode, setOtpCode] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [showNew, setShowNew] = useState(false);
+    const [showConfirm, setShowConfirm] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
 
     const email =
         localStorage.getItem("resetEmail");
+
+    const passwordRules = getPasswordRules(newPassword, email);
+    const isPasswordStrong = passwordRules.every((r) => r.ok);
 
     const handleResetPassword = async () => {
 
@@ -25,6 +124,15 @@ export default function ResetPassword() {
             !confirmPassword.trim()
         ) {
             toast.error("Please complete all fields.");
+            return;
+        }
+
+        const weakRule = passwordRules.find((r) => !r.ok);
+
+        if (weakRule) {
+            toast.error(
+                `Password is not strong enough: ${weakRule.label.toLowerCase()}.`
+            );
             return;
         }
 
@@ -187,27 +295,40 @@ export default function ResetPassword() {
                                 New Password
                             </label>
 
-                            <input
-                                type="password"
-                                placeholder="Enter new password"
-                                value={newPassword}
-                                onChange={(e) =>
-                                    setNewPassword(e.target.value)
-                                }
-                                className="
-                                    w-full
-                                    px-4 py-3
-                                    rounded-xl
-                                    border
-                                    border-slate-200
-                                    bg-slate-50
-                                    text-sm
-                                    text-slate-700
-                                    outline-none
-                                    focus:border-[#106A2E]
-                                    focus:bg-white
-                                    transition-colors
-                                "
+                            <div className="relative">
+                                <input
+                                    type={showNew ? "text" : "password"}
+                                    autoComplete="new-password"
+                                    placeholder="Enter new password"
+                                    value={newPassword}
+                                    onChange={(e) =>
+                                        setNewPassword(e.target.value)
+                                    }
+                                    className="
+                                        w-full
+                                        pl-4 pr-11 py-3
+                                        rounded-xl
+                                        border
+                                        border-slate-200
+                                        bg-slate-50
+                                        text-sm
+                                        text-slate-700
+                                        outline-none
+                                        focus:border-[#106A2E]
+                                        focus:bg-white
+                                        transition-colors
+                                    "
+                                />
+
+                                <EyeToggle
+                                    shown={showNew}
+                                    onToggle={() => setShowNew((v) => !v)}
+                                />
+                            </div>
+
+                            <PasswordStrength
+                                rules={passwordRules}
+                                password={newPassword}
                             />
                         </div>
 
@@ -216,33 +337,59 @@ export default function ResetPassword() {
                                 Confirm Password
                             </label>
 
-                            <input
-                                type="password"
-                                placeholder="Re-enter new password"
-                                value={confirmPassword}
-                                onChange={(e) =>
-                                    setConfirmPassword(e.target.value)
-                                }
-                                className="
-                                    w-full
-                                    px-4 py-3
-                                    rounded-xl
-                                    border
-                                    border-slate-200
-                                    bg-slate-50
-                                    text-sm
-                                    text-slate-700
-                                    outline-none
-                                    focus:border-[#106A2E]
-                                    focus:bg-white
-                                    transition-colors
-                                "
-                            />
+                            <div className="relative">
+                                <input
+                                    type={showConfirm ? "text" : "password"}
+                                    autoComplete="new-password"
+                                    placeholder="Re-enter new password"
+                                    value={confirmPassword}
+                                    onChange={(e) =>
+                                        setConfirmPassword(e.target.value)
+                                    }
+                                    className="
+                                        w-full
+                                        pl-4 pr-11 py-3
+                                        rounded-xl
+                                        border
+                                        border-slate-200
+                                        bg-slate-50
+                                        text-sm
+                                        text-slate-700
+                                        outline-none
+                                        focus:border-[#106A2E]
+                                        focus:bg-white
+                                        transition-colors
+                                    "
+                                />
+
+                                <EyeToggle
+                                    shown={showConfirm}
+                                    onToggle={() => setShowConfirm((v) => !v)}
+                                />
+                            </div>
+
+                            {confirmPassword && (
+                                <p
+                                    className={`mt-1.5 text-[11px] font-medium ${
+                                        confirmPassword === newPassword
+                                            ? "text-emerald-700"
+                                            : "text-red-600"
+                                    }`}
+                                >
+                                    {confirmPassword === newPassword
+                                        ? "Passwords match"
+                                        : "Passwords do not match"}
+                                </p>
+                            )}
                         </div>
 
                         <button
                             onClick={handleResetPassword}
-                            disabled={loading}
+                            disabled={
+                                loading ||
+                                !isPasswordStrong ||
+                                newPassword !== confirmPassword
+                            }
                             className="
                                 w-full
                                 bg-gradient-to-br
@@ -258,7 +405,8 @@ export default function ResetPassword() {
                                 transition-all
                                 shadow-lg
                                 shadow-emerald-900/20
-                                disabled:opacity-70
+                                disabled:opacity-60
+                                disabled:cursor-not-allowed
                             "
                         >
                             {loading ? "Updating..." : "Update Password"}

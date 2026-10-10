@@ -112,6 +112,34 @@ export async function clearMySessionRecord() {
     return { ok: true };
 }
 
+/**
+ * Logs this account out on EVERY device, including this one.
+ *
+ * The API stamps the account with "tokens valid from now", which kills this
+ * browser's token too, so the caller must drop the local session and go back
+ * to the login screen exactly like a normal sign-out.
+ */
+export async function signOutEverywhere() {
+    const token =
+        localStorage.getItem("token") || localStorage.getItem("authToken");
+
+    const response = await fetch(`${API_URL}/api/auth/session/everywhere`, {
+        method: "POST",
+        headers: {
+            Accept: "application/json",
+            Authorization: `Bearer ${token}`,
+        },
+    });
+
+    const body = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        return { ok: false, error: body?.message || "Could not sign out on all devices." };
+    }
+
+    return { ok: true, message: body?.message };
+}
+
 export function formatWhen(iso) {
     if (!iso) return "";
     const date = new Date(iso);
