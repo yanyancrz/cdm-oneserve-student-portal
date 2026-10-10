@@ -180,7 +180,7 @@ export default function MarketStaffWorkspacesPage() {
                                 <WorkspaceCard
                                     key={workspace.workspaceId}
                                     workspace={workspace}
-                                    locationLabel=""
+                                    locationLabel={locationName(workspace.stallLocationId)}
                                     busy={busy}
                                     onEdit={() => setShowWorkspace(workspace)}
                                     onAccount={() => setShowAccount(workspace)}
@@ -471,7 +471,7 @@ function WorkspaceModal({ initial, locations, onClose, onSaved }) {
                 ...(initial.workspaceId ? { workspaceId: initial.workspaceId } : {}),
                 workspaceType,
                 name: name.trim(),
-                stallLocationId: workspaceType === "Stall" && stallLocationId ? Number(stallLocationId) : null,
+                stallLocationId: stallLocationId ? Number(stallLocationId) : null,
                 isActive,
             });
             toast.success(response.message || "Saved.");
@@ -519,6 +519,26 @@ function WorkspaceModal({ initial, locations, onClose, onSaved }) {
                         className={marketSelectClass}
                     >
                         <option value="">Choose a location</option>
+                        {locations
+                            .filter((l) => l.isActive)
+                            .map((l) => (
+                                <option key={l.stallLocationId} value={l.stallLocationId}>
+                                    {l.name}
+                                </option>
+                            ))}
+                    </select>
+                </>
+            )}
+
+            {workspaceType === "BusinessHub" && (
+                <>
+                    <label className={`${fieldLabel} mt-3`}>Site (optional)</label>
+                    <select
+                        value={stallLocationId}
+                        onChange={(e) => setStallLocationId(e.target.value)}
+                        className={marketSelectClass}
+                    >
+                        <option value="">No specific site</option>
                         {locations
                             .filter((l) => l.isActive)
                             .map((l) => (

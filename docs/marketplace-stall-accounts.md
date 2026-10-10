@@ -15,6 +15,17 @@ Stall login (e.g. Stall 1 account)
 Floating operators (Head, legacy personal staff) pick the workspace on the
 same screen instead — the session pins them to it either way.
 
+Buyer store hierarchy (Shop by store):
+
+```
+CDM BusinessHub (Canteen)
+CDM FoodHub
+└── Main FoodHub — Old Building Lobby: Stall 1, Stall 2, ...
+```
+
+A BusinessHub MAY link a location as its site label; a Stall MUST belong
+to a FoodHub location. Checkout still splits one order per workspace.
+
 ## Rules enforced server-side
 
 - The workspace is derived from `marketplace_stall_accounts`, never from

@@ -44,6 +44,7 @@ export default function MarketShopPage() {
     // each food stall). Client-side over the loaded catalog, so switching
     // stalls is instant and never refetches.
     const [workspaces, setWorkspaces] = useState([]);
+    const [stallLocations, setStallLocations] = useState([]);
     const [workspaceId, setWorkspaceId] = useState("");
 
     // Size selection for the tapped product. Uniforms have their own stock per
@@ -80,14 +81,14 @@ export default function MarketShopPage() {
     useEffect(() => {
         let cancelled = false;
 
-        buyerApi
-            .workspaces()
-            .then((response) => {
-                if (!cancelled) setWorkspaces(response.data || []);
-            })
-            .catch(() => {
-                // The shop works without the grouping; the filter just hides.
-            });
+        Promise.all([
+            buyerApi.workspaces().catch(() => ({ data: [] })),
+            buyerApi.stallLocations().catch(() => ({ data: [] })),
+        ]).then(([wsRes, locRes]) => {
+            if (cancelled) return;
+            setWorkspaces(wsRes.data || []);
+            setStallLocations(locRes.data || []);
+        });
 
         return () => {
             cancelled = true;
@@ -219,25 +220,16 @@ export default function MarketShopPage() {
                 ))}
             </div>
 
-            {/* Stall filter: BusinessHub vs each food stall, so a buyer shops
-                one counter at a time. Checkout still splits by stall whatever
-                is in the cart. */}
+            {/* Shop by store: the BusinessHub, then each FoodHub location
+                with its stalls. Tapping a store filters the catalog below;
+                checkout still splits by stall whatever is in the cart. */}
             {workspaces.length > 0 && (
-                <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    <CategoryChip
-                        label="All stalls"
-                        active={!workspaceId}
-                        onClick={() => setWorkspaceId("")}
-                    />
-                    {workspaces.map((workspace) => (
-                        <CategoryChip
-                            key={workspace.workspaceId}
-                            label={workspace.name}
-                            active={String(workspaceId) === String(workspace.workspaceId)}
-                            onClick={() => setWorkspaceId(String(workspace.workspaceId))}
-                        />
-                    ))}
-                </div>
+                <StoreBrowser
+                    workspaces={workspaces}
+                    stallLocations={stallLocations}
+                    workspaceId={workspaceId}
+                    onSelect={setWorkspaceId}
+                />
             )}
 
             {category && subCategoriesFor(category).length > 0 && (
@@ -588,5 +580,141 @@ function CategoryChip({ label, active, onClick, small = false }) {
         >
             {label}
         </button>
+    );
+}
+
+// =====================================================
+// store browser: BusinessHub, then FoodHub locations with stalls
+//
+//   CDM BusinessHub (Canteen)
+//   CDM FoodHub
+//     Main FoodHub — Old Building Lobby: Stall 1, Stall 2, ...
+//
+// Tapping a store filters the catalog; tapping it again (or All) clears.
+// =====================================================
+
+function StoreBrowser({ workspaces, stallLocations, workspaceId, onSelect }) {
+    const hubs = workspaces.filter((w) => w.workspaceType === "BusinessHub");
+    const stalls = workspaces.filter((w) => w.workspaceType !== "BusinessHub");
+
+    const isActive = (id) => String(workspaceId) === String(id);
+    const toggle = (id) => onSelect(isActive(id) ? "" : String(id));
+
+    // Stalls grouped under their FoodHub location, in location order.
+    // A stall whose location vanished still shows under "Other stalls".
+    const orderedLocations = [...stallLocations].sort(
+        (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+    );
+    const stallsByLocation = new Map();
+    for (const stall of stalls) {
+        const key = stall.stallLocationId ?? 0;
+        if (!stallsByLocation.has(key)) stallsByLocation.set(key, []);
+        stallsByLocation.get(key).push(stall);
+    }
+    const orphanStalls = stallsByLocation.get(0) ?? [];
+
+    return (
+        <div className="space-y-2.5">
+            {hubs.map((hub) => (
+                <button
+                    key={hub.workspaceId}
+                    type="button"
+                    onClick={() => toggle(hub.workspaceId)}
+                    aria-pressed={isActive(hub.workspaceId)}
+                    className={`flex w-full items-center gap-3 rounded-2xl border bg-white p-3.5 text-left shadow-sm transition active:scale-[0.99] ${
+                        isActive(hub.workspaceId)
+                            ? "border-[#106A2E] ring-2 ring-[#106A2E]/20"
+                            : "border-[#0E3B22]/10 hover:border-[#106A2E]/30"
+                    }`}
+                >
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] text-white">
+                        <Store size={20} aria-hidden="true" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-bold text-slate-800">
+                            {hub.name}
+                        </span>
+                        <span className="block truncate text-[11px] text-slate-500">
+                            Uniforms & merchandise
+                            {hub.stallLocationName ? ` · ${hub.stallLocationName}` : ""}
+                        </span>
+                    </span>
+                    <span
+                        className={`shrink-0 rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                            isActive(hub.workspaceId)
+                                ? "bg-[#106A2E] text-white"
+                                : "bg-[#106A2E]/10 text-[#106A2E]"
+                        }`}
+                    >
+                        {isActive(hub.workspaceId) ? "Showing" : "Shop"}
+                    </span>
+                </button>
+            ))}
+
+            <div className="rounded-2xl border border-[#0E3B22]/10 bg-white p-3.5 shadow-sm">
+                <p className="text-[10px] font-bold uppercase tracking-[.14em] text-[#106A2E]/70">
+                    CDM FoodHub
+                </p>
+
+                {orderedLocations.map((location) => {
+                    const locationStalls = stallsByLocation.get(location.stallLocationId) ?? [];
+                    if (locationStalls.length === 0) return null;
+
+                    return (
+                        <div key={location.stallLocationId} className="mt-2.5 first:mt-2">
+                            <p className="text-xs font-semibold text-slate-700">
+                                {location.name}
+                            </p>
+                            <div className="mt-1.5 flex flex-wrap gap-1.5">
+                                {locationStalls.map((stall) => (
+                                    <CategoryChip
+                                        key={stall.workspaceId}
+                                        small
+                                        label={stall.name}
+                                        active={isActive(stall.workspaceId)}
+                                        onClick={() => toggle(stall.workspaceId)}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
+
+                {orphanStalls.length > 0 && (
+                    <div className="mt-2.5">
+                        <p className="text-xs font-semibold text-slate-700">
+                            Other stalls
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap gap-1.5">
+                            {orphanStalls.map((stall) => (
+                                <CategoryChip
+                                    key={stall.workspaceId}
+                                    small
+                                    label={stall.name}
+                                    active={isActive(stall.workspaceId)}
+                                    onClick={() => toggle(stall.workspaceId)}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {stalls.length === 0 && (
+                    <p className="mt-1.5 text-[11px] text-slate-400">
+                        No food stalls yet.
+                    </p>
+                )}
+            </div>
+
+            {workspaceId && (
+                <button
+                    type="button"
+                    onClick={() => onSelect("")}
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-[11px] font-semibold text-slate-500 transition hover:bg-slate-50"
+                >
+                    Show all stalls
+                </button>
+            )}
+        </div>
     );
 }
