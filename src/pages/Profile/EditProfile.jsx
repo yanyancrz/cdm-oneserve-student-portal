@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
 import BackgroundLayout from "../../layouts/BackgroundLayout";
+import BottomNavSpacer from "../../components/Layout/BottomNavSpacer";
 
 export default function EditProfile() {
 
@@ -755,6 +756,10 @@ export default function EditProfile() {
                         </button>
 
                     </div>
+
+                    {/* Clears the floating bottom nav so "Save Changes" is
+                        never underneath it. */}
+                    <BottomNavSpacer />
 
                 </div>
 

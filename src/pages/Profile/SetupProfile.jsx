@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
 import BackgroundLayout from "../../layouts/BackgroundLayout";
+import BottomNavSpacer from "../../components/Layout/BottomNavSpacer";
 
 export default function SetupProfile() {
     const navigate = useNavigate();
@@ -761,6 +762,10 @@ export default function SetupProfile() {
                             ? "Saving Profile..."
                             : "Save Profile"}
                     </button>
+
+                    {/* Clears the floating bottom nav so "Save Profile" is
+                        never underneath it. */}
+                    <BottomNavSpacer />
 
                 </div>
 

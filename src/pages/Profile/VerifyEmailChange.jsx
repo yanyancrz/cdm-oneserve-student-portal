@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from "../../config/api";
 import BackgroundLayout from "../../layouts/BackgroundLayout";
+import BottomNavSpacer from "../../components/Layout/BottomNavSpacer";
 import toast from "react-hot-toast";
 
 export default function VerifyEmailChange() {
@@ -277,6 +278,9 @@ return (
             >
                 Verify Email
             </button>
+
+            {/* Clears the floating bottom nav. */}
+            <BottomNavSpacer />
 
         </div>
 
