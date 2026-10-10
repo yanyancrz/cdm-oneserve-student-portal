@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "../../config/api";
+import { Skeleton } from "../../components/States";
 import { QRCodeSVG } from "qrcode.react";
 import {
     QrCode,
@@ -202,18 +203,18 @@ export default function AccessPass() {
             <div className="min-h-screen bg-[#F8FAF8] px-5 pb-28 pt-8">
                 <div className="mx-auto max-w-md">
 
-                    <div className="mb-8 h-8 w-40 animate-pulse rounded-lg bg-slate-200" />
+                    <Skeleton className="mb-8 h-8 w-40" />
 
                     <div className="rounded-[28px] bg-white p-6 shadow-sm">
 
-                        <div className="mx-auto mb-6 h-8 w-44 animate-pulse rounded-lg bg-slate-200" />
+                        <Skeleton className="mx-auto mb-6 h-8 w-44" />
 
-                        <div className="mx-auto h-64 w-64 animate-pulse rounded-2xl bg-slate-200" />
+                        <Skeleton className="mx-auto h-64 w-64 rounded-2xl" />
 
                         <div className="mt-7 space-y-3">
-                            <div className="h-5 animate-pulse rounded bg-slate-200" />
-                            <div className="h-5 animate-pulse rounded bg-slate-200" />
-                            <div className="h-5 animate-pulse rounded bg-slate-200" />
+                            <Skeleton className="h-5 rounded" />
+                            <Skeleton className="h-5 rounded" />
+                            <Skeleton className="h-5 rounded" />
                         </div>
                     </div>
                 </div>

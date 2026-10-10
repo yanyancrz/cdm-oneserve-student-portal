@@ -10,9 +10,30 @@ import { invokeGuidanceHub, onGuidanceEvent } from "../services/realtime";
 
 const FALLBACK_POLL_MS = 30 * 1000;
 
+const pad = (n) => String(n).padStart(2, "0");
+
+// The API may send dates without a timezone suffix (naive datetime).
+// Treat those as UTC so the browser converts them to PH local time.
+const parseDate = (iso) => {
+    const raw = String(iso || "");
+    // No timezone info -> append Z so it's parsed as UTC
+    if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(raw)) {
+        return new Date(`${raw}Z`);
+    }
+    return new Date(raw);
+};
+
+// The calendar day IN THE USER'S TIME ZONE ("2026-10-05"), or "" when the date is bad.
+// (Using toISOString() here grouped a message sent at 6 AM Manila time under "Yesterday".)
+const dayKey = (iso) => {
+    const d = parseDate(iso);
+    if (Number.isNaN(d.getTime())) return "";
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+};
+
 // "2026-10-05" -> Today / Yesterday / Oct 5
-function dayLabel(iso) {
-    const [y, m, d] = String(iso || "").slice(0, 10).split("-").map(Number);
+function dayLabel(key) {
+    const [y, m, d] = String(key || "").split("-").map(Number);
     if (!y || !m || !d) return "";
 
     const date = new Date(y, m - 1, d);
@@ -31,19 +52,15 @@ function dayLabel(iso) {
     return date.toLocaleDateString("en-PH", { month: "short", day: "numeric", year: "numeric" });
 }
 
-// The API may send dates without a timezone suffix (naive datetime).
-// Treat those as UTC so the browser converts them to PH local time.
-const parseDate = (iso) => {
-    const raw = String(iso || "");
-    // No timezone info -> append Z so it's parsed as UTC
-    if (!/[zZ]|[+-]\d{2}:?\d{2}$/.test(raw)) {
-        return new Date(`${raw}Z`);
-    }
-    return new Date(raw);
+const timeOf = (iso) => {
+    const d = parseDate(iso);
+    return Number.isNaN(d.getTime())
+        ? ""
+        : d.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" });
 };
 
-const timeOf = (iso) =>
-    parseDate(iso).toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit" });
+// Ids can arrive as number or string depending on the source (REST vs SignalR).
+const sameId = (a, b) => a != null && b != null && Number(a) === Number(b);
 
 // =========================================================
 // Single chat thread — shared by student and counselor via the
@@ -61,7 +78,11 @@ export default function ChatThreadPage({ audience }) {
     const A = ACCENTS[accent];
 
     const id = Number(conversationId);
-    const myId = me?.UserId;
+
+    // The signed-in user's id. The API sends it as `userId` (camelCase).
+    // (It used to read `me.UserId`, which is always undefined -> every message looked
+    //  like it came from the other person.)
+    const myId = me?.userId ?? me?.UserId;
 
     const [messages, setMessages] = useState([]);
     const [partnerName, setPartnerName] = useState("");
@@ -74,8 +95,10 @@ export default function ChatThreadPage({ audience }) {
     const bottomRef = useRef(null);
     const nearBottomRef = useRef(true);
 
+    // Who sent it? The sender id is the source of truth; the server's `mine`
+    // flag is only a fallback when we don't know either id.
     const isMine = useCallback(
-        (m) => (m.mine ?? (myId != null && m.senderId === myId)),
+        (m) => (myId != null && m.senderId != null ? sameId(m.senderId, myId) : Boolean(m.mine)),
         [myId]
     );
 
@@ -143,10 +166,10 @@ export default function ChatThreadPage({ audience }) {
         const offMessage = onGuidanceEvent("ChatMessage", (payload) => {
             if (Number(payload?.conversationId) !== id) return;
 
+            const mine = sameId(payload.senderId, myId);
+
             setMessages((prev) => {
                 if (prev.some((m) => m.id === payload.id)) return prev;
-
-                const mine = myId != null && payload.senderId === myId;
 
                 const message = {
                     id: payload.id,
@@ -161,8 +184,9 @@ export default function ChatThreadPage({ audience }) {
                 return [...prev, message];
             });
 
-            // I opened the thread -> read it straight away (live read receipt).
-            guidanceApi.markChatRead(audience, id).catch(() => {});
+            // I opened the thread -> read the OTHER person's message straight away
+            // (live read receipt). My own messages need no receipt.
+            if (!mine) guidanceApi.markChatRead(audience, id).catch(() => {});
         });
 
         return () => {
@@ -211,13 +235,14 @@ export default function ChatThreadPage({ audience }) {
         try {
             const result = await guidanceApi.sendMessage(audience, id, body, clientId);
 
-            // The POST response is the saved message (deduped against
-            // the SignalR echo by id below).
+            // The POST response is the saved message. The SignalR echo may have
+            // already added it (it often arrives first): if so, update it so it is
+            // marked as mine instead of keeping whatever the echo guessed.
             const dto = result?.data ?? result;
             if (dto?.id) {
                 setMessages((prev) =>
                     prev.some((m) => m.id === dto.id)
-                        ? prev
+                        ? prev.map((m) => (m.id === dto.id ? { ...m, ...dto, mine: true } : m))
                         : [...prev, { ...dto, mine: true }]
                 );
             }
@@ -242,8 +267,8 @@ export default function ChatThreadPage({ audience }) {
         let lastMine = null;
 
         messages.forEach((m, i) => {
-            const day = parseDate(m.createdAt).toISOString().slice(0, 10);
-            if (day !== lastDay) {
+            const day = dayKey(m.createdAt);
+            if (day && day !== lastDay) {
                 out.push({ kind: "day", label: dayLabel(day), key: `day-${day}-${i}` });
                 lastDay = day;
                 lastMine = null;

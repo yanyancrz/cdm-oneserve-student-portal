@@ -24,6 +24,8 @@ import {
     getMyReservations,
 } from "../../services/libraryService";
 
+import { Skeleton, BookGridSkeleton } from "../../components/States";
+
 // =========================================================
 // ENDPOINTS
 // =========================================================
@@ -148,11 +150,8 @@ const formatPeso = (value) =>
         currency: "PHP",
     });
 
-const Skeleton = ({ className = "" }) => (
-    <div
-        className={`animate-pulse rounded-xl bg-slate-200 ${className}`}
-    />
-);
+// Grey blocks come from the shared kit: it respects "reduce motion" and
+// announces itself to screen readers, which this private copy never did.
 
 // =========================================================
 // BOOK CARD
@@ -911,7 +910,8 @@ export default function Dashboard() {
                     {[
                         {
                             label: "Borrowed",
-                            value: loans === null ? "–" : borrowedLoans.length,
+                            loading: loans === null,
+                            value: borrowedLoans.length,
                             sub: `of ${borrowLimit} limit`,
                             icon: LibraryBig,
                             tone: "bg-blue-50 text-blue-600",
@@ -919,7 +919,8 @@ export default function Dashboard() {
                         },
                         {
                             label: "Reserved",
-                            value: reservationsLoading ? "–" : activeReservations.length,
+                            loading: reservationsLoading,
+                            value: activeReservations.length,
                             sub: "books on hold",
                             icon: BookMarked,
                             tone: "bg-amber-50 text-amber-600",
@@ -927,7 +928,8 @@ export default function Dashboard() {
                         },
                         {
                             label: "Overdue",
-                            value: loans === null ? "–" : overdueLoans.length,
+                            loading: loans === null,
+                            value: overdueLoans.length,
                             sub: overdueLoans.length > 0 ? "return now" : "all good",
                             icon: AlertTriangle,
                             tone:
@@ -938,7 +940,8 @@ export default function Dashboard() {
                         },
                         {
                             label: "Slots left",
-                            value: loans === null || reservationsLoading ? "–" : slotsLeft,
+                            loading: loans === null || reservationsLoading,
+                            value: slotsLeft,
                             sub: "can still borrow/reserve",
                             icon: CheckCircle2,
                             tone: "bg-emerald-50 text-[#106A2E]",
@@ -960,9 +963,16 @@ export default function Dashboard() {
                                     <Icon size={17} />
                                 </div>
 
-                                <p className="mt-3 text-2xl font-bold text-slate-800">
-                                    {item.value}
-                                </p>
+                                {/* A grey block, not a dash. "–" reads as
+                                    "zero" or "not available"; a block reads
+                                    as "still counting". */}
+                                {item.loading ? (
+                                    <Skeleton className="mt-3 h-7 w-10" />
+                                ) : (
+                                    <p className="mt-3 text-2xl font-bold text-slate-800">
+                                        {item.value}
+                                    </p>
+                                )}
 
                                 <p className="text-xs font-semibold text-slate-600">
                                     {item.label}
@@ -1174,21 +1184,7 @@ export default function Dashboard() {
                     </div>
 
                     {catalogLoading ? (
-                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-                            {Array.from({ length: 6 }).map((_, index) => (
-                                <div
-                                    key={index}
-                                    className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
-                                >
-                                    <Skeleton className="aspect-[3/4] rounded-none" />
-
-                                    <div className="p-3">
-                                        <Skeleton className="h-3 w-full" />
-                                        <Skeleton className="mt-2 h-3 w-2/3" />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        <BookGridSkeleton count={6} label="Loading books..." />
                     ) : booksError ? (
                         <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-8 text-center">
                             <p className="text-sm font-semibold text-red-700">

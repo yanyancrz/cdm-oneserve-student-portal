@@ -22,6 +22,8 @@ import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
 import LibraryBottomNav from "../../components/BottomNavigation/LibraryBottomNav";
 
+import { Skeleton, BookGridSkeleton } from "../../components/States";
+
 // Palitan ang path kung nasa ibang folder ang curated_books.json
 import curatedBooksList from "./curated_books.json";
 
@@ -126,11 +128,7 @@ const getAvailability = (book) => {
     };
 };
 
-const Skeleton = ({ className = "" }) => (
-    <div
-        className={`animate-pulse rounded-xl bg-slate-200 ${className}`}
-    />
-);
+// Grey blocks come from the shared kit.
 
 // =========================================================
 // BOOK CARD
@@ -1244,21 +1242,7 @@ export default function Dashboard() {
                     </div>
 
                     {isLoading ? (
-                        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-                            {Array.from({ length: 6 }).map((_, index) => (
-                                <div
-                                    key={index}
-                                    className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
-                                >
-                                    <Skeleton className="aspect-[3/4] rounded-none" />
-
-                                    <div className="p-3">
-                                        <Skeleton className="h-3 w-full" />
-                                        <Skeleton className="mt-2 h-3 w-2/3" />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        <BookGridSkeleton count={6} label="Loading books to reserve..." />
                     ) : visibleBooks.length > 0 ? (
                         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
                             {visibleBooks.map((book) => (

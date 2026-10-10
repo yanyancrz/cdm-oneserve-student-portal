@@ -21,6 +21,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 import { API_URL } from "../../config/api";
+import { Skeleton } from "../States";
 
 // How often the alerts refresh in the background (only while the tab is visible).
 const NOTIFICATION_POLL_MS = 30 * 1000;
@@ -714,7 +715,8 @@ export default function BottomNavigation() {
 
         if (notificationsLoading) {
             return (
-                <div className="px-3.5 py-4">
+                <div role="status" aria-busy="true" aria-live="polite" className="px-3.5 py-4">
+                    <span className="sr-only">Loading notifications...</span>
 
                     {Array.from({
                         length: 4,
@@ -725,13 +727,13 @@ export default function BottomNavigation() {
                                 className="flex items-center gap-3 py-3"
                             >
 
-                                <div className="h-2 w-2 animate-pulse rounded-full bg-slate-200" />
+                                <Skeleton className="h-2 w-2 rounded-full" />
 
                                 <div className="min-w-0 flex-1">
 
-                                    <div className="h-3 w-3/4 animate-pulse rounded bg-slate-100" />
+                                    <Skeleton className="h-3 w-3/4 rounded" />
 
-                                    <div className="mt-1.5 h-2.5 w-1/3 animate-pulse rounded bg-slate-100" />
+                                    <Skeleton className="mt-1.5 h-2.5 w-1/3 rounded" />
 
                                 </div>
 

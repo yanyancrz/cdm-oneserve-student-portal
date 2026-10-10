@@ -12,6 +12,8 @@ import {
 } from "../../services/libraryService";
 import { formatDate } from "../../utils/libraryHelpers";
 import { API_URL } from "../../config/api";
+
+import { Skeleton } from "../../components/States";
 import noCover from "../../assets/images/no-cover.png";
 
 // =========================================================
@@ -64,11 +66,7 @@ const STATUS_STYLES = {
     },
 };
 
-const Skeleton = ({ className = "" }) => (
-    <div
-        className={`animate-pulse rounded-xl bg-slate-200 ${className}`}
-    />
-);
+// Grey blocks come from the shared kit.
 
 // =========================================================
 // HELPERS

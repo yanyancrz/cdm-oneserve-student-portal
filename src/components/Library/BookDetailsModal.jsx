@@ -11,6 +11,7 @@ import toast from "react-hot-toast";
 import noCover from "../../assets/images/no-cover.png";
 import { API_URL } from "../../config/api";
 import { reserveBook } from "../../services/libraryService";
+import { Skeleton } from "../States";
 
 const HOLD_DAYS = 3;
 
@@ -38,6 +39,7 @@ export default function BookDetailsModal({
     // How many days a reserved book is held. Follows the Library Settings;
     // HOLD_DAYS is only used until they arrive (or if they cannot be loaded).
     const [holdDays, setHoldDays] = useState(HOLD_DAYS);
+    const [policyLoading, setPolicyLoading] = useState(true);
 
     useEffect(() => {
         let cancelled = false;
@@ -64,6 +66,8 @@ export default function BookDetailsModal({
                 }
             } catch {
                 // Keep the default.
+            } finally {
+                if (!cancelled) setPolicyLoading(false);
             }
         };
 
@@ -552,8 +556,13 @@ export default function BookDetailsModal({
                         />
 
                         <p className="text-[10px] leading-4">
-                            Reserved books are held for {holdDays} days.
-                            Pick them up at the circulation desk
+                            Reserved books are held for{" "}
+                            {policyLoading ? (
+                                <Skeleton className="inline-block h-3 w-6 align-middle" />
+                            ) : (
+                                `${holdDays} days`
+                            )}
+                            . Pick them up at the circulation desk
                             and show your Access Pass. The librarian
                             will confirm the claim.
                         </p>

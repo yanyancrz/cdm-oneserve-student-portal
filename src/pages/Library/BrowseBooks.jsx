@@ -7,6 +7,8 @@ import LibraryBottomNav from "../../components/BottomNavigation/LibraryBottomNav
 
 import useLibrary from "../../hooks/useLibrary";
 
+import { BookGridSkeleton } from "../../components/States";
+
 import { API_URL } from "../../config/api";
 
 // =========================================================
@@ -88,11 +90,8 @@ const getAvailability = (book) => {
     };
 };
 
-const Skeleton = ({ className = "" }) => (
-    <div
-        className={`animate-pulse rounded-xl bg-slate-200 ${className}`}
-    />
-);
+// Grey blocks come from the shared kit: it respects "reduce motion" and
+// announces itself to screen readers, which this private copy never did.
 
 // =========================================================
 // BOOK CARD
@@ -476,23 +475,7 @@ export default function BrowseBooks() {
                 ================================================= */}
 
                 {loading ? (
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6">
-                        {Array.from({ length: 12 }).map(
-                            (_, index) => (
-                                <div
-                                    key={index}
-                                    className="overflow-hidden rounded-2xl border border-slate-200 bg-white"
-                                >
-                                    <Skeleton className="aspect-[3/4] rounded-none" />
-
-                                    <div className="p-3">
-                                        <Skeleton className="h-3 w-full" />
-                                        <Skeleton className="mt-2 h-3 w-2/3" />
-                                    </div>
-                                </div>
-                            )
-                        )}
-                    </div>
+                    <BookGridSkeleton count={12} label="Loading books..." />
                 ) : error ? (
                     <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-8 text-center">
                         <p className="text-sm font-semibold text-red-700">
