@@ -367,6 +367,28 @@ Why a bare `/(.*)` catch-all is safe: Vercel checks the **filesystem before appl
 
 The catch-all also means an unknown route renders the app shell with a blank page rather than a 404. That is normal SPA behaviour; matching is React Router's job, and it already has a `*` fallback per module.
 
+### Build failure: `npm ci` and an incomplete lockfile
+
+The `installCommand: "npm ci"` above is deliberate (reproducible deploys), but it is **stricter than `npm install`**: `npm ci` refuses to run unless every platform variant of every optional dependency is recorded in `package-lock.json`.
+
+A lockfile generated on Windows only records the win32 variants. `@tailwindcss/oxide` and `lightningcss` each ship ~12 platform-specific optional packages, so the committed lockfile was missing **60 entries**. `npm ci` passed locally on npm 10 and failed on Vercel's npm 11 with:
+
+```
+npm error code EUSAGE
+npm error `npm ci` can only install packages when your package.json and
+npm error   package-lock.json ... are in sync.
+npm error Missing: @tailwindcss/oxide-linux-x64-gnu@4.3.1 from lock file
+```
+
+Fix (already applied): regenerate the lockfile so it records all platforms.
+
+```bash
+npm run lockfile:check     # report only - run this before committing a lockfile
+npm run lockfile:fix       # regenerates with npm 11; package.json is untouched
+```
+
+Verified passing on npm 10, 11 and 12, and `npm run build` is unchanged. This is worth remembering beyond this project: the same failure appears in Docker builds and GitHub Actions the first time a Windows dev commits a lockfile.
+
 ## 9. Production deployment
 
 ```powershell
