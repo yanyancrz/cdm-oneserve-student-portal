@@ -11,6 +11,7 @@ import {
 
 import { useGuidanceMe } from "../components/GuidanceGate";
 import { AlertsSheet, useGuidanceNotifications } from "../components/GuidanceAlerts";
+import { signOut } from "../utils/session";
 import { ACCENTS } from "../components/GuidanceUi";
 import { useGuidanceRealtime } from "../hooks/useGuidanceRealtime";
 import { useUnreadChats } from "../hooks/useUnreadChats";
@@ -59,6 +60,15 @@ export default function CounselorLayout() {
     const unreadChats = useUnreadChats("counselor");
 
     const [alertsOpen, setAlertsOpen] = useState(false);
+
+    // The counselor's last nav slot ends the session rather than "going back to
+    // the portal" - a counselor has no dashboard to return to, so a Portal tab
+    // was only ever a dead end. Same handler CounselorProfilePage uses, so both
+    // sign-out paths behave identically.
+    const handleSignOut = () => {
+        signOut();
+        window.location.replace("/");
+    };
 
     const items = [
         ...TABS.map((tab) => ({
@@ -132,6 +142,8 @@ export default function CounselorLayout() {
                     brandTitle="CDM OneServe"
                     brandSubtitle="Counselor"
                     homePath="/guidance/counselor"
+                    portalLabel="Sign out"
+                    portalOnClick={handleSignOut}
                 />
             </div>
 

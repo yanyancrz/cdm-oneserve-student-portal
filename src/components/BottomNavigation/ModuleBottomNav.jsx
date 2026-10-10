@@ -1,5 +1,5 @@
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { ArrowLeft, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, LogOut, MoreHorizontal } from "lucide-react";
 import { useState } from "react";
 
 import { portalHomeForRole } from "../PortalLink/BackToPortal";
@@ -30,6 +30,11 @@ import { portalHomeForRole } from "../PortalLink/BackToPortal";
  * @param {string} props.brandSubtitle  e.g. "Library"
  * @param {string} props.homePath       the brand button's own destination
  * @param {string} [props.portalLabel]  defaults to "Portal"
+ * @param {Function} [props.portalOnClick]
+ *   Turns the tab into an ACTION instead of a link. When it is given, the
+ *   button calls it and shows a logout icon, so a module whose last slot
+ *   should end the session (the counselor's) does not have to pretend to
+ *   navigate somewhere. Without it the tab stays "back to the portal".
  */
 export default function ModuleBottomNav({
     items,
@@ -38,12 +43,21 @@ export default function ModuleBottomNav({
     brandSubtitle,
     homePath,
     portalLabel = "Portal",
+    portalOnClick,
 }) {
     const navigate = useNavigate();
 
     // Resolved from the stored role, so an Admin leaves for the admin dashboard
     // and everyone else for the student one.
     const portalHome = () => portalHomeForRole(localStorage.getItem("role") || "");
+
+    // A module that hands us an action owns that slot: logout icon, its own
+    // handler, no navigation at all.
+    const isPortalAction = typeof portalOnClick === "function";
+    const PortalIcon = isPortalAction ? LogOut : ArrowLeft;
+    const handlePortal = isPortalAction
+        ? portalOnClick
+        : () => navigate(portalHome());
 
     // ---- Mobile crowding ----
     // A module with ten tabs (the staff console) cannot fit in one pill:
@@ -247,7 +261,7 @@ export default function ModuleBottomNav({
 
                         <button
                             type="button"
-                            onClick={() => navigate(portalHome())}
+                            onClick={handlePortal}
                             className="
                                 flex
                                 items-center
@@ -263,7 +277,7 @@ export default function ModuleBottomNav({
                                 hover:text-slate-800
                             "
                         >
-                            <ArrowLeft size={14} />
+                            <PortalIcon size={14} />
                             {portalLabel}
                         </button>
                     </div>
@@ -492,7 +506,7 @@ export default function ModuleBottomNav({
 
                     <button
                         type="button"
-                        onClick={() => navigate(portalHome())}
+                        onClick={handlePortal}
                         className="
                             relative
                             flex
@@ -510,7 +524,7 @@ export default function ModuleBottomNav({
                             active:scale-95
                         "
                     >
-                        <ArrowLeft size={18} />
+                        <PortalIcon size={18} />
 
                         <span className="text-[10px] font-semibold">
                             {portalLabel}
