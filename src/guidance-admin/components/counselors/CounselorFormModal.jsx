@@ -15,7 +15,7 @@ const passwordRules = (pw, idNumber = "", email = "") => {
     const emailName = email.split("@")[0].trim().toLowerCase();
     const lower = pw.toLowerCase();
     return [
-        { key: "len", label: "At least 12 characters", ok: pw.length >= 12 },
+        { key: "len", label: "At least 8 characters", ok: pw.length >= 8 },
         { key: "upper", label: "An uppercase letter (A-Z)", ok: /[A-Z]/.test(pw) },
         { key: "lower", label: "A lowercase letter (a-z)", ok: /[a-z]/.test(pw) },
         { key: "digit", label: "A number (0-9)", ok: /\d/.test(pw) },
@@ -33,7 +33,7 @@ const passwordRules = (pw, idNumber = "", email = "") => {
 };
 
 // Cryptographically random password that always passes every rule above.
-const generatePassword = (length = 14) => {
+const generatePassword = (length = 12) => {
     const sets = ["ABCDEFGHJKLMNPQRSTUVWXYZ", "abcdefghijkmnopqrstuvwxyz", "23456789", SYMBOLS];
     const all = sets.join("");
     const rand = (n) => {
@@ -67,7 +67,7 @@ function PasswordMeter({ rules, password }) {
     const filled = !password ? 0 : level === 4 ? 4 : Math.max(1, Math.min(3, level));
 
     return (
-        <div className="mt-2" aria-live="polite">
+        <div aria-live="polite">
             <div className="flex gap-1">
                 {[0, 1, 2, 3].map((i) => (
                     <span
@@ -79,7 +79,7 @@ function PasswordMeter({ rules, password }) {
                 ))}
             </div>
             {password && <p className={`mt-1 text-[11px] font-semibold ${info.text}`}>{info.label}</p>}
-            <ul className="mt-1.5 space-y-0.5">
+            <ul className="mt-2 grid grid-cols-1 gap-x-4 gap-y-0.5 sm:grid-cols-2">
                 {rules.map((r) => (
                     <li
                         key={r.key}
@@ -272,7 +272,7 @@ export default function CounselorFormModal({ counselor, onClose, onSaved }) {
                                         className={`${input} pr-10`}
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        placeholder="At least 12 characters"
+                                        placeholder="At least 8 characters"
                                         required
                                     />
                                     <button
@@ -297,11 +297,13 @@ export default function CounselorFormModal({ counselor, onClose, onSaved }) {
                                     Generate strong password
                                 </button>
 
-                                <PasswordMeter rules={passwordRules(password, idNumber, email)} password={password} />
-
                                 <p className="mt-1 text-[11px] text-gray-400">
                                     Share this with the counselor - they can change it after signing in.
                                 </p>
+                            </Field>
+
+                            <Field className="sm:col-span-2">
+                                <PasswordMeter rules={passwordRules(password, idNumber, email)} password={password} />
                             </Field>
                         </>
                     )}

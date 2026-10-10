@@ -1,9 +1,94 @@
 import { useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { Eye, EyeOff, Check, X } from "lucide-react";
 import LoadingModal from "../../components/LoadingModal/LoadingModal";
 import { API_URL } from "../../config/api";
 import BackgroundLayout from "../../layouts/BackgroundLayout";
+
+// =========================================================
+// STRONG PASSWORD RULES
+// =========================================================
+
+const getPasswordRules = (pw, idNumber = "", email = "") => {
+    const emailName = email.split("@")[0].trim().toLowerCase();
+    const lower = pw.toLowerCase();
+    const id = idNumber.trim().toLowerCase();
+
+    return [
+        { key: "len", label: "At least 8 characters", ok: pw.length >= 8 },
+        { key: "upper", label: "An uppercase letter (A-Z)", ok: /[A-Z]/.test(pw) },
+        { key: "lower", label: "A lowercase letter (a-z)", ok: /[a-z]/.test(pw) },
+        { key: "digit", label: "A number (0-9)", ok: /\d/.test(pw) },
+        { key: "symbol", label: "A symbol (! @ # $ % ...)", ok: /[^A-Za-z0-9\s]/.test(pw) },
+        { key: "space", label: "No spaces", ok: pw.length > 0 && !/\s/.test(pw) },
+        {
+            key: "personal",
+            label: "Not your email name or ID number",
+            ok:
+                pw.length > 0 &&
+                !(emailName.length >= 3 && lower.includes(emailName)) &&
+                !(id.length >= 3 && lower.includes(id)),
+        },
+    ];
+};
+
+const STRENGTH = [
+    { label: "Too weak", bar: "bg-red-500", text: "text-red-600" },
+    { label: "Weak", bar: "bg-orange-500", text: "text-orange-600" },
+    { label: "Fair", bar: "bg-amber-500", text: "text-amber-600" },
+    { label: "Good", bar: "bg-lime-500", text: "text-lime-600" },
+    { label: "Strong", bar: "bg-emerald-600", text: "text-emerald-700" },
+];
+
+function PasswordStrength({ rules, password }) {
+    if (!password) return null;
+
+    const passed = rules.filter((r) => r.ok).length;
+    const level =
+        passed >= rules.length
+            ? 4
+            : Math.min(3, Math.floor((passed / rules.length) * 4));
+    const filled = level === 4 ? 4 : Math.max(1, level);
+    const info = STRENGTH[level];
+
+    return (
+        <div className="mt-2.5" aria-live="polite">
+            <div className="flex gap-1">
+                {[0, 1, 2, 3].map((i) => (
+                    <span
+                        key={i}
+                        className={`h-1.5 flex-1 rounded-full transition-colors ${
+                            i < filled ? info.bar : "bg-slate-200"
+                        }`}
+                    />
+                ))}
+            </div>
+
+            <p className={`mt-1 text-[11px] font-semibold ${info.text}`}>
+                {info.label}
+            </p>
+
+            <ul className="mt-1.5 grid grid-cols-1 gap-y-0.5 sm:grid-cols-2 sm:gap-x-3">
+                {rules.map((r) => (
+                    <li
+                        key={r.key}
+                        className={`flex items-center gap-1.5 text-[11px] ${
+                            r.ok ? "text-emerald-700" : "text-slate-400"
+                        }`}
+                    >
+                        {r.ok ? (
+                            <Check size={12} aria-hidden="true" />
+                        ) : (
+                            <X size={12} aria-hidden="true" />
+                        )}
+                        {r.label}
+                    </li>
+                ))}
+            </ul>
+        </div>
+    );
+}
 
 export default function Register() {
     const [idNumber, setIdNumber] = useState("");
@@ -16,6 +101,7 @@ export default function Register() {
     const [role, setRole] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
 
     const [physicalIdFile, setPhysicalIdFile] = useState(null);
     const [physicalIdPreview, setPhysicalIdPreview] = useState("");
@@ -32,6 +118,9 @@ export default function Register() {
     // FORM VALIDATION
     // =========================================================
 
+    const passwordRules = getPasswordRules(password, idNumber, email);
+    const isPasswordStrong = passwordRules.every((r) => r.ok);
+
     const isFormValid =
         idNumber.trim() &&
         firstName.trim() &&
@@ -39,6 +128,7 @@ export default function Register() {
         role &&
         email.trim() &&
         password.trim() &&
+        isPasswordStrong &&
         physicalIdFile;
 
     // =========================================================
@@ -167,6 +257,20 @@ export default function Register() {
         ) {
             toast.error(
                 "Please complete all required fields."
+            );
+
+            return;
+        }
+
+        // -----------------------------------------------------
+        // STRONG PASSWORD VALIDATION
+        // -----------------------------------------------------
+
+        const weakRule = passwordRules.find((r) => !r.ok);
+
+        if (weakRule) {
+            toast.error(
+                `Password is not strong enough: ${weakRule.label.toLowerCase()}.`
             );
 
             return;
@@ -799,29 +903,65 @@ export default function Register() {
                                 </span>
                             </label>
 
-                            <input
-                                type="password"
-                                placeholder="Enter Password"
-                                className="
-                                    w-full
-                                    px-4
-                                    py-3
-                                    rounded-xl
-                                    border
-                                    border-slate-200
-                                    bg-slate-50
-                                    text-sm
-                                    text-slate-700
-                                    outline-none
-                                    focus:border-[#106A2E]
-                                    focus:bg-white
-                                "
-                                value={password}
-                                onChange={(e) =>
-                                    setPassword(
-                                        e.target.value
-                                    )
-                                }
+                            <div className="relative">
+                                <input
+                                    type={showPassword ? "text" : "password"}
+                                    autoComplete="new-password"
+                                    placeholder="Enter Password"
+                                    className="
+                                        w-full
+                                        pl-4
+                                        pr-11
+                                        py-3
+                                        rounded-xl
+                                        border
+                                        border-slate-200
+                                        bg-slate-50
+                                        text-sm
+                                        text-slate-700
+                                        outline-none
+                                        focus:border-[#106A2E]
+                                        focus:bg-white
+                                    "
+                                    value={password}
+                                    onChange={(e) =>
+                                        setPassword(
+                                            e.target.value
+                                        )
+                                    }
+                                />
+
+                                <button
+                                    type="button"
+                                    onClick={() =>
+                                        setShowPassword((v) => !v)
+                                    }
+                                    aria-label={
+                                        showPassword
+                                            ? "Hide password"
+                                            : "Show password"
+                                    }
+                                    className="
+                                        absolute
+                                        right-3
+                                        top-1/2
+                                        -translate-y-1/2
+                                        p-1
+                                        text-slate-400
+                                        hover:text-slate-600
+                                    "
+                                >
+                                    {showPassword ? (
+                                        <EyeOff size={18} />
+                                    ) : (
+                                        <Eye size={18} />
+                                    )}
+                                </button>
+                            </div>
+
+                            <PasswordStrength
+                                rules={passwordRules}
+                                password={password}
                             />
                         </div>
 
