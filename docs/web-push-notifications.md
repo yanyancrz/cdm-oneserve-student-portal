@@ -347,7 +347,27 @@ Or use the ready-made helper: `npm run send --prefix push-service -- "Title" "Bo
 
 ---
 
-## 8. Production deployment
+## 8. Vercel deployment (SPA rewrites — required)
+
+**`vercel.json` is required.** Without it, Vercel serves only real files and answers every deep link with its own platform 404 (`404 NOT_FOUND` plus a Request ID), so React Router never sees the request. In-app navigation keeps working, which is why the bug hides until someone refreshes, opens a shared link, or taps a push notification while the PWA is closed.
+
+```json
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+}
+```
+
+The committed file also pins cache headers: `sw.js` and `registerSW.js` are `no-cache` (a cached worker breaks `autoUpdate`), `/assets/*` is `immutable` for one year, plus `X-Content-Type-Options` and `X-Frame-Options`.
+
+Why a bare `/(.*)` catch-all is safe: Vercel checks the **filesystem before applying rewrites** ("precedence is given to the filesystem prior to rewrites being applied"). So `/assets/index-*.js`, `/sw.js`, `/manifest.webmanifest` and `/icons/*` are served as real files; only unknown paths fall through to `index.html`. Never add negative-lookahead excludes to that rewrite — if the regex form isn't supported you break asset serving entirely instead of just deep links.
+
+The catch-all also means an unknown route renders the app shell with a blank page rather than a 404. That is normal SPA behaviour; matching is React Router's job, and it already has a `*` fallback per module.
+
+## 9. Production deployment
 
 ```powershell
 # Web server (IIS) — copy publish output + built PWA
