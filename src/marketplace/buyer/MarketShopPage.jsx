@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { PackageSearch, Search, ShoppingBag } from "lucide-react";
+import { PackageSearch, Search, ShoppingBag, Store } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { buyerApi } from "../services/marketApi";
@@ -16,6 +16,7 @@ import {
     MarketSkeleton,
     marketInputClass,
 } from "../components/marketUi";
+import { ModuleLoadingScreen } from "../../components/States";
 
 /**
  * The marketplace shop.
@@ -137,6 +138,21 @@ export default function MarketShopPage() {
     // ---------------------------------------------------------
     // catalog
     // ---------------------------------------------------------
+
+    // The module-opening splash, same as the Guidance gate: the dashboard
+    // card lands here while the first catalog fetch is still in flight.
+    // Searching or filtering later keeps the inline skeleton instead,
+    // because the page is already open by then.
+    if (loading && products.length === 0) {
+        return (
+            <ModuleLoadingScreen
+                icon={Store}
+                accent="bg-gradient-to-br from-[#178A45] to-[#0E3B22]"
+                label="Opening Marketplace"
+                text="Opening Marketplace..."
+            />
+        );
+    }
 
     return (
         <div className="space-y-4">

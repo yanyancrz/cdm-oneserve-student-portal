@@ -25,6 +25,7 @@ import {
     LfStatusChip,
     LfTypeTag,
 } from "../components/lfUi";
+import { ModuleLoadingScreen } from "../../components/States";
 
 // =====================================================
 // The module home: what is happening right now, and
@@ -61,10 +62,23 @@ export default function LfHomePage() {
         };
     }, []);
 
+    // The module-opening splash, same as the Guidance gate: the dashboard
+    // card lands here while the first fetch is still in flight. Later
+    // visits keep the inline skeleton, because the page is already open.
+    if (loading && recent.length === 0 && !error) {
+        return (
+            <ModuleLoadingScreen
+                icon={PackageSearch}
+                accent="bg-gradient-to-br from-[#7C6CE0] to-[#4A3FA3]"
+                label="Opening Lost & Found"
+                text="Opening Lost & Found..."
+            />
+        );
+    }
+
     return (
         <div className="space-y-5">
-            {/* ---------- quick actions ---------- */}
-            <div className="grid gap-3 sm:grid-cols-2">
+            {/* ---------- quick actions ---------- */}            <div className="grid gap-3 sm:grid-cols-2">
                 <Link
                     to={`${LOST_FOUND_HOME_ROUTE}/report/new`}
                     className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:shadow-md"

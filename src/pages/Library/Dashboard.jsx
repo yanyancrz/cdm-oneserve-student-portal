@@ -24,7 +24,7 @@ import {
     getMyReservations,
 } from "../../services/libraryService";
 
-import { Skeleton, BookGridSkeleton } from "../../components/States";
+import { Skeleton, BookGridSkeleton, ModuleLoadingScreen } from "../../components/States";
 
 // =========================================================
 // ENDPOINTS
@@ -800,6 +800,21 @@ export default function Dashboard() {
     // =====================================================
     // RENDER
     // =====================================================
+
+    // The module-opening splash, same as the Guidance gate: the dashboard
+    // card lands here while the profile (user, loans, reservations) is
+    // still being verified, so the brand mark stays on screen instead of
+    // a half-empty page. Inner pages keep their skeletons.
+    if (profileLoading) {
+        return (
+            <ModuleLoadingScreen
+                icon={LibraryBig}
+                accent="bg-gradient-to-br from-[#106A2E] to-[#0E3B22]"
+                label="Opening Library"
+                text="Opening Library..."
+            />
+        );
+    }
 
     return (
         <div className="min-h-screen bg-[#F7F8F5] text-slate-800">
