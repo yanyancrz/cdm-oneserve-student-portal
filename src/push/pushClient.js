@@ -18,6 +18,55 @@ function getToken() {
     return null;
 }
 
+/**
+ * A real browser PushSubscription has NO `.keys` property - the p256dh/auth
+ * values only exist through toJSON() (base64url strings) or getKey()
+ * (ArrayBuffers). A plain { endpoint, keys } object (the shape the service
+ * worker stashes) is accepted too.
+ */
+function bufferToBase64Url(buffer) {
+    if (!buffer) return undefined;
+
+    const bytes = new Uint8Array(buffer);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i += 1) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+
+    return window
+        .btoa(binary)
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=+$/, "");
+}
+
+function extractSubscription(subscription) {
+    if (!subscription) return { endpoint: undefined, p256dh: undefined, auth: undefined };
+
+    let json = {};
+    if (typeof subscription.toJSON === "function") {
+        json = subscription.toJSON() ?? {};
+    }
+
+    const keys = json.keys ?? subscription.keys ?? {};
+
+    let p256dh = keys.p256dh;
+    let auth = keys.auth;
+
+    if (!p256dh && typeof subscription.getKey === "function") {
+        p256dh = bufferToBase64Url(subscription.getKey("p256dh"));
+    }
+    if (!auth && typeof subscription.getKey === "function") {
+        auth = bufferToBase64Url(subscription.getKey("auth"));
+    }
+
+    return {
+        endpoint: json.endpoint ?? subscription.endpoint,
+        p256dh,
+        auth,
+    };
+}
+
 async function request(path, options = {}) {
     const token = getToken();
     if (!token) throw new Error("not-signed-in");
@@ -52,15 +101,17 @@ async function toJson(response) {
 }
 
 export async function subscribe(subscription, deviceLabel) {
+    const { endpoint, p256dh, auth } = extractSubscription(subscription);
+
+    if (!endpoint || !p256dh || !auth) {
+        throw new Error(
+            "This browser did not return a complete push subscription. Try again."
+        );
+    }
+
     const response = await request("/api/push/subscribe", {
         method: "POST",
-        body: JSON.stringify({
-            endpoint: subscription.endpoint,
-            // Serialised with .toJSON(): ArrayBuffers must not be sent raw.
-            p256dh: subscription.keys?.p256dh,
-            auth: subscription.keys?.auth,
-            deviceLabel,
-        }),
+        body: JSON.stringify({ endpoint, p256dh, auth, deviceLabel }),
     });
 
     const body = await toJson(response);
@@ -102,15 +153,16 @@ export async function getMySubscriptions() {
  * permission) and by the service worker's pushsubscriptionchange handler.
  */
 export async function validate(subscription) {
+    let body_ = undefined;
+
+    if (subscription) {
+        const { endpoint, p256dh, auth } = extractSubscription(subscription);
+        body_ = JSON.stringify({ endpoint, p256dh, auth });
+    }
+
     const response = await request("/api/push/validate", {
         method: "POST",
-        body: subscription
-            ? JSON.stringify({
-                  endpoint: subscription.endpoint,
-                  p256dh: subscription.keys?.p256dh,
-                  auth: subscription.keys?.auth,
-              })
-            : undefined,
+        body: body_,
     });
 
     const body = await toJson(response);
