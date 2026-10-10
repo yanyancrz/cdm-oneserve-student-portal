@@ -57,8 +57,15 @@ export default function SessionRecordSheet({ appointment, onClose, onDone }) {
         }
     };
 
+    // The nav is a fixed pill (bottom-3 + ~70px tall), so the sheet is lifted
+    // clear of it. Without this the Finalize button sits under the pill and
+    // cannot be tapped.
     return (
-        <div className="fixed inset-0 z-50 flex items-end bg-black/40" onClick={onClose}>
+        <div
+            className="fixed inset-0 z-50 flex items-end bg-black/40"
+            style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom))" }}
+            onClick={onClose}
+        >
             <div
                 role="dialog"
                 aria-modal="true"
