@@ -439,6 +439,7 @@ function HistoryList({ rows, loading, error }) {
                         <p className="mt-1 text-[11px] leading-5 text-slate-500">
                             {row.actionType}
                             {row.operatorName ? ` · ${row.operatorName}` : ""}
+                            {row.idLast3 ? ` (ID •••${row.idLast3})` : ""}
                             {row.orderReference ? ` · ${row.orderReference}` : ""}
                             {row.reason ? ` · ${row.reason}` : ""}
                         </p>

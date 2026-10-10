@@ -65,6 +65,16 @@ Workspaces (locations + stalls + BusinessHub + one login each) and Activity
 Log. Operators see an "On duty" bar with End shift; mutations without a
 session fail with "Start an operator session first".
 
+## Role split: who sees what
+
+- OPERATOR (stall login or legacy personal account): Dashboard, Orders,
+  Products, Deliveries, Inventory, Locations, Chat, Transactions, Settings.
+  Opens a duty shift after login.
+- HEAD: Dashboard, Staff Accounts, Workspaces, Activity Log. Administers
+  stalls, logins and designated operators, and reviews the audit trail.
+  No counter screens (UI hides them and the routes bounce back), no duty
+  shift. The API itself is unchanged.
+
 ## Intentional deviations from the original master prompt
 
 - Per-stall accounts instead of ONE shared credential (approved decision:

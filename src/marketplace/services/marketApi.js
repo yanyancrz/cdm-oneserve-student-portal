@@ -300,6 +300,8 @@ export const headApi = {
         http.delete(`/api/marketplace/head/workspaces/${workspaceId}/account`),
     resetStallAccountPassword: (workspaceId, password) =>
         http.post(`/api/marketplace/head/workspaces/${workspaceId}/account/password`, { password }),
+    setStallOperator: (workspaceId, body) =>
+        http.put(`/api/marketplace/head/workspaces/${workspaceId}/account/operator`, body),
 
     audit: (params) => http.get("/api/marketplace/head/audit", { params }),
 };

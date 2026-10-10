@@ -29,14 +29,16 @@ export function useMarketSession() {
 /**
  * Confirms the caller may use the marketplace staff portal.
  *
- * TWO roles get in, matching how the rest of OneServe is organised:
+ * TWO roles get in, with opposite menus:
  *
- *   OPERATOR  a staff account (marketplace_staff). Runs products, stock, orders,
- *             deliveries and chat.
+ *   OPERATOR  a stall account (marketplace_stall_accounts) or a legacy
+ *             personal staff account. Runs the counter: products, stock,
+ *             orders, deliveries and chat. Opens a duty shift on the setup
+ *             screen after login.
  *   HEAD      the Marketplace Head - Role 'MarketplaceAdmin', AdminModule
- *             'Marketplace', created in Admin > Users "Add Head". A SUPERSET of
- *             staff: can operate everything, and is the only role that also sees
- *             the Staff Accounts screen.
+ *             'Marketplace', created in Admin > Users "Add Head".
+ *             Administers: stalls, stall logins, designated operators, and
+ *             the activity log. No counter screens, no duty shift.
  *
  * Neither is a guess. Staff is a row in marketplace_staff and Head is a OneServe
  * role, so the marketplace is asked directly.
@@ -100,7 +102,12 @@ export default function MarketStaffGate({ children }) {
 
                 if (head?.data?.isHead) {
                     setIsHead(true);
-                    await loadSessionContext();
+                    // The Head administers (stalls, accounts, audit) and runs
+                    // no counter shift, so there is no setup screen for them:
+                    // straight to the console.
+                    setOperatorSessionId(null);
+                    setContext({ workspace: null, hasActiveSession: false, session: null });
+                    setState("allowed");
                     return;
                 }
 

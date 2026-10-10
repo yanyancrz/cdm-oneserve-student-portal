@@ -37,6 +37,7 @@ export default function MarketStaffWorkspacesPage() {
     const [showWorkspace, setShowWorkspace] = useState(null);
     const [showAccount, setShowAccount] = useState(null);
     const [showPassword, setShowPassword] = useState(null);
+    const [showOperator, setShowOperator] = useState(null);
 
     const load = async () => {
         try {
@@ -185,6 +186,7 @@ export default function MarketStaffWorkspacesPage() {
                                     onEdit={() => setShowWorkspace(workspace)}
                                     onAccount={() => setShowAccount(workspace)}
                                     onPassword={() => setShowPassword(workspace)}
+                                    onOperator={() => setShowOperator(workspace)}
                                     onDeactivate={() =>
                                         runBusy(`deact-${workspace.workspaceId}`, () =>
                                             headApi.deactivateStallAccount(workspace.workspaceId)
@@ -223,6 +225,7 @@ export default function MarketStaffWorkspacesPage() {
                                         onEdit={() => setShowWorkspace(workspace)}
                                         onAccount={() => setShowAccount(workspace)}
                                         onPassword={() => setShowPassword(workspace)}
+                                        onOperator={() => setShowOperator(workspace)}
                                         onDeactivate={() =>
                                             runBusy(`deact-${workspace.workspaceId}`, () =>
                                                 headApi.deactivateStallAccount(workspace.workspaceId)
@@ -263,6 +266,7 @@ export default function MarketStaffWorkspacesPage() {
             {showAccount !== null && (
                 <AccountModal
                     workspace={showAccount}
+                    workspaces={workspaces}
                     onClose={() => setShowAccount(null)}
                     onSaved={() => {
                         setShowAccount(null);
@@ -278,6 +282,17 @@ export default function MarketStaffWorkspacesPage() {
                     onSaved={() => setShowPassword(null)}
                 />
             )}
+
+            {showOperator !== null && (
+                <OperatorModal
+                    workspace={showOperator}
+                    onClose={() => setShowOperator(null)}
+                    onSaved={() => {
+                        setShowOperator(null);
+                        load();
+                    }}
+                />
+            )}
         </div>
     );
 }
@@ -289,6 +304,7 @@ function WorkspaceCard({
     onEdit,
     onAccount,
     onPassword,
+    onOperator,
     onDeactivate,
 }) {
     const deactivating = busy === `deact-${workspace.workspaceId}`;
@@ -315,6 +331,21 @@ function WorkspaceCard({
                                 <span className="font-semibold text-[#106A2E]">
                                     {workspace.accountEmail}
                                 </span>
+                                {workspace.operatorName ? (
+                                    <span className="block">
+                                        Operator:{" "}
+                                        <span className="font-semibold text-slate-700">
+                                            {workspace.operatorName}
+                                        </span>{" "}
+                                        <span className="text-slate-400">
+                                            (ID •••{workspace.idLast3})
+                                        </span>
+                                    </span>
+                                ) : (
+                                    <span className="block font-semibold text-amber-600">
+                                        No designated operator yet
+                                    </span>
+                                )}
                             </>
                         ) : (
                             <span className="font-semibold text-amber-600">
@@ -334,6 +365,13 @@ function WorkspaceCard({
                     </button>
                     {workspace.hasAccount ? (
                         <>
+                            <button
+                                type="button"
+                                onClick={onOperator}
+                                className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 hover:bg-slate-50"
+                            >
+                                Operator
+                            </button>
                             <button
                                 type="button"
                                 onClick={onPassword}
@@ -566,19 +604,33 @@ function WorkspaceModal({ initial, locations, onClose, onSaved }) {
     );
 }
 
-function AccountModal({ workspace, onClose, onSaved }) {
+function AccountModal({ workspace, workspaces, onClose, onSaved }) {
+    // The Head may point the login at any workspace without one; the card it
+    // opened from is just the default.
+    const options = (workspaces || []).filter(
+        (w) => !w.hasAccount || w.workspaceId === workspace.workspaceId
+    );
+
+    const [targetId, setTargetId] = useState(String(workspace.workspaceId));
     const [email, setEmail] = useState("");
     const [fullName, setFullName] = useState(`${workspace.name} Account`);
     const [password, setPassword] = useState("");
+    const [operatorName, setOperatorName] = useState("");
+    const [idLast3, setIdLast3] = useState("");
     const [saving, setSaving] = useState(false);
+
+    const idOk = /^[0-9]{3}$/.test(idLast3.trim());
 
     const save = async () => {
         setSaving(true);
         try {
-            const response = await headApi.createStallAccount(workspace.workspaceId, {
+            const response = await headApi.createStallAccount(Number(targetId), {
+                workspaceId: Number(targetId),
                 email: email.trim(),
                 fullName: fullName.trim(),
                 password,
+                operatorName: operatorName.trim(),
+                idLast3: idLast3.trim(),
             });
             toast.success(response.message || "Login created.");
             onSaved();
@@ -589,15 +641,36 @@ function AccountModal({ workspace, onClose, onSaved }) {
         }
     };
 
+    const canSave =
+        !saving &&
+        targetId &&
+        password.length >= 8 &&
+        fullName.trim().length >= 2 &&
+        operatorName.trim().length >= 2 &&
+        idOk;
+
     return (
-        <ModalShell title={`Login for ${workspace.name}`} onClose={onClose}>
+        <ModalShell title="Stall login account" onClose={onClose}>
             <p className="mb-3 text-xs leading-5 text-slate-500">
                 One account for the whole stall. Whoever is on duty signs in
                 with it and enters their own name - share these credentials
                 with the operators, nobody else.
             </p>
 
-            <label className={fieldLabel}>Account name</label>
+            <label className={fieldLabel}>Stall / workspace</label>
+            <select
+                value={targetId}
+                onChange={(e) => setTargetId(e.target.value)}
+                className={marketSelectClass}
+            >
+                {options.map((w) => (
+                    <option key={w.workspaceId} value={w.workspaceId}>
+                        {w.name}
+                    </option>
+                ))}
+            </select>
+
+            <label className={`${fieldLabel} mt-3`}>Account name</label>
             <input
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -623,12 +696,104 @@ function AccountModal({ workspace, onClose, onSaved }) {
                 className={marketInputClass}
             />
 
+            <div className="mt-3 rounded-xl border border-[#106A2E]/20 bg-[#106A2E]/[0.04] p-3">
+                <p className="text-xs font-bold text-slate-800">
+                    Designated operator
+                </p>
+                <p className="mt-0.5 text-[11px] leading-4 text-slate-500">
+                    Shown on the setup screen with a reminder. A matching
+                    shift carries the ID suffix into every audit row.
+                </p>
+
+                <label className={`${fieldLabel} mt-2`}>Operator name</label>
+                <input
+                    value={operatorName}
+                    onChange={(e) => setOperatorName(e.target.value)}
+                    placeholder="Full name of the operator on duty"
+                    maxLength={120}
+                    className={marketInputClass}
+                />
+
+                <label className={`${fieldLabel} mt-2`}>Last 3 digits of ID number</label>
+                <input
+                    value={idLast3}
+                    onChange={(e) =>
+                        setIdLast3(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))
+                    }
+                    placeholder="e.g. 123"
+                    inputMode="numeric"
+                    className={marketInputClass}
+                />
+            </div>
+
             <MarketButton
                 onClick={save}
-                disabled={saving || password.length < 8 || fullName.trim().length < 2}
+                disabled={!canSave}
                 className="mt-4 w-full justify-center"
             >
                 {saving ? "Creating..." : "Create login"}
+            </MarketButton>
+        </ModalShell>
+    );
+}
+
+function OperatorModal({ workspace, onClose, onSaved }) {
+    const [operatorName, setOperatorName] = useState(workspace.operatorName || "");
+    const [idLast3, setIdLast3] = useState(workspace.idLast3 || "");
+    const [saving, setSaving] = useState(false);
+
+    const idOk = /^[0-9]{3}$/.test(idLast3.trim());
+
+    const save = async () => {
+        setSaving(true);
+        try {
+            const response = await headApi.setStallOperator(workspace.workspaceId, {
+                operatorName: operatorName.trim(),
+                idLast3: idLast3.trim(),
+            });
+            toast.success(response.message || "Operator updated.");
+            onSaved();
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    return (
+        <ModalShell title={`Designated operator · ${workspace.name}`} onClose={onClose}>
+            <p className="mb-3 text-xs leading-5 text-slate-500">
+                Shown on the setup screen with a reminder before the operator
+                enters their name. A matching shift carries the ID suffix into
+                the audit trail.
+            </p>
+
+            <label className={fieldLabel}>Operator name</label>
+            <input
+                value={operatorName}
+                onChange={(e) => setOperatorName(e.target.value)}
+                placeholder="Full name of the operator on duty"
+                maxLength={120}
+                className={marketInputClass}
+            />
+
+            <label className={`${fieldLabel} mt-3`}>Last 3 digits of ID number</label>
+            <input
+                value={idLast3}
+                onChange={(e) =>
+                    setIdLast3(e.target.value.replace(/[^0-9]/g, "").slice(0, 3))
+                }
+                placeholder="e.g. 123"
+                inputMode="numeric"
+                className={marketInputClass}
+            />
+
+            <MarketButton
+                onClick={save}
+                disabled={saving || operatorName.trim().length < 2 || !idOk}
+                className="mt-4 w-full justify-center"
+            >
+                {saving ? "Saving..." : "Save operator"}
             </MarketButton>
         </ModalShell>
     );

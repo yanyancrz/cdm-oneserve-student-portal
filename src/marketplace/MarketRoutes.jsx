@@ -94,16 +94,21 @@ export const marketStaffRoutes = (
         }
     >
         <Route path="/marketplace/staff" element={<MarketStaffDashboard />} />
-        <Route path="/marketplace/staff/orders" element={<MarketStaffOrdersPage />} />
-        <Route path="/marketplace/staff/orders/:orderId" element={<MarketStaffOrdersPage />} />
-        <Route path="/marketplace/staff/deliveries" element={<MarketStaffDeliveriesPage />} />
-        <Route path="/marketplace/staff/products" element={<MarketStaffProductsPage />} />
-        <Route path="/marketplace/staff/inventory" element={<MarketStaffInventoryPage />} />
-        <Route path="/marketplace/staff/locations" element={<MarketStaffLocationsPage />} />
-        <Route path="/marketplace/staff/chat" element={<MarketStaffChatPage />} />
-        <Route path="/marketplace/staff/chat/:conversationId" element={<MarketStaffChatPage />} />
-        <Route path="/marketplace/staff/transactions" element={<MarketStaffTransactionsPage />} />
-        <Route path="/marketplace/staff/settings" element={<MarketStaffSettingsPage />} />
+
+        {/* Counter screens: operators only. The Head administers stalls and
+            accounts instead (see below), so even a typed URL bounces back. */}
+        <Route element={<RequireOperator />}>
+            <Route path="/marketplace/staff/orders" element={<MarketStaffOrdersPage />} />
+            <Route path="/marketplace/staff/orders/:orderId" element={<MarketStaffOrdersPage />} />
+            <Route path="/marketplace/staff/deliveries" element={<MarketStaffDeliveriesPage />} />
+            <Route path="/marketplace/staff/products" element={<MarketStaffProductsPage />} />
+            <Route path="/marketplace/staff/inventory" element={<MarketStaffInventoryPage />} />
+            <Route path="/marketplace/staff/locations" element={<MarketStaffLocationsPage />} />
+            <Route path="/marketplace/staff/chat" element={<MarketStaffChatPage />} />
+            <Route path="/marketplace/staff/chat/:conversationId" element={<MarketStaffChatPage />} />
+            <Route path="/marketplace/staff/transactions" element={<MarketStaffTransactionsPage />} />
+            <Route path="/marketplace/staff/settings" element={<MarketStaffSettingsPage />} />
+        </Route>
 
         {/* Head only, and desktop only.
             The wrapper keeps an operator out even if they type the URL, though the
@@ -136,6 +141,17 @@ function RequireMarketHead() {
     const isHead = useIsMarketHead();
 
     return isHead ? <Outlet /> : <Navigate to="/marketplace/staff" replace />;
+}
+
+// Keeps the Head out of the day-to-day counter screens.
+//
+// The Head administers (stalls, accounts, operators, audit) and does not run
+// inventory, products or orders - those belong to the stall operators. Like
+// RequireMarketHead this is a routing convenience: the API is unchanged.
+function RequireOperator() {
+    const isHead = useIsMarketHead();
+
+    return isHead ? <Navigate to="/marketplace/staff" replace /> : <Outlet />;
 }
 
 // The Marketplace Head is a supervisor, and the portal is desktop only for them.
@@ -199,8 +215,9 @@ function RequireDesktopForHead() {
                 </h1>
 
                 <p className="mt-2.5 text-sm leading-6 text-slate-500">
-                    The Marketplace Head portal is for desktop and laptop. Use one to
-                    manage operator accounts, products, stock and orders.
+                    The Marketplace Head console is for desktop and laptop. Use one to
+                    manage stalls, stall logins and operators, and to review the
+                    activity log.
                 </p>
 
                 <div className="mt-5 rounded-2xl bg-[#106A2E]/5 p-4 text-left">

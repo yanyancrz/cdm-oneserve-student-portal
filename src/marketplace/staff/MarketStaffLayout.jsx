@@ -24,15 +24,16 @@ import ModuleBottomNav from "../../components/BottomNavigation/ModuleBottomNav";
 //
 // Any device - a phone at the counter, a desktop for the inventory list.
 //
-// ONE portal serves both marketplace roles, the same way the Library portal
-// serves both Library Admin and Library Staff:
+// ONE portal serves both marketplace roles, with opposite menus:
 //
-//   OPERATOR  a staff account. Everything below except Staff Accounts.
-//   HEAD      the Marketplace Head (Admin > Users > Add Head). A superset of
-//             staff: everything below, plus Staff Accounts.
+//   OPERATOR  a stall account (or a legacy personal account). The counter:
+//             Dashboard, Orders, Products, Deliveries, Inventory, Locations,
+//             Chat, Transactions, Settings.
 //
-// Staff Accounts is filtered out for an operator, so the Head-only screen is
-// never even rendered for someone who cannot use it.
+//   HEAD      the Marketplace Head (Admin > Users > Add Head). The console:
+//             Dashboard, Staff Accounts, Workspaces, Activity Log. The Head
+//             administers stalls and logins and reviews the audit trail -
+//             inventory, products and orders belong to the operators.
 //
 // The CDM OneServe Admin has no link into this portal: they monitor from
 // /marketplace/admin instead.
@@ -47,25 +48,29 @@ import ModuleBottomNav from "../../components/BottomNavigation/ModuleBottomNav";
 const NAV = [
     // The first three stay as pill tabs on mobile; the rest go behind "More".
     { to: "/marketplace/staff", label: "Dashboard", icon: LayoutDashboard, end: true },
-    { to: "/marketplace/staff/orders", label: "Orders", icon: ClipboardList },
-    { to: "/marketplace/staff/products", label: "Products", icon: Package },
+    // Counter screens: operators only. The Head administers instead, so these
+    // links (and their routes) are operator-only.
+    { to: "/marketplace/staff/orders", label: "Orders", icon: ClipboardList, operatorOnly: true },
+    { to: "/marketplace/staff/products", label: "Products", icon: Package, operatorOnly: true },
     // Overflow
-    { to: "/marketplace/staff/deliveries", label: "Deliveries", icon: Truck },
-    { to: "/marketplace/staff/inventory", label: "Inventory", icon: Boxes },
-    { to: "/marketplace/staff/locations", label: "Locations", icon: MapPin },
-    { to: "/marketplace/staff/chat", label: "Chat", icon: MessageCircle },
-    { to: "/marketplace/staff/transactions", label: "Transactions", icon: Receipt },
-    { to: "/marketplace/staff/settings", label: "Settings", icon: Settings },
+    { to: "/marketplace/staff/deliveries", label: "Deliveries", icon: Truck, operatorOnly: true },
+    { to: "/marketplace/staff/inventory", label: "Inventory", icon: Boxes, operatorOnly: true },
+    { to: "/marketplace/staff/locations", label: "Locations", icon: MapPin, operatorOnly: true },
+    { to: "/marketplace/staff/chat", label: "Chat", icon: MessageCircle, operatorOnly: true },
+    { to: "/marketplace/staff/transactions", label: "Transactions", icon: Receipt, operatorOnly: true },
+    { to: "/marketplace/staff/settings", label: "Settings", icon: Settings, operatorOnly: true },
     // Head only.
     { to: "/marketplace/staff/accounts", label: "Staff Accounts", icon: Users, headOnly: true },
     { to: "/marketplace/staff/workspaces", label: "Workspaces", icon: Store, headOnly: true },
     { to: "/marketplace/staff/audit", label: "Activity Log", icon: History, headOnly: true },
 ];
 
-/** Drops the Head-only entries when the caller is an operator. */
+/** Operators see the counter; the Head sees the console. Neither sees the other's. */
 function useVisibleNav() {
     const isHead = useIsMarketHead();
-    return NAV.filter((item) => !item.headOnly || isHead);
+    return NAV.filter(
+        (item) => (!item.headOnly || isHead) && (!item.operatorOnly || !isHead)
+    );
 }
 
 export default function MarketStaffLayout() {
@@ -133,6 +138,7 @@ export default function MarketStaffLayout() {
                             </span>
                             <span className="block text-[11px] text-slate-500">
                                 On duty: {session.operatorName}
+                                {session.idLast3 ? ` (ID •••${session.idLast3})` : ""}
                             </span>
                         </span>
                         <button

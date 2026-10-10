@@ -198,6 +198,7 @@ export default function MarketStaffAuditPage() {
                                     {row.workspaceName}
                                     {" · "}
                                     {row.operatorName || row.actorName || "system"}
+                                    {row.idLast3 ? ` (ID •••${row.idLast3})` : ""}
                                     {row.orderReference ? ` · ${row.orderReference}` : ""}
                                     {row.reason ? ` · ${row.reason}` : ""}
                                 </p>

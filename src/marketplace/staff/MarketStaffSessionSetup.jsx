@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ClipboardList, Store } from "lucide-react";
+import { AlertTriangle, ClipboardList, Store } from "lucide-react";
 
 import { buyerApi, staffApi, setOperatorSessionId } from "../services/marketApi";
 import {
@@ -25,8 +25,12 @@ import {
  */
 export default function MarketStaffSessionSetup({ context, onStarted }) {
     const fixed = context?.workspace ?? null;
+    const designated = fixed?.operatorName ? fixed : null;
 
-    const [operatorName, setOperatorName] = useState("");
+    // When the Head named a designated operator, their name is already
+    // filled in - the human on duty just confirms it is really them.
+    const [operatorName, setOperatorName] = useState(designated?.operatorName ?? "");
+    const [touched, setTouched] = useState(false);
     const [workspaces, setWorkspaces] = useState([]);
     const [workspaceId, setWorkspaceId] = useState("");
     const [loadingLists, setLoadingLists] = useState(!fixed);
@@ -99,6 +103,29 @@ export default function MarketStaffSessionSetup({ context, onStarted }) {
                 </div>
 
                 <MarketPanel>
+                    {/* PAALALA - read before the name goes in. What is entered
+                        here is stamped on every stock update of this shift. */}
+                    <div
+                        role="note"
+                        className="mb-4 flex items-start gap-2.5 rounded-xl border border-amber-200 bg-amber-50 p-3"
+                    >
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-700">
+                            <AlertTriangle size={16} aria-hidden="true" />
+                        </span>
+                        <div className="min-w-0">
+                            <p className="text-xs font-bold text-amber-900">
+                                Paalala bago maglagay ng pangalan
+                            </p>
+                            <p className="mt-0.5 text-[11px] leading-5 text-amber-800">
+                                Ikaw ay naka-login gamit ang stall account. Ilagay
+                                ang <strong>buong pangalan ng operator na naka-duty
+                                ngayon</strong> - ito ang maitatala sa bawat stock
+                                update, benta, at pagsasauli sa shift na ito.
+                                Siguraduhing tama ang spelling bago magpatuloy.
+                            </p>
+                        </div>
+                    </div>
+
                     <label
                         htmlFor="market-operator-name"
                         className="block text-xs font-semibold text-slate-600"
@@ -109,12 +136,33 @@ export default function MarketStaffSessionSetup({ context, onStarted }) {
                         id="market-operator-name"
                         type="text"
                         value={operatorName}
-                        onChange={(event) => setOperatorName(event.target.value)}
+                        onChange={(event) => {
+                            setOperatorName(event.target.value);
+                            setTouched(true);
+                        }}
                         placeholder="Enter the name of the operator on duty"
                         maxLength={120}
                         autoComplete="off"
                         className={`${marketInputClass} mt-1.5`}
                     />
+
+                    {designated && (
+                        <p className="mt-1.5 text-[11px] leading-4 text-slate-500">
+                            Naka-rehistrong operator dito:{" "}
+                            <span className="font-semibold text-slate-700">
+                                {designated.operatorName}
+                            </span>{" "}
+                            <span className="text-slate-400">
+                                (ID •••{designated.idLast3})
+                            </span>
+                            {!touched && (
+                                <span className="block text-emerald-700">
+                                    Ikaw ba ito? Pindutin na ang Continue. Kung
+                                    hindi, palitan ang pangalan sa itaas.
+                                </span>
+                            )}
+                        </p>
+                    )}
 
                     <div className="mt-4">
                         <span className="block text-xs font-semibold text-slate-600">
