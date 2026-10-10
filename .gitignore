@@ -12,6 +12,21 @@ dist
 dist-ssr
 *.local
 
+# Build environment. .env.example is committed and documents every key;
+# real values stay local. NEVER put a VAPID private key here.
+.env
+.env.*
+!.env.example
+
+# Web Push secrets - the Node notification service holds the VAPID
+# PRIVATE key. It must never reach git.
+push-service/.env
+push-service/node_modules
+push-service/dist
+*.pem
+vapid-keys.json
+vapid-*.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

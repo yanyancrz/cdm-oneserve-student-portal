@@ -5,7 +5,9 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // The Node notification service is its own package with its own
+  // (plain Node) runtime; it is not part of the Vite app.
+  globalIgnores(['dist', 'push-service']),
   {
     files: ['**/*.{js,jsx}'],
     extends: [

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
+import { PushNotificationCard } from "../../push/PushNotificationCard";
 
 export default function Profile() {
 
@@ -1003,6 +1004,13 @@ export default function Profile() {
                     </div>
 
                 </div>
+
+
+                {/* ==========================================
+                    PUSH NOTIFICATIONS
+                    ========================================== */}
+
+                <PushNotificationCard />
 
 
                 {/* ==========================================

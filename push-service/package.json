@@ -1,0 +1,23 @@
+{
+  "name": "cdm-oneserve-push-service",
+  "version": "1.0.0",
+  "private": true,
+  "description": "CDM OneServe Web Push notification service (RFC 8030 / VAPID) using the official web-push library",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "keys": "node scripts/generate-vapid-keys.js",
+    "send": "node scripts/manual-send.mjs",
+    "health": "node -e \"fetch('http://127.0.0.1:' + (process.env.PORT || 4100) + '/health').then(r => r.json()).then(j => console.log(JSON.stringify(j, null, 2)))\""
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "mysql2": "^3.11.5",
+    "web-push": "^3.6.7"
+  }
+}

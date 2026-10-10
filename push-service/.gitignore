@@ -1,0 +1,6 @@
+node_modules
+.env
+*.log
+*.pem
+vapid-keys.json
+npm-debug.log*

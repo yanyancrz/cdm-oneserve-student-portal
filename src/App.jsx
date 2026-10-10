@@ -93,9 +93,20 @@ import { marketBuyerRoutes, marketStaffRoutes, marketAdminRoutes } from "./marke
 // =====================================================
 import { lostFoundUserRoutes, lostFoundAdminRoutes } from "./lost-found/LfRoutes";
 
+// Web Push: the sync component runs the hook on every page load (it repairs
+// a rotated subscription and never prompts). The banner is the single
+// opt-in affordance that every role can reach, because the Profile page is
+// only inside the student layout.
+import { PushNotificationSync } from "./push/PushNotificationSync";
+import { PushNotificationBanner } from "./push/PushNotificationBanner";
+
 function App() {
     return (
         <BrowserRouter>
+            <PushNotificationSync />
+
+            <PushNotificationBanner />
+
             <Routes>
                 {/* ================= AUTH / PUBLIC (PWA required) ================= */}
                 <Route

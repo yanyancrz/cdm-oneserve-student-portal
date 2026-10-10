@@ -12,6 +12,7 @@ import {
     faBell,
     faTableCellsLarge,
     faStore,
+    faBagShopping,
     faChevronDown,
     faCircleCheck,
     faTriangleExclamation,
@@ -54,6 +55,13 @@ const NOTIFICATION_MODULES = [
         icon: faStethoscope,
         chip: "bg-sky-50 text-sky-700",
         match: ["CLINIC"],
+    },
+    {
+        key: "marketplace",
+        label: "Marketplace",
+        icon: faBagShopping,
+        chip: "bg-amber-50 text-amber-700",
+        match: ["MARKETPLACE", "MARKET", "ORDER"],
     },
     {
         key: "lost-found",
@@ -517,6 +525,34 @@ export default function BottomNavigation() {
                     role === "counselor"
                         ? "/guidance/counselor/appointments"
                         : "/guidance/appointments"
+                );
+            }
+
+            // Marketplace order notices: order list for a buyer, staff queue
+            // for staff (same home the role redirects to at login).
+            if (
+                ["MARKETPLACE", "MARKET", "ORDER"].includes(
+                    String(notification.type || "")
+                        .toUpperCase()
+                        .split(/[^A-Z]+/)[0]
+                )
+            ) {
+                const role = String(
+                    localStorage.getItem("role") ||
+                        localStorage.getItem("userRole") ||
+                        ""
+                )
+                    .trim()
+                    .toLowerCase();
+
+                closeMenu();
+
+                navigate(
+                    role === "marketplaceadmin" ||
+                        role === "marketplacestaff" ||
+                        role === "marketplacehead"
+                        ? "/marketplace/staff/orders"
+                        : "/marketplace/orders"
                 );
             }
 
