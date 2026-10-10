@@ -4,12 +4,13 @@ import { BarChart3, TrendingUp } from "lucide-react";
 import { adminApi } from "../services/marketApi";
 import { formatDate, formatPeso } from "../utils/format";
 import {
-    MarketEmpty,
-    MarketNotice,
-    MarketPanel,
-    MarketSkeleton,
-    MarketStat,
-} from "../components/marketUi";
+    AdminEmpty,
+    AdminNotice,
+    AdminPanel,
+    AdminSkeleton,
+    adminSelectClass,
+    AdminStat,
+} from "../components/marketAdminUi";
 import { AdminPageHeader } from "./MarketAdminLayout";
 
 /**
@@ -80,7 +81,7 @@ export default function MarketAdminAnalytics() {
                             <select
                                 value={workspaceId}
                                 onChange={(event) => setWorkspaceId(event.target.value)}
-                                className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600"
+                                className={adminSelectClass}
                             >
                                 <option value="">All stalls</option>
                                 {workspaces.map((workspace) => (
@@ -93,7 +94,7 @@ export default function MarketAdminAnalytics() {
                         <select
                             value={days}
                             onChange={(event) => setDays(Number(event.target.value))}
-                            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600"
+                            className={adminSelectClass}
                         >
                             <option value={7}>Last 7 days</option>
                             <option value={30}>Last 30 days</option>
@@ -105,57 +106,57 @@ export default function MarketAdminAnalytics() {
             />
 
             {error && (
-                <MarketNotice tone="error" title="Could not load analytics">
+                <AdminNotice tone="error" title="Could not load analytics">
                     {error}
-                </MarketNotice>
+                </AdminNotice>
             )}
 
             {loading ? (
-                <MarketPanel>
-                    <MarketSkeleton rows={6} />
-                </MarketPanel>
+                <AdminPanel>
+                    <AdminSkeleton rows={6} />
+                </AdminPanel>
             ) : !data ? (
-                <MarketPanel>
-                    <MarketEmpty
+                <AdminPanel>
+                    <AdminEmpty
                         icon={<BarChart3 size={20} />}
                         title="No analytics yet"
                         hint="Charts appear once orders start completing."
                     />
-                </MarketPanel>
+                </AdminPanel>
             ) : (
                 <>
-                    <MarketPanel>
+                    <AdminPanel>
                         <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-4">
-                            <MarketStat
+                            <AdminStat
                                 label={`Sales (${days}d)`}
                                 value={formatPeso(data.totalSalesCentavos)}
                                 tone="good"
                             />
-                            <MarketStat
+                            <AdminStat
                                 label="Days with sales"
                                 value={data.overTime.length}
                             />
-                            <MarketStat
+                            <AdminStat
                                 label="Orders"
                                 value={data.overTime.reduce(
                                     (sum, row) => sum + row.orders,
                                     0
                                 )}
                             />
-                            <MarketStat
+                            <AdminStat
                                 label="Best sellers"
                                 value={data.bestSellers.length}
                             />
                         </div>
-                    </MarketPanel>
+                    </AdminPanel>
 
                     {/* Over time */}
-                    <MarketPanel
+                    <AdminPanel
                         title="Sales over time"
                         subtitle="Completed orders per day"
                     >
                         {data.overTime.length === 0 ? (
-                            <MarketEmpty
+                            <AdminEmpty
                                 icon={<TrendingUp size={18} />}
                                 title="No completed orders"
                                 hint="Nothing to plot in this window."
@@ -183,21 +184,21 @@ export default function MarketAdminAnalytics() {
                                 ))}
                             </div>
                         )}
-                    </MarketPanel>
+                    </AdminPanel>
 
                     <div className="grid gap-4 lg:grid-cols-2">
-                        <MarketPanel title="By category">
+                        <AdminPanel title="By category">
                             <GroupList groups={data.byCategory} />
-                        </MarketPanel>
+                        </AdminPanel>
 
-                        <MarketPanel title="By account type">
+                        <AdminPanel title="By account type">
                             <GroupList groups={data.byAccountType} />
-                        </MarketPanel>
+                        </AdminPanel>
                     </div>
 
-                    <MarketPanel title="Best sellers">
+                    <AdminPanel title="Best sellers">
                         {data.bestSellers.length === 0 ? (
-                            <MarketEmpty
+                            <AdminEmpty
                                 icon={<TrendingUp size={18} />}
                                 title="No sales yet"
                                 hint="Best sellers appear once items are sold."
@@ -206,7 +207,7 @@ export default function MarketAdminAnalytics() {
                             <div className="overflow-x-auto">
                                 <table className="w-full text-left text-xs">
                                     <thead>
-                                        <tr className="border-b border-slate-100 text-[9px] uppercase tracking-wider text-slate-400">
+                                        <tr className="border-b border-black/[0.05] bg-gray-50/70 text-[9px] uppercase tracking-wider text-gray-400">
                                             <th className="px-4 py-2.5 font-semibold">
                                                 Item
                                             </th>
@@ -221,16 +222,16 @@ export default function MarketAdminAnalytics() {
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="divide-y divide-slate-50">
+                                    <tbody className="divide-y divide-black/[0.04]">
                                         {data.bestSellers.map((row) => (
                                             <tr key={row.name}>
-                                                <td className="px-4 py-2.5 font-semibold text-slate-800">
+                                                <td className="px-4 py-2.5 font-semibold text-gray-800">
                                                     {row.name}
                                                 </td>
-                                                <td className="px-4 py-2.5 text-slate-500">
+                                                <td className="px-4 py-2.5 text-gray-500">
                                                     {row.category}
                                                 </td>
-                                                <td className="px-4 py-2.5 text-right text-slate-600">
+                                                <td className="px-4 py-2.5 text-right text-gray-600">
                                                     {row.unitsSold}
                                                 </td>
                                                 <td className="px-4 py-2.5 text-right font-semibold text-[#106A2E]">
@@ -242,7 +243,7 @@ export default function MarketAdminAnalytics() {
                                 </table>
                             </div>
                         )}
-                    </MarketPanel>
+                    </AdminPanel>
                 </>
             )}
         </div>
@@ -252,7 +253,7 @@ export default function MarketAdminAnalytics() {
 function GroupList({ groups }) {
     if (!groups || groups.length === 0) {
         return (
-            <MarketEmpty
+            <AdminEmpty
                 title="Nothing yet"
                 hint="This breakdown fills in as orders complete."
             />
@@ -266,18 +267,18 @@ function GroupList({ groups }) {
             {groups.map((group) => (
                 <li key={group.label}>
                     <div className="mb-1 flex items-center justify-between text-[11px]">
-                        <span className="font-medium text-slate-700">
+                        <span className="font-medium text-gray-700">
                             {group.label}
                         </span>
-                        <span className="font-semibold text-slate-700">
+                        <span className="font-semibold text-gray-700">
                             {formatPeso(group.amountCentavos)}
-                            <span className="ml-1.5 font-normal text-slate-400">
+                            <span className="ml-1.5 font-normal text-gray-400">
                                 {group.orders} order{group.orders === 1 ? "" : "s"}
                             </span>
                         </span>
                     </div>
 
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-gray-100">
                         <div
                             className="h-full rounded-full bg-[#106A2E]/70"
                             style={{

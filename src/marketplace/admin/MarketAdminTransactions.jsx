@@ -12,12 +12,13 @@ import {
 } from "../config/marketVocabulary";
 import { formatDateTime, formatPeso } from "../utils/format";
 import {
-    MarketEmpty,
-    MarketNotice,
-    MarketPanel,
-    MarketSkeleton,
-    marketInputClass,
-} from "../components/marketUi";
+    AdminEmpty,
+    AdminNotice,
+    AdminPanel,
+    AdminSkeleton,
+    adminSelectClass,
+    adminInputClass,
+} from "../components/marketAdminUi";
 import { AdminPageHeader } from "./MarketAdminLayout";
 
 /**
@@ -109,21 +110,21 @@ export default function MarketAdminTransactions() {
                 <div className="relative min-w-[200px] flex-1">
                     <Search
                         size={14}
-                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        className="pointer-events-none absolute left-3 top-1/2 -trangray-y-1/2 text-gray-400"
                     />
                     <input
                         type="search"
                         value={search}
                         onChange={(event) => setSearch(event.target.value)}
                         placeholder="Reference, buyer, recipient..."
-                        className={`${marketInputClass} py-2 pl-8 text-xs`}
+                        className={`${adminInputClass} py-2 pl-8 text-xs`}
                     />
                 </div>
 
                 <select
                     value={method}
                     onChange={(event) => setParam("method", event.target.value)}
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600"
+                    className={adminSelectClass}
                 >
                     <option value="">All fulfillment</option>
                     <option value={FULFILLMENT.PICKUP}>Pick Up</option>
@@ -133,7 +134,7 @@ export default function MarketAdminTransactions() {
                 <select
                     value={status}
                     onChange={(event) => setParam("status", event.target.value)}
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600"
+                    className={adminSelectClass}
                 >
                     <option value="">All statuses</option>
                     {[...STATUS_FLOW[FULFILLMENT.CAMPUS_DELIVERY], "Cancelled"]
@@ -148,7 +149,7 @@ export default function MarketAdminTransactions() {
                 <select
                     value={accountType}
                     onChange={(event) => setAccountType(event.target.value)}
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600"
+                    className={adminSelectClass}
                 >
                     <option value="">All accounts</option>
                     <option value="Student">Student</option>
@@ -159,7 +160,7 @@ export default function MarketAdminTransactions() {
                     <select
                         value={workspaceId}
                         onChange={(event) => setWorkspaceId(event.target.value)}
-                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600"
+                        className={adminSelectClass}
                     >
                         <option value="">All stalls</option>
                         {workspaces.map((workspace) => (
@@ -174,41 +175,41 @@ export default function MarketAdminTransactions() {
                     type="date"
                     value={from}
                     onChange={(event) => setFrom(event.target.value)}
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600"
+                    className={adminSelectClass}
                 />
 
                 <input
                     type="date"
                     value={to}
                     onChange={(event) => setTo(event.target.value)}
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600"
+                    className={adminSelectClass}
                 />
             </div>
 
             {error && (
-                <MarketNotice tone="error" title="Could not load transactions">
+                <AdminNotice tone="error" title="Could not load transactions">
                     {error}
-                </MarketNotice>
+                </AdminNotice>
             )}
 
             {loading ? (
-                <MarketPanel>
-                    <MarketSkeleton rows={8} />
-                </MarketPanel>
+                <AdminPanel>
+                    <AdminSkeleton rows={8} />
+                </AdminPanel>
             ) : visible.length === 0 ? (
-                <MarketPanel>
-                    <MarketEmpty
+                <AdminPanel>
+                    <AdminEmpty
                         icon={<Receipt size={20} />}
                         title="No transactions"
                         hint="No Marketplace order matches the current filters."
                     />
-                </MarketPanel>
+                </AdminPanel>
             ) : (
-                <MarketPanel>
+                <AdminPanel>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs">
                             <thead>
-                                <tr className="border-b border-slate-100 text-[9px] uppercase tracking-wider text-slate-400">
+                                <tr className="border-b border-black/[0.05] bg-gray-50/70 text-[9px] uppercase tracking-wider text-gray-400">
                                     <th className="px-4 py-2.5 font-semibold">Reference</th>
                                     <th className="px-4 py-2.5 font-semibold">Buyer</th>
                                     <th className="px-4 py-2.5 font-semibold">Fulfillment</th>
@@ -218,27 +219,27 @@ export default function MarketAdminTransactions() {
                                     <th className="px-4 py-2.5 text-right font-semibold">Total</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-50">
+                            <tbody className="divide-y divide-black/[0.04]">
                                 {visible.map((row) => (
                                     <tr key={row.orderId} className="align-top">
                                         <td className="px-4 py-2.5">
-                                            <p className="font-semibold text-slate-800">
+                                            <p className="font-semibold text-gray-800">
                                                 {row.orderReference}
                                             </p>
-                                            <p className="text-[10px] text-slate-400">
+                                            <p className="text-[10px] text-gray-400">
                                                 {formatDateTime(row.createdAt)}
                                             </p>
                                         </td>
                                         <td className="px-4 py-2.5">
-                                            <p className="text-slate-700">{row.buyerName}</p>
-                                            <p className="text-[10px] text-slate-400">
+                                            <p className="text-gray-700">{row.buyerName}</p>
+                                            <p className="text-[10px] text-gray-400">
                                                 {row.accountType}
                                             </p>
                                         </td>
-                                        <td className="px-4 py-2.5 text-slate-600">
+                                        <td className="px-4 py-2.5 text-gray-600">
                                             {fulfillmentLabel(row.fulfillmentMethod)}
                                         </td>
-                                        <td className="px-4 py-2.5 text-slate-500">
+                                        <td className="px-4 py-2.5 text-gray-500">
                                             {row.fulfillmentMethod ===
                                             FULFILLMENT.CAMPUS_DELIVERY
                                                 ? `${row.campusLocationName || "-"}${
@@ -248,7 +249,7 @@ export default function MarketAdminTransactions() {
                                                   }`
                                                 : "-"}
                                             {row.recipientName && (
-                                                <p className="text-[10px] text-slate-400">
+                                                <p className="text-[10px] text-gray-400">
                                                     {row.recipientName}
                                                 </p>
                                             )}
@@ -260,10 +261,10 @@ export default function MarketAdminTransactions() {
                                                 {statusLabel(row.status)}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-2.5 text-right text-slate-500">
+                                        <td className="px-4 py-2.5 text-right text-gray-500">
                                             {row.itemCount}
                                         </td>
-                                        <td className="px-4 py-2.5 text-right font-semibold text-slate-700">
+                                        <td className="px-4 py-2.5 text-right font-semibold text-gray-700">
                                             {formatPeso(row.totalCentavos)}
                                         </td>
                                     </tr>
@@ -271,7 +272,7 @@ export default function MarketAdminTransactions() {
                             </tbody>
                         </table>
                     </div>
-                </MarketPanel>
+                </AdminPanel>
             )}
         </div>
     );

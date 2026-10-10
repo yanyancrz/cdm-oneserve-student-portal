@@ -39,17 +39,17 @@ export default function MarketAdminLayout() {
     };
 
     return (
-        <div className="min-h-screen bg-[#F7F5EF] md:pt-24">
-            <header className="border-b border-[#0E3B22]/10 bg-[#106A2E] px-4 py-4 text-white sm:px-6">
+        <div className="min-h-screen bg-[#F4F7F4] md:pt-24">
+            <header className="border-b border-[#0E3B22]/10 bg-gradient-to-r from-[#106A2E] to-[#0d5a27] px-4 py-4 shadow-sm text-white sm:px-6">
                 <div className="mx-auto flex w-full max-w-[1500px] items-center justify-between gap-4">
                     <div>
-                        <p className="text-[9px] font-semibold uppercase tracking-[.2em] text-amber-300/80">
+                        <p className="text-[9px] font-semibold uppercase tracking-[.2em] text-white/70">
                             CampusMarket
                         </p>
                         <h1 className="mt-0.5 text-base font-semibold sm:text-lg">
                             Marketplace Monitoring
                         </h1>
-                        <p className="mt-0.5 text-[10px] text-white/50">
+                        <p className="mt-0.5 text-[10px] text-white/60">
                             Read-only. The Admin watches; Marketplace Staff operates.
                         </p>
                     </div>
@@ -88,7 +88,7 @@ export default function MarketAdminLayout() {
                 </div>
             </header>
 
-            <nav className="border-b border-slate-200 bg-white">
+            <nav className="border-b border-black/[0.05] bg-white">
                 <div className="mx-auto flex w-full max-w-[1500px] gap-1 overflow-x-auto px-3 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:px-6">
                     {NAV.map((item) => {
                         const Icon = item.icon;
@@ -101,8 +101,8 @@ export default function MarketAdminLayout() {
                                 className={({ isActive }) =>
                                     `flex shrink-0 items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-semibold transition ${
                                         isActive
-                                            ? "bg-[#106A2E] text-white"
-                                            : "text-slate-500 hover:bg-slate-100"
+                                            ? "bg-[#E1F0E4] text-[#106A2E]"
+                                            : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
                                     }`
                                 }
                             >
@@ -125,14 +125,14 @@ export function AdminPageHeader({ title, subtitle, action }) {
     return (
         <header className="mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[.2em] text-[#106A2E]/50">
+                <p className="text-[9px] font-semibold uppercase tracking-[.2em] text-[#106A2E]/60">
                     CampusMarket Monitoring
                 </p>
-                <h1 className="mt-0.5 text-lg font-semibold text-slate-800 sm:text-xl">
+                <h1 className="mt-0.5 text-lg font-semibold text-gray-800 sm:text-xl">
                     {title}
                 </h1>
                 {subtitle && (
-                    <p className="mt-0.5 text-[11px] text-slate-400">{subtitle}</p>
+                    <p className="mt-0.5 text-[11px] text-gray-400">{subtitle}</p>
                 )}
             </div>
 

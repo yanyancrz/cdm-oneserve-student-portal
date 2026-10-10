@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 
 import { adminApi } from "../services/marketApi";
 import { getToken } from "../session";
-import { MarketNotice } from "../components/marketUi";
+import { AdminNotice } from "../components/marketAdminUi";
 
 /**
  * Confirms the caller is the existing CDM OneServe Admin before the monitoring
@@ -57,10 +57,10 @@ export default function MarketAdminGate({ children }) {
 
     if (state === "loading") {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-[#F7F5EF]">
+            <div className="flex min-h-screen items-center justify-center bg-[#F4F7F4]">
                 <div className="text-center">
                     <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#106A2E]/20 border-t-[#106A2E]" />
-                    <p className="mt-3 text-xs text-slate-400">
+                    <p className="mt-3 text-xs text-gray-400">
                         Checking admin access...
                     </p>
                 </div>
@@ -74,9 +74,9 @@ export default function MarketAdminGate({ children }) {
 
     if (state === "forbidden") {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-[#F7F5EF] px-4">
+            <div className="flex min-h-screen items-center justify-center bg-[#F4F7F4] px-4">
                 <div className="w-full max-w-md space-y-4">
-                    <MarketNotice
+                    <AdminNotice
                         tone="error"
                         icon={<ShieldAlert size={16} />}
                         title="CDM OneServe Admin access required"
@@ -84,18 +84,18 @@ export default function MarketAdminGate({ children }) {
                         Marketplace monitoring is read-only and available to the OneServe
                         Admin only. Marketplace Staff should use the staff portal, and
                         Student or Faculty accounts should use the store.
-                    </MarketNotice>
+                    </AdminNotice>
 
                     <div className="flex gap-2">
                         <a
                             href="/marketplace/staff"
-                            className="flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-center text-xs font-semibold text-slate-600"
+                            className="flex-1 rounded-xl border border-black/[0.08] bg-white px-4 py-2.5 text-center text-xs font-semibold text-gray-600 transition hover:bg-gray-50"
                         >
                             Staff portal
                         </a>
                         <a
                             href="/admin/dashboard"
-                            className="flex-1 rounded-xl bg-[#106A2E] px-4 py-2.5 text-center text-xs font-semibold text-white"
+                            className="flex-1 rounded-xl bg-[#106A2E] px-4 py-2.5 text-center text-xs font-semibold text-white transition hover:bg-[#0d5a27]"
                         >
                             OneServe admin
                         </a>

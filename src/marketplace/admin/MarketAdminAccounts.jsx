@@ -4,12 +4,14 @@ import { Eye, Search, Users } from "lucide-react";
 import { adminApi } from "../services/marketApi";
 import { formatDate, formatPeso } from "../utils/format";
 import {
-    MarketEmpty,
-    MarketNotice,
-    MarketPanel,
-    MarketSkeleton,
-    marketInputClass,
-} from "../components/marketUi";
+    AdminEmpty,
+    AdminNotice,
+    AdminPanel,
+    AdminSkeleton,
+    AdminStat,
+    adminSelectClass,
+    adminInputClass,
+} from "../components/marketAdminUi";
 import { AdminPageHeader } from "./MarketAdminLayout";
 
 /**
@@ -76,31 +78,31 @@ export default function MarketAdminAccounts() {
                 subtitle="Marketplace activity per Student and Faculty account"
             />
 
-            <MarketNotice tone="info" icon={<Eye size={14} />}>
+            <AdminNotice tone="info" icon={<Eye size={14} />}>
                 Read-only view. The marketplace does not manage user accounts - it only
                 reads the shared CDM OneServe user. Edit or deactivate an account from
                 the OneServe admin, not from here.
-            </MarketNotice>
+            </AdminNotice>
 
             <div className="flex flex-wrap items-center gap-2">
                 <div className="relative min-w-[200px] flex-1">
                     <Search
                         size={14}
-                        className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                        className="pointer-events-none absolute left-3 top-1/2 -trangray-y-1/2 text-gray-400"
                     />
                     <input
                         type="search"
                         value={search}
                         onChange={(event) => setSearch(event.target.value)}
                         placeholder="Name, ID number or email..."
-                        className={`${marketInputClass} py-2 pl-8 text-xs`}
+                        className={`${adminInputClass} py-2 pl-8 text-xs`}
                     />
                 </div>
 
                 <select
                     value={accountType}
                     onChange={(event) => setAccountType(event.target.value)}
-                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs text-slate-600"
+                    className={adminSelectClass}
                 >
                     <option value="">All account types</option>
                     <option value="Student">Student</option>
@@ -109,42 +111,42 @@ export default function MarketAdminAccounts() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                <MarketStatCard label="Accounts" value={visible.length} />
-                <MarketStatCard
+                <AdminStat label="Accounts" value={visible.length} />
+                <AdminStat
                     label="Orders"
                     value={visible.reduce((sum, row) => sum + row.orderCount, 0)}
                 />
-                <MarketStatCard
+                <AdminStat
                     label="Completed"
                     value={visible.reduce((sum, row) => sum + row.completedOrderCount, 0)}
                 />
-                <MarketStatCard label="Purchase total" value={formatPeso(totalSpent)} />
+                <AdminStat label="Purchase total" value={formatPeso(totalSpent)} />
             </div>
 
             {error && (
-                <MarketNotice tone="error" title="Could not load accounts">
+                <AdminNotice tone="error" title="Could not load accounts">
                     {error}
-                </MarketNotice>
+                </AdminNotice>
             )}
 
             {loading ? (
-                <MarketPanel>
-                    <MarketSkeleton rows={6} />
-                </MarketPanel>
+                <AdminPanel>
+                    <AdminSkeleton rows={6} />
+                </AdminPanel>
             ) : visible.length === 0 ? (
-                <MarketPanel>
-                    <MarketEmpty
+                <AdminPanel>
+                    <AdminEmpty
                         icon={<Users size={20} />}
                         title="No accounts"
                         hint="No Student or Faculty account has placed a Marketplace order yet."
                     />
-                </MarketPanel>
+                </AdminPanel>
             ) : (
-                <MarketPanel>
+                <AdminPanel>
                     <div className="overflow-x-auto">
                         <table className="w-full text-left text-xs">
                             <thead>
-                                <tr className="border-b border-slate-100 text-[9px] uppercase tracking-wider text-slate-400">
+                                <tr className="border-b border-black/[0.05] bg-gray-50/70 text-[9px] uppercase tracking-wider text-gray-400">
                                     <th className="px-4 py-2.5 font-semibold">Name</th>
                                     <th className="px-4 py-2.5 font-semibold">ID number</th>
                                     <th className="px-4 py-2.5 font-semibold">Type</th>
@@ -155,43 +157,43 @@ export default function MarketAdminAccounts() {
                                     <th className="px-4 py-2.5 font-semibold">Last order</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-slate-50">
+                            <tbody className="divide-y divide-black/[0.04]">
                                 {visible.map((row) => (
-                                    <tr key={row.userId} className="transition hover:bg-slate-50">
+                                    <tr key={row.userId} className="transition hover:bg-[#F3F8F4]">
                                         <td className="px-4 py-2.5">
-                                            <p className="font-semibold text-slate-800">
+                                            <p className="font-semibold text-gray-800">
                                                 {row.fullName}
                                             </p>
-                                            <p className="text-[10px] text-slate-400">
+                                            <p className="text-[10px] text-gray-400">
                                                 {row.email}
                                             </p>
                                         </td>
-                                        <td className="px-4 py-2.5 text-slate-600">
+                                        <td className="px-4 py-2.5 text-gray-600">
                                             {row.idNumber}
                                         </td>
                                         <td className="px-4 py-2.5">
-                                            <span className="rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-semibold text-slate-600">
+                                            <span className="rounded-full border border-[#106A2E]/15 bg-[#E1F0E4] px-2 py-0.5 text-[10px] font-semibold text-[#106A2E]">
                                                 {row.accountType}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-2.5 text-slate-500">
+                                        <td className="px-4 py-2.5 text-gray-500">
                                             {row.course || row.institute || "-"}
                                             {row.yearLevel && (
-                                                <p className="text-[10px] text-slate-400">
+                                                <p className="text-[10px] text-gray-400">
                                                     {row.yearLevel}
                                                 </p>
                                             )}
                                         </td>
-                                        <td className="px-4 py-2.5 text-right text-slate-600">
+                                        <td className="px-4 py-2.5 text-right text-gray-600">
                                             {row.orderCount}
                                         </td>
-                                        <td className="px-4 py-2.5 text-right text-slate-600">
+                                        <td className="px-4 py-2.5 text-right text-gray-600">
                                             {row.completedOrderCount}
                                         </td>
                                         <td className="px-4 py-2.5 text-right font-semibold text-[#106A2E]">
                                             {formatPeso(row.totalPurchaseCentavos)}
                                         </td>
-                                        <td className="px-4 py-2.5 text-slate-500">
+                                        <td className="px-4 py-2.5 text-gray-500">
                                             {formatDate(row.lastOrderAt)}
                                         </td>
                                     </tr>
@@ -199,19 +201,8 @@ export default function MarketAdminAccounts() {
                             </tbody>
                         </table>
                     </div>
-                </MarketPanel>
+                </AdminPanel>
             )}
-        </div>
-    );
-}
-
-function MarketStatCard({ label, value }) {
-    return (
-        <div className="rounded-xl border border-slate-100 bg-white px-3.5 py-3">
-            <p className="text-[9px] font-semibold uppercase tracking-[.14em] text-slate-400">
-                {label}
-            </p>
-            <p className="mt-1 text-lg font-semibold text-slate-800">{value}</p>
         </div>
     );
 }

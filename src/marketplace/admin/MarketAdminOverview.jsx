@@ -6,11 +6,11 @@ import { adminApi } from "../services/marketApi";
 import { FULFILLMENT } from "../config/marketVocabulary";
 import { formatPesoShort } from "../utils/format";
 import {
-    MarketNotice,
-    MarketPanel,
-    MarketSkeleton,
-    MarketStat,
-} from "../components/marketUi";
+    AdminNotice,
+    AdminPanel,
+    AdminSkeleton,
+    AdminStat,
+} from "../components/marketAdminUi";
 import { AdminPageHeader } from "./MarketAdminLayout";
 
 /**
@@ -57,9 +57,9 @@ export default function MarketAdminOverview() {
         return (
             <div className="space-y-4">
                 <AdminPageHeader title="Overview" />
-                <MarketPanel>
-                    <MarketSkeleton rows={5} />
-                </MarketPanel>
+                <AdminPanel>
+                    <AdminSkeleton rows={5} />
+                </AdminPanel>
             </div>
         );
     }
@@ -68,9 +68,9 @@ export default function MarketAdminOverview() {
         return (
             <div className="space-y-4">
                 <AdminPageHeader title="Overview" />
-                <MarketNotice tone="error" title="Could not load the overview">
+                <AdminNotice tone="error" title="Could not load the overview">
                     {error}
-                </MarketNotice>
+                </AdminNotice>
             </div>
         );
     }
@@ -82,82 +82,82 @@ export default function MarketAdminOverview() {
                 subtitle="Marketplace activity, read-only"
             />
 
-            <MarketNotice tone="info" icon={<Eye size={14} />}>
+            <AdminNotice tone="info" icon={<Eye size={14} />}>
                 Monitoring only. The Admin cannot modify Student or Faculty accounts,
                 products, stock, orders or chat through the marketplace - those are
                 handled by Marketplace Staff.
-            </MarketNotice>
+            </AdminNotice>
 
             {/* Sales */}
-            <MarketPanel title="Sales" subtitle="Completed orders only">
+            <AdminPanel title="Sales" subtitle="Completed orders only">
                 <div className="grid grid-cols-2 gap-3 p-4 lg:grid-cols-4">
-                    <MarketStat label="Today" value={formatPesoShort(data.todaySalesCentavos)} />
-                    <MarketStat label="7 days" value={formatPesoShort(data.weekSalesCentavos)} />
-                    <MarketStat label="30 days" value={formatPesoShort(data.monthSalesCentavos)} />
-                    <MarketStat
+                    <AdminStat label="Today" value={formatPesoShort(data.todaySalesCentavos)} />
+                    <AdminStat label="7 days" value={formatPesoShort(data.weekSalesCentavos)} />
+                    <AdminStat label="30 days" value={formatPesoShort(data.monthSalesCentavos)} />
+                    <AdminStat
                         label="All time"
                         value={formatPesoShort(data.totalSalesCentavos)}
                         tone="good"
                     />
                 </div>
-            </MarketPanel>
+            </AdminPanel>
 
             {/* Orders */}
             <div className="grid gap-4 lg:grid-cols-2">
-                <MarketPanel title="Orders">
+                <AdminPanel title="Orders">
                     <div className="grid grid-cols-2 gap-3 p-4">
-                        <MarketStat label="Total orders" value={data.totalOrders} />
-                        <MarketStat
+                        <AdminStat label="Total orders" value={data.totalOrders} />
+                        <AdminStat
                             label="Completed"
                             value={data.completedOrders}
                             tone="good"
                         />
-                        <MarketStat
+                        <AdminStat
                             label="Pending"
                             value={data.pendingOrders}
                             tone="warn"
                         />
-                        <MarketStat
+                        <AdminStat
                             label="Cancelled"
                             value={data.cancelledOrders}
                             tone="bad"
                         />
                     </div>
-                </MarketPanel>
+                </AdminPanel>
 
-                <MarketPanel title="Fulfillment split">
+                <AdminPanel title="Fulfillment split">
                     <div className="grid grid-cols-2 gap-3 p-4">
                         <Link
                             to={`/marketplace/admin/transactions?method=${FULFILLMENT.PICKUP}`}
-                            className="rounded-xl border border-slate-100 px-3.5 py-3 transition hover:bg-slate-50"
+                            className="rounded-xl border border-black/[0.05] bg-white px-3.5 py-3 transition hover:bg-[#F3F8F4]"
                         >
-                            <p className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[.14em] text-slate-400">
+                            <p className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[.14em] text-gray-400">
                                 <PackageCheck size={12} />
                                 Pick Up
                             </p>
-                            <p className="mt-1 text-lg font-semibold text-slate-800">
+                            <p className="mt-1 text-lg font-semibold text-gray-800">
                                 {data.pickupOrders}
                             </p>
                         </Link>
 
                         <Link
                             to={`/marketplace/admin/transactions?method=${FULFILLMENT.CAMPUS_DELIVERY}`}
-                            className="rounded-xl border border-slate-100 px-3.5 py-3 transition hover:bg-slate-50"
+                            className="rounded-xl border border-black/[0.05] bg-white px-3.5 py-3 transition hover:bg-[#F3F8F4]"
                         >
-                            <p className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[.14em] text-slate-400">
+                            <p className="flex items-center gap-1.5 text-[9px] font-semibold uppercase tracking-[.14em] text-gray-400">
                                 <Truck size={12} />
                                 Campus Delivery
                             </p>
-                            <p className="mt-1 text-lg font-semibold text-slate-800">
+                            <p className="mt-1 text-lg font-semibold text-gray-800">
                                 {data.campusDeliveryOrders}
                             </p>
                         </Link>
                     </div>
-                </MarketPanel>
+                </AdminPanel>
             </div>
 
             {/* Buyers */}
-            <MarketPanel
+            <AdminPanel
                 title="Buyer accounts"
                 subtitle="Student and Faculty members who can order"
                 action={
@@ -171,15 +171,15 @@ export default function MarketAdminOverview() {
                 }
             >
                 <div className="grid grid-cols-2 gap-3 p-4">
-                    <MarketStat label="Students" value={data.studentBuyers} />
-                    <MarketStat label="Faculty" value={data.facultyBuyers} />
+                    <AdminStat label="Students" value={data.studentBuyers} />
+                    <AdminStat label="Faculty" value={data.facultyBuyers} />
                 </div>
-            </MarketPanel>
+            </AdminPanel>
 
-            <MarketNotice tone="warn" icon={<MapPin size={14} />}>
+            <AdminNotice tone="warn" icon={<MapPin size={14} />}>
                 Campus Delivery is restricted to approved campus locations managed by
                 Marketplace Staff, so buyers cannot ship outside the CDM campus.
-            </MarketNotice>
+            </AdminNotice>
         </div>
     );
 }
