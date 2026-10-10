@@ -134,6 +134,26 @@ async function main() {
 
         log.info("Tables created (or already present).");
 
+        // One row per login, so the dashboard can warn about another device.
+        // The JWT stays stateless - this is not an allow-list.
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS UserSessions (
+              UserSessionId int(11) NOT NULL AUTO_INCREMENT,
+              UserId int(11) NOT NULL,
+              SessionKey varchar(64) NOT NULL,
+              DeviceLabel varchar(100) DEFAULT NULL,
+              UserAgent varchar(500) DEFAULT NULL,
+              IpAddress varchar(64) DEFAULT NULL,
+              CreatedAt datetime NOT NULL DEFAULT current_timestamp(),
+              LastSeenAt datetime NOT NULL DEFAULT current_timestamp(),
+              IsRevoked tinyint(1) NOT NULL DEFAULT 0,
+              PRIMARY KEY (UserSessionId),
+              UNIQUE KEY IX_UserSession_Key (SessionKey),
+              KEY IX_UserSession_User_Recent (UserId, CreatedAt),
+              CONSTRAINT FK_UserSession_User FOREIGN KEY (UserId) REFERENCES users (Id)
+                ON DELETE CASCADE ON UPDATE NO ACTION
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`);
+
         // ---- carry-over ------------------------------------------------------
         if (legacyExists) {
             const [result] = await connection.query(

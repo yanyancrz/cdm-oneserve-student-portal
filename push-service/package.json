@@ -13,6 +13,7 @@
     "lockfile:fix": "node scripts/check-lockfile.mjs --fix",
     "probe:subscribe": "node scripts/probe-subscribe.mjs",
     "verify:chat-grouping": "node scripts/verify-chat-grouping.mjs",
+    "verify:device-session": "node scripts/verify-device-session.mjs",
     "send": "node scripts/manual-send.mjs",
     "health": "node -e \"fetch('http://127.0.0.1:' + (process.env.PORT || 4100) + '/health').then(r => r.json()).then(j => console.log(JSON.stringify(j, null, 2)))\""
   },

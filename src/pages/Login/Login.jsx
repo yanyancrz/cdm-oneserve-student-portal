@@ -20,6 +20,7 @@ import BackgroundLayout from "../../layouts/BackgroundLayout";
 import { API_URL } from "../../config/api";
 import { isPWAInstalled } from "../../utils/pwa";
 import { LIBRARY_HOME_ROUTE, clearSession } from "../../library-admin/utils/session";
+import { rememberSessionKey } from "../../session/deviceSession";
 import { GUIDANCE_HEAD_HOME_ROUTE } from "../../guidance-admin/utils/session";
 import { MARKET_STAFF_HOME_ROUTE } from "../../marketplace/session";
 import { LOST_FOUND_ADMIN_HOME_ROUTE } from "../../lost-found/session";
@@ -177,6 +178,12 @@ export default function Login() {
                 localStorage.setItem("token", data.token);
                 localStorage.setItem("authToken", data.token); // compatibility
             }
+
+            // ---------- REMEMBER WHICH BROWSER THIS IS ----------
+            // Stored next to the token. It is the only way the server can later
+            // answer "was your account signed in somewhere else?" - a stateless
+            // JWT cannot answer that on its own.
+            rememberSessionKey(data.sessionKey);
 
             // ---------- SAVE USER INFORMATION ----------
             localStorage.setItem("userId", user.id ?? "");

@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { API_URL } from "../../config/api";
+import DeviceSessionWarning from "../../components/AccountSecurity/DeviceSessionWarning";
 import toast from "react-hot-toast";
 
 export default function Dashboard() {
@@ -541,6 +542,13 @@ export default function Dashboard() {
 
     return (
         <div className="relative min-h-screen overflow-x-hidden bg-[#F6F2E6] md:pt-24">
+
+            {/* SECURITY WARNING - shown only when the server is certain another
+                device signed in after this one. Renders nothing when it cannot
+                tell, so there is never a false alarm. */}
+            <div className="relative z-10 mx-auto w-full max-w-6xl px-4 pt-4 sm:px-6">
+                <DeviceSessionWarning />
+            </div>
 
             <div className="pointer-events-none fixed inset-0 overflow-hidden">
 
