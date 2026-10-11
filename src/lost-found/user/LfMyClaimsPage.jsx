@@ -175,9 +175,7 @@ function ClaimCard({ claim, cancelling, onOpen, onPickup, onCancel }) {
                         onClick={onPickup}
                     >
                         <CalendarClock size={14} aria-hidden="true" />
-                        {claim.status === "Approved"
-                            ? "Choose a pickup slot"
-                            : "Pickup slot"}
+                        Office availability
                     </LfButton>
                 )}
 

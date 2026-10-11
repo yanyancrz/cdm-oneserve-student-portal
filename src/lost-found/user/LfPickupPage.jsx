@@ -1,13 +1,10 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, CalendarClock, MapPin } from "lucide-react";
-import toast from "react-hot-toast";
 
 import { lfApi } from "../services/lfApi";
-import { LOST_FOUND_HOME_ROUTE } from "../session";
 import { formatDateTime } from "../config/lfTheme";
 import {
-    LfButton,
     LfEmpty,
     LfNotice,
     LfPanel,
@@ -15,11 +12,11 @@ import {
 } from "../components/lfUi";
 
 // =====================================================
-// Choose a pickup slot for an approved claim. Every handover runs at the
+// Office availability for an approved claim. Every handover runs at the
 // office - there are no keepers outside it.
 //
-// Only slots inside a published availability window
-// can be booked, by the claimant or through the office.
+// Students do NOT pick a time here: they come during any published window
+// below. The admin records the handover itself, which completes the claim.
 // =====================================================
 
 export default function LfPickupPage() {
@@ -30,8 +27,6 @@ export default function LfPickupPage() {
     const [schedule, setSchedule] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    const [selectedSlot, setSelectedSlot] = useState("");
-    const [booking, setBooking] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -61,29 +56,6 @@ export default function LfPickupPage() {
             cancelled = true;
         };
     }, [claimId]);
-
-    const onBook = async () => {
-        if (!selectedSlot) {
-            toast.error("Choose a pickup time first.");
-            return;
-        }
-
-        setBooking(true);
-
-        try {
-            const response = await lfApi.bookSchedule({
-                claimId: Number(claimId),
-                scheduledDateTime: new Date(selectedSlot).toISOString(),
-            });
-
-            toast.success(response.message || "Pickup scheduled.");
-            navigate(`${LOST_FOUND_HOME_ROUTE}/claims`, { replace: true });
-        } catch (err) {
-            toast.error(err.message);
-        } finally {
-            setBooking(false);
-        }
-    };
 
     if (loading) return <LfSkeleton rows={4} />;
 
@@ -136,8 +108,8 @@ export default function LfPickupPage() {
             </button>
 
             <LfPanel
-                title="Choose a pickup time"
-                subtitle={`Only the published windows below can be booked. Handovers happen at the ${"OneServe Student Affairs Office"}.`}
+                title="Office availability"
+                subtitle="No need to book - come to the OneServe Student Affairs Office during any window below."
             >
                 {availability.length === 0 ? (
                     <LfEmpty
@@ -146,52 +118,38 @@ export default function LfPickupPage() {
                         message="The Lost & Found admin has not published any pickup windows yet. Check back later."
                     />
                 ) : (
-                    <div className="space-y-2" role="radiogroup" aria-label="Pickup time">
+                    <ul className="space-y-2">
                         {availability.map((window) => {
                             const starts = new Date(window.startDateTime);
                             const ends = new Date(window.endDateTime);
 
                             return (
-                                <label
+                                <li
                                     key={window.availabilityId}
-                                    className="block rounded-xl border border-slate-200 bg-white p-3 transition hover:border-[#106A2E]/40"
+                                    className="rounded-xl border border-slate-200 bg-white p-3"
                                 >
-                                    <span className="flex items-center justify-between gap-3">
-                                        <span>
-                                            <span className="block text-sm font-semibold text-slate-800">
-                                                {starts.toLocaleDateString("en-PH", {
-                                                    weekday: "long",
-                                                    month: "long",
-                                                    day: "numeric",
-                                                })}
-                                            </span>
-                                            <span className="mt-0.5 block text-xs text-slate-500">
-                                                {starts.toLocaleTimeString("en-PH", {
-                                                    hour: "numeric",
-                                                    minute: "2-digit",
-                                                })}{" "}
-                                                –{" "}
-                                                {ends.toLocaleTimeString("en-PH", {
-                                                    hour: "numeric",
-                                                    minute: "2-digit",
-                                                })}
-                                            </span>
-                                        </span>
-                                        <input
-                                            type="radio"
-                                            name="pickup-slot"
-                                            value={window.startDateTime}
-                                            checked={selectedSlot === window.startDateTime}
-                                            onChange={() =>
-                                                setSelectedSlot(window.startDateTime)
-                                            }
-                                            className="h-4 w-4 accent-[#106A2E]"
-                                        />
+                                    <span className="block text-sm font-semibold text-slate-800">
+                                        {starts.toLocaleDateString("en-PH", {
+                                            weekday: "long",
+                                            month: "long",
+                                            day: "numeric",
+                                        })}
                                     </span>
-                                </label>
+                                    <span className="mt-0.5 block text-xs text-slate-500">
+                                        {starts.toLocaleTimeString("en-PH", {
+                                            hour: "numeric",
+                                            minute: "2-digit",
+                                        })}{" "}
+                                        –{" "}
+                                        {ends.toLocaleTimeString("en-PH", {
+                                            hour: "numeric",
+                                            minute: "2-digit",
+                                        })}
+                                    </span>
+                                </li>
                             );
                         })}
-                    </div>
+                    </ul>
                 )}
 
                 <p className="mt-3 flex items-center gap-1.5 text-[11px] text-slate-500">
@@ -199,26 +157,6 @@ export default function LfPickupPage() {
                     OneServe Student Affairs Office
                 </p>
             </LfPanel>
-
-            <div className="flex gap-2">
-                <LfButton
-                    variant="accent"
-                    onClick={onBook}
-                    loading={booking}
-                    disabled={!selectedSlot || availability.length === 0}
-                    className="flex-1"
-                >
-                    <CalendarClock size={14} aria-hidden="true" />
-                    Book pickup
-                </LfButton>
-                <LfButton
-                    type="button"
-                    variant="ghost"
-                    onClick={() => navigate(-1)}
-                >
-                    Cancel
-                </LfButton>
-            </div>
         </div>
     );
 }

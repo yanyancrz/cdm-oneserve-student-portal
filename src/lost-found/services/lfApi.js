@@ -156,9 +156,9 @@ export const lfApi = {
     cancelClaim: (id) => http.put(`/api/lostfound/claims/${id}/cancel`),
     deleteClaim: (id) => http.delete(`/api/lostfound/claims/${id}`),
 
-    // Pickup schedules
+    // Pickup schedules (view-only: students walk in during published
+    // windows, nobody books a slot)
     availability: () => http.get("/api/lostfound/schedules/availability"),
-    bookSchedule: (body) => http.post("/api/lostfound/schedules/book", body),
     scheduleForClaim: (claimId) =>
         http.get(`/api/lostfound/schedules/claim/${claimId}`),
 

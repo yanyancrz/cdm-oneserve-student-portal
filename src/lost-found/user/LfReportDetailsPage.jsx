@@ -47,6 +47,10 @@ export default function LfReportDetailsPage() {
 
     const [userId, setUserId] = useState(null);
 
+    // Recovery on this report, if the viewer may see it (owner, finder or
+    // admin - everyone else gets a 403, which simply hides this panel).
+    const [recovery, setRecovery] = useState(null);
+
     const load = useCallback(async () => {
         try {
             setLoading(true);
@@ -58,6 +62,13 @@ export default function LfReportDetailsPage() {
 
             const response = await lfApi.report(reportId);
             setReport(response.data);
+
+            try {
+                const recoveryResponse = await lfApi.recoveryForReport(reportId);
+                setRecovery(recoveryResponse.data || null);
+            } catch {
+                setRecovery(null);
+            }
         } catch (err) {
             if (err.status === 404) setNotFound(true);
             else setError(err.message);
@@ -182,6 +193,43 @@ export default function LfReportDetailsPage() {
                     </div>
                 </div>
             </LfPanel>
+
+            {/* ---------- recovery on this report ---------- */}
+            {recovery && (
+                <LfPanel
+                    title="Recovery reported"
+                    subtitle={
+                        recovery.finderUserId === userId
+                            ? "You reported finding this item"
+                            : "Someone reported finding this item"
+                    }
+                >
+                    <div className="flex items-start gap-3">
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#106A2E]/10 text-[#106A2E]">
+                            <PackageSearch size={16} aria-hidden="true" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-slate-800">
+                                {recovery.finderUserId === userId
+                                    ? "Reported by you"
+                                    : `Reported by ${recovery.finderName || "another student"}`}
+                            </p>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                                {formatDateTime(recovery.createdAt)}
+                                {recovery.status
+                                    ? ` · ${formatStatus(recovery.status)}`
+                                    : ""}
+                                {" · "}at the OneServe Student Affairs Office
+                            </p>
+                            {recovery.message && (
+                                <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-[11px] italic leading-5 text-slate-600">
+                                    “{recovery.message}”
+                                </p>
+                            )}
+                        </div>
+                    </div>
+                </LfPanel>
+            )}
 
             {/* ---------- actions ---------- */}
             {canClaim && (

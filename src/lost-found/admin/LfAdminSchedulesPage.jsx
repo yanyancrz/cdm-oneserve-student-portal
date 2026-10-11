@@ -127,47 +127,110 @@ export default function LfAdminSchedulesPage() {
 // =====================================================
 
 function AvailabilityManager({ availability, onChanged }) {
+    const today = new Date();
     const [adding, setAdding] = useState(false);
-    const [date, setDate] = useState("");
-    const [startTime, setStartTime] = useState("");
-    const [endTime, setEndTime] = useState("");
+    const [viewYear, setViewYear] = useState(today.getFullYear());
+    const [viewMonth, setViewMonth] = useState(today.getMonth());
+    const [selectedDates, setSelectedDates] = useState([]);
+    const [times, setTimes] = useState([]);
+    const [fromInput, setFromInput] = useState("");
+    const [toInput, setToInput] = useState("");
     const [saving, setSaving] = useState(false);
     const [retiring, setRetiring] = useState(null);
+
+    const toKey = (year, month, day) =>
+        `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+    const todayKey = toKey(today.getFullYear(), today.getMonth(), today.getDate());
+
+    const toggleDate = (key) => {
+        // Past dates are blocked - the cells are disabled, this is the
+        // second lock for programmatic calls.
+        if (key < todayKey) return;
+
+        setSelectedDates((current) =>
+            current.includes(key)
+                ? current.filter((day) => day !== key)
+                : [...current, key].sort()
+        );
+    };
+
+    const shiftMonth = (delta) => {
+        const next = new Date(viewYear, viewMonth + delta, 1);
+        setViewYear(next.getFullYear());
+        setViewMonth(next.getMonth());
+    };
+
+    const addTime = () => {
+        if (!fromInput || !toInput) {
+            toast.error("Choose a start and end time first.");
+            return;
+        }
+
+        if (fromInput >= toInput) {
+            toast.error("The end time must be after the start time.");
+            return;
+        }
+
+        if (times.some((slot) => slot.from === fromInput && slot.to === toInput)) {
+            toast.error("That time is already in the list.");
+            return;
+        }
+
+        setTimes((current) =>
+            [...current, { from: fromInput, to: toInput }].sort((a, b) =>
+                a.from < b.from ? -1 : 1
+            )
+        );
+        setFromInput("");
+        setToInput("");
+    };
+
+    const windowCount = selectedDates.length * times.length;
 
     const onPublish = async (event) => {
         event.preventDefault();
 
-        if (!date || !startTime || !endTime) {
-            toast.error("Choose a date and a start and end time.");
+        if (selectedDates.length === 0) {
+            toast.error("Pick at least one date on the calendar.");
             return;
         }
 
-        const start = new Date(`${date}T${startTime}`);
-        const end = new Date(`${date}T${endTime}`);
-
-        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-            toast.error("Choose a valid date and time.");
+        if (times.length === 0) {
+            toast.error("Add at least one time window to the list.");
             return;
         }
 
-        if (start >= end) {
-            toast.error("The window must end after it starts.");
-            return;
+        const periods = [];
+
+        for (const day of selectedDates) {
+            for (const slot of times) {
+                const start = new Date(`${day}T${slot.from}`);
+                const end = new Date(`${day}T${slot.to}`);
+
+                if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+                    toast.error("A date or time is invalid.");
+                    return;
+                }
+
+                periods.push({
+                    startDateTime: start.toISOString(),
+                    endDateTime: end.toISOString(),
+                });
+            }
         }
 
         setSaving(true);
 
         try {
-            const response = await lfAdminApi.createAvailability({
-                startDateTime: start.toISOString(),
-                endDateTime: end.toISOString(),
+            const response = await lfAdminApi.createAvailabilityBatch({
+                availability: periods,
             });
 
-            toast.success(response.message || "Pickup window published.");
+            toast.success(response.message || "Pickup windows published.");
             setAdding(false);
-            setDate("");
-            setStartTime("");
-            setEndTime("");
+            setSelectedDates([]);
+            setTimes([]);
             await onChanged();
         } catch (err) {
             toast.error(err.message);
@@ -179,7 +242,7 @@ function AvailabilityManager({ availability, onChanged }) {
     const onRetire = async (window) => {
         if (
             !window.confirm(
-                "Retire this pickup window? Booked slots inside it cannot be affected, but no new slot can be chosen from it."
+                "Retire this pickup window? It disappears from the office-hours view. Existing handover records keep their time."
             )
         )
             return;
@@ -200,6 +263,13 @@ function AvailabilityManager({ availability, onChanged }) {
         }
     };
 
+    const monthLabel = new Date(viewYear, viewMonth, 1).toLocaleDateString(
+        "en-PH",
+        { month: "long", year: "numeric" }
+    );
+    const leadBlanks = new Date(viewYear, viewMonth, 1).getDay();
+    const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
     return (
         <LfPanel
             title="Pickup windows"
@@ -208,7 +278,7 @@ function AvailabilityManager({ availability, onChanged }) {
                 !adding ? (
                     <LfButton variant="secondary" onClick={() => setAdding(true)}>
                         <Plus size={14} aria-hidden="true" />
-                        Publish window
+                        Publish availability
                     </LfButton>
                 ) : undefined
             }
@@ -216,33 +286,164 @@ function AvailabilityManager({ availability, onChanged }) {
             {adding && (
                 <form
                     onSubmit={onPublish}
-                    className="mb-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4"
+                    className="mb-4 space-y-4 rounded-xl border border-slate-200 bg-slate-50/60 p-4"
                 >
-                    <div className="grid gap-4 sm:grid-cols-3">
-                        <label className="block">
-                            <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                Date
+                    {/* ---------- dates: pick as many as needed ---------- */}
+                    <div>
+                        <div className="mb-2 flex items-center justify-between">
+                            <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                                Dates ({selectedDates.length} picked)
                             </span>
-                            <input
-                                type="date"
-                                value={date}
-                                onChange={(event) => setDate(event.target.value)}
-                                className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-800 focus:border-[#106A2E]/40 focus:outline-none focus:ring-2 focus:ring-[#106A2E]/15"
-                            />
-                        </label>
-                        {lfField("From", {
-                            type: "time",
-                            value: startTime,
-                            onChange: (event) => setStartTime(event.target.value),
-                        })}
-                        {lfField("Until", {
-                            type: "time",
-                            value: endTime,
-                            onChange: (event) => setEndTime(event.target.value),
-                        })}
+                            <span className="flex items-center gap-1">
+                                <button
+                                    type="button"
+                                    onClick={() => shiftMonth(-1)}
+                                    aria-label="Previous month"
+                                    className="rounded-lg px-2 py-1 text-slate-500 transition hover:bg-slate-200/60"
+                                >
+                                    ‹
+                                </button>
+                                <span className="min-w-[130px] text-center text-xs font-semibold text-slate-700">
+                                    {monthLabel}
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => shiftMonth(1)}
+                                    aria-label="Next month"
+                                    className="rounded-lg px-2 py-1 text-slate-500 transition hover:bg-slate-200/60"
+                                >
+                                    ›
+                                </button>
+                            </span>
+                        </div>
+
+                        <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                            {["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"].map(
+                                (day) => (
+                                    <span key={day} className="py-1">
+                                        {day}
+                                    </span>
+                                )
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-7 gap-1">
+                            {Array.from({ length: leadBlanks }).map((_, index) => (
+                                <span key={`blank-${index}`} />
+                            ))}
+                            {Array.from({ length: daysInMonth }).map((_, index) => {
+                                const day = index + 1;
+                                const key = toKey(viewYear, viewMonth, day);
+                                const past = key < todayKey;
+                                const active = selectedDates.includes(key);
+
+                                return (
+                                    <button
+                                        key={key}
+                                        type="button"
+                                        disabled={past}
+                                        onClick={() => toggleDate(key)}
+                                        aria-pressed={active}
+                                        aria-label={`${key}${past ? " (past)" : ""}`}
+                                        className={`rounded-lg py-2 text-xs font-semibold transition ${
+                                            past
+                                                ? "cursor-not-allowed text-slate-300"
+                                                : active
+                                                  ? "bg-[#106A2E] text-white shadow-sm"
+                                                  : "bg-white text-slate-600 ring-1 ring-slate-200 hover:ring-[#106A2E]/40"
+                                        }`}
+                                    >
+                                        {day}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
-                    <div className="mt-3 flex gap-2">
-                        <LfButton type="submit" loading={saving}>
+
+                    {/* ---------- times: build the list, then publish ---------- */}
+                    <div>
+                        <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                            Times ({times.length} in the list)
+                        </span>
+
+                        {times.length > 0 && (
+                            <ul className="mb-2 space-y-1.5">
+                                {times.map((slot) => (
+                                    <li
+                                        key={`${slot.from}-${slot.to}`}
+                                        className="flex items-center justify-between gap-2 rounded-lg bg-white px-3 py-2 text-xs font-medium text-slate-700 ring-1 ring-slate-200"
+                                    >
+                                        <span>
+                                            {slot.from} – {slot.to}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                setTimes((current) =>
+                                                    current.filter(
+                                                        (kept) =>
+                                                            kept.from !== slot.from ||
+                                                            kept.to !== slot.to
+                                                    )
+                                                )
+                                            }
+                                            aria-label={`Remove ${slot.from} to ${slot.to}`}
+                                            className="rounded-md p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                                        >
+                                            <Trash2 size={13} aria-hidden="true" />
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+
+                        <div className="flex gap-2">
+                            <label className="flex-1">
+                                <span className="sr-only">Start time</span>
+                                <input
+                                    type="time"
+                                    value={fromInput}
+                                    onChange={(event) => setFromInput(event.target.value)}
+                                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-800 focus:border-[#106A2E]/40 focus:outline-none"
+                                />
+                            </label>
+                            <label className="flex-1">
+                                <span className="sr-only">End time</span>
+                                <input
+                                    type="time"
+                                    value={toInput}
+                                    onChange={(event) => setToInput(event.target.value)}
+                                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs text-slate-800 focus:border-[#106A2E]/40 focus:outline-none"
+                                />
+                            </label>
+                            <button
+                                type="button"
+                                onClick={addTime}
+                                className="shrink-0 rounded-xl border border-[#106A2E]/40 px-3.5 text-xs font-semibold text-[#106A2E] transition hover:bg-[#106A2E]/5"
+                            >
+                                Add
+                            </button>
+                        </div>
+                    </div>
+
+                    {windowCount > 0 && (
+                        <p className="text-[11px] text-slate-500">
+                            Publishing{" "}
+                            <strong>
+                                {windowCount} window{windowCount === 1 ? "" : "s"}
+                            </strong>{" "}
+                            ({selectedDates.length} date
+                            {selectedDates.length === 1 ? "" : "s"} ×{" "}
+                            {times.length} time{times.length === 1 ? "" : "s"}).
+                        </p>
+                    )}
+
+                    <div className="flex gap-2">
+                        <LfButton
+                            type="submit"
+                            loading={saving}
+                            disabled={windowCount === 0}
+                        >
                             Publish
                         </LfButton>
                         <LfButton
@@ -258,7 +459,7 @@ function AvailabilityManager({ availability, onChanged }) {
 
             {availability.length === 0 ? (
                 <p className="text-xs text-slate-500">
-                    No open windows. Publish one so claimants can book a slot.
+                    No open windows. Pick dates and times above so students know when to come.
                 </p>
             ) : (
                 <ul className="space-y-2">
