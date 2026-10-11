@@ -176,7 +176,6 @@ export default function LfReportDetailsPage() {
                         </div>
 
                         <dl className="grid gap-3 text-xs sm:grid-cols-2">
-                            <DetailRow label="When" value={formatDateTime(report.dateLostFound)} />
                             <DetailRow label="Status" value={formatStatus(report.status)} />
                             <DetailRow label="Custody" value={report.itemCustody === "None" ? "Not yet recovered" : report.itemCustody === "AdminOffice" ? "OneServe Student Affairs Office" : "With a student"} />
                             <DetailRow label="Reported" value={formatDateTime(report.createdAt)} />

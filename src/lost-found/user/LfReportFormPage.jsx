@@ -31,6 +31,23 @@ import {
 // with a broken photo reference.
 // =====================================================
 
+/**
+ * ISO datetime -> date-input value, read as LOCAL calendar parts.
+ *
+ * new Date(value).toISOString().slice(0, 10) looks equivalent but shifts a
+ * day back in UTC+8: midnight Oct 11 local is Oct 10 16:00 UTC, so the edit
+ * form would open showing Oct 10 for an Oct 11 event.
+ */
+function toInputDate(value) {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
 const CATEGORIES = [
     "Electronics",
     "Clothing",
@@ -92,11 +109,7 @@ export default function LfReportFormPage() {
                 setDescription(existing.description);
                 setCategory(existing.category);
                 setLocation(existing.location);
-                setDateLostFound(
-                    existing.dateLostFound
-                        ? new Date(existing.dateLostFound).toISOString().slice(0, 10)
-                        : ""
-                );
+                setDateLostFound(toInputDate(existing.dateLostFound));
                 setReportType(existing.reportType || "Lost");
                 setItemCustody(existing.itemCustody || "None");
                 setImagePath(existing.imagePath || null);

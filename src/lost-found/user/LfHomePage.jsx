@@ -231,6 +231,15 @@ export default function LfHomePage() {
                     placeholder="Search items, categories, locations…"
                 />
 
+                {filtering && (
+                    <Link
+                        to={`${LOST_FOUND_HOME_ROUTE}/browse?q=${encodeURIComponent(search.trim())}`}
+                        className="block text-center text-xs font-semibold text-[#106A2E] hover:underline"
+                    >
+                        See all results on the full board →
+                    </Link>
+                )}
+
                 <div
                     className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                     role="group"

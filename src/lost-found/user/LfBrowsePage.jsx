@@ -37,7 +37,9 @@ export default function LfBrowsePage() {
     const [searchParams, setSearchParams] = useSearchParams();
 
     const [type, setType] = useState(searchParams.get("type") || "");
-    const [search, setSearch] = useState("");
+    // Deep-linked from the home search (?q=...): the board searches the full
+    // catalog, while home only filters its own rails.
+    const [search, setSearch] = useState(searchParams.get("q") || "");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
