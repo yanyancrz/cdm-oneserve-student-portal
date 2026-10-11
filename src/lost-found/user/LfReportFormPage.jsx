@@ -32,20 +32,22 @@ import {
 // =====================================================
 
 /**
- * ISO datetime -> date-input value, read as LOCAL calendar parts.
+ * ISO datetime -> datetime-local input value, read as LOCAL parts.
  *
- * new Date(value).toISOString().slice(0, 10) looks equivalent but shifts a
+ * new Date(value).toISOString().slice(0, 16) looks equivalent but shifts a
  * day back in UTC+8: midnight Oct 11 local is Oct 10 16:00 UTC, so the edit
  * form would open showing Oct 10 for an Oct 11 event.
  */
-function toInputDate(value) {
+function toInputDateTime(value) {
     if (!value) return "";
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "";
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 const CATEGORIES = [
@@ -59,11 +61,6 @@ const CATEGORIES = [
     "Bottle & Container",
     "Sports Gear",
     "Other",
-];
-
-const CUSTODY_OPTIONS = [
-    { value: "AdminOffice", label: "Handed to the Student Affairs Office" },
-    { value: "Student", label: "I currently have the item" },
 ];
 
 export default function LfReportFormPage() {
@@ -82,7 +79,6 @@ export default function LfReportFormPage() {
     const [location, setLocation] = useState("");
     const [dateLostFound, setDateLostFound] = useState("");
     const [reportType, setReportType] = useState("Lost");
-    const [itemCustody, setItemCustody] = useState("AdminOffice");
     const [imagePath, setImagePath] = useState(null);
     const [preview, setPreview] = useState(null);
 
@@ -109,9 +105,8 @@ export default function LfReportFormPage() {
                 setDescription(existing.description);
                 setCategory(existing.category);
                 setLocation(existing.location);
-                setDateLostFound(toInputDate(existing.dateLostFound));
+                setDateLostFound(toInputDateTime(existing.dateLostFound));
                 setReportType(existing.reportType || "Lost");
-                setItemCustody(existing.itemCustody || "None");
                 setImagePath(existing.imagePath || null);
                 setPreview(lfImageUrl(existing.imagePath));
             } catch (err) {
@@ -169,8 +164,7 @@ export default function LfReportFormPage() {
                     ? new Date(dateLostFound).toISOString()
                     : new Date().toISOString(),
                 reportType,
-                itemCustody:
-                    reportType === "Found" ? itemCustody : "None",
+                itemCustody: "AdminOffice",
                 imagePath: imagePathToSend,
             };
 
@@ -296,10 +290,10 @@ export default function LfReportFormPage() {
                         })}
                         <label className="block">
                             <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                Date {reportType === "Found" ? "found" : "lost"}
+                                Date and time {reportType === "Found" ? "found" : "lost"}
                             </span>
                             <input
-                                type="date"
+                                type="datetime-local"
                                 value={dateLostFound}
                                 onChange={(e) => setDateLostFound(e.target.value)}
                                 className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-800 focus:border-[#106A2E]/40 focus:outline-none focus:ring-2 focus:ring-[#106A2E]/15"
@@ -325,41 +319,17 @@ export default function LfReportFormPage() {
                         />
                     </label>
 
-                    {/* ---------- custody (found only) ---------- */}
+                    {/* ---------- handover (found only): office, always ---------- */}
                     {reportType === "Found" && (
-                        <fieldset>
-                            <legend className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                                Where is the item now?
-                            </legend>
-                            <div className="space-y-2">
-                                {CUSTODY_OPTIONS.map((option) => {
-                                    const active = itemCustody === option.value;
-
-                                    return (
-                                        <label
-                                            key={option.value}
-                                            className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 transition ${
-                                                active
-                                                    ? "border-[#106A2E]/50 bg-[#106A2E]/5"
-                                                    : "border-slate-200 bg-white hover:bg-slate-50"
-                                            }`}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name="itemCustody"
-                                                value={option.value}
-                                                checked={active}
-                                                onChange={() => setItemCustody(option.value)}
-                                                className="h-4 w-4 accent-[#106A2E]"
-                                            />
-                                            <span className="text-xs font-medium text-slate-700">
-                                                {option.label}
-                                            </span>
-                                        </label>
-                                    );
-                                })}
-                            </div>
-                        </fieldset>
+                        <div className="rounded-xl border border-[#106A2E]/20 bg-[#106A2E]/[0.04] p-3.5 text-xs leading-5 text-slate-600">
+                            <span className="font-semibold text-[#106A2E]">
+                                Hand it to the office.
+                            </span>{" "}
+                            Every found item goes to the OneServe Student
+                            Affairs Office - there is no keeping it while the
+                            owner is looked for. Mention in the description
+                            when you handed it over.
+                        </div>
                     )}
 
                     {/* ---------- photo ---------- */}

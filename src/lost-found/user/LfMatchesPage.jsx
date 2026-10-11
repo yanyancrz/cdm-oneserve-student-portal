@@ -132,6 +132,13 @@ function MatchCard({ match, onOpen }) {
                     />
                 </div>
 
+                <p className="mt-2.5 text-[10px] leading-4 text-slate-400">
+                    Name {match.nameScore ?? 0} · Category{" "}
+                    {match.categoryScore ?? 0} · Location{" "}
+                    {match.locationScore ?? 0} · Date {match.dateScore ?? 0}{" "}
+                    (25 each)
+                </p>
+
                 <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
                     <span className="text-[11px] text-slate-400">
                         {formatDate(match.createdAt)}

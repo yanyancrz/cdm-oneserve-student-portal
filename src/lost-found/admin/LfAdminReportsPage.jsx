@@ -124,7 +124,6 @@ export default function LfAdminReportsPage() {
                                 <th className="px-4 py-3 font-semibold">Type</th>
                                 <th className="px-4 py-3 font-semibold">Reported</th>
                                 <th className="px-4 py-3 font-semibold">Status</th>
-                                <th className="px-4 py-3 font-semibold">Custody</th>
                                 <th className="px-4 py-3 text-right font-semibold">
                                     Review
                                 </th>
@@ -174,13 +173,6 @@ export default function LfAdminReportsPage() {
                                         </td>
                                         <td className="px-4 py-3">
                                             <LfStatusChip status={report.status} />
-                                        </td>
-                                        <td className="px-4 py-3 text-slate-500">
-                                            {report.itemCustody === "AdminOffice"
-                                                ? "Office"
-                                                : report.itemCustody === "Student"
-                                                  ? "Student"
-                                                  : "—"}
                                         </td>
                                         <td className="px-4 py-3">
                                             {report.status === "Pending" ? (

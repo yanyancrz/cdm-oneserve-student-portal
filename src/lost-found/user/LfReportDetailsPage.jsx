@@ -177,7 +177,6 @@ export default function LfReportDetailsPage() {
 
                         <dl className="grid gap-3 text-xs sm:grid-cols-2">
                             <DetailRow label="Status" value={formatStatus(report.status)} />
-                            <DetailRow label="Custody" value={report.itemCustody === "None" ? "Not yet recovered" : report.itemCustody === "AdminOffice" ? "OneServe Student Affairs Office" : "With a student"} />
                             <DetailRow label="Reported" value={formatDateTime(report.createdAt)} />
                         </dl>
                     </div>
@@ -216,7 +215,7 @@ export default function LfReportDetailsPage() {
                             Report recovery
                         </LfButton>
                         <p className="text-xs text-slate-500">
-                            You will say how the owner can get it back - directly, or via the office.
+                            Hand it to the OneServe Student Affairs Office - that is the only handover.
                         </p>
                     </div>
                 </LfPanel>

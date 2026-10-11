@@ -99,7 +99,6 @@ export default function LfAdminSchedulesPage() {
                                     <th className="px-4 py-3 font-semibold">Item</th>
                                     <th className="px-4 py-3 font-semibold">Claimant</th>
                                     <th className="px-4 py-3 font-semibold">Slot</th>
-                                    <th className="px-4 py-3 font-semibold">Custody</th>
                                     <th className="px-4 py-3 font-semibold">Status</th>
                                     <th className="px-4 py-3 text-right font-semibold">
                                         Handover
@@ -381,13 +380,6 @@ function ScheduleRow({ schedule, onHandover }) {
                         </span>
                     </>
                 )}
-            </td>
-            <td className="px-4 py-3 text-slate-500">
-                {schedule.itemCustody === "AdminOffice"
-                    ? "Office"
-                    : schedule.itemCustody === "Student"
-                      ? "Student"
-                      : "—"}
             </td>
             <td className="px-4 py-3">
                 <LfStatusChip status={schedule.status} />

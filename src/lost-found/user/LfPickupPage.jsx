@@ -15,12 +15,11 @@ import {
 } from "../components/lfUi";
 
 // =====================================================
-// Choose a pickup slot for an approved claim.
+// Choose a pickup slot for an approved claim. Every handover runs at the
+// office - there are no keepers outside it.
 //
 // Only slots inside a published availability window
-// can be booked, and the API checks custody again:
-// office-custody items are booked through the office,
-// student-custody items by the report owner.
+// can be booked, by the claimant or through the office.
 // =====================================================
 
 export default function LfPickupPage() {
