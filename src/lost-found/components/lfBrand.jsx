@@ -1,20 +1,18 @@
 // Brand marks for Lost & Found (FIND) and Guidance Counseling.
 //
-// The PNGs live in `public/brand/` so a missing file never breaks
-// the Vite build - the <img> simply hides itself on error and the
-// lucide fallback shows instead:
+// FIND uses the bundled white logo at
+// `src/assets/images/FIND LOGO white.png` (imported below, so Vite
+// hashes and serves it - spaces in the filename are fine).
 //
-//   public/brand/find-logo.png      - Image 1, green FIND on transparent/dark
-//   public/brand/find-splash.png    - Image 2, white FIND for the dark splash
-//   public/brand/guidance-logo.png  - Image 3, Guidance Counseling seal
-//
-// Save the three chat images to those paths (exact names) and the
-// whole module picks them up with no code change.
+// The Guidance seal has no file in the repo yet. When you add it,
+// save it as `public/brand/guidance-logo.png` and the whole module
+// picks it up with no code change - until then the <img> hides
+// itself on error and the lucide fallback shows instead.
 
-import findLogoWhite from "../../assets/image/FIND LOGO white.png";
+import findLogoWhite from "../../assets/images/FIND LOGO white.png";
 
 export const FIND_LOGO_SRC = findLogoWhite;
-export const FIND_SPLASH_SRC = "/brand/find-splash.png";
+export const FIND_SPLASH_SRC = findLogoWhite;
 export const GUIDANCE_LOGO_SRC = "/brand/guidance-logo.png";
 
 function hideOnError(event) {
