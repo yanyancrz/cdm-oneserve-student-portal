@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, CalendarClock, MapPin } from "lucide-react";
+import { ArrowLeft, CalendarClock, IdCard, MapPin } from "lucide-react";
 
 import { lfApi } from "../services/lfApi";
 import { formatDateTime } from "../config/lfTheme";
@@ -155,6 +155,11 @@ export default function LfPickupPage() {
                 <p className="mt-3 flex items-center gap-1.5 text-[11px] text-slate-500">
                     <MapPin size={12} aria-hidden="true" />
                     OneServe Student Affairs Office
+                </p>
+
+                <p className="mt-2 flex items-center gap-1.5 rounded-xl border border-[#106A2E]/20 bg-[#106A2E]/[0.04] p-3 text-[11px] font-medium leading-5 text-slate-600">
+                    <IdCard size={14} className="shrink-0 text-[#106A2E]" aria-hidden="true" />
+                    Bring your student ID when you come - the office checks it before handing anything over.
                 </p>
             </LfPanel>
         </div>

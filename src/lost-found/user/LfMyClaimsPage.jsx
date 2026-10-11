@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarClock, HandHelping } from "lucide-react";
+import { CalendarClock, HandHelping, IdCard } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { lfApi } from "../services/lfApi";
@@ -14,6 +14,7 @@ import {
     LfEmpty,
     LfImage,
     LfNotice,
+    LfPanel,
     LfSkeleton,
     LfStatusChip,
 } from "../components/lfUi";
@@ -21,15 +22,16 @@ import {
 // The caller's claims, with the pickup state front
 // and center.
 //
-// A claim moves Pending -> Approved -> Scheduled ->
-// Completed. An approved claim is where the pickup
-// button lives; a scheduled one shows the slot.
+// A claim moves Pending -> Approved -> Completed. Approved claims walk in
+// during office windows (shown below) - nobody books a slot. Completed
+// claims show the handover.
 // =====================================================
 
 export default function LfMyClaimsPage() {
     const navigate = useNavigate();
 
     const [claims, setClaims] = useState([]);
+    const [availability, setAvailability] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [cancelling, setCancelling] = useState(null);
@@ -51,6 +53,15 @@ export default function LfMyClaimsPage() {
         (async () => {
             if (cancelled) return;
             await load();
+
+            // Office windows load on their own: a failure here must never
+            // hide the claims list.
+            try {
+                const windows = await lfApi.availability();
+                if (!cancelled) setAvailability(windows.data || []);
+            } catch {
+                if (!cancelled) setAvailability([]);
+            }
         })();
 
         return () => {
@@ -61,7 +72,7 @@ export default function LfMyClaimsPage() {
     const onCancel = async (claim) => {
         if (
             !window.confirm(
-                "Withdraw this claim? The finder will be notified and any pickup slot is released."
+                "Withdraw this claim? The office will be notified."
             )
         )
             return;
@@ -99,6 +110,56 @@ export default function LfMyClaimsPage() {
                     }
                 />
             ) : (
+                <div className="space-y-4">
+            <LfPanel
+                title="Office availability"
+                subtitle="Come anytime during these windows - no booking needed"
+            >
+                {availability.length === 0 ? (
+                    <p className="text-xs text-slate-500">
+                        No pickup windows published yet. Check back later.
+                    </p>
+                ) : (
+                    <ul className="space-y-2">
+                        {availability.map((window) => {
+                            const starts = new Date(window.startDateTime);
+                            const ends = new Date(window.endDateTime);
+
+                            return (
+                                <li
+                                    key={window.availabilityId}
+                                    className="rounded-xl border border-slate-200 bg-white p-3"
+                                >
+                                    <span className="block text-sm font-semibold text-slate-800">
+                                        {starts.toLocaleDateString("en-PH", {
+                                            weekday: "long",
+                                            month: "long",
+                                            day: "numeric",
+                                        })}
+                                    </span>
+                                    <span className="mt-0.5 block text-xs text-slate-500">
+                                        {starts.toLocaleTimeString("en-PH", {
+                                            hour: "numeric",
+                                            minute: "2-digit",
+                                        })}{" "}
+                                        –{" "}
+                                        {ends.toLocaleTimeString("en-PH", {
+                                            hour: "numeric",
+                                            minute: "2-digit",
+                                        })}
+                                    </span>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
+
+                <p className="mt-3 flex items-center gap-1.5 rounded-xl border border-[#106A2E]/20 bg-[#106A2E]/[0.04] p-3 text-[11px] font-medium leading-5 text-slate-600">
+                    <IdCard size={14} className="shrink-0 text-[#106A2E]" aria-hidden="true" />
+                    Bring your student ID when you come - the office checks it before handing anything over.
+                </p>
+            </LfPanel>
+
                 <ul className="space-y-3">
                     {claims.map((claim) => (
                         <ClaimCard
@@ -110,25 +171,18 @@ export default function LfMyClaimsPage() {
                                     `${LOST_FOUND_HOME_ROUTE}/report/${claim.reportId}`
                                 )
                             }
-                            onPickup={() =>
-                                navigate(
-                                    `${LOST_FOUND_HOME_ROUTE}/pickup/${claim.claimId}`
-                                )
-                            }
                             onCancel={() => onCancel(claim)}
                         />
                     ))}
                 </ul>
+                </div>
             )}
         </div>
     );
 }
 
-function ClaimCard({ claim, cancelling, onOpen, onPickup, onCancel }) {
+function ClaimCard({ claim, cancelling, onOpen, onCancel }) {
     const image = lfImageUrl(claim.imagePath);
-    const canPickup =
-        claim.status === "Approved" ||
-        claim.status === "Awaiting Pickup";
     const canCancel =
         claim.status === "Pending" ||
         claim.status === "Approved" ||
@@ -169,20 +223,10 @@ function ClaimCard({ claim, cancelling, onOpen, onPickup, onCancel }) {
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
-                {canPickup && (
-                    <LfButton
-                        variant="accent"
-                        onClick={onPickup}
-                    >
-                        <CalendarClock size={14} aria-hidden="true" />
-                        Office availability
-                    </LfButton>
-                )}
-
                 {claim.status === "Scheduled" && (
                     <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#F4D35E]/20 px-3 py-2 text-[11px] font-semibold text-[#1F1F1F]">
                         <CalendarClock size={13} aria-hidden="true" />
-                        See your slot below
+                        Previously scheduled - come during office hours
                     </span>
                 )}
 
@@ -243,7 +287,7 @@ function ClaimScheduleBox({ claimId }) {
     return (
         <div className="mt-3 rounded-xl border border-[#0D7856]/20 bg-[#0D7856]/5 px-4 py-3">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-[#0D7856]">
-                Pickup slot
+                Earlier booking
             </p>
             <p className="mt-0.5 text-sm font-semibold text-slate-800">
                 {formatDateTime(schedule.scheduledDateTime)}
