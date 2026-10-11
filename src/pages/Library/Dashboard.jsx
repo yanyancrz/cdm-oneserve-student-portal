@@ -820,22 +820,52 @@ export default function Dashboard() {
         <div className="min-h-screen bg-[#F7F8F5] text-slate-800">
             <LibraryBottomNav />
 
+            <style>{`
+                @keyframes libraryReveal {
+                    from { opacity: 0; transform: translateY(15px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .library-reveal {
+                    animation: libraryReveal .65s cubic-bezier(.2,.8,.2,1) both;
+                }
+            `}</style>
+
             <main className="mx-auto max-w-7xl px-4 pb-28 pt-6 sm:px-6 md:pb-12 md:pt-24 lg:px-8">
-                {/* GREETING */}
+                {/* HERO - same welcome card as the Guidance home */}
 
-                <section className="mb-5">
-                    <p className="text-xs font-medium text-slate-400">
-                        {today}
-                    </p>
+                <section className="library-reveal relative mb-5 overflow-hidden rounded-[28px] border border-[#0E3B22]/10 bg-gradient-to-br from-[#10B981] via-[#0E3B22] to-[#052E16] px-5 py-6 shadow-xl shadow-emerald-900/20 sm:px-7 sm:py-8">
+                    <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-emerald-300/20 blur-3xl" />
+                    <div className="pointer-events-none absolute -bottom-24 right-1/3 h-72 w-72 rounded-full bg-cyan-300/10 blur-3xl" />
+                    <div className="pointer-events-none absolute inset-0 opacity-[0.06] bg-[linear-gradient(rgba(255,255,255,.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.6)_1px,transparent_1px)] bg-[size:32px_32px]" />
 
-                    <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-800 sm:text-4xl">
-                        Welcome, {firstName}
-                    </h1>
+                    <div className="relative">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5">
+                                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,.8)]" />
+                                <span className="text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-200">
+                                    CDM Library
+                                </span>
+                            </div>
 
-                    <p className="mt-1 text-sm text-slate-500">
-                        {[institute, program].filter(Boolean).join(" · ") ||
-                            "CDM Library"}
-                    </p>
+                            <LibraryBig className="text-emerald-200/80" size={26} aria-hidden="true" />
+                        </div>
+
+                        <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                            Welcome,
+                            <span className="block bg-gradient-to-r from-emerald-300 to-cyan-200 bg-clip-text text-transparent">
+                                {firstName}
+                            </span>
+                        </h1>
+
+                        <p className="mt-2 max-w-xl text-sm leading-6 text-white/60 sm:text-base">
+                            {[institute, program].filter(Boolean).join(" · ") ||
+                                "What will you read today?"}
+                        </p>
+
+                        <p className="mt-4 text-xs uppercase tracking-[.14em] text-white/35">
+                            {today}
+                        </p>
+                    </div>
                 </section>
 
                 {/* OVERDUE ALERT */}
