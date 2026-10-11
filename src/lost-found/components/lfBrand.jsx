@@ -11,7 +11,9 @@
 // Save the three chat images to those paths (exact names) and the
 // whole module picks them up with no code change.
 
-export const FIND_LOGO_SRC = "/brand/find-logo.png";
+import findLogoWhite from "../../assets/image/FIND LOGO white.png";
+
+export const FIND_LOGO_SRC = findLogoWhite;
 export const FIND_SPLASH_SRC = "/brand/find-splash.png";
 export const GUIDANCE_LOGO_SRC = "/brand/guidance-logo.png";
 
@@ -20,7 +22,11 @@ function hideOnError(event) {
 }
 
 /** Green FIND mark for light surfaces (header, nav, cards). */
-export function FindLogo({ className = "h-10 w-10", alt = "FIND - Found Item & Notification Desk" }) {
+/** White FIND mark (header, nav, cards). */
+export function FindLogo({
+    className = "h-20 w-20 shrink-0 object-contain drop-shadow-lg sm:h-24 sm:w-24",
+    alt = "FIND - Found Item & Notification Desk",
+}) {
     return (
         <img
             src={FIND_LOGO_SRC}
