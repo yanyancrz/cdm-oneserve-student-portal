@@ -2,17 +2,14 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
     ArrowRight,
-    HandHelping,
     PackageSearch,
     Plus,
-    SearchCheck,
 } from "lucide-react";
 
 import { lfApi } from "../services/lfApi";
 import { LOST_FOUND_HOME_ROUTE } from "../session";
 import {
     formatDate,
-    formatStatus,
     LF_COLORS,
 } from "../config/lfTheme";
 import { lfImageUrl } from "../config/lfImage";
@@ -21,7 +18,6 @@ import {
     LfImage,
     LfNotice,
     LfPanel,
-    LfSkeleton,
     LfStatusChip,
     LfTypeTag,
 } from "../components/lfUi";
@@ -182,30 +178,6 @@ export default function LfHomePage() {
                 </Link>
             </div>
 
-            {/* ---------- how it works ---------- */}
-            <LfPanel title="How it works" subtitle="From lost to handover in three steps">
-                <ol className="space-y-3">
-                    <HowItWorksStep
-                        icon={SearchCheck}
-                        step="1"
-                        title="Report it"
-                        text="Describe the item and where it was lost or found. Photos help a match enormously."
-                    />
-                    <HowItWorksStep
-                        icon={HandHelping}
-                        step="2"
-                        title="Claim or recover"
-                        text="Found the owner? Submit a recovery report. Lost your item? Claim a matching found report."
-                    />
-                    <HowItWorksStep
-                        icon={PackageSearch}
-                        step="3"
-                        title="Pick up"
-                        text="Once a claim is approved, book a pickup slot at the OneServe Student Affairs Office."
-                    />
-                </ol>
-            </LfPanel>
-
             {/* ---------- recent lost ---------- */}
             <LfPanel
                 title="Recently lost"
@@ -220,7 +192,7 @@ export default function LfHomePage() {
                 }
             >
                 {loading ? (
-                    <LfSkeleton rows={3} />
+                    <RecentRailSkeleton />
                 ) : error ? (
                     <LfNotice tone="bad">{error}</LfNotice>
                 ) : recentLost.length === 0 ? (
@@ -230,9 +202,9 @@ export default function LfHomePage() {
                         message="When a student reports a lost item, it shows up here."
                     />
                 ) : (
-                    <ul className="divide-y divide-slate-100">
+                    <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2">
                         {recentLost.map((report) => (
-                            <RecentReportRow
+                            <RecentReportCard
                                 key={report.reportId}
                                 report={report}
                                 onOpen={() =>
@@ -260,7 +232,7 @@ export default function LfHomePage() {
                 }
             >
                 {loading ? (
-                    <LfSkeleton rows={3} />
+                    <RecentRailSkeleton />
                 ) : error ? (
                     <LfNotice tone="bad">{error}</LfNotice>
                 ) : recent.length === 0 ? (
@@ -270,9 +242,9 @@ export default function LfHomePage() {
                         message="When a student hands something in, it shows up here."
                     />
                 ) : (
-                    <ul className="divide-y divide-slate-100">
+                    <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2">
                         {recent.map((report) => (
-                            <RecentReportRow
+                            <RecentReportCard
                                 key={report.reportId}
                                 report={report}
                                 onOpen={() =>
@@ -289,58 +261,70 @@ export default function LfHomePage() {
     );
 }
 
-function HowItWorksStep({ icon: Icon, step, title, text }) {
+function RecentRailSkeleton() {
     return (
-        <li className="flex items-start gap-3">
-            <span
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-xs font-bold"
-                style={{ backgroundColor: LF_COLORS.accent, color: LF_COLORS.ink }}
-            >
-                {step}
-            </span>
-            <div className="min-w-0 pt-0.5">
-                <p className="flex items-center gap-1.5 text-sm font-semibold text-slate-800">
-                    <Icon size={14} className="text-[#106A2E]" aria-hidden="true" />
-                    {title}
-                </p>
-                <p className="mt-0.5 text-xs leading-5 text-slate-500">{text}</p>
-            </div>
-        </li>
+        <div
+            role="status"
+            aria-label="Loading"
+            className="flex snap-x gap-3 overflow-x-auto pb-2"
+        >
+            {[0, 1, 2].map((index) => (
+                <div
+                    key={index}
+                    className="w-44 shrink-0 snap-start overflow-hidden rounded-2xl border border-slate-200 bg-white"
+                >
+                    <div className="h-28 animate-pulse bg-slate-200/70" />
+                    <div className="space-y-2 p-3">
+                        <div className="h-3 w-3/4 animate-pulse rounded bg-slate-200/70" />
+                        <div className="h-2.5 w-1/2 animate-pulse rounded bg-slate-200/70" />
+                    </div>
+                </div>
+            ))}
+        </div>
     );
 }
 
-function RecentReportRow({ report, onOpen }) {
+function RecentReportCard({ report, onOpen }) {
     const image = lfImageUrl(report.imagePath);
+    const itemId = `#${String(report.reportId ?? 0).padStart(3, "0")}`;
 
     return (
-        <li>
+        <li className="w-44 shrink-0 snap-start">
             <button
                 type="button"
                 onClick={onOpen}
-                className="flex w-full items-center gap-3 py-3 text-left transition hover:bg-slate-50/70"
+                aria-label={`Item ${itemId}: ${report.itemName}`}
+                className="block w-full overflow-hidden rounded-2xl border border-slate-200 bg-white text-left shadow-sm transition hover:shadow-md active:scale-[0.99]"
             >
-                <LfImage
-                    src={image}
-                    alt={report.itemName}
-                    className="h-12 w-12 shrink-0 rounded-xl"
-                />
-                <span className="min-w-0 flex-1">
-                    <span className="flex flex-wrap items-center gap-2">
-                        <span className="truncate text-sm font-semibold text-slate-800">
-                            {report.itemName}
-                        </span>
-                        <LfTypeTag type={report.reportType} />
-                    </span>
-                    <span className="mt-0.5 block truncate text-xs text-slate-500">
-                        {report.category || "Uncategorized"}
-                        {report.location ? ` · ${report.location}` : ""} ·{" "}
-                        {formatDate(report.dateLostFound)}
+                <span className="relative block h-28 w-full bg-slate-100">
+                    <LfImage
+                        src={image}
+                        alt={report.itemName}
+                        className="h-full w-full rounded-none"
+                    />
+                    {/* Emphasized Item ID, upper left */}
+                    <span className="absolute left-2 top-2 rounded-lg bg-[#10231B] px-2 py-1 text-xs font-bold tracking-wide text-white shadow-md ring-1 ring-white/30">
+                        {itemId}
                     </span>
                 </span>
-                <span className="flex shrink-0 flex-col items-end gap-1">
-                    <LfStatusChip status={report.status} />
-                    <span className="text-[10px] text-slate-400">
-                        {formatStatus(report.status)}
+
+                <span className="block p-3">
+                    <span className="block truncate text-[13px] font-semibold leading-5 text-slate-800">
+                        {report.itemName}
+                    </span>
+
+                    <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                        <LfTypeTag type={report.reportType} />
+                        <LfStatusChip status={report.status} />
+                    </span>
+
+                    <span className="mt-1.5 block truncate text-[11px] text-slate-500">
+                        {report.category || "Uncategorized"}
+                        {report.location ? ` · ${report.location}` : ""}
+                    </span>
+
+                    <span className="mt-0.5 block text-[10px] text-slate-400">
+                        {formatDate(report.dateLostFound)}
                     </span>
                 </span>
             </button>
