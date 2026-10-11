@@ -23,10 +23,10 @@ export default function Dashboard() {
     const touchStartX = useRef(null);
 
     
-    const [recentActivity, setRecentActivity] =
+    const [recentLogins, setRecentLogins] =
         useState([]);
 
-    const [activityLoading, setActivityLoading] =
+    const [loginsLoading, setLoginsLoading] =
         useState(true);
 
     
@@ -115,56 +115,67 @@ export default function Dashboard() {
 
     
     useEffect(() => {
-        const email =
-            user?.email ||
-            localStorage.getItem("userEmail");
+        const token =
+            localStorage.getItem("token") ||
+            localStorage.getItem("authToken");
 
-        if (!email) {
+        if (!token) {
+            navigate("/");
             return;
         }
 
-        const loadRecentActivity =
+        const loadRecentLogins =
             async () => {
                 try {
-                    setActivityLoading(true);
+                    setLoginsLoading(true);
+
+                    const sessionKey =
+                        localStorage.getItem("oneserve:sessionKey") || "";
 
                     const response =
                         await fetch(
-                            `${API_URL}/api/profile/activity/${encodeURIComponent(
-                                email
-                            )}`
+                            `${API_URL}/api/auth/session/logins`,
+                            {
+                                headers: {
+                                    Accept: "application/json",
+                                    Authorization: `Bearer ${token}`,
+                                    ...(sessionKey
+                                        ? { "X-Session-Key": sessionKey }
+                                        : {}),
+                                },
+                            }
                         );
 
                     if (!response.ok) {
                         throw new Error(
-                            "Unable to load recent activity."
+                            "Unable to load recent logins."
                         );
                     }
 
-                    const data =
+                    const body =
                         await response.json();
 
-                    setRecentActivity(
-                        Array.isArray(data)
-                            ? data
+                    setRecentLogins(
+                        Array.isArray(body?.logins)
+                            ? body.logins
                             : []
                     );
                 } catch (error) {
                     console.error(
-                        "Recent activity error:",
+                        "Recent logins error:",
                         error
                     );
 
-                    setRecentActivity([]);
+                    setRecentLogins([]);
                 } finally {
-                    setActivityLoading(
+                    setLoginsLoading(
                         false
                     );
                 }
             };
 
-        loadRecentActivity();
-    }, [user?.email]);
+        loadRecentLogins();
+    }, [navigate]);
 
    
     const isLoading = !user;
@@ -1263,7 +1274,7 @@ export default function Dashboard() {
                             </section>
 
 
-                            {/* RECENT ACTIVITY */}
+                            {/* RECENT LOGINS */}
 
                             <section className="dashboard-reveal dashboard-delay-4 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
 
@@ -1272,11 +1283,11 @@ export default function Dashboard() {
                                     <div>
 
                                         <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-[#173F2C]/50">
-                                            Account Timeline
+                                            Security
                                         </p>
 
                                         <h2 className="mt-1 text-base font-semibold text-slate-800">
-                                            Recent Activity
+                                            Recent Logins
                                         </h2>
 
                                     </div>
@@ -1291,7 +1302,7 @@ export default function Dashboard() {
 
                                 <div className="divide-y divide-slate-100">
 
-                                    {activityLoading ? (
+                                    {loginsLoading ? (
                                         Array.from({
                                             length: 4
                                         }).map(
@@ -1320,37 +1331,66 @@ export default function Dashboard() {
                                                 </div>
                                             )
                                         )
-                                    ) : recentActivity.length > 0 ? (
-                                        recentActivity.map(
-                                            (item) => (
+                                    ) : recentLogins.length > 0 ? (
+                                        recentLogins.slice(0, 5).map(
+                                            (item, index) => (
                                                 <div
-                                                    key={
-                                                        item.id
-                                                    }
+                                                    key={`${item.loggedInAt}-${index}`}
                                                     className="flex items-center gap-3 py-3.5"
                                                 >
 
-                                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-amber-100 bg-amber-50 text-amber-600">
+                                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-[#106A2E]">
 
-                                                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                                                        <svg
+                                                            width="17"
+                                                            height="17"
+                                                            viewBox="0 0 24 24"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="1.8"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                        >
+                                                            <rect
+                                                                x="5"
+                                                                y="2"
+                                                                width="14"
+                                                                height="20"
+                                                                rx="2"
+                                                            />
+
+                                                            <path d="M12 18h.01" />
+                                                        </svg>
 
                                                     </div>
 
 
                                                     <div className="min-w-0 flex-1">
 
-                                                        <p className="truncate text-sm font-medium text-slate-800">
+                                                        <p className="flex items-center gap-1.5 truncate text-sm font-medium text-slate-800">
                                                             {
-                                                                item.label
+                                                                item.device ||
+                                                                "Unknown device"
                                                             }
+
+                                                            {item.isCurrent && (
+                                                                <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-semibold text-emerald-700">
+                                                                    This device
+                                                                </span>
+                                                            )}
                                                         </p>
 
 
-                                                        <p className="mt-0.5 line-clamp-2 text-[10px] leading-4 text-slate-400">
+                                                        <p className="mt-0.5 truncate text-[10px] leading-4 text-slate-400">
                                                             {
-                                                                item.description ||
-                                                                "Account activity"
+                                                                item.ipAddress
+                                                                    ? `${item.ipAddress} · `
+                                                                    : ""
                                                             }
+                                                            Signed in{" "}
+                                                            {formatRelativeTime(
+                                                                item.loggedInAt
+                                                            )}
                                                         </p>
 
                                                     </div>
@@ -1358,7 +1398,8 @@ export default function Dashboard() {
 
                                                     <span className="shrink-0 text-[10px] text-slate-300">
                                                         {formatRelativeTime(
-                                                            item.createdAt
+                                                            item.lastSeenAt ||
+                                                            item.loggedInAt
                                                         )}
                                                     </span>
 
@@ -1394,7 +1435,7 @@ export default function Dashboard() {
 
 
                                             <p className="mt-3 text-sm font-medium text-slate-500">
-                                                No recent activity
+                                                No recent logins
                                             </p>
 
 

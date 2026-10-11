@@ -6,8 +6,55 @@ import { PushNotificationCard } from "../../push/PushNotificationCard";
 import { signOutEverywhere } from "../../session/deviceSession";
 import {
     AlertTriangle,
+    Clock3,
     LogOut,
+    MapPin,
+    MonitorSmartphone,
 } from "lucide-react";
+
+// Module scope on purpose: the purity lint forbids Date.now() inside the
+// component, so the login-time helpers live out here like the dashboard's.
+
+const formatLoginDate = (value) => {
+
+    if (!value) return "—";
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return "—";
+
+    return date.toLocaleString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    });
+};
+
+const formatLoginAgo = (value) => {
+
+    if (!value) return "";
+
+    const then = new Date(value).getTime();
+
+    if (Number.isNaN(then)) return "";
+
+    const minutes = Math.floor((Date.now() - then) / 60000);
+
+    if (minutes < 1) return "just now";
+    if (minutes < 60) return `${minutes}m ago`;
+
+    const hours = Math.floor(minutes / 60);
+
+    if (hours < 24) return `${hours}h ago`;
+
+    const days = Math.floor(hours / 24);
+
+    if (days < 30) return `${days}d ago`;
+
+    return formatLoginDate(value);
+};
 
 export default function Profile() {
 
@@ -20,6 +67,11 @@ export default function Profile() {
     // "Log out on all devices" confirmation + in-flight flag.
     const [showEverywhereConfirm, setShowEverywhereConfirm] = useState(false);
     const [everywhereLoading, setEverywhereLoading] = useState(false);
+
+    // Login history modal: device, network address and times per login.
+    const [showLogins, setShowLogins] = useState(false);
+    const [logins, setLogins] = useState([]);
+    const [loginsLoading, setLoginsLoading] = useState(false);
 
 
     // ==========================================
@@ -162,6 +214,69 @@ export default function Profile() {
     };
 
 
+    // ==========================================
+    // RECENT LOGINS
+    // ==========================================
+
+    // Device, network address and times of each login. The address is the
+    // network the login came from (an IP), not a GPS pin.
+
+    const openLogins = async () => {
+
+        setShowLogins(true);
+        setLoginsLoading(true);
+
+        try {
+
+            const token =
+                localStorage.getItem("token") ||
+                localStorage.getItem("authToken");
+
+            const sessionKey =
+                localStorage.getItem("oneserve:sessionKey") || "";
+
+            const response = await fetch(
+                `${API_URL}/api/auth/session/logins`,
+                {
+                    headers: {
+                        Accept: "application/json",
+                        Authorization: `Bearer ${token}`,
+                        ...(sessionKey
+                            ? { "X-Session-Key": sessionKey }
+                            : {}),
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Unable to load recent logins.");
+            }
+
+            const body = await response.json();
+
+            setLogins(
+                Array.isArray(body?.logins)
+                    ? body.logins
+                    : []
+            );
+        }
+        catch (error) {
+
+            console.error(error);
+
+            toast.error(
+                error.message ||
+                "Unable to load recent logins."
+            );
+        }
+        finally {
+
+            setLoginsLoading(false);
+        }
+    };
+
+    // Login history modal: device, network address and times per login.
+    // Formatting helpers are module scope (above), next to the imports.
     // Small reusable pulsing block for skeleton state
     const Bone = ({ className = "" }) => (
         <div className={`animate-pulse bg-slate-200/70 rounded-lg ${className}`} />
@@ -1163,6 +1278,47 @@ export default function Profile() {
                 </p>
 
 
+                {/* ==========================================
+                    RECENT LOGINS
+                ========================================== */}
+
+                <button
+                    onClick={openLogins}
+                    disabled={logoutLoading || everywhereLoading || loginsLoading}
+                    className="
+                        w-full
+                        mt-3
+                        flex
+                        items-center
+                        justify-center
+                        gap-2
+                        bg-white
+                        hover:bg-slate-50
+                        text-slate-700
+                        border
+                        border-slate-200
+                        p-3
+                        rounded-xl
+                        font-semibold
+                        transition-all
+                        disabled:opacity-70
+                    "
+                >
+
+                    <MonitorSmartphone size={16} />
+
+                    {loginsLoading
+                        ? "Loading Logins..."
+                        : "Recent Logins"}
+
+                </button>
+
+                <p className="mt-2 text-center text-xs text-slate-400">
+                    See every device signed in to this account, with its
+                    network address and login time.
+                </p>
+
+
             </div>
 
 
@@ -1244,6 +1400,122 @@ export default function Profile() {
                             </button>
 
                         </div>
+
+                    </div>
+
+                </div>
+
+            )}
+
+
+            {/* ==========================================
+                RECENT LOGINS
+            ========================================== */}
+
+            {showLogins && (
+
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+
+                    <div className="flex max-h-[85vh] w-full max-w-sm flex-col rounded-2xl bg-white p-6 shadow-xl">
+
+                        <div className="mx-auto flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-[#106A2E]">
+                            <MonitorSmartphone size={22} />
+                        </div>
+
+                        <h2 className="mt-4 text-center text-lg font-semibold text-slate-900">
+                            Recent Logins
+                        </h2>
+
+                        <p className="mt-1 text-center text-xs leading-5 text-slate-500">
+                            Every device signed in to this account. The address
+                            is the network it connected from, not a GPS location.
+                        </p>
+
+                        <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
+                            {loginsLoading ? (
+                                <div className="space-y-3">
+                                    {Array.from({ length: 4 }).map((_, index) => (
+                                        <div key={index} className="flex items-center gap-3">
+                                            <Bone className="h-10 w-10 shrink-0 rounded-xl" />
+                                            <div className="flex-1">
+                                                <Bone className="h-3.5 w-2/3" />
+                                                <Bone className="mt-1.5 h-2.5 w-1/3" />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : logins.length === 0 ? (
+                                <p className="py-8 text-center text-sm text-slate-400">
+                                    No recent logins found.
+                                </p>
+                            ) : (
+                                <ul className="divide-y divide-slate-100">
+                                    {logins.map((item, index) => (
+                                        <li
+                                            key={`${item.loggedInAt}-${index}`}
+                                            className="flex items-start gap-3 py-3"
+                                        >
+                                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500">
+                                                <MonitorSmartphone size={17} />
+                                            </span>
+
+                                            <div className="min-w-0 flex-1">
+                                                <p className="flex flex-wrap items-center gap-1.5 text-sm font-semibold text-slate-800">
+                                                    <span className="truncate">
+                                                        {item.device || "Unknown device"}
+                                                    </span>
+
+                                                    {item.isCurrent && (
+                                                        <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-semibold text-emerald-700">
+                                                            This device
+                                                        </span>
+                                                    )}
+                                                </p>
+
+                                                <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-500">
+                                                    <MapPin size={11} className="shrink-0" />
+                                                    <span className="truncate">
+                                                        {item.ipAddress || "Address unavailable"}
+                                                    </span>
+                                                </p>
+
+                                                <p className="mt-1 flex items-center gap-1 text-[11px] text-slate-400">
+                                                    <Clock3 size={11} className="shrink-0" />
+                                                    <span>
+                                                        {formatLoginDate(item.loggedInAt)}
+                                                        {item.lastSeenAt && item.lastSeenAt !== item.loggedInAt
+                                                            ? ` · seen ${formatLoginAgo(item.lastSeenAt)}`
+                                                            : ""}
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+
+                        <button
+                            onClick={() => setShowLogins(false)}
+                            className="
+                                mt-4
+                                w-full
+                                shrink-0
+                                bg-white
+                                hover:bg-slate-50
+                                text-slate-600
+                                border
+                                border-slate-200
+                                p-3
+                                rounded-xl
+                                font-semibold
+                                transition-all
+                            "
+                        >
+
+                            Close
+
+                        </button>
 
                     </div>
 
