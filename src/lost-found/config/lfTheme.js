@@ -28,6 +28,7 @@ export const REPORT_STATUS = {
 
 export const CLAIM_STATUS = {
     PROCESSING: "Processing",
+    INFORMATION_REQUESTED: "InformationRequested",
     RETURNED: "Returned",
     REJECTED: "Rejected",
     SCHEDULED: "Scheduled",
@@ -111,6 +112,9 @@ export function formatStatus(status) {
     // "AtAdminOffice" reads better with a space.
     if (value === "AtAdminOffice") return "At Admin Office";
 
+    // "InformationRequested" is the only camelCase status left.
+    if (value === "InformationRequested") return "Information Requested";
+
     return value;
 }
 
@@ -120,6 +124,8 @@ export function statusTone(status) {
     if (["published", "completed", "returned", "atadminoffice"].includes(value))
         return "ok";
     if (["rejected", "cancelled"].includes(value)) return "bad";
+    // "Awaiting Pickup" is good news, but the module reads it as pending
+    // until the item is actually back - keep it amber.
     return "pending";
 }
 

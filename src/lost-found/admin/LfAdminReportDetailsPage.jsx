@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
+    AlertCircle,
     ArrowLeft,
     Check,
     GitCompare,
     HandHelping,
+    MessageSquare,
     PackageSearch,
+    Paperclip,
     UserRound,
     X,
 } from "lucide-react";
@@ -28,6 +31,7 @@ import {
     LfSkeleton,
     LfStatusChip,
     LfTypeTag,
+    lfInputClass,
 } from "../components/lfUi";
 
 // =====================================================
@@ -96,20 +100,29 @@ export default function LfAdminReportDetailsPage() {
         }
     };
 
-    const onDecideClaim = async (claim, status) => {
+    const onDecideClaim = async (claim, status, reason) => {
         const verb = status === "Awaiting Pickup" ? "approve" : "reject";
         if (
             !window.confirm(
                 `${status === "Awaiting Pickup" ? "Approve" : "Reject"} this claim by ${
                     claim.claimantName || "this student"
-                }?`
+                }?` +
+                    (status === "Awaiting Pickup"
+                        ? " It moves straight to awaiting pickup."
+                        : reason
+                          ? ` Reason: ${reason}`
+                          : "")
             )
         )
             return;
 
         setActing(`claim:${claim.claimId}`);
         try {
-            const response = await lfAdminApi.updateClaimStatus(claim.claimId, status);
+            const response = await lfAdminApi.updateClaimStatus(
+                claim.claimId,
+                status,
+                reason
+            );
             toast.success(response.message || `Claim ${verb}d.`);
             await load();
         } catch (err) {
@@ -219,7 +232,7 @@ export default function LfAdminReportDetailsPage() {
             {/* ---------- CLAIMS ---------- */}
             <LfPanel
                 title={`Claims (${claims.length})`}
-                subtitle="Everyone asking for this item, with the decision"
+                subtitle="Everyone asking for this item, with the evidence the reviewer sees"
             >
                 {claims.length === 0 ? (
                     <LfEmpty
@@ -230,53 +243,13 @@ export default function LfAdminReportDetailsPage() {
                 ) : (
                     <ul className="space-y-3">
                         {claims.map((claim) => (
-                            <li
+                            <ClaimReviewCard
                                 key={claim.claimId}
-                                className="rounded-2xl border border-slate-200 bg-white p-4"
-                            >
-                                <div className="flex flex-wrap items-start justify-between gap-3">
-                                    <div className="min-w-0">
-                                        <p className="text-sm font-semibold text-slate-800">
-                                            {claim.claimantName || "—"}
-                                        </p>
-                                        <p className="text-xs text-slate-500">
-                                            {claim.claimantEmail}
-                                        </p>
-                                        <p className="mt-1 text-[11px] text-slate-400">
-                                            Claimed {formatDateTime(claim.claimDate)}
-                                        </p>
-                                        {claim.verificationNotes && (
-                                            <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-[11px] italic leading-5 text-slate-600">
-                                                “{claim.verificationNotes}”
-                                            </p>
-                                        )}
-                                    </div>
-                                    <LfStatusChip status={claim.status} />
-                                </div>
-
-                                {claim.status === "Processing" && (
-                                    <div className="mt-3 flex flex-wrap gap-2">
-                                        <button
-                                            type="button"
-                                            disabled={acting === `claim:${claim.claimId}`}
-                                            onClick={() => onDecideClaim(claim, "Awaiting Pickup")}
-                                            className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                                        >
-                                            <Check size={13} aria-hidden="true" />
-                                            Approve for pickup
-                                        </button>
-                                        <button
-                                            type="button"
-                                            disabled={acting === `claim:${claim.claimId}`}
-                                            onClick={() => onDecideClaim(claim, "Rejected")}
-                                            className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
-                                        >
-                                            <X size={13} aria-hidden="true" />
-                                            Reject
-                                        </button>
-                                    </div>
-                                )}
-                            </li>
+                                claim={claim}
+                                report={report}
+                                acting={acting === `claim:${claim.claimId}`}
+                                onDecide={onDecideClaim}
+                            />
                         ))}
                     </ul>
                 )}
@@ -369,6 +342,307 @@ function DetailRow({ label, value }) {
                 {label}
             </dt>
             <dd className="mt-0.5 text-xs font-medium text-slate-700">{value}</dd>
+        </div>
+    );
+}
+
+// =====================================================
+// One claim as the reviewer sees it: who asked, when,
+// what they wrote, whether a proof is attached, and the
+// three decisions - approve for pickup, reject with a
+// reason, or send back for more information.
+// =====================================================
+
+function ClaimReviewCard({ claim, report, acting, onDecide }) {
+    const [rejecting, setRejecting] = useState(false);
+    const [reason, setReason] = useState("");
+    const [asking, setAsking] = useState(false);
+    const [infoMessage, setInfoMessage] = useState("");
+    const [proofOpen, setProofOpen] = useState(false);
+
+    const decide = (status, note) => {
+        setRejecting(false);
+        setAsking(false);
+        onDecide(claim, status, note);
+    };
+
+    const hasProof = claim.hasProof;
+
+    return (
+        <li className="rounded-2xl border border-slate-200 bg-white p-4">
+            {/* ---------- claimant ---------- */}
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0">
+                    <p className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-md bg-[#10231B] px-1.5 py-0.5 font-mono text-[10px] font-bold text-white ring-1 ring-white/30">
+                            Claim #{String(claim.claimId ?? 0).padStart(3, "0")}
+                        </span>
+                        <span className="text-sm font-semibold text-slate-800">
+                            {claim.claimantName || "—"}
+                        </span>
+                        <LfStatusChip status={claim.status} />
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                        {claim.claimantEmail}
+                    </p>
+                    <p className="mt-0.5 text-[11px] text-slate-400">
+                        Item #{String(report.reportId ?? 0).padStart(3, "0")} ·{" "}
+                        {report.itemName} · submitted {formatDateTime(claim.claimDate)}
+                    </p>
+                </div>
+
+                {/* A reviewer sees at a glance whether to expect a file. */}
+                {hasProof ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-700">
+                        <Paperclip size={11} aria-hidden="true" />
+                        PROOF ATTACHED
+                    </span>
+                ) : (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">
+                        <AlertCircle size={11} aria-hidden="true" />
+                        NO PROOF ATTACHED
+                    </span>
+                )}
+            </div>
+
+            {/* ---------- what the claimant wrote ---------- */}
+            <dl className="mt-3 space-y-2">
+                {claim.ownershipExplanation && (
+                    <ReviewRow
+                        label="Why they believe it is theirs"
+                        value={claim.ownershipExplanation}
+                    />
+                )}
+                {claim.identifyingDetails && (
+                    <ReviewRow
+                        label="Identifying details"
+                        value={claim.identifyingDetails}
+                        highlight
+                    />
+                )}
+                {!hasProof && claim.noProofReason && (
+                    <ReviewRow
+                        label="Reason for no proof"
+                        value={claim.noProofReason}
+                        tone="warn"
+                    />
+                )}
+
+                {claim.decisionReason && (
+                    <ReviewRow
+                        label={
+                            claim.status === "InformationRequested"
+                                ? "What you asked for"
+                                : "Decision reason"
+                        }
+                        value={claim.decisionReason}
+                        tone={
+                            claim.status === "Rejected" ? "bad" : "info"
+                        }
+                    />
+                )}
+            </dl>
+
+            {/* ---------- attachment ---------- */}
+            {hasProof ? (
+                <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                        <p className="flex min-w-0 items-center gap-2 text-xs font-semibold text-slate-700">
+                            <Paperclip size={13} className="shrink-0 text-[#106A2E]" aria-hidden="true" />
+                            <span className="truncate">
+                                {claim.proofFileName || "Proof of ownership"}
+                            </span>
+                            <span className="shrink-0 text-[10px] font-normal text-slate-400">
+                                {claim.proofContentType}
+                            </span>
+                        </p>
+                        <div className="flex shrink-0 gap-1.5">
+                            <button
+                                type="button"
+                                onClick={() => setProofOpen((open) => !open)}
+                                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                            >
+                                {proofOpen ? "Hide" : "Preview"}
+                            </button>
+                            <a
+                                href={claim.proofUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                            >
+                                Open
+                            </a>
+                        </div>
+                    </div>
+
+                    {proofOpen && (
+                        <div className="mt-3">
+                            {claim.proofContentType?.startsWith("image/") ? (
+                                <img
+                                    src={claim.proofUrl}
+                                    alt={`Proof from ${claim.claimantName}`}
+                                    className="max-h-80 w-full rounded-xl border border-slate-200 bg-white object-contain"
+                                />
+                            ) : (
+                                <iframe
+                                    src={claim.proofUrl}
+                                    title={`Proof from ${claim.claimantName}`}
+                                    className="h-96 w-full rounded-xl border border-slate-200 bg-white"
+                                />
+                            )}
+                            <p className="mt-2 text-[10px] text-slate-400">
+                                Served only to you, the claimant and the finder.
+                            </p>
+                        </div>
+                    )}
+                </div>
+            ) : (
+                <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2.5 text-[11px] leading-5 text-amber-800">
+                    No Proof of Ownership Attached. Review the explanation and
+                    the identifying details above before deciding.
+                </p>
+            )}
+
+            {/* ---------- actions ---------- */}
+            {claim.status === "Processing" && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                        type="button"
+                        disabled={acting}
+                        onClick={() => decide("Awaiting Pickup")}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                        <Check size={13} aria-hidden="true" />
+                        Approve for pickup
+                    </button>
+
+                    <button
+                        type="button"
+                        disabled={acting}
+                        onClick={() => {
+                            setReason("");
+                            setRejecting(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100 disabled:opacity-50"
+                    >
+                        <X size={13} aria-hidden="true" />
+                        Reject with reason
+                    </button>
+
+                    <button
+                        type="button"
+                        disabled={acting}
+                        onClick={() => {
+                            setInfoMessage("");
+                            setAsking(true);
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100 disabled:opacity-50"
+                    >
+                        <MessageSquare size={13} aria-hidden="true" />
+                        Request information
+                    </button>
+                </div>
+            )}
+
+            {rejecting && (
+                <ReasonBox
+                    title="Why are you rejecting this claim?"
+                    placeholder="e.g. The serial number given does not match the item."
+                    value={reason}
+                    onChange={setReason}
+                    onCancel={() => setRejecting(false)}
+                    onSubmit={() => {
+                        if (!reason.trim()) {
+                            toast.error("Give a reason - the claimant will see it.");
+                            return;
+                        }
+                        decide("Rejected", reason.trim());
+                    }}
+                />
+            )}
+
+            {asking && (
+                <ReasonBox
+                    title="What do you need from the claimant?"
+                    placeholder="e.g. Please describe the sticker on the back or add a photo of your ID."
+                    value={infoMessage}
+                    onChange={setInfoMessage}
+                    tone="warn"
+                    onCancel={() => setAsking(false)}
+                    onSubmit={() => {
+                        if (!infoMessage.trim()) {
+                            toast.error("Tell the claimant what to add.");
+                            return;
+                        }
+                        decide("InformationRequested", infoMessage.trim());
+                    }}
+                />
+            )}
+        </li>
+    );
+}
+
+function ReviewRow({ label, value, tone, highlight }) {
+    const tones = {
+        warn: "bg-amber-50 border-amber-200",
+        bad: "bg-red-50 border-red-200",
+        info: "bg-sky-50 border-sky-200",
+    };
+
+    return (
+        <div
+            className={`rounded-xl border px-3 py-2.5 ${
+                tone ? tones[tone] : highlight ? "bg-slate-100" : "bg-slate-50"
+            }`}
+        >
+            <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                {label}
+            </dt>
+            <dd className="mt-0.5 whitespace-pre-wrap text-xs leading-5 text-slate-700">
+                {value}
+            </dd>
+        </div>
+    );
+}
+
+function ReasonBox({ title, placeholder, value, onChange, onCancel, onSubmit, tone }) {
+    return (
+        <div
+            className={`mt-3 rounded-2xl border p-3 ${
+                tone === "warn" ? "border-amber-200 bg-amber-50/60" : "border-red-200 bg-red-50/60"
+            }`}
+        >
+            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+                {title}
+            </p>
+            <textarea
+                rows={3}
+                value={value}
+                onChange={(event) => onChange(event.target.value)}
+                placeholder={placeholder}
+                maxLength={500}
+                className={`${lfInputClass} resize-none leading-6`}
+            />
+            <div className="mt-2 flex gap-2">
+                <button
+                    type="button"
+                    onClick={onSubmit}
+                    className={`rounded-xl px-4 py-2 text-xs font-semibold text-white transition ${
+                        tone === "warn"
+                            ? "bg-amber-600 hover:bg-amber-700"
+                            : "bg-red-600 hover:bg-red-700"
+                    }`}
+                >
+                    Confirm
+                </button>
+                <button
+                    type="button"
+                    onClick={onCancel}
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                >
+                    Cancel
+                </button>
+            </div>
         </div>
     );
 }

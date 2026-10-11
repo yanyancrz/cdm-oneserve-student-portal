@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CalendarClock, HandHelping, IdCard } from "lucide-react";
+import { CalendarClock, HandHelping, IdCard, MessageSquare, Paperclip, UploadCloud } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { lfApi } from "../services/lfApi";
@@ -177,6 +177,12 @@ export default function LfMyClaimsPage() {
                                 )
                             }
                             onCancel={() => onCancel(claim)}
+                            onUpdated={() => load()}
+                            onUpdate={() =>
+                                navigate(
+                                    `${LOST_FOUND_HOME_ROUTE}/report/${claim.reportId}/claim?update=${claim.claimId}`
+                                )
+                            }
                         />
                     ))}
                 </ul>
@@ -186,7 +192,7 @@ export default function LfMyClaimsPage() {
     );
 }
 
-function ClaimCard({ claim, cancelling, onOpen, onPickup, onCancel }) {
+function ClaimCard({ claim, cancelling, onOpen, onPickup, onCancel, onUpdated, onUpdate }) {
     const image = lfImageUrl(claim.imagePath);
     const canCancel =
         claim.status === "Processing" ||
@@ -195,6 +201,7 @@ function ClaimCard({ claim, cancelling, onOpen, onPickup, onCancel }) {
     const canPickup =
         claim.status === "Scheduled" ||
         claim.status === "Awaiting Pickup";
+    const [proving, setProving] = useState(false);
 
     return (
         <li className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -224,6 +231,45 @@ function ClaimCard({ claim, cancelling, onOpen, onPickup, onCancel }) {
                         <p className="mt-2 rounded-lg bg-slate-50 px-3 py-2 text-[11px] italic leading-5 text-slate-600">
                             “{claim.verificationNotes}”
                         </p>
+                    )}
+
+                    {/* What the reviewer asked for, or why it was rejected. */}
+                    {claim.status === "InformationRequested" && claim.decisionReason && (
+                        <div className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                                More information needed
+                            </p>
+                            <p className="mt-1 text-[11px] leading-5 text-amber-900">
+                                {claim.decisionReason}
+                            </p>
+                            <button
+                                type="button"
+                                onClick={onUpdate}
+                                className="mt-2 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-amber-700"
+                            >
+                                <MessageSquare size={12} aria-hidden="true" />
+                                Add the information
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setProving(true)}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-amber-300 bg-white px-3 py-1.5 text-[11px] font-bold text-amber-700 transition hover:bg-amber-50"
+                            >
+                                <Paperclip size={12} aria-hidden="true" />
+                                Attach proof
+                            </button>
+                        </div>
+                    )}
+
+                    {claim.status === "Rejected" && claim.decisionReason && (
+                        <div className="mt-2 rounded-xl border border-red-200 bg-red-50 p-3">
+                            <p className="text-[10px] font-bold uppercase tracking-wide text-red-700">
+                                Reason for rejection
+                            </p>
+                            <p className="mt-1 text-[11px] leading-5 text-red-900">
+                                {claim.decisionReason}
+                            </p>
+                        </div>
                     )}
                 </div>
                 <LfStatusChip status={claim.status} />
@@ -281,7 +327,100 @@ function ClaimCard({ claim, cancelling, onOpen, onPickup, onCancel }) {
             </div>
 
             {claim.status === "Scheduled" && <ClaimScheduleBox claimId={claim.claimId} />}
+
+            {proving && (
+                <ProofUploader
+                    claim={claim}
+                    onClose={() => setProving(false)}
+                    onAttached={onUpdated}
+                />
+            )}
         </li>
+    );
+}
+
+/**
+ * Inline proof upload for a claim that is already open. The file is
+ * uploaded, then immediately attached to this claim by updating it -
+ * a staged file alone would never be linked to anything.
+ */
+function ProofUploader({ claim, onClose, onAttached }) {
+    const [uploading, setUploading] = useState(false);
+
+    const upload = async (file) => {
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("Proof must not exceed 5 MB.");
+            return;
+        }
+
+        setUploading(true);
+        try {
+            const uploaded = await lfApi.uploadClaimProof(file);
+
+            // Re-submitting the claim with the new proof path links the
+            // file to this claim and puts it back in review.
+            await lfApi.updateMyClaim(claim.claimId, {
+                reportId: claim.reportId,
+                ownershipExplanation: claim.ownershipExplanation || claim.verificationNotes || "",
+                identifyingDetails: claim.identifyingDetails || null,
+                noProofReason: claim.noProofReason || null,
+                proofAttachmentPath: uploaded.data?.storedPath,
+            });
+
+            toast.success("Proof attached. The reviewer can see it now.");
+            onAttached?.();
+            onClose();
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    return (
+        <div className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
+            <p className="text-[11px] font-semibold text-emerald-900">
+                Proof of Ownership (Optional)
+            </p>
+            <p className="mt-0.5 text-[10px] text-slate-500">
+                JPG, PNG, WEBP or PDF · max 5 MB. Only you, the finder and the
+                admin can open it.
+            </p>
+
+            <label className="mt-2 flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-emerald-300 bg-white px-3 py-4 text-center transition hover:border-[#106A2E]/50">
+                {uploading ? (
+                    <span className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-[#106A2E]" />
+                        Uploading…
+                    </span>
+                ) : (
+                    <>
+                        <UploadCloud size={20} className="mb-1.5 text-[#106A2E]/60" aria-hidden="true" />
+                        <span className="text-xs font-semibold text-slate-700">
+                            Choose a file
+                        </span>
+                    </>
+                )}
+                <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,application/pdf"
+                    className="sr-only"
+                    disabled={uploading}
+                    onChange={(event) => {
+                        upload(event.target.files?.[0]);
+                    }}
+                />
+            </label>
+
+            <button
+                type="button"
+                onClick={onClose}
+                className="mt-2 text-[11px] font-semibold text-slate-500"
+            >
+                Cancel
+            </button>
+        </div>
     );
 }
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, CheckCheck, HandHelping } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { lfApi } from "../services/lfApi";
@@ -24,10 +24,11 @@ const TYPE_LABELS = {
     ClaimSubmitted: "New claim",
     ClaimApproved: "Ready for pickup",
     ClaimRejected: "Claim rejected",
+    ClaimUpdate: "Claim update",
+    ClaimInfoRequested: "More information needed",
     MatchFound: "Item found",
     RecoveryReady: "Recovery",
     RecoveryCompleted: "Handover",
-    ClaimUpdate: "Pickup",
 };
 
 export default function LfNotificationsPage() {
@@ -163,12 +164,23 @@ export default function LfNotificationsPage() {
                             </button>
 
                             {notification.reportId && (
-                                <Link
-                                    to={`${LOST_FOUND_HOME_ROUTE}/report/${notification.reportId}`}
-                                    className="mt-2 inline-block text-[11px] font-semibold text-[#0D7856] hover:underline"
-                                >
-                                    View the report →
-                                </Link>
+                                <div className="mt-2 flex flex-wrap gap-3">
+                                    <Link
+                                        to={`${LOST_FOUND_HOME_ROUTE}/report/${notification.reportId}`}
+                                        className="inline-block text-[11px] font-semibold text-[#0D7856] hover:underline"
+                                    >
+                                        View the report →
+                                    </Link>
+                                    {notification.notificationType === "MatchFound" && (
+                                        <Link
+                                            to={`${LOST_FOUND_HOME_ROUTE}/report/${notification.reportId}/claim`}
+                                            className="inline-flex items-center gap-1 rounded-full bg-[#106A2E] px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-[#0E3B22]"
+                                        >
+                                            <HandHelping size={12} aria-hidden="true" />
+                                            Submit Claim
+                                        </Link>
+                                    )}
+                                </div>
                             )}
                         </li>
                     ))}

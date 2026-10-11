@@ -151,10 +151,24 @@ export const lfApi = {
     claimsForReport: (reportId) =>
         http.get(`/api/lostfound/claims/report/${reportId}`),
     submitClaim: (body) => http.post("/api/lostfound/claims", body),
-    updateClaimStatus: (id, status) =>
-        http.put(`/api/lostfound/claims/${id}/status`, { status }),
+    updateMyClaim: (claimId, body) =>
+        http.put(`/api/lostfound/claims/${claimId}`, body),
+    updateClaimStatus: (id, status, reason) =>
+        http.put(`/api/lostfound/claims/${id}/status`, { status, reason }),
     cancelClaim: (id) => http.put(`/api/lostfound/claims/${id}/cancel`),
     deleteClaim: (id) => http.delete(`/api/lostfound/claims/${id}`),
+
+    // Proof of ownership (optional). The file is uploaded first and only
+    // its server-side reference travels with the claim, so a proof is
+    // never a public URL.
+    uploadClaimProof: (file) => {
+        const body = new FormData();
+        body.append("file", file);
+        return http.post("/api/lostfound/claims/proof-upload", body);
+    },
+    /** Authorized proof URL - only the claimant, the finder or an admin can read it. */
+    claimProofUrl: (claimId) =>
+        `${API_URL}/api/lostfound/claims/${claimId}/proof`,
 
     // Pickup schedules (view-only: students walk in during published
     // windows, nobody books a slot)
@@ -202,8 +216,8 @@ export const lfAdminApi = {
     availability: () => http.get("/api/lostfound/admin/availability"),
     updateReportStatus: (id, status) =>
         http.put(`/api/lostfound/reports/${id}/status`, { status }),
-    updateClaimStatus: (id, status) =>
-        http.put(`/api/lostfound/claims/${id}/status`, { status }),
+    updateClaimStatus: (id, status, reason) =>
+        http.put(`/api/lostfound/claims/${id}/status`, { status, reason }),
     createAvailability: (body) =>
         http.post("/api/lostfound/schedules/availability", body),
     createAvailabilityBatch: (body) =>
