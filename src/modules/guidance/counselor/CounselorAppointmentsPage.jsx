@@ -8,7 +8,7 @@ import { CardListSkeleton, Empty, ErrorBox } from "../components/GuidanceStates"
 import { Avatar, DateBadge, FilterChips, SearchBar } from "../components/GuidanceUi";
 import { guidanceApi } from "../services/guidanceApi";
 import { personDetails } from "../utils/people";
-import { formatYMD, slotToMinutes } from "../utils/dateTime";
+import { arrivalWindow, formatYMD, slotToMinutes } from "../utils/dateTime";
 import RescheduleSheet from "./RescheduleSheet";
 import SessionRecordSheet from "./SessionRecordSheet";
 import FollowUpSheet from "./FollowUpSheet";
@@ -214,32 +214,25 @@ export default function CounselorAppointmentsPage() {
                         )}
 
                         {a.status === "Confirmed" && (
-                            <>
-                                <div className="mt-3 flex gap-2">
-                                    <button type="button" disabled={isBusy} onClick={() => act(a.id, "Arrived", "Mark this student as arrived?")}
-                                        className={`${btn} bg-[#106A2E] text-white shadow-sm`}>
-                                        <Check size={14} aria-hidden="true" /> Arrived
-                                    </button>
-                                    <button type="button" disabled={isBusy} onClick={() => act(a.id, "NoShow", "Mark this student as no-show? They did not come.") }
-                                        className={`${btn} border border-amber-200 bg-amber-50 text-amber-800`}>
-                                        <X size={14} aria-hidden="true" /> No-show
-                                    </button>
-                                </div>
-                                <div className="mt-2 flex gap-2">
-                                    <button type="button" disabled={isBusy} onClick={() => act(a.id, "Completed", "Mark this session as completed?")}
-                                        className={`${btn} bg-sky-600 text-white shadow-sm`}>
-                                        <CheckCircle2 size={14} aria-hidden="true" /> Done
-                                    </button>
-                                    <button type="button" disabled={isBusy} onClick={() => setResched(a)}
-                                        className={`${btn} border border-slate-200 text-slate-700`}>
-                                        <CalendarClock size={14} aria-hidden="true" /> Reschedule
-                                    </button>
-                                    <button type="button" disabled={isBusy} onClick={() => act(a.id, "Cancelled", "Cancel this appointment? The student will be notified.")}
-                                        className={`${btn} border border-red-200 bg-red-50 text-red-700`}>
-                                        <X size={14} aria-hidden="true" /> Cancel
-                                    </button>
-                                </div>
-                            </>
+                            <ConfirmedArrivalBox
+                                appointment={a}
+                                isBusy={isBusy}
+                                onArrived={() => act(a.id, "Arrived")}
+                                onNoShow={() => act(a.id, "NoShow", "Mark this student as no-show? The session will be terminated.")}
+                            />
+                        )}
+
+                        {a.status === "Arrived" && (
+                            <div className="mt-3 flex gap-2">
+                                <button type="button" disabled={isBusy} onClick={() => act(a.id, "Completed", "Mark this session as completed?")}
+                                    className={`${btn} bg-sky-600 text-white shadow-sm`}>
+                                    <CheckCircle2 size={14} aria-hidden="true" /> Done
+                                </button>
+                                <button type="button" disabled={isBusy} onClick={() => setResched(a)}
+                                    className={`${btn} border border-slate-200 text-slate-700`}>
+                                    <CalendarClock size={14} aria-hidden="true" /> Reschedule
+                                </button>
+                            </div>
                         )}
                             {a.status === "Completed" && (
                                 <div className="mt-3 flex gap-2">
@@ -296,5 +289,49 @@ export default function CounselorAppointmentsPage() {
                 />
             )}
         </main>
+    );
+}
+
+/**
+ * The ONLY action on a Confirmed appointment is arrival tracking.
+ * Arrived unlocks 30 minutes before the session starts; 30 minutes
+ * after the start with no arrival, the session is terminated as no-show.
+ */
+function ConfirmedArrivalBox({ appointment, isBusy, onArrived, onNoShow }) {
+    const btn = "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition active:scale-95 disabled:opacity-60";
+    const window = arrivalWindow(appointment.date, appointment.timeSlot);
+
+    if (window.state === "expired") {
+        return (
+            <div className="mt-3 space-y-2">
+                <p className="rounded-lg bg-red-50 px-3 py-2 text-[11px] font-medium leading-5 text-red-700">
+                    30 minutes past the start with no arrival. Terminate the session as no-show.
+                </p>
+                <div className="flex gap-2">
+                    <button type="button" disabled={isBusy} onClick={onNoShow}
+                        className={`${btn} border border-red-200 bg-red-50 text-red-700`}>
+                        <X size={14} aria-hidden="true" /> No-show - terminate
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    const tooEarly = window.state === "upcoming";
+
+    return (
+        <div className="mt-3 space-y-2">
+            <div className="flex gap-2">
+                <button type="button" disabled={isBusy || tooEarly} onClick={onArrived}
+                    className={`${btn} bg-[#106A2E] text-white shadow-sm`}>
+                    <Check size={14} aria-hidden="true" /> Arrived
+                </button>
+            </div>
+            {tooEarly && (
+                <p className="text-[11px] text-slate-400">
+                    Arrived unlocks 30 minutes before the session ({appointment.timeSlot}).
+                </p>
+            )}
+        </div>
     );
 }

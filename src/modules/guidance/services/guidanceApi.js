@@ -127,6 +127,15 @@ export const guidanceApi = {
 
     deleteAvailability: (id) => guidanceFetch(`/counselor/availability/${id}`, { method: "DELETE" }),
 
+    // ---- counselor: day-offs (one-date unavailability; weekly blocks repeat on their own) ----
+    getDayOffs: (signal) =>
+        guidanceFetch("/counselor/day-offs", { signal }).then((d) => d.dayOffs || []),
+
+    addDayOff: (body) =>
+        guidanceFetch("/counselor/day-offs", { method: "POST", body }),
+
+    deleteDayOff: (id) => guidanceFetch(`/counselor/day-offs/${id}`, { method: "DELETE" }),
+
     // ---- counselor: session records, follow-ups, student records ----
     getRecords: (studentId, signal) => {
         const q = studentId ? `?studentId=${studentId}` : "";

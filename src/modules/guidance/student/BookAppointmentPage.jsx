@@ -549,7 +549,7 @@ export default function BookAppointmentPage() {
                             <div className="min-w-0">
                                 <p className="text-[10px] font-bold uppercase tracking-wider text-[#0E3B22]">Your booking</p>
                                 <p className="truncate text-sm font-semibold text-slate-800">{selected.fullName}</p>
-                                <p className="text-xs text-slate-600">{formatYMD(date)} · {slot}</p>
+                                <p className="text-xs text-slate-600">{formatYMD(date)} · {slot} · 30 mins</p>
                             </div>
                         </div>
                     )}

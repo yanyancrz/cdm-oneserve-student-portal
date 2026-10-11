@@ -11,8 +11,8 @@ import { DateBadge, FilterChips, SectionTitle } from "../components/GuidanceUi";
 import { guidanceApi } from "../services/guidanceApi";
 import { formatStamp, formatYMD, slotToMinutes, todayISO } from "../utils/dateTime";
 
-const FILTERS = ["All", "Pending", "Confirmed", "Completed", "Cancelled"];
-const ACTIVE = ["Pending", "Confirmed"];
+const FILTERS = ["All", "Pending", "Confirmed", "Arrived", "NoShow", "Completed", "Cancelled"];
+const ACTIVE = ["Pending", "Confirmed", "Arrived"];
 const hiddenKey = (id) => `gp_hidden_appts_${id}`;
 
 const byWhen = (a, b) => a.date.localeCompare(b.date) || slotToMinutes(a.timeSlot) - slotToMinutes(b.timeSlot);
@@ -139,6 +139,16 @@ export default function MyAppointmentsPage() {
                     <span className="mt-3 inline-block rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-semibold text-[#0E3B22]">
                         {a.concernType}
                     </span>
+                )}
+
+                {/* Arrive-on-time reminder for today's confirmed sessions (the
+                    server also sends a push 1 hour before - this is the in-app backup). */}
+                {a.status === "Confirmed" && a.date === today && (
+                    <p className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] font-medium leading-5 text-amber-800">
+                        <Clock3 size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
+                        Please arrive on time - your {a.timeSlot} session is today. Each session is 30 minutes.
+                        Arriving over 30 minutes late terminates the session.
+                    </p>
                 )}
 
                 {sched && changes.length > 0 && (

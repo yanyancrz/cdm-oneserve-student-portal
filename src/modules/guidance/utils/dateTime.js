@@ -23,6 +23,26 @@ export const slotToMinutes = (slot) => {
 export const isPastSlot = (dateISO, slot) =>
     dateISO === todayISO() && slotToMinutes(slot) <= nowMinutes();
 
+/**
+ * Arrival window for a session (30-minute grace on both sides):
+ *   - "upcoming": session is in the future (Arrived unlocks 30 min before start)
+ *   - "open":     from 30 min before start until 30 min after start (Arrived allowed)
+ *   - "expired":  more than 30 min past start with no arrival (terminate as no-show)
+ */
+export const arrivalWindow = (dateISO, slot) => {
+    const start = slotToMinutes(slot);
+    const today = todayISO();
+
+    if (!dateISO || !start) return { state: "expired", minutesToStart: -Infinity };
+    if (dateISO > today) return { state: "upcoming", minutesToStart: Infinity };
+    if (dateISO < today) return { state: "expired", minutesToStart: -Infinity };
+
+    const diff = start - nowMinutes();
+    if (diff > 30) return { state: "upcoming", minutesToStart: diff };
+    if (diff < -30) return { state: "expired", minutesToStart: diff };
+    return { state: "open", minutesToStart: diff };
+};
+
 // "2026-10-05" -> "Oct 5, 2026" (parsed as a plain calendar date, no timezone shift)
 export const formatYMD = (value) => {
     if (!value) return "—";

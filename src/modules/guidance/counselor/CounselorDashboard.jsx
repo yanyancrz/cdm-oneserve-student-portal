@@ -10,7 +10,7 @@ import StatusBadge from "../components/StatusBadge";
 import MonthCalendar from "../components/MonthCalendar";
 import ProfileSheet from "./ProfileSheet";
 import { guidanceApi } from "../services/guidanceApi";
-import { formatYMD, slotToMinutes, todayISO } from "../utils/dateTime";
+import { arrivalWindow, formatYMD, slotToMinutes, todayISO } from "../utils/dateTime";
 import { getPHHolidays } from "../utils/phHolidays";
 import { personDetails } from "../utils/people";
 
@@ -95,8 +95,7 @@ export default function CounselorDashboard() {
     const dayAppts = (selectedDay ? byDate[selectedDay] || [] : []).sort(byWhen);
 
     const markAttendance = async (id, status) => {
-        const label = status === "Arrived" ? "arrived" : "no-show";
-        if (!window.confirm(`Mark this appointment as ${label}?`)) return;
+        if (status === "NoShow" && !window.confirm("Mark as no-show? The session will be terminated.")) return;
         setBusy(id);
         try {
             await guidanceApi.updateAppointmentStatus(id, status);
@@ -256,40 +255,59 @@ export default function CounselorDashboard() {
                             No confirmed sessions today.
                         </p>
                     ) : (
-                        todays.map((a) => (
-                            <article key={a.id} className="rounded-2xl border border-slate-200 bg-white p-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="rounded-xl bg-green-50 px-2.5 py-1.5 text-xs font-bold text-green-700">{a.timeSlot}</div>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-slate-800">
-                                            <span className="truncate">{a.studentName}</span>
-                                            <RoleBadge role={a.role} />
-                                        </p>
-                                        <p className="truncate text-xs text-slate-500">
-                                            {personDetails(a)}{a.concernType ? ` · ${a.concernType}` : ""}
-                                        </p>
+                        todays.map((a) => {
+                            const window = arrivalWindow(a.date, a.timeSlot);
+                            const expired = window.state === "expired";
+                            const tooEarly = window.state === "upcoming";
+
+                            return (
+                                <article key={a.id} className="rounded-2xl border border-slate-200 bg-white p-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="rounded-xl bg-green-50 px-2.5 py-1.5 text-xs font-bold text-green-700">{a.timeSlot}</div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-slate-800">
+                                                <span className="truncate">{a.studentName}</span>
+                                                <RoleBadge role={a.role} />
+                                            </p>
+                                            <p className="truncate text-xs text-slate-500">
+                                                {personDetails(a)}{a.concernType ? ` · ${a.concernType}` : ""}
+                                            </p>
+                                        </div>
                                     </div>
-                                </div>
-                                <div className="mt-2 flex gap-2">
-                                    <button
-                                        type="button"
-                                        disabled={busy === a.id}
-                                        onClick={() => markAttendance(a.id, "Arrived")}
-                                        className="flex-1 rounded-lg bg-[#106A2E] py-2 text-xs font-semibold text-white disabled:opacity-60"
-                                    >
-                                        Arrived
-                                    </button>
-                                    <button
-                                        type="button"
-                                        disabled={busy === a.id}
-                                        onClick={() => markAttendance(a.id, "NoShow")}
-                                        className="flex-1 rounded-lg border border-amber-200 bg-amber-50 py-2 text-xs font-semibold text-amber-800 disabled:opacity-60"
-                                    >
-                                        No-show
-                                    </button>
-                                </div>
-                            </article>
-                        ))
+                                    {expired ? (
+                                        <div className="mt-2">
+                                            <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-[11px] font-medium text-red-700">
+                                                30 minutes past with no arrival.
+                                            </p>
+                                            <button
+                                                type="button"
+                                                disabled={busy === a.id}
+                                                onClick={() => markAttendance(a.id, "NoShow")}
+                                                className="w-full rounded-lg border border-red-200 bg-red-50 py-2 text-xs font-semibold text-red-700 disabled:opacity-60"
+                                            >
+                                                No-show - terminate
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="mt-2">
+                                            <button
+                                                type="button"
+                                                disabled={busy === a.id || tooEarly}
+                                                onClick={() => markAttendance(a.id, "Arrived")}
+                                                className="w-full rounded-lg bg-[#106A2E] py-2 text-xs font-semibold text-white disabled:opacity-60"
+                                            >
+                                                Arrived
+                                            </button>
+                                            {tooEarly && (
+                                                <p className="mt-1.5 text-[11px] text-slate-400">
+                                                    Unlocks 30 minutes before the session.
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                </article>
+                            );
+                        })
                     )}
                     </section>
                 </>

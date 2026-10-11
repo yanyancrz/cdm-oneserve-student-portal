@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { CalendarClock, Plus, Trash2 } from "lucide-react";
+import { CalendarClock, CalendarX2, Plus, Trash2 } from "lucide-react";
 
 import { CardListSkeleton, Empty, ErrorBox, Note } from "../components/GuidanceStates";
 import { ACCENTS, fieldClass } from "../components/GuidanceUi";
 import { guidanceApi } from "../services/guidanceApi";
+import { todayISO } from "../utils/dateTime";
+import RescheduleSheet from "./RescheduleSheet";
 
 const DAYS = [
     { idx: 1, label: "Monday" },
@@ -43,6 +45,16 @@ export default function ManageAvailabilityPage() {
     const [saving, setSaving] = useState(false);
     const [busyId, setBusyId] = useState(null);
     const [applyingDefault, setApplyingDefault] = useState(false);
+
+    // One-date day-offs (the weekly blocks repeat on their own, so next
+    // week is automatically back to normal).
+    const [dayOffs, setDayOffs] = useState([]);
+    const [dayOffDate, setDayOffDate] = useState("");
+    const [dayOffReason, setDayOffReason] = useState("");
+    const [affected, setAffected] = useState(null); // appointments on the picked date
+    const [checkingDay, setCheckingDay] = useState(false);
+    const [savingDayOff, setSavingDayOff] = useState(false);
+    const [resched, setResched] = useState(null);
 
     // Default office schedule: Mon-Fri, 8:00 AM - 12:00 NN and
     // 1:00 PM - 5:00 PM. Lunch (12-1) is left with NO block, so it is
@@ -84,7 +96,12 @@ export default function ManageAvailabilityPage() {
         setError("");
         setLoading(true);
         try {
-            setSlots(await guidanceApi.getMyAvailability(signal));
+            const [blocks, offs] = await Promise.all([
+                guidanceApi.getMyAvailability(signal),
+                guidanceApi.getDayOffs(signal).catch(() => []),
+            ]);
+            setSlots(blocks);
+            setDayOffs(offs);
         } catch (e) {
             if (e?.name !== "AbortError") setError(e.message || "Could not load your schedule.");
         } finally {
@@ -138,6 +155,51 @@ export default function ManageAvailabilityPage() {
             toast.error(e.message || "Could not remove.");
         } finally {
             setBusyId(null);
+        }
+    };
+
+    // Who has an appointment on the picked day-off date? They must be
+    // rescheduled first - setting the day off blocks NEW bookings, but
+    // existing appointments stay until moved.
+    const checkDay = async () => {
+        if (!dayOffDate) return toast.error("Pick a date first.");
+        if (dayOffDate < todayISO()) return toast.error("Cannot mark a past date as a day off.");
+        setCheckingDay(true);
+        try {
+            const list = await guidanceApi.getCounselorAppointments({ date: dayOffDate });
+            setAffected(list.filter((a) => ["Pending", "Confirmed", "Arrived"].includes(a.status)));
+        } catch (e) {
+            toast.error(e.message || "Could not check that date.");
+        } finally {
+            setCheckingDay(false);
+        }
+    };
+
+    const saveDayOff = async () => {
+        if (!dayOffDate) return toast.error("Pick a date first.");
+        setSavingDayOff(true);
+        try {
+            const r = await guidanceApi.addDayOff({ date: dayOffDate, reason: dayOffReason.trim() || null });
+            toast.success(r.message || "Day off saved.");
+            setDayOffDate("");
+            setDayOffReason("");
+            setAffected(null);
+            await load();
+        } catch (e) {
+            toast.error(e.message || "Could not save the day off.");
+        } finally {
+            setSavingDayOff(false);
+        }
+    };
+
+    const removeDayOff = async (d) => {
+        if (!window.confirm(`Remove the day off on ${d.date}? The date follows the weekly schedule again.`)) return;
+        try {
+            await guidanceApi.deleteDayOff(d.id);
+            toast.success("Day off removed.");
+            await load();
+        } catch (e) {
+            toast.error(e.message || "Could not remove.");
         }
     };
 
@@ -277,6 +339,8 @@ export default function ManageAvailabilityPage() {
                                     </label>
                                 </div>
 
+                                <p className="text-[11px] text-slate-400">Each session is 30 minutes.</p>
+
                                 {addError && <Note tone="error">{addError}</Note>}
 
                                 <div className="flex gap-2">
@@ -292,6 +356,129 @@ export default function ManageAvailabilityPage() {
                     </section>
                 );
             })}
+
+            {/* ---------- DAY-OFFS: one date only, weekly schedule auto-repeats ---------- */}
+            <section className="rounded-2xl border border-black/[0.05] bg-white p-4 shadow-sm">
+                <div className="flex items-center gap-2">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                        <CalendarX2 size={18} aria-hidden="true" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <h2 className="text-sm font-bold text-slate-700">Day off (one date)</h2>
+                        <p className="text-[11px] text-slate-400">
+                            Closes a single date. Next week is automatically back to the weekly schedule.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="mt-3 flex gap-2">
+                    <input
+                        type="date"
+                        aria-label="Day-off date"
+                        min={todayISO()}
+                        value={dayOffDate}
+                        onChange={(e) => { setDayOffDate(e.target.value); setAffected(null); }}
+                        className={fieldClass("green")}
+                    />
+                    <button
+                        type="button"
+                        onClick={checkDay}
+                        disabled={checkingDay || !dayOffDate}
+                        className="shrink-0 rounded-xl bg-[#106A2E] px-4 text-xs font-semibold text-white transition active:scale-95 disabled:opacity-60"
+                    >
+                        {checkingDay ? "Checking…" : "Check"}
+                    </button>
+                </div>
+
+                <input
+                    aria-label="Day-off reason (optional)"
+                    value={dayOffReason}
+                    onChange={(e) => setDayOffReason(e.target.value)}
+                    placeholder="Reason (optional, e.g. seminar)"
+                    maxLength={200}
+                    className={`${fieldClass("green")} mt-2`}
+                />
+
+                {affected !== null && (
+                    <div className="mt-3 rounded-xl bg-slate-50 p-3">
+                        {affected.length === 0 ? (
+                            <p className="text-xs text-slate-500">
+                                No appointments on {dayOffDate}. Safe to mark unavailable.
+                            </p>
+                        ) : (
+                            <>
+                                <p className="text-xs font-bold text-amber-800">
+                                    {affected.length} appointment{affected.length === 1 ? "" : "s"} on {dayOffDate} - reschedule them first:
+                                </p>
+                                <ul className="mt-2 space-y-2">
+                                    {affected.map((a) => (
+                                        <li key={a.id} className="flex items-center gap-2 rounded-lg bg-white p-2 shadow-sm">
+                                            <div className="min-w-0 flex-1">
+                                                <p className="truncate text-xs font-semibold text-slate-700">
+                                                    {a.studentName} · {a.timeSlot}
+                                                </p>
+                                                <p className="truncate text-[11px] text-slate-400">
+                                                    {a.status}{a.concernType ? ` · ${a.concernType}` : ""}
+                                                </p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setResched(a)}
+                                                className="shrink-0 rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-700 transition active:scale-95"
+                                            >
+                                                Reschedule
+                                            </button>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </>
+                        )}
+
+                        <button
+                            type="button"
+                            onClick={saveDayOff}
+                            disabled={savingDayOff}
+                            className="mt-3 w-full rounded-xl bg-red-600 py-2.5 text-xs font-bold text-white transition active:scale-[0.99] disabled:opacity-60"
+                        >
+                            {savingDayOff ? "Saving…" : `Mark ${dayOffDate} unavailable`}
+                        </button>
+                    </div>
+                )}
+
+                {dayOffs.length > 0 && (
+                    <ul className="mt-3 space-y-1.5">
+                        {dayOffs.map((d) => (
+                            <li key={d.id} className="flex items-center gap-2 rounded-xl bg-red-50/60 px-3 py-2">
+                                <p className="min-w-0 flex-1 text-xs font-semibold text-slate-700">
+                                    {d.date}
+                                    {d.reason && <span className="font-normal text-slate-500"> · {d.reason}</span>}
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => removeDayOff(d)}
+                                    aria-label={`Remove day off on ${d.date}`}
+                                    className="rounded-full p-1.5 text-red-500 transition hover:bg-red-100"
+                                >
+                                    <Trash2 size={15} />
+                                </button>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </section>
+
+            {resched && (
+                <RescheduleSheet
+                    appointment={resched}
+                    onClose={() => setResched(null)}
+                    onDone={() => {
+                        setResched(null);
+                        toast.success("Appointment rescheduled.");
+                        if (dayOffDate) checkDay();
+                        load();
+                    }}
+                />
+            )}
         </main>
     );
 }
