@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, SearchCheck, X } from "lucide-react";
-import toast from "react-hot-toast";
+import { Eye, SearchCheck } from "lucide-react";
 
 import { lfAdminApi } from "../services/lfApi";
 import {
     formatDate,
     formatDateTime,
-    formatStatus,
 } from "../config/lfTheme";
 import { lfImageUrl } from "../config/lfImage";
 import {
@@ -21,9 +19,9 @@ import {
 } from "../components/lfUi";
 
 // =====================================================
-// Every report, newest first, with the review
-// action: publish puts a report on the public
-// board, reject takes it out of the queue.
+// Every report, newest first. The row only opens the
+// detail view - publishing or rejecting happens there,
+// after the admin has seen the full item.
 // =====================================================
 
 export default function LfAdminReportsPage() {
@@ -31,7 +29,6 @@ export default function LfAdminReportsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [search, setSearch] = useState("");
-    const [acting, setActing] = useState(null);
 
     const load = async () => {
         try {
@@ -55,29 +52,6 @@ export default function LfAdminReportsPage() {
             cancelled = true;
         };
     }, []);
-
-    const onReview = async (report, status) => {
-        const verb = status === "Published" ? "publish" : "reject";
-
-        if (!window.confirm(`${status === "Published" ? "Publish" : "Reject"} this report? It will ${verb === "publish" ? "appear on the public board" : "be removed from the review queue"}.`))
-            return;
-
-        setActing(report.reportId);
-
-        try {
-            const response = await lfAdminApi.updateReportStatus(
-                report.reportId,
-                status
-            );
-
-            toast.success(response.message || `Report ${verb}ed.`);
-            await load();
-        } catch (err) {
-            toast.error(err.message);
-        } finally {
-            setActing(null);
-        }
-    };
 
     const visible = reports.filter(
         (report) =>
@@ -125,7 +99,7 @@ export default function LfAdminReportsPage() {
                                 <th className="px-4 py-3 font-semibold">Reported</th>
                                 <th className="px-4 py-3 font-semibold">Status</th>
                                 <th className="px-4 py-3 text-right font-semibold">
-                                    Review
+                                    Detail
                                 </th>
                             </tr>
                         </thead>
@@ -179,39 +153,14 @@ export default function LfAdminReportsPage() {
                                         <td className="px-4 py-3">
                                             <LfStatusChip status={report.status} />
                                         </td>
-                                        <td className="px-4 py-3">
-                                            {report.status === "Pending" ? (
-                                                <div className="flex items-center justify-end gap-1.5">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            onReview(report, "Published")
-                                                        }
-                                                        disabled={acting === report.reportId}
-                                                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                                                        title="Publish - show on the board"
-                                                        aria-label={`Publish ${report.itemName}`}
-                                                    >
-                                                        <Check size={13} aria-hidden="true" />
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() =>
-                                                            onReview(report, "Rejected")
-                                                        }
-                                                        disabled={acting === report.reportId}
-                                                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-100 text-red-600 transition hover:bg-red-200 disabled:opacity-50"
-                                                        title="Reject"
-                                                        aria-label={`Reject ${report.itemName}`}
-                                                    >
-                                                        <X size={13} aria-hidden="true" />
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <span className="text-right text-[10px] text-slate-400">
-                                                    {formatStatus(report.status)}
-                                                </span>
-                                            )}
+                                        <td className="px-4 py-3 text-right">
+                                            <Link
+                                                to={`/lost-found/admin/reports/${report.reportId}`}
+                                                className="inline-flex items-center gap-1.5 rounded-xl bg-[#106A2E] px-3.5 py-2 text-[11px] font-semibold text-white transition hover:bg-[#0E3B22]"
+                                            >
+                                                <Eye size={13} aria-hidden="true" />
+                                                View detail
+                                            </Link>
                                         </td>
                                     </tr>
                                 );

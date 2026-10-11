@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Check, HandHelping, X } from "lucide-react";
-import toast from "react-hot-toast";
+import { Eye, HandHelping } from "lucide-react";
 
 import { lfAdminApi } from "../services/lfApi";
 import {
     formatDateTime,
-    formatStatus,
 } from "../config/lfTheme";
 import {
     LfEmpty,
@@ -18,13 +16,9 @@ import {
 } from "../components/lfUi";
 
 // =====================================================
-// Every claim, with the finder's decision:
-// claimed opens a pickup schedule and notifies
-// the claimant; reject closes the claim and
-// cancels any schedule.
-//
-// Claiming is limited to processing claims - the
-// API enforces the same rule.
+// Every claim. The row only opens the item's detail view -
+// approving or rejecting happens there, after the admin
+// has seen the item, the evidence and the other claims.
 // =====================================================
 
 export default function LfAdminClaimsPage() {
@@ -32,7 +26,6 @@ export default function LfAdminClaimsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [search, setSearch] = useState("");
-    const [acting, setActing] = useState(null);
 
     const load = async () => {
         try {
@@ -56,36 +49,6 @@ export default function LfAdminClaimsPage() {
             cancelled = true;
         };
     }, []);
-
-    const onDecide = async (claim, status) => {
-        const verb = status === "Awaiting Pickup" ? "approve" : "reject";
-
-        if (
-            !window.confirm(
-                `${status === "Awaiting Pickup" ? "Approve" : "Reject"} this claim by ${claim.claimantName || "this student"}?` +
-                    (status === "Awaiting Pickup"
-                        ? " It moves straight to awaiting pickup."
-                        : "")
-            )
-        )
-            return;
-
-        setActing(claim.claimId);
-
-        try {
-            const response = await lfAdminApi.updateClaimStatus(
-                claim.claimId,
-                status
-            );
-
-            toast.success(response.message || `Claim ${verb}.`);
-            await load();
-        } catch (err) {
-            toast.error(err.message);
-        } finally {
-            setActing(null);
-        }
-    };
 
     const visible = claims.filter(
         (claim) =>
@@ -137,7 +100,7 @@ export default function LfAdminClaimsPage() {
                                 <th className="px-4 py-3 font-semibold">Claim date</th>
                                 <th className="px-4 py-3 font-semibold">Status</th>
                                 <th className="px-4 py-3 text-right font-semibold">
-                                    Decision
+                                    Detail
                                 </th>
                             </tr>
                         </thead>
@@ -200,39 +163,14 @@ export default function LfAdminClaimsPage() {
                                     <td className="px-4 py-3">
                                         <LfStatusChip status={claim.status} />
                                     </td>
-                                    <td className="px-4 py-3">
-                                        {claim.status === "Processing" ? (
-                                            <div className="flex items-center justify-end gap-1.5">
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        onDecide(claim, "Awaiting Pickup")
-                                                    }
-                                                    disabled={acting === claim.claimId}
-                                                    className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                                                    title="Approve - moves to awaiting pickup"
-                                                    aria-label={`Approve claim by ${claim.claimantName}`}
-                                                >
-                                                    <Check size={13} aria-hidden="true" />
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() =>
-                                                        onDecide(claim, "Rejected")
-                                                    }
-                                                    disabled={acting === claim.claimId}
-                                                    className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-100 text-red-600 transition hover:bg-red-200 disabled:opacity-50"
-                                                    title="Reject"
-                                                    aria-label={`Reject claim by ${claim.claimantName}`}
-                                                >
-                                                    <X size={13} aria-hidden="true" />
-                                                </button>
-                                            </div>
-                                        ) : (
-                                            <span className="text-right text-[10px] text-slate-400">
-                                                {formatStatus(claim.status)}
-                                            </span>
-                                        )}
+                                    <td className="px-4 py-3 text-right">
+                                        <Link
+                                            to={`/lost-found/admin/reports/${claim.reportId}`}
+                                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#106A2E] px-3.5 py-2 text-[11px] font-semibold text-white transition hover:bg-[#0E3B22]"
+                                        >
+                                            <Eye size={13} aria-hidden="true" />
+                                            View detail
+                                        </Link>
                                     </td>
                                 </tr>
                             ))}

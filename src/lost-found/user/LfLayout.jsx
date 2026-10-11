@@ -12,6 +12,7 @@ import {
 import { LF_UNAUTHORIZED_EVENT, lfApi } from "../services/lfApi";
 import { LOST_FOUND_HOME_ROUTE, isLostFoundAdminRole } from "../session";
 import { FIND_LOGO_SRC } from "../components/lfBrand";
+import LfAssistant from "../components/LfAssistant";
 import { AmbientBackground } from "../../marketplace/components/marketUi";
 import ModuleBottomNav from "../../components/BottomNavigation/ModuleBottomNav";
 
@@ -123,6 +124,9 @@ function LfShell() {
                 <LfHeader />
                 <Outlet />
             </main>
+
+            {/* FIND helper on every user page. */}
+            <LfAssistant />
         </div>
     );
 }
