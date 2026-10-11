@@ -183,7 +183,9 @@ export function ModuleLoadingScreen({
     text = "Loading...",
 }) {
     return (
-        <div role="status" className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#0B0B0B] px-6 text-center">
+        <div role="status" className="relative flex min-h-screen flex-col items-center justify-center gap-4 overflow-hidden bg-gradient-to-br from-[#10B981] via-[#0E3B22] to-[#052E16] px-6 text-center">
+            <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-emerald-300/20 blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-24 left-1/4 h-72 w-72 rounded-full bg-cyan-300/10 blur-3xl" />
             <span className="sr-only">{label ?? text}</span>
 
             {imageSrc ? (
