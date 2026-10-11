@@ -13,6 +13,7 @@ import toast from "react-hot-toast";
 import { lfAdminApi } from "../services/lfApi";
 import {
     formatDateTime,
+    formatItemId,
 } from "../config/lfTheme";
 import {
     LfButton,
@@ -550,8 +551,8 @@ function ScheduleRow({ schedule, onHandover }) {
         <tr className="transition hover:bg-slate-50/70">
             <td className="px-4 py-3">
                 <span className="flex flex-wrap items-center gap-1.5 font-semibold text-slate-800">
-                    <span className="rounded-md bg-[#10231B] px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white ring-1 ring-white/30">
-                        #{String(schedule.reportId ?? 0).padStart(3, "0")}
+                    <span className="rounded-md bg-[#10231B] px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-white ring-1 ring-white/30">
+                        {formatItemId(schedule.reportId)}
                     </span>
                     <Link
                         to={`/lost-found/admin/reports/${schedule.reportId}`}

@@ -15,6 +15,7 @@ import { lfAdminApi } from "../services/lfApi";
 import {
     formatDate,
     formatDateTime,
+    formatItemId,
     formatStatus,
 } from "../config/lfTheme";
 import { lfImageUrl } from "../config/lfImage";
@@ -124,7 +125,7 @@ export default function LfAdminReportDetailsPage() {
 
     const { report, claims = [], recovery, matches = [] } = detail;
     const image = lfImageUrl(report.imagePath);
-    const itemId = `#${String(report.reportId ?? 0).padStart(3, "0")}`;
+    const itemId = formatItemId(report.reportId);
 
     return (
         <div className="space-y-4">
@@ -340,7 +341,7 @@ export default function LfAdminReportDetailsPage() {
                                                 {otherName || "—"}
                                             </span>
                                             <span className="text-[11px] text-slate-400">
-                                                #{String(otherId ?? 0).padStart(3, "0")} ·{" "}
+                                                {formatItemId(otherId)} ·{" "}
                                                 {match.matchPercentage}% match ·{" "}
                                                 {match.isConfirmed ? "Confirmed" : "Unconfirmed"}
                                             </span>

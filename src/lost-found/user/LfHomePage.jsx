@@ -11,6 +11,7 @@ import { lfApi } from "../services/lfApi";
 import { LOST_FOUND_HOME_ROUTE } from "../session";
 import {
     formatDate,
+    formatItemId,
     LF_COLORS,
 } from "../config/lfTheme";
 import { lfImageUrl } from "../config/lfImage";
@@ -471,7 +472,7 @@ function RecentRailSkeleton() {    return (
 
 function RecentReportCard({ report, onOpen }) {
     const image = lfImageUrl(report.imagePath);
-    const itemId = `#${String(report.reportId ?? 0).padStart(3, "0")}`;
+    const itemId = formatItemId(report.reportId);
 
     return (
         <li className="w-44 shrink-0 snap-start">

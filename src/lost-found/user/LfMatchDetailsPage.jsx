@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 
 import { lfApi } from "../services/lfApi";
 import { LOST_FOUND_HOME_ROUTE } from "../session";
-import { formatDate, formatDateTime } from "../config/lfTheme";
+import { formatDate, formatDateTime, formatItemId } from "../config/lfTheme";
 import { lfImageUrl } from "../config/lfImage";
 import {
     LfButton,
@@ -191,7 +191,7 @@ export default function LfMatchDetailsPage() {
 
 function MatchItemCard({ label, report, onOpen }) {
     const image = lfImageUrl(report.imagePath);
-    const itemId = `#${String(report.reportId ?? 0).padStart(3, "0")}`;
+    const itemId = formatItemId(report.reportId);
 
     return (
         <LfPanel>

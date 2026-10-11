@@ -11,7 +11,7 @@ import toast from "react-hot-toast";
 
 import { lfApi } from "../services/lfApi";
 import { LOST_FOUND_HOME_ROUTE } from "../session";
-import { formatDateTime, formatStatus } from "../config/lfTheme";
+import { formatDateTime, formatItemId, formatStatus } from "../config/lfTheme";
 import { lfImageUrl } from "../config/lfImage";
 import {
     LfButton,
@@ -136,8 +136,8 @@ export default function LfReportDetailsPage() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
-                            <span className="rounded-lg bg-[#10231B] px-2.5 py-1 text-sm font-bold tracking-wide text-white shadow-md ring-1 ring-white/30">
-                                #{String(report.reportId ?? 0).padStart(3, "0")}
+                            <span className="rounded-lg bg-[#10231B] px-2.5 py-1 font-mono text-sm font-bold tracking-wide text-white shadow-md ring-1 ring-white/30">
+                                {formatItemId(report.reportId)}
                             </span>
                             <h2 className="text-xl font-semibold text-slate-800">
                                 {report.itemName}

@@ -50,6 +50,56 @@ export const RECOVERY_STATUS = {
 };
 
 // =====================================================
+// ITEM ID - the one identifier the whole module uses
+//
+// Reports are identified by their numeric ReportId from the
+// API. Every surface shows it as "#001" (zero-padded to three
+// digits), and that value IS the Item ID - there is no second
+// id field in the database.
+//
+// Search must be an EXACT match on this value: the query may
+// carry the "#" prefix and leading zeros, and it must never
+// match a different item that merely shares digits.
+// =====================================================
+
+/** 1 -> "#001" */
+export function formatItemId(reportId) {
+    return `#${String(reportId ?? 0).padStart(3, "0")}`;
+}
+
+/** "  #001  " -> "001" (tolerates the prefix and stray spaces). */
+export function normalizeItemIdQuery(value) {
+    return String(value ?? "")
+        .trim()
+        .replace(/^#/, "")
+        .trim();
+}
+
+/**
+ * True only when `query` names this report's Item ID exactly.
+ *
+ * The Item ID is carried by the report's own numeric id and shown as
+ * "#001", so a query may include the hash and any amount of leading
+ * zeros: "1", "001", "#001", "01" and "0001" all name item 1. A query
+ * that resolves to a DIFFERENT id ("10" for item 1, "0012" for item
+ * 125) never matches, and a non-numeric string such as
+ * "LF-2026-001" is not a complete Item ID here at all.
+ */
+export function isExactItemIdMatch(reportId, query) {
+    const key = normalizeItemIdQuery(query);
+    if (!key) return false;
+
+    // Our Item IDs are numeric; anything else is not a complete ID.
+    if (!/^\d+$/.test(key)) return false;
+
+    // Compared as strings with the zero padding removed, so no leading
+    // zero is ever lost in translation.
+    const stripLeadingZeros = (value) => String(value).replace(/^0+(?=\d)/, "");
+
+    return stripLeadingZeros(key) === stripLeadingZeros(String(reportId));
+}
+
+// =====================================================
 // Small presentation helpers
 // =====================================================
 

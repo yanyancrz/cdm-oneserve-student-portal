@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertCircle, CheckCircle2, Clock, Image as ImageIcon, Inbox, Loader2, Search, UploadCloud } from "lucide-react";
+import { AlertCircle, CheckCircle2, Clock, Image as ImageIcon, Inbox, Loader2, Search, UploadCloud, X } from "lucide-react";
 
 import { LF_COLORS, statusTone } from "../config/lfTheme";
 
@@ -175,6 +175,119 @@ export function LfSearchInput({ value, onChange, placeholder = "Search items…"
         </label>
     );
 }
+
+/**
+ * Exact Item ID search for the admin console.
+ *
+ * The Item ID is the report's own id, shown as "#001". Matching is
+ * exact: a partial number never returns a different item. The query is
+ * only applied on Enter / Search / Clear, so the list never flickers
+ * mid-typing and no stale result can survive a new search.
+ *
+ * @param {string} props.value          current draft query
+ * @param {Function} props.onChange     (value) => void - typing
+ * @param {Function} props.onSubmit     (value) => void - Enter / button
+ * @param {Function} props.onClear      () => void
+ * @param {boolean} [props.loading]     shows a spinner on the button
+ */
+export function LfItemIdSearch({
+    value,
+    onChange,
+    onSubmit,
+    onClear,
+    loading = false,
+}) {
+    const hasQuery = value.trim().length > 0;
+
+    return (
+        <div className="flex flex-wrap items-center gap-2">
+            <label className="relative min-w-[220px] flex-1">
+                <span className="sr-only">Search by exact Item ID</span>
+                <Search
+                    size={15}
+                    className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+                    aria-hidden="true"
+                />
+                <input
+                    type="text"
+                    value={value}
+                    inputMode="text"
+                    autoComplete="off"
+                    spellCheck="false"
+                    placeholder="Enter exact Item ID..."
+                    aria-label="Search by exact Item ID"
+                    onChange={(event) => onChange(event.target.value)}
+                    onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                            event.preventDefault();
+                            onSubmit(value);
+                        }
+                        if (event.key === "Escape" && value) {
+                            event.preventDefault();
+                            onClear();
+                        }
+                    }}
+                    className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-9 font-mono text-xs tracking-wide text-slate-800 placeholder:font-sans placeholder:tracking-normal placeholder:text-slate-400 focus:border-[#106A2E]/40 focus:outline-none focus:ring-2 focus:ring-[#106A2E]/15"
+                />
+                {hasQuery && (
+                    <button
+                        type="button"
+                        onClick={onClear}
+                        aria-label="Clear Item ID search"
+                        title="Clear (Esc)"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                    >
+                        <X size={13} aria-hidden="true" />
+                    </button>
+                )}
+            </label>
+
+            <LfButton type="submit" onClick={() => onSubmit(value)} loading={loading}>
+                {loading ? "Searching…" : "Search"}
+            </LfButton>
+        </div>
+    );
+}
+
+/** Empty state written for the Item ID search. */
+export function LfItemIdEmpty({ icon: Icon = Search, recordNoun = "report", onClear }) {
+    return (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white/60 px-6 py-12 text-center">
+            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                <Icon size={22} aria-hidden="true" />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-700">
+                No {recordNoun} found
+            </h3>
+            <p className="mt-1 max-w-sm text-xs leading-5 text-slate-500">
+                Nothing matches that exact Item ID. Item IDs look like{" "}
+                <span className="font-mono font-semibold text-slate-600">#001</span>{" "}
+                - paste the whole thing, with or without the hash. Partial
+                numbers never match.
+            </p>
+            <button
+                type="button"
+                onClick={onClear}
+                className="mt-4 rounded-xl border border-[#106A2E] px-4 py-2 text-xs font-semibold text-[#106A2E] transition hover:bg-[#106A2E]/5"
+            >
+                Show all records
+            </button>
+        </div>
+    );
+}
+
+/** Table wrapper with the horizontal scroll the console relies on. */
+export function LfTableShell({ children }) {
+    return (
+        <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <table className="w-full min-w-[860px] text-left text-xs">{children}</table>
+        </div>
+    );
+}
+
+export const lfThClass = "px-4 py-3 font-semibold text-[10px] uppercase tracking-wide text-slate-400";
+export const lfTdClass = "px-4 py-3 align-middle";
+export const lfTrClass = "border-b border-slate-100 transition last:border-0 hover:bg-slate-50/70";
 
 export const lfInputClass =
     "w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-800 placeholder:text-slate-400 focus:border-[#106A2E]/40 focus:outline-none focus:ring-2 focus:ring-[#106A2E]/15";
