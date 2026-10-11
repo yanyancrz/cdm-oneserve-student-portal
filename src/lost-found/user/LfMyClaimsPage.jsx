@@ -22,7 +22,7 @@ import {
 // The caller's claims, with the pickup state front
 // and center.
 //
-// A claim moves Processing -> Claimed -> Returned. Claimed items walk in
+// A claim moves Processing -> Awaiting Pickup -> Returned. Items awaiting
 // during office windows (shown below) - nobody books a slot. Returned
 // claims show the handover.
 // =====================================================
@@ -190,11 +190,9 @@ function ClaimCard({ claim, cancelling, onOpen, onPickup, onCancel }) {
     const image = lfImageUrl(claim.imagePath);
     const canCancel =
         claim.status === "Processing" ||
-        claim.status === "Claimed" ||
         claim.status === "Scheduled" ||
         claim.status === "Awaiting Pickup";
     const canPickup =
-        claim.status === "Claimed" ||
         claim.status === "Scheduled" ||
         claim.status === "Awaiting Pickup";
 
@@ -219,7 +217,7 @@ function ClaimCard({ claim, cancelling, onOpen, onPickup, onCancel }) {
                         {claim.location ? ` · ${claim.location}` : ""}
                     </p>
                     <p className="mt-1 text-[11px] text-slate-400">
-                        Claimed {formatDateTime(claim.claimDate)}
+                        Submitted {formatDateTime(claim.claimDate)}
                     </p>
 
                     {claim.verificationNotes && (
@@ -253,13 +251,7 @@ function ClaimCard({ claim, cancelling, onOpen, onPickup, onCancel }) {
                 {claim.status === "Awaiting Pickup" && (
                     <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#F4D35E]/20 px-3 py-2 text-[11px] font-semibold text-[#1F1F1F]">
                         <CalendarClock size={13} aria-hidden="true" />
-                        Claimed - walk in during office hours
-                    </span>
-                )}
-
-                {claim.status === "Claimed" && (
-                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-2 text-[11px] font-semibold text-emerald-700">
-                        Claimed - walk in during office hours
+                        Awaiting pickup - walk in during office hours
                     </span>
                 )}
 

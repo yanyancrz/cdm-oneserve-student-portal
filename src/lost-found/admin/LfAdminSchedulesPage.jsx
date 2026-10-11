@@ -29,8 +29,8 @@ import {
 //   - published windows (create / retire),
 //   - the pickup queue (Awaiting Pickup and
 //     Scheduled first), and
-//   - the handover itself, which completes the
-//     claim, marks the report Claimed and
+//   - the handover itself, which returns the
+//     claim, marks the schedule completed and
 //     closes every other active claim.
 // =====================================================
 

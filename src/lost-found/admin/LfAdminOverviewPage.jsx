@@ -103,7 +103,7 @@ export default function LfAdminOverviewPage() {
                     title="Claim statuses"
                     rows={[
                         ["Processing", stats.processingClaims],
-                        ["Claimed", stats.claimedClaims],
+                        ["Awaiting pickup", stats.awaitingPickupClaims],
                         ["Rejected", stats.rejectedClaims],
                         ["Returned", stats.returnedClaims],
                     ]}

@@ -57,13 +57,13 @@ export default function LfAdminClaimsPage() {
     }, []);
 
     const onDecide = async (claim, status) => {
-        const verb = status === "Claimed" ? "mark as claimed" : "reject";
+        const verb = status === "Awaiting Pickup" ? "approve" : "reject";
 
         if (
             !window.confirm(
-                `${status === "Claimed" ? "Mark as claimed" : "Reject"} this claim by ${claim.claimantName || "this student"}?` +
-                    (status === "Claimed"
-                        ? " A pickup schedule opens automatically."
+                `${status === "Awaiting Pickup" ? "Approve" : "Reject"} this claim by ${claim.claimantName || "this student"}?` +
+                    (status === "Awaiting Pickup"
+                        ? " It moves straight to awaiting pickup."
                         : "")
             )
         )
@@ -133,7 +133,7 @@ export default function LfAdminClaimsPage() {
                                 <th className="px-4 py-3 font-semibold">Claimant</th>
                                 <th className="px-4 py-3 font-semibold">Finder</th>
                                 <th className="px-4 py-3 font-semibold">Evidence</th>
-                                <th className="px-4 py-3 font-semibold">Claimed</th>
+                                <th className="px-4 py-3 font-semibold">Claim date</th>
                                 <th className="px-4 py-3 font-semibold">Status</th>
                                 <th className="px-4 py-3 text-right font-semibold">
                                     Decision
@@ -201,12 +201,12 @@ export default function LfAdminClaimsPage() {
                                                 <button
                                                     type="button"
                                                     onClick={() =>
-                                                        onDecide(claim, "Claimed")
+                                                        onDecide(claim, "Awaiting Pickup")
                                                     }
                                                     disabled={acting === claim.claimId}
                                                     className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                                                    title="Claimed - opens a pickup schedule"
-                                                    aria-label={`Mark claim by ${claim.claimantName} as claimed`}
+                                                    title="Approve - moves to awaiting pickup"
+                                                    aria-label={`Approve claim by ${claim.claimantName}`}
                                                 >
                                                     <Check size={13} aria-hidden="true" />
                                                 </button>

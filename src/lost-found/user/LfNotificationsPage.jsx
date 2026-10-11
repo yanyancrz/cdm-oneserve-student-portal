@@ -22,7 +22,7 @@ import {
 const TYPE_LABELS = {
     General: "Update",
     ClaimSubmitted: "New claim",
-    ClaimApproved: "Item claimed",
+    ClaimApproved: "Ready for pickup",
     ClaimRejected: "Claim rejected",
     MatchFound: "Item found",
     RecoveryReady: "Recovery",

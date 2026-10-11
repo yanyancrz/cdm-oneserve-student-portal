@@ -83,14 +83,6 @@ export default function LfAdminLayout() {
 
                         <button
                             type="button"
-                            onClick={() => navigate("/admin/dashboard")}
-                            className="rounded-xl bg-white/10 px-3 py-2 text-[11px] font-semibold text-white transition hover:bg-white/20"
-                        >
-                            OneServe admin
-                        </button>
-
-                        <button
-                            type="button"
                             onClick={handleLogout}
                             aria-label="Log out"
                             title="Log out"

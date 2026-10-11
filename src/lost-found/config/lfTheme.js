@@ -28,7 +28,6 @@ export const REPORT_STATUS = {
 
 export const CLAIM_STATUS = {
     PROCESSING: "Processing",
-    CLAIMED: "Claimed",
     RETURNED: "Returned",
     REJECTED: "Rejected",
     SCHEDULED: "Scheduled",
@@ -68,7 +67,7 @@ export function formatStatus(status) {
 /** One-line description of a status for screen readers. */
 export function statusTone(status) {
     const value = String(status || "").toLowerCase();
-    if (["published", "completed", "claimed", "returned", "atadminoffice"].includes(value))
+    if (["published", "completed", "returned", "atadminoffice"].includes(value))
         return "ok";
     if (["rejected", "cancelled"].includes(value)) return "bad";
     return "pending";
