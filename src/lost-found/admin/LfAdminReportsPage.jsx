@@ -21,7 +21,7 @@ import {
 
 // =====================================================
 // Every report, newest first, with the review
-// action: approve puts a report on the public
+// action: publish puts a report on the public
 // board, reject takes it out of the queue.
 // =====================================================
 
@@ -56,9 +56,9 @@ export default function LfAdminReportsPage() {
     }, []);
 
     const onReview = async (report, status) => {
-        const verb = status === "Approved" ? "approve" : "reject";
+        const verb = status === "Published" ? "publish" : "reject";
 
-        if (!window.confirm(`${status === "Approved" ? "Approve" : "Reject"} this report? It will ${verb === "approve" ? "appear on the public board" : "be removed from the review queue"}.`))
+        if (!window.confirm(`${status === "Published" ? "Publish" : "Reject"} this report? It will ${verb === "publish" ? "appear on the public board" : "be removed from the review queue"}.`))
             return;
 
         setActing(report.reportId);
@@ -148,8 +148,13 @@ export default function LfAdminReportsPage() {
                                                     {/* Plain text on purpose: /lost-found/report/:id
                                                         lives inside the student layout, which redirects
                                                         admins back to /lost-found/admin. */}
-                                                    <span className="block truncate font-semibold text-slate-800">
-                                                        {report.itemName}
+                                                    <span className="flex flex-wrap items-center gap-1.5">
+                                                        <span className="rounded-md bg-[#10231B] px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white ring-1 ring-white/30">
+                                                            #{String(report.reportId ?? 0).padStart(3, "0")}
+                                                        </span>
+                                                        <span className="block truncate font-semibold text-slate-800">
+                                                            {report.itemName}
+                                                        </span>
                                                     </span>
                                                     <span className="mt-0.5 block truncate text-[10px] text-slate-400">
                                                         {report.category || "Uncategorized"}
@@ -179,12 +184,12 @@ export default function LfAdminReportsPage() {
                                                     <button
                                                         type="button"
                                                         onClick={() =>
-                                                            onReview(report, "Approved")
+                                                            onReview(report, "Published")
                                                         }
                                                         disabled={acting === report.reportId}
                                                         className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                                                        title="Approve - publish to the board"
-                                                        aria-label={`Approve ${report.itemName}`}
+                                                        title="Publish - show on the board"
+                                                        aria-label={`Publish ${report.itemName}`}
                                                     >
                                                         <Check size={13} aria-hidden="true" />
                                                     </button>

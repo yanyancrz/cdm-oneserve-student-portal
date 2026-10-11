@@ -32,7 +32,7 @@ import {
 //   - the owner edits while it is pending review;
 //   - a found report can be claimed by anyone else;
 //   - a lost report can receive a recovery report;
-//   - an approved found report carries its claim list
+//   - a published found report carries its claim list
 //     for its finder.
 // =====================================================
 
@@ -85,8 +85,8 @@ export default function LfReportDetailsPage() {
     const isPending = report?.status === "Pending";
     const isFound = report?.reportType === "Found";
     const isLost = report?.reportType === "Lost";
-    const canClaim = isFound && report?.status === "Approved" && !isOwner;
-    const canRecover = isLost && report?.status === "Approved" && !isOwner;
+    const canClaim = isFound && report?.status === "Published" && !isOwner;
+    const canRecover = isLost && report?.status === "Published" && !isOwner;
 
     const onDelete = async () => {
         if (!window.confirm("Delete this report? This cannot be undone.")) return;
@@ -136,6 +136,9 @@ export default function LfReportDetailsPage() {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-lg bg-[#10231B] px-2.5 py-1 text-sm font-bold tracking-wide text-white shadow-md ring-1 ring-white/30">
+                                #{String(report.reportId ?? 0).padStart(3, "0")}
+                            </span>
                             <h2 className="text-xl font-semibold text-slate-800">
                                 {report.itemName}
                             </h2>
@@ -269,7 +272,7 @@ export default function LfReportDetailsPage() {
                 </LfPanel>
             )}
 
-            {isOwner && isFound && report.status === "Approved" && (
+            {isOwner && isFound && report.status === "Published" && (
                 <LfPanel
                     title="Claims on this item"
                     subtitle="Students who say they lost this item"

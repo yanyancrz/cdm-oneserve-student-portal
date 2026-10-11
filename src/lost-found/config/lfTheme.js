@@ -22,18 +22,17 @@ export const LF_COLORS = {
 
 export const REPORT_STATUS = {
     PENDING: "Pending",
-    APPROVED: "Approved",
+    PUBLISHED: "Published",
     REJECTED: "Rejected",
-    CLAIMED: "Claimed",
 };
 
 export const CLAIM_STATUS = {
-    PENDING: "Pending",
-    APPROVED: "Approved",
+    PROCESSING: "Processing",
+    CLAIMED: "Claimed",
+    RETURNED: "Returned",
     REJECTED: "Rejected",
     SCHEDULED: "Scheduled",
     AWAITING_PICKUP: "Awaiting Pickup",
-    COMPLETED: "Completed",
     CANCELLED: "Cancelled",
 };
 
@@ -69,7 +68,7 @@ export function formatStatus(status) {
 /** One-line description of a status for screen readers. */
 export function statusTone(status) {
     const value = String(status || "").toLowerCase();
-    if (["approved", "completed", "claimed", "atadminoffice"].includes(value))
+    if (["published", "completed", "claimed", "returned", "atadminoffice"].includes(value))
         return "ok";
     if (["rejected", "cancelled"].includes(value)) return "bad";
     return "pending";

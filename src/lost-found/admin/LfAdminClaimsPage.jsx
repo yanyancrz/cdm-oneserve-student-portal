@@ -18,11 +18,11 @@ import {
 
 // =====================================================
 // Every claim, with the finder's decision:
-// approve opens a pickup schedule and notifies
+// claimed opens a pickup schedule and notifies
 // the claimant; reject closes the claim and
 // cancels any schedule.
 //
-// Approval is limited to pending claims - the
+// Claiming is limited to processing claims - the
 // API enforces the same rule.
 // =====================================================
 
@@ -57,12 +57,12 @@ export default function LfAdminClaimsPage() {
     }, []);
 
     const onDecide = async (claim, status) => {
-        const verb = status === "Approved" ? "approve" : "reject";
+        const verb = status === "Claimed" ? "mark as claimed" : "reject";
 
         if (
             !window.confirm(
-                `${status === "Approved" ? "Approve" : "Reject"} this claim by ${claim.claimantName || "this student"}?` +
-                    (status === "Approved"
+                `${status === "Claimed" ? "Mark as claimed" : "Reject"} this claim by ${claim.claimantName || "this student"}?` +
+                    (status === "Claimed"
                         ? " A pickup schedule opens automatically."
                         : "")
             )
@@ -77,7 +77,7 @@ export default function LfAdminClaimsPage() {
                 status
             );
 
-            toast.success(response.message || `Claim ${verb}ed.`);
+            toast.success(response.message || `Claim ${verb}.`);
             await load();
         } catch (err) {
             toast.error(err.message);
@@ -107,7 +107,7 @@ export default function LfAdminClaimsPage() {
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-slate-500">
                     {claims.length} claims ·{" "}
-                    {claims.filter((c) => c.status === "Pending").length} awaiting a decision
+                    {claims.filter((c) => c.status === "Processing").length} awaiting a decision
                 </p>
                 <div className="w-full sm:w-72">
                     <LfSearchInput
@@ -148,7 +148,10 @@ export default function LfAdminClaimsPage() {
                                 >
                                     <td className="px-4 py-3">
                                         {/* Plain text: the user detail route redirects admins away. */}
-                                        <span className="font-semibold text-slate-800">
+                                        <span className="flex flex-wrap items-center gap-1.5 font-semibold text-slate-800">
+                                            <span className="rounded-md bg-[#10231B] px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white ring-1 ring-white/30">
+                                                #{String(claim.reportId ?? 0).padStart(3, "0")}
+                                            </span>
                                             {claim.itemName}
                                         </span>
                                         <span className="mt-0.5 block text-[10px] text-slate-400">
@@ -193,17 +196,17 @@ export default function LfAdminClaimsPage() {
                                         <LfStatusChip status={claim.status} />
                                     </td>
                                     <td className="px-4 py-3">
-                                        {claim.status === "Pending" ? (
+                                        {claim.status === "Processing" ? (
                                             <div className="flex items-center justify-end gap-1.5">
                                                 <button
                                                     type="button"
                                                     onClick={() =>
-                                                        onDecide(claim, "Approved")
+                                                        onDecide(claim, "Claimed")
                                                     }
                                                     disabled={acting === claim.claimId}
                                                     className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-white transition hover:bg-emerald-700 disabled:opacity-50"
-                                                    title="Approve - opens a pickup schedule"
-                                                    aria-label={`Approve claim by ${claim.claimantName}`}
+                                                    title="Claimed - opens a pickup schedule"
+                                                    aria-label={`Mark claim by ${claim.claimantName} as claimed`}
                                                 >
                                                     <Check size={13} aria-hidden="true" />
                                                 </button>

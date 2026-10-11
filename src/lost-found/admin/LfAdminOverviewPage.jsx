@@ -42,7 +42,7 @@ export default function LfAdminOverviewPage() {
     if (error) return <LfNotice tone="bad">{error}</LfNotice>;
     if (!stats) return <LfSkeleton rows={3} />;
 
-    const reviewQueue = stats.pendingReports + stats.pendingClaims;
+    const reviewQueue = stats.pendingReports + stats.processingClaims;
 
     return (
         <div className="space-y-5">
@@ -53,7 +53,7 @@ export default function LfAdminOverviewPage() {
                     </p>
                     <p className="mt-0.5 text-xs text-amber-800">
                         {stats.pendingReports} report{stats.pendingReports === 1 ? "" : "s"} and{" "}
-                        {stats.pendingClaims} claim{stats.pendingClaims === 1 ? "" : "s"}
+                        {stats.processingClaims} claim{stats.processingClaims === 1 ? "" : "s"}
                         {" "}have not been decided yet.
                     </p>
                 </div>
@@ -64,14 +64,14 @@ export default function LfAdminOverviewPage() {
                     icon={SearchCheck}
                     label="Reports"
                     value={stats.totalReports}
-                    detail={`${stats.approvedReports} approved · ${stats.claimedReports} claimed`}
+                    detail={`${stats.publishedReports} published · ${stats.returnedReports} returned`}
                     to="/lost-found/admin/reports"
                 />
                 <StatCard
                     icon={HandHelping}
                     label="Claims"
                     value={stats.totalClaims}
-                    detail={`${stats.pendingClaims} pending · ${stats.completedClaims} completed`}
+                    detail={`${stats.processingClaims} processing · ${stats.returnedClaims} returned`}
                     to="/lost-found/admin/claims"
                 />
                 <StatCard
@@ -94,18 +94,18 @@ export default function LfAdminOverviewPage() {
                     title="Report statuses"
                     rows={[
                         ["Pending review", stats.pendingReports],
-                        ["Approved", stats.approvedReports],
+                        ["Published", stats.publishedReports],
                         ["Rejected", stats.rejectedReports],
-                        ["Claimed", stats.claimedReports],
+                        ["Returned", stats.returnedReports],
                     ]}
                 />
                 <StatusBreakdown
                     title="Claim statuses"
                     rows={[
-                        ["Pending", stats.pendingClaims],
-                        ["Approved", stats.approvedClaims],
+                        ["Processing", stats.processingClaims],
+                        ["Claimed", stats.claimedClaims],
                         ["Rejected", stats.rejectedClaims],
-                        ["Completed", stats.completedClaims],
+                        ["Returned", stats.returnedClaims],
                     ]}
                 />
             </div>

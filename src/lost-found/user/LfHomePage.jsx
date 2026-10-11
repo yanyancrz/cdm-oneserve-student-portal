@@ -19,7 +19,6 @@ import {
     LfImage,
     LfNotice,
     LfPanel,
-    LfSearchInput,
     LfStatusChip,
     LfTypeTag,
 } from "../components/lfUi";
@@ -57,9 +56,8 @@ export default function LfHomePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    // Home-level search + category filter. The rails are small (6 each), so
+    // Home-level category filter. The rails are small (6 each), so
     // this filters instantly on the client - no debounce, no refetch.
-    const [search, setSearch] = useState("");
     const [category, setCategory] = useState("");
 
     const firstName = (localStorage.getItem("userName") || "Student").split(" ")[0] || "Student";
@@ -92,20 +90,13 @@ export default function LfHomePage() {
         };
     }, []);
 
-    const query = search.trim().toLowerCase();
-    const filtering = query.length > 0 || category !== "";
+    const filtering = category !== "";
 
     // The rails hold at most 6 items each - plain filters, no memo needed.
     const filterReports = (list) =>
         list.filter((report) => {
             if (category && report.category !== category) return false;
-            if (!query) return true;
-
-            return [report.itemName, report.category, report.location]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase()
-                .includes(query);
+            return true;
         });
 
     const visibleFound = filterReports(recent);
@@ -226,23 +217,8 @@ export default function LfHomePage() {
                 </Link>
             </div>
 
-            {/* ---------- search + categories (filter the rails below) ---------- */}
+            {/* ---------- categories (filter the rails below) ---------- */}
             <div className="space-y-2.5">
-                <LfSearchInput
-                    value={search}
-                    onChange={setSearch}
-                    placeholder="Search items, categories, locations…"
-                />
-
-                {filtering && (
-                    <Link
-                        to={`${LOST_FOUND_HOME_ROUTE}/browse?q=${encodeURIComponent(search.trim())}`}
-                        className="block text-center text-xs font-semibold text-[#106A2E] hover:underline"
-                    >
-                        See all results on the full board →
-                    </Link>
-                )}
-
                 <div
                     className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                     role="group"
@@ -512,7 +488,7 @@ function RecentReportCard({ report, onOpen }) {
                         className="h-full w-full rounded-none"
                     />
                     {/* Emphasized Item ID, upper left */}
-                    <span className="absolute left-2 top-2 rounded-lg bg-[#10231B] px-2 py-1 text-xs font-bold tracking-wide text-white shadow-md ring-1 ring-white/30">
+                    <span className="absolute left-2 top-2 rounded-lg bg-[#10231B] px-2.5 py-1 text-sm font-black tracking-wider text-white shadow-lg ring-2 ring-[#F4D35E]">
                         {itemId}
                     </span>
                 </span>

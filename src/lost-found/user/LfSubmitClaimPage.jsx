@@ -178,7 +178,7 @@ export default function LfSubmitClaimPage() {
                     })}
                     <p className="mt-1.5 text-[11px] text-slate-400">
                         The finder verifies claims before scheduling the handover.
-                        Specific details get claims approved faster.
+                        Specific details get claims marked as claimed faster.
                     </p>
                 </div>
             </LfPanel>

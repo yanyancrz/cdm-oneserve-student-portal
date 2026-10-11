@@ -22,7 +22,7 @@ import {
 //
 // Edit is only offered while a report is pending
 // review; the API enforces the same rule, so a
-// deep link to an approved report simply fails.
+// deep link to a published report simply fails.
 //
 // The photo is uploaded FIRST and the returned
 // root-relative path is submitted with the form -

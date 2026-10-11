@@ -15,14 +15,14 @@ import {
 
 // =====================================================
 // The caller's Lost & Found notifications - claim
-// submitted, approved, rejected; pickup selected;
+// submitted, claimed, rejected; pickup selected;
 // handover completed.
 // =====================================================
 
 const TYPE_LABELS = {
     General: "Update",
     ClaimSubmitted: "New claim",
-    ClaimApproved: "Claim approved",
+    ClaimApproved: "Item claimed",
     ClaimRejected: "Claim rejected",
     MatchFound: "Item found",
     RecoveryReady: "Recovery",

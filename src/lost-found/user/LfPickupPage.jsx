@@ -12,7 +12,7 @@ import {
 } from "../components/lfUi";
 
 // =====================================================
-// Office availability for an approved claim. Every handover runs at the
+// Office availability for a claimed item. Every handover runs at the
 // office - there are no keepers outside it.
 //
 // Students do NOT pick a time here: they come during any published window

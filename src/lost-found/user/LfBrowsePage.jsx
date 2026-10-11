@@ -18,12 +18,16 @@ import {
 
 // =====================================================
 // The board. Lost and found reports live side by side;
-// only approved reports are visible, and a report whose
+// only published reports are visible, and a report whose
 // item was handed over drops off on its own.
 //
 // The type filter is also the URL query (?type=Found), so
 // a "view all found" link from the home screen lands here
 // already filtered.
+//
+// Search matches the item name, description and category
+// (server-side first, then a client pass for instantly
+// narrowing what is already loaded).
 // =====================================================
 
 const TABS = [
@@ -102,9 +106,23 @@ export default function LfBrowsePage() {
         return { all, lost, found };
     }, [reports]);
 
+    // Client pass over item name + description + category, so the list
+    // narrows instantly even before the debounced server search returns.
+    const query = debouncedSearch.trim().toLowerCase();
+    const visibleReports = useMemo(() => {
+        if (!query) return reports;
+        return reports.filter((r) =>
+            [r.itemName, r.description, r.category]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase()
+                .includes(query)
+        );
+    }, [reports, query]);
+
     return (
         <div className="space-y-4">
-            <LfSearchInput value={search} onChange={setSearch} placeholder="Search items, categories, locations…" />
+            <LfSearchInput value={search} onChange={setSearch} placeholder="Search item name, description, category…" />
 
             {/* ---------- tabs ---------- */}
             <div className="flex gap-2" role="tablist" aria-label="Filter by report type">
@@ -148,19 +166,19 @@ export default function LfBrowsePage() {
                 <LfSkeleton rows={4} />
             ) : error ? (
                 <LfNotice tone="bad">{error}</LfNotice>
-            ) : reports.length === 0 ? (
+            ) : visibleReports.length === 0 ? (
                 <LfEmpty
                     icon={PackageSearch}
                     title="Nothing on the board"
                     message={
                         search
-                            ? "No approved reports match your search. Try a different keyword."
-                            : "No approved reports yet. Found something? Report it so its owner can find it."
+                            ? "No published reports match your search. Try the item name, description or category."
+                            : "No published reports yet. Found something? Report it so its owner can find it."
                     }
                 />
             ) : (
                 <ul className="space-y-3">
-                    {reports.map((report) => (
+                    {visibleReports.map((report) => (
                         <BoardRow
                             key={report.reportId}
                             report={report}

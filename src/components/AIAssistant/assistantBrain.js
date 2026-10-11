@@ -273,7 +273,7 @@ export function answerAssistant(rawText) {
     // ---- lost & found: claims ----
     if (has(text, "claim", "akin", "aangkin", "match")) {
         return {
-            text: "If a found report matches your lost item, submit a claim on it. Once approved, you book a pickup slot at the OneServe Student Affairs Office.",
+            text: "If a found report matches your lost item, submit a claim on it. Once it is marked as claimed, walk in during office hours at the OneServe Student Affairs Office to pick it up.",
             links: [{ label: "Browse the board", to: "/lost-found/browse" }],
         };
     }

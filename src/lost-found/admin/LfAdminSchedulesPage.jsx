@@ -88,7 +88,7 @@ export default function LfAdminSchedulesPage() {
                     <LfEmpty
                         icon={CalendarClock}
                         title="No pickups yet"
-                        message="When a claim is approved, its pickup schedule appears here."
+                        message="When a claim is marked as claimed, its pickup schedule appears here."
                     />
                 ) : (
                     <div className="overflow-x-auto rounded-2xl border border-slate-200">
@@ -549,7 +549,10 @@ function ScheduleRow({ schedule, onHandover }) {
         <tr className="transition hover:bg-slate-50/70">
             <td className="px-4 py-3">
                 {/* Plain text: the user detail route redirects admins away. */}
-                <span className="font-semibold text-slate-800">
+                <span className="flex flex-wrap items-center gap-1.5 font-semibold text-slate-800">
+                    <span className="rounded-md bg-[#10231B] px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-white ring-1 ring-white/30">
+                        #{String(schedule.reportId ?? 0).padStart(3, "0")}
+                    </span>
                     {schedule.itemName}
                 </span>
             </td>
