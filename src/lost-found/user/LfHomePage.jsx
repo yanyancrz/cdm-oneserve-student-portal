@@ -40,6 +40,8 @@ export default function LfHomePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
+    const firstName = (localStorage.getItem("userName") || "Student").split(" ")[0] || "Student";
+
     useEffect(() => {
         let cancelled = false;
 
@@ -78,6 +80,51 @@ export default function LfHomePage() {
 
     return (
         <div className="space-y-5">
+            <style>{`
+                @keyframes lfReveal {
+                    from { opacity: 0; transform: translateY(15px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .lf-reveal {
+                    animation: lfReveal .65s cubic-bezier(.2,.8,.2,1) both;
+                }
+            `}</style>
+
+            {/* HERO - same welcome card as the Guidance home */}
+            <section className="lf-reveal relative overflow-hidden rounded-[28px] border border-[#0E3B22]/10 bg-gradient-to-br from-[#10B981] via-[#0E3B22] to-[#052E16] px-5 py-6 shadow-xl shadow-emerald-900/20 sm:px-7 sm:py-8">
+                <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-emerald-300/20 blur-3xl" />
+                <div className="pointer-events-none absolute -bottom-24 right-1/3 h-72 w-72 rounded-full bg-cyan-300/10 blur-3xl" />
+                <div className="pointer-events-none absolute inset-0 opacity-[0.06] bg-[linear-gradient(rgba(255,255,255,.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.6)_1px,transparent_1px)] bg-[size:32px_32px]" />
+
+                <div className="relative">
+                    <div className="mb-3 flex items-center justify-between gap-3">
+                        <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5">
+                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,.8)]" />
+                            <span className="text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-200">
+                                Lost & Found
+                            </span>
+                        </div>
+
+                        <PackageSearch className="text-emerald-200/80" size={26} aria-hidden="true" />
+                    </div>
+
+                    <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+                        Hello,
+                        <span className="block bg-gradient-to-r from-emerald-300 to-cyan-200 bg-clip-text text-transparent">
+                            {firstName}
+                        </span>
+                    </h1>
+
+                    <p className="mt-2 max-w-xl text-sm leading-6 text-white/60 sm:text-base">
+                        Lost something or found something? You are in the right place.
+                    </p>
+
+                    <p className="mt-4 text-xs uppercase tracking-[.14em] text-white/35">
+                        {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+                    </p>
+                </div>
+            </section>
+
             {/* ---------- quick actions ---------- */}            <div className="grid gap-3 sm:grid-cols-2">
                 <Link
                     to={`${LOST_FOUND_HOME_ROUTE}/report/new`}
