@@ -42,6 +42,43 @@ export default function ManageAvailabilityPage() {
     const [addError, setAddError] = useState("");
     const [saving, setSaving] = useState(false);
     const [busyId, setBusyId] = useState(null);
+    const [applyingDefault, setApplyingDefault] = useState(false);
+
+    // Default office schedule: Mon-Fri, 8:00 AM - 12:00 NN and
+    // 1:00 PM - 5:00 PM. Lunch (12-1) is left with NO block, so it is
+    // automatically unavailable for booking. PH holidays are handled
+    // separately (see the calendar - holiday dates are blocked there).
+    const applyDefaultSchedule = async () => {
+        if (
+            !window.confirm(
+                "Apply the default schedule?\n\nMon–Fri: 8:00 AM – 12:00 NN and 1:00 PM – 5:00 PM.\nLunch (12–1) stays unavailable.\n\nThis replaces your current blocks."
+            )
+        )
+            return;
+
+        setApplyingDefault(true);
+        try {
+            await Promise.all(slots.map((s) => guidanceApi.deleteAvailability(s.id).catch(() => {})));
+
+            const blocks = [];
+            for (let day = 1; day <= 5; day++) {
+                blocks.push({ dayOfWeek: day, startTime: "08:00:00", endTime: "12:00:00" });
+                blocks.push({ dayOfWeek: day, startTime: "13:00:00", endTime: "17:00:00" });
+            }
+
+            for (const b of blocks) {
+                await guidanceApi.addAvailability(b);
+            }
+
+            toast.success("Default schedule applied: Mon–Fri, 8AM–12NN and 1PM–5PM.");
+            await load();
+        } catch (e) {
+            toast.error(e.message || "Could not apply the default schedule.");
+            await load();
+        } finally {
+            setApplyingDefault(false);
+        }
+    };
 
     const load = useCallback(async (signal) => {
         setError("");
@@ -119,15 +156,25 @@ export default function ManageAvailabilityPage() {
                         <CalendarClock size={20} aria-hidden="true" />
                     </div>
 
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold">
                             {activeDays} active day{activeDays === 1 ? "" : "s"}
                         </p>
                         <p className="mt-0.5 text-xs leading-5 text-white/80">
                             Students book 30-minute slots inside these blocks, Monday to Friday.
+                            Lunch (12–1 PM) and PH holidays are always unavailable.
                         </p>
                     </div>
                 </div>
+
+                <button
+                    type="button"
+                    onClick={applyDefaultSchedule}
+                    disabled={applyingDefault}
+                    className="relative mt-3 w-full rounded-xl bg-white/15 py-2.5 text-xs font-bold text-white transition hover:bg-white/25 active:scale-[0.99] disabled:opacity-60"
+                >
+                    {applyingDefault ? "Applying…" : "Apply default: Mon–Fri · 8AM–12NN · 1PM–5PM"}
+                </button>
 
                 <div className="relative mt-3 flex gap-1.5" aria-hidden="true">
                     {DAYS.map(({ idx, label }) => (

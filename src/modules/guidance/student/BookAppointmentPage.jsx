@@ -6,9 +6,11 @@ import PageHeader from "../components/PageHeader";
 import { ErrorBox, Note, Skeleton } from "../components/GuidanceStates";
 import { useGuidanceMe } from "../components/GuidanceGate";
 import { ACCENTS, Avatar, StepLabel, fieldClass } from "../components/GuidanceUi";
+import MonthCalendar from "../components/MonthCalendar";
 import { guidanceApi } from "../services/guidanceApi";
 import { CONCERN_TYPES } from "../utils/concernTypes";
 import { formatYMD, isPastSlot, todayISO } from "../utils/dateTime";
+import { getPHHolidays } from "../utils/phHolidays";
 
 const A = ACCENTS.green;
 
@@ -51,6 +53,13 @@ export default function BookAppointmentPage() {
     const [success, setSuccess] = useState("");
     const [, setTick] = useState(0);
 
+    // PH holidays (cached, one call per year) + per-day availability marks
+    // for the date calendar: { "2026-11-05": { offDay, free } }.
+    const [holidays, setHolidays] = useState({});
+    const [marks, setMarks] = useState({});
+    const marksRef = useRef({});
+    const [viewMonth, setViewMonth] = useState(null); // { y, m } from the calendar
+
     const restored = useRef(false);
 
     // counselors
@@ -75,6 +84,17 @@ export default function BookAppointmentPage() {
             .getBookingRules(c.signal)
             .then((r) => { if (!c.signal.aborted) setRules(r); })
             .catch(() => { /* keep the permissive default */ });
+
+        // PH holidays this year + next (cached in localStorage).
+        const year = new Date().getFullYear();
+        Promise.allSettled([getPHHolidays(year), getPHHolidays(year + 1)]).then(([a, b]) => {
+            if (c.signal.aborted) return;
+            setHolidays({
+                ...(a.status === "fulfilled" ? a.value : {}),
+                ...(b.status === "fulfilled" ? b.value : {}),
+            });
+        });
+
         return () => c.abort();
     }, []);
 
@@ -150,6 +170,62 @@ export default function BookAppointmentPage() {
         if (day.offDay || day.bookedSlots.includes(slot) || !day.allSlots.includes(slot) || isPastSlot(date, slot))
             queueMicrotask(() => setSlot(""));
     }, [day, slot, date]);
+
+    // Prefetch per-day availability for the visible calendar month so free
+    // days show a dot and full/off days are disabled. Weekends, holidays
+    // and past days are skipped client-side (never bookable). Results are
+    // cached per counselor+date for the session.
+    useEffect(() => {
+        if (!counselorId || !viewMonth) return;
+        const c = new AbortController();
+        const { y, m } = viewMonth;
+        const pad = (n) => String(n).padStart(2, "0");
+        const daysInMonth = new Date(y, m + 1, 0).getDate();
+        const today = todayISO();
+
+        (async () => {
+            const targets = [];
+            for (let d = 1; d <= daysInMonth; d++) {
+                const iso = `${y}-${pad(m + 1)}-${pad(d)}`;
+                if (iso < today) continue;
+                if (rules?.latestDate && iso > rules.latestDate) continue;
+                const dow = new Date(y, m, d).getDay();
+                if (dow === 0 || dow === 6) continue;
+                if (holidays[iso]) continue;
+                const key = `${counselorId}|${iso}`;
+                if (marksRef.current[key] !== undefined) continue;
+                targets.push(iso);
+            }
+
+            // Batches of 5 so the server is never hit with 20 parallel calls.
+            for (let i = 0; i < targets.length; i += 5) {
+                if (c.signal.aborted) return;
+                const batch = targets.slice(i, i + 5);
+                const results = await Promise.allSettled(
+                    batch.map((iso) => guidanceApi.getAvailability(counselorId, iso, c.signal))
+                );
+                if (c.signal.aborted) return;
+
+                const next = {};
+                results.forEach((r, n) => {
+                    const iso = batch[n];
+                    const key = `${counselorId}|${iso}`;
+                    if (r.status === "fulfilled") {
+                        const v = r.value || {};
+                        const free = (v.availableSlots || []).length;
+                        marksRef.current[key] = { offDay: !!v.offDay, free };
+                        next[iso] = marksRef.current[key];
+                    } else if (r.reason?.name !== "AbortError") {
+                        marksRef.current[key] = { offDay: true, free: 0 };
+                        next[iso] = marksRef.current[key];
+                    }
+                });
+                if (Object.keys(next).length > 0) setMarks((prev) => ({ ...prev, ...next }));
+            }
+        })();
+
+        return () => c.abort();
+    }, [counselorId, viewMonth, holidays, rules]);
 
     const clearDraft = () => {
         try { localStorage.removeItem(draftKey(me.userId)); } catch { /* ignore */ }
@@ -297,7 +373,7 @@ export default function BookAppointmentPage() {
                         )}
                     </div>
 
-                    {/* 2. DATE */}
+                    {/* 2. DATE - calendar with the counselor's free days dotted */}
                     <div>
                         <StepLabel
                             n={2}
@@ -306,15 +382,52 @@ export default function BookAppointmentPage() {
                             Preferred date
                         </StepLabel>
 
-                        <input
-                            type="date"
-                            aria-label="Preferred date"
-                            min={today}
-                            max={rules?.latestDate || undefined}
-                            value={date}
-                            onChange={(e) => { setDate(e.target.value); setSlot(""); }}
-                            className={fieldClass("green")}
-                        />
+                        {!counselorId ? (
+                            <p className="mt-2 rounded-xl bg-slate-50 px-3 py-3 text-xs text-slate-400">
+                                Select a counselor first to see their available dates.
+                            </p>
+                        ) : (
+                            <>
+                                <div className="mt-2">
+                                    <MonthCalendar
+                                        value={date}
+                                        onSelect={(iso) => { setDate(iso); setSlot(""); }}
+                                        onMonthChange={(y, m) => setViewMonth({ y, m })}
+                                        minDate={today}
+                                        maxDate={rules?.latestDate || undefined}
+                                        dayInfo={(iso) => {
+                                            const [yy, mm, dd] = iso.split("-").map(Number);
+                                            const dow = new Date(yy, mm - 1, dd).getDay();
+                                            if (dow === 0 || dow === 6)
+                                                return { disabled: true, disabledReason: "Weekends unavailable", weekend: true };
+                                            if (holidays[iso])
+                                                return { disabled: true, disabledReason: holidays[iso], holiday: holidays[iso] };
+                                            const mark = marks[iso];
+                                            if (!mark) return {};
+                                            if (mark.offDay)
+                                                return { disabled: true, disabledReason: "Counselor not scheduled" };
+                                            if (mark.free === 0)
+                                                return { disabled: true, disabledReason: "Fully booked" };
+                                            return { dots: 1 };
+                                        }}
+                                    />
+                                </div>
+
+                                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
+                                    <span className="flex items-center gap-1.5">
+                                        <span className="h-2 w-2 rounded-full bg-[#106A2E]" /> Available
+                                    </span>
+                                    <span className="flex items-center gap-1.5">
+                                        <span className="h-2 w-2 rounded-full bg-red-400" /> Holiday - unavailable
+                                    </span>
+                                    {date && (
+                                        <span className="font-semibold text-[#106A2E]">
+                                            {formatYMD(date)}
+                                        </span>
+                                    )}
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     {/* 3. TIME SLOT */}

@@ -6,9 +6,13 @@ import { CalendarCheck2, CheckCircle2, Clock, Users } from "lucide-react";
 import { useGuidanceMe } from "../components/GuidanceGate";
 import { ErrorBox, Loading } from "../components/GuidanceStates";
 import RoleBadge from "../components/RoleBadge";
+import StatusBadge from "../components/StatusBadge";
+import MonthCalendar from "../components/MonthCalendar";
 import ProfileSheet from "./ProfileSheet";
 import { guidanceApi } from "../services/guidanceApi";
 import { formatYMD, slotToMinutes, todayISO } from "../utils/dateTime";
+import { getPHHolidays } from "../utils/phHolidays";
+import { personDetails } from "../utils/people";
 
 const byWhen = (a, b) => a.date.localeCompare(b.date) || slotToMinutes(a.timeSlot) - slotToMinutes(b.timeSlot);
 
@@ -23,6 +27,8 @@ export default function CounselorDashboard() {
     const [busy, setBusy] = useState(null);
     const [profileOpen, setProfileOpen] = useState(false);
     const [profile, setProfile] = useState(p);
+    const [holidays, setHolidays] = useState({});
+    const [selectedDay, setSelectedDay] = useState(todayISO());
 
     const load = useCallback(async (signal) => {
         setError("");
@@ -44,6 +50,20 @@ export default function CounselorDashboard() {
     useEffect(() => {
         const c = new AbortController();
         load(c.signal);
+
+        // PH holidays for this year and next (December views) - cached in
+        // localStorage, so this is one network call per year at most.
+        const year = new Date().getFullYear();
+        Promise.allSettled([getPHHolidays(year, c.signal), getPHHolidays(year + 1, c.signal)]).then(
+            ([a, b]) => {
+                if (c.signal.aborted) return;
+                setHolidays({
+                    ...(a.status === "fulfilled" ? a.value : {}),
+                    ...(b.status === "fulfilled" ? b.value : {}),
+                });
+            }
+        );
+
         return () => c.abort();
     }, [load]);
 
@@ -64,6 +84,31 @@ export default function CounselorDashboard() {
     const today = todayISO();
     const pending = appts.filter((a) => a.status === "Pending" && a.date >= today).sort(byWhen).slice(0, 5);
     const todays = appts.filter((a) => a.status === "Confirmed" && a.date === today).sort(byWhen);
+
+    // Appointments grouped per day for the calendar dots.
+    const byDate = {};
+    for (const a of appts) {
+        if (!["Pending", "Confirmed", "Arrived"].includes(a.status)) continue;
+        (byDate[a.date] = byDate[a.date] || []).push(a);
+    }
+
+    const dayAppts = (selectedDay ? byDate[selectedDay] || [] : []).sort(byWhen);
+
+    const markAttendance = async (id, status) => {
+        const label = status === "Arrived" ? "arrived" : "no-show";
+        if (!window.confirm(`Mark this appointment as ${label}?`)) return;
+        setBusy(id);
+        try {
+            await guidanceApi.updateAppointmentStatus(id, status);
+            toast.success(status === "Arrived" ? "Marked as arrived." : "Marked as no-show.");
+            await load();
+        } catch (e) {
+            toast.error(e.message || "Action failed.");
+            load();
+        } finally {
+            setBusy(null);
+        }
+    };
 
     const cards = stats && [
         { icon: Clock, label: "Pending", value: stats.pending, tone: "text-amber-600 bg-amber-50" },
@@ -109,7 +154,59 @@ export default function CounselorDashboard() {
             )}
 
             {stats && (
-                <section className="space-y-2">
+                <>
+                    {/* ---------- CALENDAR: appointments per day ---------- */}
+                    <section className="space-y-2">
+                        <h2 className="text-sm font-bold text-slate-700">Appointment calendar</h2>
+
+                        <MonthCalendar
+                            value={selectedDay}
+                            onSelect={setSelectedDay}
+                            dayInfo={(iso) => ({
+                                dots: (byDate[iso] || []).length,
+                                holiday: holidays[iso] || "",
+                            })}
+                        />
+
+                        <div className="rounded-2xl border border-black/[0.05] bg-white p-3 shadow-sm">
+                            <p className="text-xs font-bold text-slate-700">
+                                {formatYMD(selectedDay)}
+                                {holidays[selectedDay] && (
+                                    <span className="ml-2 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-600">
+                                        {holidays[selectedDay]}
+                                    </span>
+                                )}
+                            </p>
+
+                            {dayAppts.length === 0 ? (
+                                <p className="mt-2 text-xs text-slate-400">
+                                    No appointments on this day.
+                                </p>
+                            ) : (
+                                <ul className="mt-2 space-y-2">
+                                    {dayAppts.map((a) => (
+                                        <li key={a.id} className="flex items-center gap-3 rounded-xl bg-slate-50 p-2.5">
+                                            <div className="rounded-lg bg-white px-2 py-1 text-[11px] font-bold text-green-700 shadow-sm">
+                                                {a.timeSlot}
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <p className="flex items-center gap-1.5 truncate text-xs font-semibold text-slate-800">
+                                                    <span className="truncate">{a.studentName}</span>
+                                                    <RoleBadge role={a.role} />
+                                                </p>
+                                                <p className="truncate text-[11px] text-slate-500">
+                                                    {personDetails(a)}{a.concernType ? ` · ${a.concernType}` : ""}
+                                                </p>
+                                            </div>
+                                            <StatusBadge status={a.status} />
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                    </section>
+
+                    <section className="space-y-2">
                     <div className="flex items-center justify-between">
                         <h2 className="text-sm font-bold text-slate-700">Needs your response</h2>
                         <Link to="/guidance/counselor/appointments" className="text-xs font-semibold text-[#106A2E]">
@@ -160,16 +257,42 @@ export default function CounselorDashboard() {
                         </p>
                     ) : (
                         todays.map((a) => (
-                            <article key={a.id} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3">
-                                <div className="rounded-xl bg-green-50 px-2.5 py-1.5 text-xs font-bold text-green-700">{a.timeSlot}</div>
-                                <div className="min-w-0">
-                                    <p className="truncate text-sm font-semibold text-slate-800">{a.studentName}</p>
-                                    <p className="truncate text-xs text-slate-500">{a.concernType}</p>
+                            <article key={a.id} className="rounded-2xl border border-slate-200 bg-white p-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="rounded-xl bg-green-50 px-2.5 py-1.5 text-xs font-bold text-green-700">{a.timeSlot}</div>
+                                    <div className="min-w-0 flex-1">
+                                        <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-slate-800">
+                                            <span className="truncate">{a.studentName}</span>
+                                            <RoleBadge role={a.role} />
+                                        </p>
+                                        <p className="truncate text-xs text-slate-500">
+                                            {personDetails(a)}{a.concernType ? ` · ${a.concernType}` : ""}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="mt-2 flex gap-2">
+                                    <button
+                                        type="button"
+                                        disabled={busy === a.id}
+                                        onClick={() => markAttendance(a.id, "Arrived")}
+                                        className="flex-1 rounded-lg bg-[#106A2E] py-2 text-xs font-semibold text-white disabled:opacity-60"
+                                    >
+                                        Arrived
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={busy === a.id}
+                                        onClick={() => markAttendance(a.id, "NoShow")}
+                                        className="flex-1 rounded-lg border border-amber-200 bg-amber-50 py-2 text-xs font-semibold text-amber-800 disabled:opacity-60"
+                                    >
+                                        No-show
+                                    </button>
                                 </div>
                             </article>
                         ))
                     )}
-                </section>
+                    </section>
+                </>
             )}
 
             {profileOpen && (

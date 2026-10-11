@@ -13,7 +13,7 @@ import RescheduleSheet from "./RescheduleSheet";
 import SessionRecordSheet from "./SessionRecordSheet";
 import FollowUpSheet from "./FollowUpSheet";
 
-const FILTERS = ["All", "Pending", "Confirmed", "Completed", "Cancelled", "Rejected", "Expired"];
+const FILTERS = ["All", "Pending", "Confirmed", "Arrived", "NoShow", "Completed", "Cancelled", "Rejected", "Expired"];
 const byWhen = (a, b) => a.date.localeCompare(b.date) || slotToMinutes(a.timeSlot) - slotToMinutes(b.timeSlot);
 
 export default function CounselorAppointmentsPage() {
@@ -214,20 +214,32 @@ export default function CounselorAppointmentsPage() {
                         )}
 
                         {a.status === "Confirmed" && (
-                            <div className="mt-3 flex gap-2">
-                                <button type="button" disabled={isBusy} onClick={() => act(a.id, "Completed", "Mark this session as completed?")}
-                                    className={`${btn} bg-sky-600 text-white shadow-sm`}>
-                                    <CheckCircle2 size={14} aria-hidden="true" /> Done
-                                </button>
-                                <button type="button" disabled={isBusy} onClick={() => setResched(a)}
-                                    className={`${btn} border border-slate-200 text-slate-700`}>
-                                    <CalendarClock size={14} aria-hidden="true" /> Reschedule
-                                </button>
-                                <button type="button" disabled={isBusy} onClick={() => act(a.id, "Cancelled", "Cancel this appointment? The student will be notified.")}
-                                    className={`${btn} border border-red-200 bg-red-50 text-red-700`}>
-                                    <X size={14} aria-hidden="true" /> Cancel
-                                </button>
-                            </div>
+                            <>
+                                <div className="mt-3 flex gap-2">
+                                    <button type="button" disabled={isBusy} onClick={() => act(a.id, "Arrived", "Mark this student as arrived?")}
+                                        className={`${btn} bg-[#106A2E] text-white shadow-sm`}>
+                                        <Check size={14} aria-hidden="true" /> Arrived
+                                    </button>
+                                    <button type="button" disabled={isBusy} onClick={() => act(a.id, "NoShow", "Mark this student as no-show? They did not come.") }
+                                        className={`${btn} border border-amber-200 bg-amber-50 text-amber-800`}>
+                                        <X size={14} aria-hidden="true" /> No-show
+                                    </button>
+                                </div>
+                                <div className="mt-2 flex gap-2">
+                                    <button type="button" disabled={isBusy} onClick={() => act(a.id, "Completed", "Mark this session as completed?")}
+                                        className={`${btn} bg-sky-600 text-white shadow-sm`}>
+                                        <CheckCircle2 size={14} aria-hidden="true" /> Done
+                                    </button>
+                                    <button type="button" disabled={isBusy} onClick={() => setResched(a)}
+                                        className={`${btn} border border-slate-200 text-slate-700`}>
+                                        <CalendarClock size={14} aria-hidden="true" /> Reschedule
+                                    </button>
+                                    <button type="button" disabled={isBusy} onClick={() => act(a.id, "Cancelled", "Cancel this appointment? The student will be notified.")}
+                                        className={`${btn} border border-red-200 bg-red-50 text-red-700`}>
+                                        <X size={14} aria-hidden="true" /> Cancel
+                                    </button>
+                                </div>
+                            </>
                         )}
                             {a.status === "Completed" && (
                                 <div className="mt-3 flex gap-2">
