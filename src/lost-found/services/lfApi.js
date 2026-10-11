@@ -195,6 +195,7 @@ export const lfApi = {
 export const lfAdminApi = {
     stats: () => http.get("/api/lostfound/admin/stats"),
     reports: () => http.get("/api/lostfound/admin/reports"),
+    reportDetail: (id) => http.get(`/api/lostfound/admin/reports/${id}`),
     claims: () => http.get("/api/lostfound/admin/claims"),
     schedules: () => http.get("/api/lostfound/admin/schedules"),
     matches: () => http.get("/api/lostfound/admin/matches"),

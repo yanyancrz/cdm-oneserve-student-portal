@@ -96,7 +96,7 @@ export default function LfMatchesPage() {
                             confirming={confirming === match.matchRecordId}
                             onOpen={() =>
                                 navigate(
-                                    `${LOST_FOUND_HOME_ROUTE}/report/${match.foundReportId}`
+                                    `${LOST_FOUND_HOME_ROUTE}/matches/${match.matchRecordId}`
                                 )
                             }
                             onConfirm={() => onConfirm(match)}

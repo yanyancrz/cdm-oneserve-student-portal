@@ -288,7 +288,7 @@ export default function LfHomePage() {
                                 match={match}
                                 onOpen={() =>
                                     navigate(
-                                        `${LOST_FOUND_HOME_ROUTE}/report/${match.foundReportId}`
+                                        `${LOST_FOUND_HOME_ROUTE}/matches/${match.matchRecordId}`
                                     )
                                 }
                             />
@@ -390,8 +390,8 @@ export default function LfHomePage() {
 
 /**
  * Compact match preview for the home rail: how strong, which two items,
- * and whether it is confirmed. Tapping opens the found side, where a
- * claim can start - same destination as the full matches page.
+ * and whether it is confirmed. Tapping opens the match detail, where
+ * both items sit side by side.
  */
 function MatchPreviewCard({ match, onOpen }) {
     const strong = match.matchPercentage >= 75;

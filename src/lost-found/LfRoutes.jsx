@@ -14,12 +14,14 @@ import LfRecoveryPage from "./user/LfRecoveryPage";
 import LfMyItemsPage from "./user/LfMyItemsPage";
 import LfMyClaimsPage from "./user/LfMyClaimsPage";
 import LfPickupPage from "./user/LfPickupPage";
+import LfMatchDetailsPage from "./user/LfMatchDetailsPage";
 import LfMatchesPage from "./user/LfMatchesPage";
 import LfNotificationsPage from "./user/LfNotificationsPage";
 import LfAdminGate from "./admin/LfAdminGate";
 import LfAdminLayout from "./admin/LfAdminLayout";
 import LfAdminOverviewPage from "./admin/LfAdminOverviewPage";
 import LfAdminReportsPage from "./admin/LfAdminReportsPage";
+import LfAdminReportDetailsPage from "./admin/LfAdminReportDetailsPage";
 import LfAdminClaimsPage from "./admin/LfAdminClaimsPage";
 import LfAdminSchedulesPage from "./admin/LfAdminSchedulesPage";
 
@@ -50,6 +52,7 @@ export const lostFoundUserRoutes = (
         <Route path="claims" element={<LfMyClaimsPage />} />
         <Route path="pickup/:claimId" element={<LfPickupPage />} />
         <Route path="matches" element={<LfMatchesPage />} />
+        <Route path="matches/:matchId" element={<LfMatchDetailsPage />} />
         <Route path="notifications" element={<LfNotificationsPage />} />
 
         <Route path="report/new" element={<LfReportFormPage />} />
@@ -90,6 +93,10 @@ export const lostFoundAdminRoutes = (
         <Route
             path="/lost-found/admin/reports"
             element={<LfAdminReportsPage />}
+        />
+        <Route
+            path="/lost-found/admin/reports/:reportId"
+            element={<LfAdminReportDetailsPage />}
         />
         <Route
             path="/lost-found/admin/claims"
