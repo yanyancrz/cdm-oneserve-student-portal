@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { API_URL } from "../../config/api";
 import DeviceSessionWarning from "../../components/AccountSecurity/DeviceSessionWarning";
+import AIAssistant from "../../components/AIAssistant/AIAssistant";
 import toast from "react-hot-toast";
 
 export default function Dashboard() {
@@ -22,14 +23,7 @@ export default function Dashboard() {
 
     const touchStartX = useRef(null);
 
-    
-    const [recentLogins, setRecentLogins] =
-        useState([]);
 
-    const [loginsLoading, setLoginsLoading] =
-        useState(true);
-
-    
     useEffect(() => {
         const email =
             localStorage.getItem("userEmail");
@@ -112,70 +106,6 @@ export default function Dashboard() {
 
         loadAnnouncements();
     }, []);
-
-    
-    useEffect(() => {
-        const token =
-            localStorage.getItem("token") ||
-            localStorage.getItem("authToken");
-
-        if (!token) {
-            navigate("/");
-            return;
-        }
-
-        const loadRecentLogins =
-            async () => {
-                try {
-                    setLoginsLoading(true);
-
-                    const sessionKey =
-                        localStorage.getItem("oneserve:sessionKey") || "";
-
-                    const response =
-                        await fetch(
-                            `${API_URL}/api/auth/session/logins`,
-                            {
-                                headers: {
-                                    Accept: "application/json",
-                                    Authorization: `Bearer ${token}`,
-                                    ...(sessionKey
-                                        ? { "X-Session-Key": sessionKey }
-                                        : {}),
-                                },
-                            }
-                        );
-
-                    if (!response.ok) {
-                        throw new Error(
-                            "Unable to load recent logins."
-                        );
-                    }
-
-                    const body =
-                        await response.json();
-
-                    setRecentLogins(
-                        Array.isArray(body?.logins)
-                            ? body.logins
-                            : []
-                    );
-                } catch (error) {
-                    console.error(
-                        "Recent logins error:",
-                        error
-                    );
-
-                    setRecentLogins([]);
-                } finally {
-                    setLoginsLoading(
-                        false
-                    );
-                }
-            };
-
-        loadRecentLogins();
-    }, [navigate]);
 
    
     const isLoading = !user;
@@ -452,75 +382,6 @@ export default function Dashboard() {
         touchStartX.current = null;
 
         setIsAnnouncementPaused(false);
-    };
-
-    const formatRelativeTime = (
-        dateValue
-    ) => {
-        if (!dateValue) {
-            return "";
-        }
-
-        const date =
-            new Date(dateValue);
-
-        if (
-            Number.isNaN(
-                date.getTime()
-            )
-        ) {
-            return "";
-        }
-
-        const now = new Date();
-
-        const difference =
-            now.getTime() -
-            date.getTime();
-
-        const seconds =
-            Math.floor(
-                difference / 1000
-            );
-
-        if (seconds < 60) {
-            return "Just now";
-        }
-
-        const minutes =
-            Math.floor(
-                seconds / 60
-            );
-
-        if (minutes < 60) {
-            return `${minutes}m ago`;
-        }
-
-        const hours =
-            Math.floor(
-                minutes / 60
-            );
-
-        if (hours < 24) {
-            return `${hours}h ago`;
-        }
-
-        const days =
-            Math.floor(
-                hours / 24
-            );
-
-        if (days < 7) {
-            return `${days}d ago`;
-        }
-
-        return date.toLocaleDateString(
-            "en-US",
-            {
-                month: "short",
-                day: "numeric"
-            }
-        );
     };
 
 
@@ -871,7 +732,7 @@ export default function Dashboard() {
                                         aria-label="Clear search"
                                         className="mr-3 flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
                                     >
-                                        ×
+                                        Ã—
                                     </button>
                                 )}
 
@@ -1021,7 +882,7 @@ export default function Dashboard() {
                                                 </span>
 
                                                 <span className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition group-hover:text-slate-700">
-                                                    →
+                                                    â†’
                                                 </span>
 
                                             </div>
@@ -1210,7 +1071,7 @@ export default function Dashboard() {
 
                                             <p className="mt-1.5 break-all text-sm font-semibold text-slate-800">
                                                 {user?.idNumber ||
-                                                    "—"}
+                                                    "â€”"}
                                             </p>
 
                                         </div>
@@ -1227,9 +1088,9 @@ export default function Dashboard() {
                                             <p className="mt-1.5 line-clamp-2 text-sm font-semibold text-slate-800">
                                                 {isStudent
                                                     ? user?.course ||
-                                                      "—"
+                                                      "â€”"
                                                     : user?.institute ||
-                                                      "—"}
+                                                      "â€”"}
                                             </p>
 
                                         </div>
@@ -1246,9 +1107,9 @@ export default function Dashboard() {
                                             <p className="mt-1.5 line-clamp-2 text-sm font-semibold text-slate-800">
                                                 {isStudent
                                                     ? user?.yearLevel ||
-                                                      "—"
+                                                      "â€”"
                                                     : user?.position ||
-                                                      "—"}
+                                                      "â€”"}
                                             </p>
 
                                         </div>
@@ -1273,182 +1134,6 @@ export default function Dashboard() {
 
                             </section>
 
-
-                            {/* RECENT LOGINS */}
-
-                            <section className="dashboard-reveal dashboard-delay-4 rounded-[24px] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-
-                                <div className="mb-4 flex items-center justify-between">
-
-                                    <div>
-
-                                        <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-[#173F2C]/50">
-                                            Security
-                                        </p>
-
-                                        <h2 className="mt-1 text-base font-semibold text-slate-800">
-                                            Recent Logins
-                                        </h2>
-
-                                    </div>
-
-
-                                    <span className="text-[10px] uppercase tracking-wider text-slate-300">
-                                        LIVE
-                                    </span>
-
-                                </div>
-
-
-                                <div className="divide-y divide-slate-100">
-
-                                    {loginsLoading ? (
-                                        Array.from({
-                                            length: 4
-                                        }).map(
-                                            (_, index) => (
-                                                <div
-                                                    key={
-                                                        index
-                                                    }
-                                                    className="flex items-center gap-3 py-3.5"
-                                                >
-
-                                                    <Bone className="h-9 w-9 shrink-0 rounded-xl" />
-
-
-                                                    <div className="min-w-0 flex-1">
-
-                                                        <Bone className="h-3.5 w-40" />
-
-                                                        <Bone className="mt-2 h-2.5 w-24" />
-
-                                                    </div>
-
-
-                                                    <Bone className="h-2.5 w-10 shrink-0" />
-
-                                                </div>
-                                            )
-                                        )
-                                    ) : recentLogins.length > 0 ? (
-                                        recentLogins.slice(0, 5).map(
-                                            (item, index) => (
-                                                <div
-                                                    key={`${item.loggedInAt}-${index}`}
-                                                    className="flex items-center gap-3 py-3.5"
-                                                >
-
-                                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-emerald-100 bg-emerald-50 text-[#106A2E]">
-
-                                                        <svg
-                                                            width="17"
-                                                            height="17"
-                                                            viewBox="0 0 24 24"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            strokeWidth="1.8"
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                        >
-                                                            <rect
-                                                                x="5"
-                                                                y="2"
-                                                                width="14"
-                                                                height="20"
-                                                                rx="2"
-                                                            />
-
-                                                            <path d="M12 18h.01" />
-                                                        </svg>
-
-                                                    </div>
-
-
-                                                    <div className="min-w-0 flex-1">
-
-                                                        <p className="flex items-center gap-1.5 truncate text-sm font-medium text-slate-800">
-                                                            {
-                                                                item.device ||
-                                                                "Unknown device"
-                                                            }
-
-                                                            {item.isCurrent && (
-                                                                <span className="shrink-0 rounded-full bg-emerald-50 px-2 py-0.5 text-[9px] font-semibold text-emerald-700">
-                                                                    This device
-                                                                </span>
-                                                            )}
-                                                        </p>
-
-
-                                                        <p className="mt-0.5 truncate text-[10px] leading-4 text-slate-400">
-                                                            {
-                                                                item.ipAddress
-                                                                    ? `${item.ipAddress} · `
-                                                                    : ""
-                                                            }
-                                                            Signed in{" "}
-                                                            {formatRelativeTime(
-                                                                item.loggedInAt
-                                                            )}
-                                                        </p>
-
-                                                    </div>
-
-
-                                                    <span className="shrink-0 text-[10px] text-slate-300">
-                                                        {formatRelativeTime(
-                                                            item.lastSeenAt ||
-                                                            item.loggedInAt
-                                                        )}
-                                                    </span>
-
-                                                </div>
-                                            )
-                                        )
-                                    ) : (
-                                        <div className="py-8 text-center">
-
-                                            <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-300">
-
-                                                <svg
-                                                    width="18"
-                                                    height="18"
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    strokeWidth="1.8"
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                >
-                                                    <circle
-                                                        cx="12"
-                                                        cy="12"
-                                                        r="9"
-                                                    />
-
-                                                    <path d="M12 7v5l3 2" />
-
-                                                </svg>
-
-                                            </div>
-
-
-                                            <p className="mt-3 text-sm font-medium text-slate-500">
-                                                No recent logins
-                                            </p>
-
-
-                                            <p className="mt-1 text-xs text-slate-400">
-                                                Your account and profile changes will appear here.
-                                            </p>
-
-                                        </div>
-                                    )}
-
-                                </div>
-
-                            </section>
 
                             {/* =================================================
                                 ANNOUNCEMENTS (rendered first via order-first)
@@ -1630,7 +1315,7 @@ export default function Dashboard() {
                                                         aria-label="Previous announcement"
                                                         className="flex h-8 w-8 items-center justify-center rounded-full bg-white/45 text-[#10231B] transition hover:bg-white/65"
                                                     >
-                                                        ←
+                                                        â†
                                                     </button>
 
 
@@ -1642,7 +1327,7 @@ export default function Dashboard() {
                                                         aria-label="Next announcement"
                                                         className="flex h-8 w-8 items-center justify-center rounded-full bg-white/45 text-[#10231B] transition hover:bg-white/65"
                                                     >
-                                                        →
+                                                        â†’
                                                     </button>
 
                                                 </div>
@@ -1680,6 +1365,9 @@ export default function Dashboard() {
                 </div>
 
             </main>
+
+            {/* OneServe Assistant: campus Q&A, floating over the dashboard. */}
+            <AIAssistant />
 
         </div>
     );
