@@ -37,6 +37,7 @@ export default function LfHomePage() {
     const navigate = useNavigate();
 
     const [recent, setRecent] = useState([]);
+    const [recentLost, setRecentLost] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
@@ -47,9 +48,13 @@ export default function LfHomePage() {
 
         const load = async () => {
             try {
-                const response = await lfApi.recentFound();
+                const [foundResponse, lostResponse] = await Promise.all([
+                    lfApi.recentFound(),
+                    lfApi.recentLost(),
+                ]);
                 if (cancelled) return;
-                setRecent(response.data || []);
+                setRecent(foundResponse.data || []);
+                setRecentLost(lostResponse.data || []);
             } catch (err) {
                 if (cancelled) return;
                 setError(err.message);
@@ -67,7 +72,7 @@ export default function LfHomePage() {
     // The module-opening splash, same as the Guidance gate: the dashboard
     // card lands here while the first fetch is still in flight. Later
     // visits keep the inline skeleton, because the page is already open.
-    if (loading && recent.length === 0 && !error) {
+    if (loading && recent.length === 0 && recentLost.length === 0 && !error) {
         return (
             <ModuleLoadingScreen
                 icon={PackageSearch}
@@ -201,6 +206,46 @@ export default function LfHomePage() {
                 </ol>
             </LfPanel>
 
+            {/* ---------- recent lost ---------- */}
+            <LfPanel
+                title="Recently lost"
+                subtitle="The newest items students are looking for"
+                action={
+                    <Link
+                        to={`${LOST_FOUND_HOME_ROUTE}/browse?type=Lost`}
+                        className="text-xs font-semibold text-[#106A2E] hover:underline"
+                    >
+                        View all
+                    </Link>
+                }
+            >
+                {loading ? (
+                    <LfSkeleton rows={3} />
+                ) : error ? (
+                    <LfNotice tone="bad">{error}</LfNotice>
+                ) : recentLost.length === 0 ? (
+                    <LfEmpty
+                        icon={PackageSearch}
+                        title="No lost items yet"
+                        message="When a student reports a lost item, it shows up here."
+                    />
+                ) : (
+                    <ul className="divide-y divide-slate-100">
+                        {recentLost.map((report) => (
+                            <RecentReportRow
+                                key={report.reportId}
+                                report={report}
+                                onOpen={() =>
+                                    navigate(
+                                        `${LOST_FOUND_HOME_ROUTE}/report/${report.reportId}`
+                                    )
+                                }
+                            />
+                        ))}
+                    </ul>
+                )}
+            </LfPanel>
+
             {/* ---------- recent found ---------- */}
             <LfPanel
                 title="Recently found"
@@ -227,7 +272,7 @@ export default function LfHomePage() {
                 ) : (
                     <ul className="divide-y divide-slate-100">
                         {recent.map((report) => (
-                            <RecentFoundRow
+                            <RecentReportRow
                                 key={report.reportId}
                                 report={report}
                                 onOpen={() =>
@@ -264,7 +309,7 @@ function HowItWorksStep({ icon: Icon, step, title, text }) {
     );
 }
 
-function RecentFoundRow({ report, onOpen }) {
+function RecentReportRow({ report, onOpen }) {
     const image = lfImageUrl(report.imagePath);
 
     return (

@@ -133,6 +133,7 @@ export const lfApi = {
     myReports: () => http.get("/api/lostfound/reports/my"),
     publicReports: (params) => http.get("/api/lostfound/reports", { params }),
     recentFound: () => http.get("/api/lostfound/reports/recent-found"),
+    recentLost: () => http.get("/api/lostfound/reports/recent-lost"),
     report: (id) => http.get(`/api/lostfound/reports/${id}`),
     createReport: (body) => http.post("/api/lostfound/reports", body),
     updateReport: (id, body) => http.put(`/api/lostfound/reports/${id}`, body),
