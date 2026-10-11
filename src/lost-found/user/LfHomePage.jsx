@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
     ArrowRight,
+    GitCompare,
     PackageSearch,
     Plus,
 } from "lucide-react";
@@ -18,10 +19,27 @@ import {
     LfImage,
     LfNotice,
     LfPanel,
+    LfSearchInput,
     LfStatusChip,
     LfTypeTag,
 } from "../components/lfUi";
 import { ModuleLoadingScreen } from "../../components/States";
+
+// Same list as the report form (LfReportFormPage CATEGORIES) - the single
+// set of categories the whole module filters by. If the form gains one,
+// add it here too.
+const CATEGORIES = [
+    "Electronics",
+    "Clothing",
+    "Accessories",
+    "Books & Supplies",
+    "ID & Cards",
+    "Keys",
+    "Umbrella",
+    "Bottle & Container",
+    "Sports Gear",
+    "Other",
+];
 
 // =====================================================
 // The module home: what is happening right now, and
@@ -34,8 +52,14 @@ export default function LfHomePage() {
 
     const [recent, setRecent] = useState([]);
     const [recentLost, setRecentLost] = useState([]);
+    const [matches, setMatches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+
+    // Home-level search + category filter. The rails are small (6 each), so
+    // this filters instantly on the client - no debounce, no refetch.
+    const [search, setSearch] = useState("");
+    const [category, setCategory] = useState("");
 
     const firstName = (localStorage.getItem("userName") || "Student").split(" ")[0] || "Student";
 
@@ -44,13 +68,15 @@ export default function LfHomePage() {
 
         const load = async () => {
             try {
-                const [foundResponse, lostResponse] = await Promise.all([
+                const [foundResponse, lostResponse, matchesResponse] = await Promise.all([
                     lfApi.recentFound(),
                     lfApi.recentLost(),
+                    lfApi.myMatches().catch(() => ({ data: [] })),
                 ]);
                 if (cancelled) return;
                 setRecent(foundResponse.data || []);
                 setRecentLost(lostResponse.data || []);
+                setMatches(matchesResponse.data || []);
             } catch (err) {
                 if (cancelled) return;
                 setError(err.message);
@@ -64,6 +90,25 @@ export default function LfHomePage() {
             cancelled = true;
         };
     }, []);
+
+    const query = search.trim().toLowerCase();
+    const filtering = query.length > 0 || category !== "";
+
+    // The rails hold at most 6 items each - plain filters, no memo needed.
+    const filterReports = (list) =>
+        list.filter((report) => {
+            if (category && report.category !== category) return false;
+            if (!query) return true;
+
+            return [report.itemName, report.category, report.location]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase()
+                .includes(query);
+        });
+
+    const visibleFound = filterReports(recent);
+    const visibleLost = filterReports(recentLost);
 
     // The module-opening splash, same as the Guidance gate: the dashboard
     // card lands here while the first fetch is still in flight. Later
@@ -178,6 +223,92 @@ export default function LfHomePage() {
                 </Link>
             </div>
 
+            {/* ---------- search + categories (filter the rails below) ---------- */}
+            <div className="space-y-2.5">
+                <LfSearchInput
+                    value={search}
+                    onChange={setSearch}
+                    placeholder="Search items, categories, locations…"
+                />
+
+                <div
+                    className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                    role="group"
+                    aria-label="Filter by category"
+                >
+                    <button
+                        key="all"
+                        type="button"
+                        onClick={() => setCategory("")}
+                        aria-pressed={category === ""}
+                        className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
+                            category === ""
+                                ? "border-[#106A2E] bg-[#106A2E] text-white"
+                                : "border-slate-200 bg-white text-slate-500"
+                        }`}
+                    >
+                        All
+                    </button>
+                    {CATEGORIES.map((option) => (
+                        <button
+                            key={option}
+                            type="button"
+                            onClick={() =>
+                                setCategory(category === option ? "" : option)
+                            }
+                            aria-pressed={category === option}
+                            className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
+                                category === option
+                                    ? "border-[#106A2E] bg-[#106A2E] text-white"
+                                    : "border-slate-200 bg-white text-slate-500"
+                            }`}
+                        >
+                            {option}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* ---------- possible matches ---------- */}
+            <LfPanel
+                title="Possible matches"
+                subtitle="Your lost and found reports that look alike"
+                action={
+                    <Link
+                        to={`${LOST_FOUND_HOME_ROUTE}/matches`}
+                        className="text-xs font-semibold text-[#106A2E] hover:underline"
+                    >
+                        View all
+                    </Link>
+                }
+            >
+                {loading ? (
+                    <RecentRailSkeleton />
+                ) : error ? (
+                    <LfNotice tone="bad">{error}</LfNotice>
+                ) : matches.length === 0 ? (
+                    <p className="py-2 text-xs leading-5 text-slate-400">
+                        No possible matches for your reports yet. When a lost
+                        and a found report look like the same item, they appear
+                        here.
+                    </p>
+                ) : (
+                    <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2">
+                        {matches.slice(0, 3).map((match) => (
+                            <MatchPreviewCard
+                                key={match.matchRecordId}
+                                match={match}
+                                onOpen={() =>
+                                    navigate(
+                                        `${LOST_FOUND_HOME_ROUTE}/report/${match.foundReportId}`
+                                    )
+                                }
+                            />
+                        ))}
+                    </ul>
+                )}
+            </LfPanel>
+
             {/* ---------- recent lost ---------- */}
             <LfPanel
                 title="Recently lost"
@@ -195,15 +326,19 @@ export default function LfHomePage() {
                     <RecentRailSkeleton />
                 ) : error ? (
                     <LfNotice tone="bad">{error}</LfNotice>
-                ) : recentLost.length === 0 ? (
+                ) : visibleLost.length === 0 ? (
                     <LfEmpty
                         icon={PackageSearch}
-                        title="No lost items yet"
-                        message="When a student reports a lost item, it shows up here."
+                        title={filtering ? "No matches on this list" : "No lost items yet"}
+                        message={
+                            filtering
+                                ? "Try a different search or category."
+                                : "When a student reports a lost item, it shows up here."
+                        }
                     />
                 ) : (
                     <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2">
-                        {recentLost.map((report) => (
+                        {visibleLost.map((report) => (
                             <RecentReportCard
                                 key={report.reportId}
                                 report={report}
@@ -235,15 +370,19 @@ export default function LfHomePage() {
                     <RecentRailSkeleton />
                 ) : error ? (
                     <LfNotice tone="bad">{error}</LfNotice>
-                ) : recent.length === 0 ? (
+                ) : visibleFound.length === 0 ? (
                     <LfEmpty
                         icon={PackageSearch}
-                        title="No found items yet"
-                        message="When a student hands something in, it shows up here."
+                        title={filtering ? "No matches on this list" : "No found items yet"}
+                        message={
+                            filtering
+                                ? "Try a different search or category."
+                                : "When a student hands something in, it shows up here."
+                        }
                     />
                 ) : (
                     <ul className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2">
-                        {recent.map((report) => (
+                        {visibleFound.map((report) => (
                             <RecentReportCard
                                 key={report.reportId}
                                 report={report}
@@ -261,8 +400,66 @@ export default function LfHomePage() {
     );
 }
 
-function RecentRailSkeleton() {
+/**
+ * Compact match preview for the home rail: how strong, which two items,
+ * and whether it is confirmed. Tapping opens the found side, where a
+ * claim can start - same destination as the full matches page.
+ */
+function MatchPreviewCard({ match, onOpen }) {
+    const strong = match.matchPercentage >= 75;
+
     return (
+        <li className="w-64 shrink-0 snap-start">
+            <button
+                type="button"
+                onClick={onOpen}
+                className="block w-full rounded-2xl border border-slate-200 bg-white p-3.5 text-left shadow-sm transition hover:shadow-md active:scale-[0.99]"
+            >
+                <span className="flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+                        <GitCompare size={13} className="text-[#106A2E]" aria-hidden="true" />
+                        Possible match
+                    </span>
+                    <span
+                        className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
+                        style={{
+                            backgroundColor: strong
+                                ? "#0D7856"
+                                : match.matchPercentage >= 40
+                                  ? "#F4D35E"
+                                  : "#F1F1F1",
+                            color: match.matchPercentage >= 40 ? "#1F1F1F" : "#64748B",
+                        }}
+                    >
+                        {match.matchPercentage}%
+                    </span>
+                </span>
+
+                <span className="mt-2.5 block space-y-1.5">
+                    <span className="block truncate text-xs text-slate-600">
+                        <span className="font-semibold text-slate-400">Lost: </span>
+                        {match.lostItemName || "—"}
+                    </span>
+                    <span className="block truncate text-xs text-slate-600">
+                        <span className="font-semibold text-slate-400">Found: </span>
+                        {match.foundItemName || "—"}
+                    </span>
+                </span>
+
+                <span className="mt-2.5 block border-t border-slate-100 pt-2 text-[10px] text-slate-400">
+                    {match.isConfirmed ? (
+                        <span className="font-bold text-emerald-700">CONFIRMED</span>
+                    ) : (
+                        <span className="font-bold text-amber-700">UNCONFIRMED</span>
+                    )}
+                    {match.location ? ` · ${match.location}` : ""}
+                </span>
+            </button>
+        </li>
+    );
+}
+
+function RecentRailSkeleton() {    return (
         <div
             role="status"
             aria-label="Loading"
