@@ -13,6 +13,7 @@ import { useGuidanceRealtime } from "../hooks/useGuidanceRealtime";
 import { useUnreadChats } from "../hooks/useUnreadChats";
 import { useGuidanceChrome } from "../hooks/useGuidanceChrome";
 import ModuleBottomNav from "../../../components/BottomNavigation/ModuleBottomNav";
+import { GUIDANCE_LOGO_SRC } from "../../../lost-found/components/lfBrand";
 
 const TABS = [
     { to: "/guidance", label: "Home", icon: LayoutDashboard, end: true },
@@ -84,6 +85,7 @@ export default function GuidanceStudentLayout() {
                 <ModuleBottomNav
                     items={items}
                     brandIcon={HeartHandshake}
+                    brandImage={GUIDANCE_LOGO_SRC}
                     brandTitle="CDM OneServe"
                     brandSubtitle="Guidance"
                     homePath="/guidance"

@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { Check, HandHelping, X } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -90,7 +89,7 @@ export default function LfAdminClaimsPage() {
     const visible = claims.filter(
         (claim) =>
             !search ||
-            claim.itemName.toLowerCase().includes(search.toLowerCase()) ||
+            (claim.itemName || "").toLowerCase().includes(search.toLowerCase()) ||
             (claim.claimantName || "")
                 .toLowerCase()
                 .includes(search.toLowerCase()) ||
@@ -148,12 +147,10 @@ export default function LfAdminClaimsPage() {
                                     className="transition hover:bg-slate-50/70"
                                 >
                                     <td className="px-4 py-3">
-                                        <Link
-                                            to={`/lost-found/report/${claim.reportId}`}
-                                            className="font-semibold text-slate-800 hover:text-[#106A2E]"
-                                        >
+                                        {/* Plain text: the user detail route redirects admins away. */}
+                                        <span className="font-semibold text-slate-800">
                                             {claim.itemName}
-                                        </Link>
+                                        </span>
                                         <span className="mt-0.5 block text-[10px] text-slate-400">
                                             {claim.category || "Uncategorized"}
                                             {claim.location ? ` · ${claim.location}` : ""}

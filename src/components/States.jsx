@@ -176,23 +176,36 @@ export function Loading({ text = "Loading..." }) {
  */
 export function ModuleLoadingScreen({
     icon: Icon,
+    imageSrc,
+    imageAlt = "Loading",
     accent = "bg-slate-800",
     label,
     text = "Loading...",
 }) {
     return (
-        <div role="status" className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#F7F5EF]">
+        <div role="status" className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#0B0B0B] px-6 text-center">
             <span className="sr-only">{label ?? text}</span>
 
-            {Icon && (
-                <div
-                    className={`flex h-16 w-16 items-center justify-center rounded-3xl ${accent} text-white shadow-lg`}
-                >
-                    <Icon size={30} aria-hidden="true" />
-                </div>
+            {imageSrc ? (
+                <img
+                    src={imageSrc}
+                    alt={imageAlt}
+                    onError={(event) => {
+                        event.currentTarget.style.display = "none";
+                    }}
+                    className="h-28 w-auto animate-pulse object-contain"
+                />
+            ) : (
+                Icon && (
+                    <div
+                        className={`flex h-16 w-16 items-center justify-center rounded-3xl ${accent} text-white shadow-lg`}
+                    >
+                        <Icon size={30} aria-hidden="true" />
+                    </div>
+                )
             )}
 
-            <p className="flex items-center gap-2 text-sm text-slate-500">
+            <p className="flex items-center gap-2 text-sm text-white/60">
                 <Loader2 className="animate-spin" size={16} aria-hidden="true" /> {text}
             </p>
         </div>

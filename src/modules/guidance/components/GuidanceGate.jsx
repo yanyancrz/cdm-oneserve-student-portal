@@ -3,6 +3,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { HeartHandshake, Loader2, ShieldAlert } from "lucide-react";
 
 import { guidanceApi, GUIDANCE_UNAUTHORIZED_EVENT } from "../services/guidanceApi";
+import { GUIDANCE_LOGO_SRC } from "../../../lost-found/components/lfBrand";
 import { getToken, getStoredRole, signOut } from "../utils/session";
 import { homeRouteForRole, isCounselorRole } from "../config/guidanceRoutes";
 import { ACCENTS } from "./GuidanceUi";
@@ -69,8 +70,16 @@ export default function GuidanceGate({ audience }) {
         return (
             <div
                 role="status"
-                className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#F7F5EF]"
+                className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#F7F5EF] px-6 text-center"
             >
+                <img
+                    src={GUIDANCE_LOGO_SRC}
+                    alt="Guidance Counseling - Appointment System"
+                    onError={(event) => {
+                        event.currentTarget.style.display = "none";
+                    }}
+                    className="h-24 w-24 rounded-full object-cover shadow-lg ring-2 ring-[#106A2E]/20"
+                />
                 <div
                     className={`flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br ${accent.gradient} text-white shadow-lg`}
                 >

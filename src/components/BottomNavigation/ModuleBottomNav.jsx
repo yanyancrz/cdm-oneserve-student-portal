@@ -39,6 +39,7 @@ import { portalHomeForRole } from "../PortalLink/BackToPortal";
 export default function ModuleBottomNav({
     items,
     brandIcon: BrandIcon,
+    brandImage,
     brandTitle = "CDM OneServe",
     brandSubtitle,
     homePath,
@@ -125,8 +126,18 @@ export default function ModuleBottomNav({
                         onClick={() => navigate(homePath)}
                         className="flex items-center gap-3"
                     >
-                        <div
-                            className="
+                        {brandImage ? (
+                            <img
+                                src={brandImage}
+                                alt={`${brandSubtitle} logo`}
+                                onError={(event) => {
+                                    event.currentTarget.style.display = "none";
+                                }}
+                                className="h-10 w-10 shrink-0 rounded-2xl border border-emerald-600/15 bg-[#0B0B0B] object-contain"
+                            />
+                        ) : (
+                            <div
+                                className="
                                 flex
                                 h-10
                                 w-10
@@ -138,12 +149,13 @@ export default function ModuleBottomNav({
                                 border-emerald-600/15
                                 bg-emerald-50
                             "
-                        >
-                            <BrandIcon
-                                size={18}
-                                className="text-[#106A2E]"
-                            />
-                        </div>
+                            >
+                                <BrandIcon
+                                    size={18}
+                                    className="text-[#106A2E]"
+                                />
+                            </div>
+                        )}
 
                         <div className="text-left">
                             <p className="text-[10px] uppercase tracking-[.22em] text-[#106A2E]/70">

@@ -24,6 +24,7 @@ import {
     LfTypeTag,
 } from "../components/lfUi";
 import { ModuleLoadingScreen } from "../../components/States";
+import { FIND_LOGO_SRC, FIND_SPLASH_SRC } from "../components/lfBrand";
 
 // Same list as the report form (LfReportFormPage CATEGORIES) - the single
 // set of categories the whole module filters by. If the form gains one,
@@ -116,10 +117,12 @@ export default function LfHomePage() {
     if (loading && recent.length === 0 && recentLost.length === 0 && !error) {
         return (
             <ModuleLoadingScreen
+                imageSrc={FIND_SPLASH_SRC}
+                imageAlt="FIND - Found Item & Notification Desk"
                 icon={PackageSearch}
                 accent="bg-gradient-to-br from-[#7C6CE0] to-[#4A3FA3]"
                 label="Opening Lost & Found"
-                text="Opening Lost & Found..."
+                text="Opening FIND — Found Item & Notification Desk..."
             />
         );
     }
@@ -136,22 +139,32 @@ export default function LfHomePage() {
                 }
             `}</style>
 
-            {/* HERO - same welcome card as the Guidance home */}
+            {/* HERO - FIND brand card: logo left, welcome right */}
             <section className="lf-reveal relative overflow-hidden rounded-[28px] border border-[#0E3B22]/10 bg-gradient-to-br from-[#10B981] via-[#0E3B22] to-[#052E16] px-5 py-6 shadow-xl shadow-emerald-900/20 sm:px-7 sm:py-8">
                 <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-emerald-300/20 blur-3xl" />
                 <div className="pointer-events-none absolute -bottom-24 right-1/3 h-72 w-72 rounded-full bg-cyan-300/10 blur-3xl" />
                 <div className="pointer-events-none absolute inset-0 opacity-[0.06] bg-[linear-gradient(rgba(255,255,255,.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.6)_1px,transparent_1px)] bg-[size:32px_32px]" />
 
-                <div className="relative">
+                <div className="relative flex items-start gap-4">
+                    <img
+                        src={FIND_LOGO_SRC}
+                        alt="FIND - Found Item & Notification Desk"
+                        onError={(event) => {
+                            event.currentTarget.style.display = "none";
+                        }}
+                        className="h-20 w-20 shrink-0 rounded-2xl bg-black/40 object-contain p-1.5 shadow-lg ring-1 ring-white/20 sm:h-24 sm:w-24"
+                    />
+
+                    <div className="min-w-0 flex-1">
                     <div className="mb-3 flex items-center justify-between gap-3">
                         <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5">
                             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,.8)]" />
                             <span className="text-[10px] font-semibold uppercase tracking-[.18em] text-emerald-200">
-                                Lost & Found
+                                FIND · Found Item &amp; Notification Desk
                             </span>
                         </div>
 
-                        <PackageSearch className="text-emerald-200/80" size={26} aria-hidden="true" />
+                        <PackageSearch className="shrink-0 text-emerald-200/80" size={26} aria-hidden="true" />
                     </div>
 
                     <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
@@ -168,6 +181,7 @@ export default function LfHomePage() {
                     <p className="mt-4 text-xs uppercase tracking-[.14em] text-white/35">
                         {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
                     </p>
+                    </div>
                 </div>
             </section>
 

@@ -171,6 +171,11 @@ export default function LfMyClaimsPage() {
                                     `${LOST_FOUND_HOME_ROUTE}/report/${claim.reportId}`
                                 )
                             }
+                            onPickup={() =>
+                                navigate(
+                                    `${LOST_FOUND_HOME_ROUTE}/pickup/${claim.claimId}`
+                                )
+                            }
                             onCancel={() => onCancel(claim)}
                         />
                     ))}
@@ -181,10 +186,14 @@ export default function LfMyClaimsPage() {
     );
 }
 
-function ClaimCard({ claim, cancelling, onOpen, onCancel }) {
+function ClaimCard({ claim, cancelling, onOpen, onPickup, onCancel }) {
     const image = lfImageUrl(claim.imagePath);
     const canCancel =
         claim.status === "Pending" ||
+        claim.status === "Approved" ||
+        claim.status === "Scheduled" ||
+        claim.status === "Awaiting Pickup";
+    const canPickup =
         claim.status === "Approved" ||
         claim.status === "Scheduled" ||
         claim.status === "Awaiting Pickup";
@@ -223,10 +232,34 @@ function ClaimCard({ claim, cancelling, onOpen, onCancel }) {
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-2">
+                {canPickup && (
+                    <button
+                        type="button"
+                        onClick={onPickup}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-[#106A2E] px-3 py-2 text-[11px] font-semibold text-white transition hover:bg-[#0E3B22]"
+                    >
+                        <CalendarClock size={13} aria-hidden="true" />
+                        View pickup
+                    </button>
+                )}
+
                 {claim.status === "Scheduled" && (
                     <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#F4D35E]/20 px-3 py-2 text-[11px] font-semibold text-[#1F1F1F]">
                         <CalendarClock size={13} aria-hidden="true" />
-                        Previously scheduled - come during office hours
+                        Walk in during office hours
+                    </span>
+                )}
+
+                {claim.status === "Awaiting Pickup" && (
+                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-[#F4D35E]/20 px-3 py-2 text-[11px] font-semibold text-[#1F1F1F]">
+                        <CalendarClock size={13} aria-hidden="true" />
+                        Approved - walk in during office hours
+                    </span>
+                )}
+
+                {claim.status === "Approved" && (
+                    <span className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 px-3 py-2 text-[11px] font-semibold text-emerald-700">
+                        Approved - walk in during office hours
                     </span>
                 )}
 

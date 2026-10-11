@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 
 import { logout } from "../session";
+import { FIND_LOGO_SRC } from "../components/lfBrand";
 
 // =====================================================
 // LOST & FOUND admin shell
@@ -49,16 +50,26 @@ export default function LfAdminLayout() {
         <div className="min-h-screen bg-[#F7F5EF] md:pt-24">
             <header className="border-b border-[#0E3B22]/10 bg-[#106A2E] px-4 py-4 text-white sm:px-6">
                 <div className="mx-auto flex w-full max-w-[1500px] items-center justify-between gap-4">
-                    <div>
-                        <p className="text-[9px] font-semibold uppercase tracking-[.2em] text-amber-300/80">
-                            CDM OneServe
-                        </p>
-                        <h1 className="mt-0.5 text-base font-semibold sm:text-lg">
-                            Lost &amp; Found Console
-                        </h1>
-                        <p className="mt-0.5 text-[10px] text-white/50">
-                            Review reports, decide claims, run pickups.
-                        </p>
+                    <div className="flex items-center gap-3">
+                        <img
+                            src={FIND_LOGO_SRC}
+                            alt="FIND - Found Item & Notification Desk"
+                            onError={(event) => {
+                                event.currentTarget.style.display = "none";
+                            }}
+                            className="h-11 w-11 shrink-0 rounded-xl bg-black/40 object-contain p-1 ring-1 ring-white/20"
+                        />
+                        <div>
+                            <p className="text-[9px] font-semibold uppercase tracking-[.2em] text-amber-300/80">
+                                FIND · Found Item &amp; Notification Desk
+                            </p>
+                            <h1 className="mt-0.5 text-base font-semibold sm:text-lg">
+                                Lost &amp; Found Console
+                            </h1>
+                            <p className="mt-0.5 text-[10px] text-white/50">
+                                Review reports, decide claims, run pickups.
+                            </p>
+                        </div>
                     </div>
 
                     <div className="flex items-center gap-2">

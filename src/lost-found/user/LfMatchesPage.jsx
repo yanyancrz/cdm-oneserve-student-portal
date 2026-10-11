@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GitCompare } from "lucide-react";
+import toast from "react-hot-toast";
 
 import { lfApi } from "../services/lfApi";
 import { LOST_FOUND_HOME_ROUTE } from "../session";
@@ -27,28 +28,52 @@ export default function LfMatchesPage() {
     const [matches, setMatches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    const [confirming, setConfirming] = useState(null);
+
+    const load = async () => {
+        try {
+            const response = await lfApi.myMatches();
+            setMatches(response.data || []);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         let cancelled = false;
 
-        const load = async () => {
-            try {
-                const response = await lfApi.myMatches();
-                if (cancelled) return;
-                setMatches(response.data || []);
-            } catch (err) {
-                if (cancelled) return;
-                setError(err.message);
-            } finally {
-                if (!cancelled) setLoading(false);
-            }
-        };
+        (async () => {
+            if (cancelled) return;
+            await load();
+        })();
 
-        load();
         return () => {
             cancelled = true;
         };
     }, []);
+
+    const onConfirm = async (match) => {
+        if (
+            !window.confirm(
+                `Confirm this is the same item? "${match.lostItemName || "Lost item"}" matches "${match.foundItemName || "found item"}".`
+            )
+        )
+            return;
+
+        setConfirming(match.matchRecordId);
+
+        try {
+            const response = await lfApi.confirmMatch(match.matchRecordId);
+            toast.success(response.message || "Match confirmed.");
+            await load();
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setConfirming(null);
+        }
+    };
 
     if (loading) return <LfSkeleton rows={3} />;
 
@@ -68,11 +93,13 @@ export default function LfMatchesPage() {
                         <MatchCard
                             key={match.matchRecordId}
                             match={match}
+                            confirming={confirming === match.matchRecordId}
                             onOpen={() =>
                                 navigate(
                                     `${LOST_FOUND_HOME_ROUTE}/report/${match.foundReportId}`
                                 )
                             }
+                            onConfirm={() => onConfirm(match)}
                         />
                     ))}
                 </ul>
@@ -81,7 +108,7 @@ export default function LfMatchesPage() {
     );
 }
 
-function MatchCard({ match, onOpen }) {
+function MatchCard({ match, confirming, onOpen, onConfirm }) {
     const image = lfImageUrl(match.imagePath);
     const strength =
         match.matchPercentage >= 75
@@ -91,12 +118,8 @@ function MatchCard({ match, onOpen }) {
               : "Weak";
 
     return (
-        <li>
-            <button
-                type="button"
-                onClick={onOpen}
-                className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:shadow-md"
-            >
+        <li className="w-full rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:shadow-md">
+            <button type="button" onClick={onOpen} className="block w-full text-left">
                 <div className="flex items-center justify-between gap-3">
                     <span className="flex items-center gap-2 text-xs font-semibold text-slate-500">
                         <GitCompare size={14} className="text-[#106A2E]" aria-hidden="true" />
@@ -138,8 +161,9 @@ function MatchCard({ match, onOpen }) {
                     {match.locationScore ?? 0} · Date {match.dateScore ?? 0}{" "}
                     (25 each)
                 </p>
+            </button>
 
-                <div className="mt-3 flex items-center justify-between border-t border-slate-100 pt-3">
+                <div className="mt-3 flex items-center justify-between gap-2 border-t border-slate-100 pt-3">
                     <span className="text-[11px] text-slate-400">
                         {formatDate(match.createdAt)}
                     </span>
@@ -148,12 +172,21 @@ function MatchCard({ match, onOpen }) {
                             CONFIRMED
                         </span>
                     ) : (
-                        <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">
-                            UNCONFIRMED
+                        <span className="flex items-center gap-2">
+                            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-bold text-amber-700">
+                                UNCONFIRMED
+                            </span>
+                            <button
+                                type="button"
+                                onClick={onConfirm}
+                                disabled={confirming}
+                                className="rounded-full bg-[#106A2E] px-2.5 py-1 text-[10px] font-bold text-white transition hover:bg-[#0E3B22] disabled:opacity-50"
+                            >
+                                {confirming ? "Confirming…" : "Confirm"}
+                            </button>
                         </span>
                     )}
                 </div>
-            </button>
         </li>
     );
 }

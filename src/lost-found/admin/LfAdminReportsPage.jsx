@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { Check, SearchCheck, X } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -82,8 +81,8 @@ export default function LfAdminReportsPage() {
     const visible = reports.filter(
         (report) =>
             !search ||
-            report.itemName.toLowerCase().includes(search.toLowerCase()) ||
-            report.category.toLowerCase().includes(search.toLowerCase()) ||
+            (report.itemName || "").toLowerCase().includes(search.toLowerCase()) ||
+            (report.category || "").toLowerCase().includes(search.toLowerCase()) ||
             (report.location || "")
                 .toLowerCase()
                 .includes(search.toLowerCase())
@@ -146,12 +145,12 @@ export default function LfAdminReportsPage() {
                                                     className="h-10 w-10 rounded-lg"
                                                 />
                                                 <div className="min-w-0">
-                                                    <Link
-                                                        to={`/lost-found/report/${report.reportId}`}
-                                                        className="block truncate font-semibold text-slate-800 hover:text-[#106A2E]"
-                                                    >
+                                                    {/* Plain text on purpose: /lost-found/report/:id
+                                                        lives inside the student layout, which redirects
+                                                        admins back to /lost-found/admin. */}
+                                                    <span className="block truncate font-semibold text-slate-800">
                                                         {report.itemName}
-                                                    </Link>
+                                                    </span>
                                                     <span className="mt-0.5 block truncate text-[10px] text-slate-400">
                                                         {report.category || "Uncategorized"}
                                                         {report.location ? ` · ${report.location}` : ""}

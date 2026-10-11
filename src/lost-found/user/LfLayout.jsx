@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import {
     Bell,
@@ -9,8 +9,9 @@ import {
     UserRound,
 } from "lucide-react";
 
-import { LF_UNAUTHORIZED_EVENT } from "../services/lfApi";
+import { LF_UNAUTHORIZED_EVENT, lfApi } from "../services/lfApi";
 import { LOST_FOUND_HOME_ROUTE, isLostFoundAdminRole } from "../session";
+import { FIND_LOGO_SRC } from "../components/lfBrand";
 import { AmbientBackground } from "../../marketplace/components/marketUi";
 import ModuleBottomNav from "../../components/BottomNavigation/ModuleBottomNav";
 
@@ -33,6 +34,7 @@ export default function LfLayout() {
 
 function LfShell() {
     const navigate = useNavigate();
+    const [unread, setUnread] = useState(0);
 
     useEffect(() => {
         const onUnauthorized = () => navigate("/", { replace: true });
@@ -40,6 +42,31 @@ function LfShell() {
         return () =>
             window.removeEventListener(LF_UNAUTHORIZED_EVENT, onUnauthorized);
     }, [navigate]);
+
+    // Unread badge for the Alerts tab. A failure here must never
+    // break the shell - the tab simply shows without a count.
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadUnread = async () => {
+            try {
+                const response = await lfApi.unreadCount();
+                if (!cancelled) setUnread(Number(response.data?.count ?? response.data ?? 0) || 0);
+            } catch {
+                if (!cancelled) setUnread(0);
+            }
+        };
+
+        loadUnread();
+        const timer = window.setInterval(loadUnread, 60000);
+        window.addEventListener("focus", loadUnread);
+
+        return () => {
+            cancelled = true;
+            window.clearInterval(timer);
+            window.removeEventListener("focus", loadUnread);
+        };
+    }, []);
 
     // A module owner has their own console; a OneServe admin
     // monitors from the admin console. Both are redirected out
@@ -75,6 +102,7 @@ function LfShell() {
             label: "Alerts",
             path: `${LOST_FOUND_HOME_ROUTE}/notifications`,
             icon: Bell,
+            badge: unread,
         },
     ];
 
@@ -85,6 +113,7 @@ function LfShell() {
             <ModuleBottomNav
                 items={items}
                 brandIcon={SearchCheck}
+                brandImage={FIND_LOGO_SRC}
                 brandTitle="CDM OneServe"
                 brandSubtitle="Lost & Found"
                 homePath={LOST_FOUND_HOME_ROUTE}
@@ -98,16 +127,26 @@ function LfShell() {
     );
 }
 
-/** What this module is - the one piece of chrome the shared nav does not cover. */
+/** What this module is - the FIND mark plus the one-line promise. */
 function LfHeader() {
     return (
-        <div className="mb-4">
-            <p className="text-[10px] uppercase tracking-[.22em] text-[#106A2E]/70">
-                Lost &amp; Found
-            </p>
-            <h1 className="mt-0.5 truncate text-2xl font-semibold tracking-tight text-slate-800">
-                Report, find, and recover campus items
-            </h1>
+        <div className="mb-4 flex items-center gap-3">
+            <img
+                src={FIND_LOGO_SRC}
+                alt="FIND - Found Item & Notification Desk"
+                onError={(event) => {
+                    event.currentTarget.style.display = "none";
+                }}
+                className="h-12 w-12 shrink-0 rounded-2xl bg-[#0B0B0B] object-contain shadow-sm ring-1 ring-black/10"
+            />
+            <div className="min-w-0">
+                <p className="text-[10px] uppercase tracking-[.22em] text-[#106A2E]/70">
+                    FIND · Found Item &amp; Notification Desk
+                </p>
+                <h1 className="truncate text-2xl font-semibold tracking-tight text-slate-800">
+                    Report, find, and recover campus items
+                </h1>
+            </div>
         </div>
     );
 }

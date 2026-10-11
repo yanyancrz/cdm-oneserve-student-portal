@@ -17,6 +17,7 @@ import { Avatar, DateBadge } from "../components/GuidanceUi";
 import { useUnreadChats } from "../hooks/useUnreadChats";
 import { personDetails } from "../utils/people";
 import { guidanceApi } from "../services/guidanceApi";
+import { GUIDANCE_LOGO_SRC } from "../../../lost-found/components/lfBrand";
 import { formatYMD, slotToMinutes, todayISO } from "../utils/dateTime";
 
 const ACTIONS = [
@@ -78,7 +79,17 @@ export default function GuidanceStudentHome() {
                     <div className="pointer-events-none absolute -bottom-24 right-1/3 h-72 w-72 rounded-full bg-cyan-300/10 blur-3xl" />
                     <div className="pointer-events-none absolute inset-0 opacity-[0.06] bg-[linear-gradient(rgba(255,255,255,.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.6)_1px,transparent_1px)] bg-[size:32px_32px]" />
 
-                    <div className="relative">
+                    <div className="relative flex items-start gap-4">
+                        <img
+                            src={GUIDANCE_LOGO_SRC}
+                            alt="Guidance Counseling - Appointment System"
+                            onError={(event) => {
+                                event.currentTarget.style.display = "none";
+                            }}
+                            className="h-20 w-20 shrink-0 rounded-full bg-white/10 object-cover shadow-lg ring-2 ring-white/25 sm:h-24 sm:w-24"
+                        />
+
+                        <div className="min-w-0 flex-1">
                         <div className="mb-3 flex items-center justify-between gap-3">
                             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1.5">
                                 <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-300 shadow-[0_0_12px_rgba(110,231,183,.8)]" />
@@ -87,7 +98,7 @@ export default function GuidanceStudentHome() {
                                 </span>
                             </div>
 
-                            <HeartHandshake className="text-emerald-200/80" size={26} aria-hidden="true" />
+                            <HeartHandshake className="shrink-0 text-emerald-200/80" size={26} aria-hidden="true" />
                         </div>
 
                         <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
@@ -104,6 +115,7 @@ export default function GuidanceStudentHome() {
                         <p className="mt-4 text-xs uppercase tracking-[.14em] text-white/35">
                             {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
                         </p>
+                        </div>
                     </div>
                 </section>
 

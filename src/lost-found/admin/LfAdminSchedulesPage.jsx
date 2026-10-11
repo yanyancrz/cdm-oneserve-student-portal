@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import {
     CalendarClock,
     CheckCircle2,
@@ -239,19 +238,19 @@ function AvailabilityManager({ availability, onChanged }) {
         }
     };
 
-    const onRetire = async (window) => {
+    const onRetire = async (slot) => {
         if (
-            !window.confirm(
+            !globalThis.window.confirm(
                 "Retire this pickup window? It disappears from the office-hours view. Existing handover records keep their time."
             )
         )
             return;
 
-        setRetiring(window.availabilityId);
+        setRetiring(slot.availabilityId);
 
         try {
             const response = await lfAdminApi.deleteAvailability(
-                window.availabilityId
+                slot.availabilityId
             );
 
             toast.success(response.message || "Pickup window retired.");
@@ -463,27 +462,27 @@ function AvailabilityManager({ availability, onChanged }) {
                 </p>
             ) : (
                 <ul className="space-y-2">
-                    {availability.map((window) => (
+                    {availability.map((slot) => (
                         <li
-                            key={window.availabilityId}
+                            key={slot.availabilityId}
                             className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 px-4 py-3"
                         >
                             <span className="flex items-center gap-2 text-xs font-medium text-slate-700">
                                 <Clock size={14} className="text-[#106A2E]" aria-hidden="true" />
-                                {formatDateTime(window.startDateTime)} –{" "}
-                                {new Date(window.endDateTime).toLocaleTimeString("en-PH", {
+                                {formatDateTime(slot.startDateTime)} –{" "}
+                                {new Date(slot.endDateTime).toLocaleTimeString("en-PH", {
                                     hour: "numeric",
                                     minute: "2-digit",
                                 })}
                             </span>
                             <button
                                 type="button"
-                                onClick={() => onRetire(window)}
-                                disabled={retiring === window.availabilityId}
+                                onClick={() => onRetire(slot)}
+                                disabled={retiring === slot.availabilityId}
                                 className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
                             >
                                 <Trash2 size={12} aria-hidden="true" />
-                                {retiring === window.availabilityId ? "Retiring…" : "Retire"}
+                                {retiring === slot.availabilityId ? "Retiring…" : "Retire"}
                             </button>
                         </li>
                     ))}
@@ -549,12 +548,10 @@ function ScheduleRow({ schedule, onHandover }) {
     return (
         <tr className="transition hover:bg-slate-50/70">
             <td className="px-4 py-3">
-                <Link
-                    to={`/lost-found/report/${schedule.reportId}`}
-                    className="font-semibold text-slate-800 hover:text-[#106A2E]"
-                >
+                {/* Plain text: the user detail route redirects admins away. */}
+                <span className="font-semibold text-slate-800">
                     {schedule.itemName}
-                </Link>
+                </span>
             </td>
             <td className="px-4 py-3">
                 <span className="block font-medium text-slate-700">

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Bell, CheckCheck } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { lfApi } from "../services/lfApi";
+import { LOST_FOUND_HOME_ROUTE } from "../session";
 import { formatDateTime } from "../config/lfTheme";
 import {
     LfButton,
@@ -123,15 +125,18 @@ export default function LfNotificationsPage() {
             ) : (
                 <ul className="space-y-2">
                     {notifications.map((notification) => (
-                        <li key={notification.notificationId}>
+                        <li
+                            key={notification.notificationId}
+                            className={`rounded-2xl border p-4 transition ${
+                                notification.isRead
+                                    ? "border-slate-200 bg-white"
+                                    : "border-[#106A2E]/30 bg-[#106A2E]/5"
+                            }`}
+                        >
                             <button
                                 type="button"
                                 onClick={() => onMarkRead(notification)}
-                                className={`w-full rounded-2xl border p-4 text-left transition ${
-                                    notification.isRead
-                                        ? "border-slate-200 bg-white"
-                                        : "border-[#106A2E]/30 bg-[#106A2E]/5"
-                                }`}
+                                className="w-full text-left"
                             >
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="min-w-0 flex-1">
@@ -155,13 +160,16 @@ export default function LfNotificationsPage() {
                                         {formatDateTime(notification.createdAt)}
                                     </span>
                                 </div>
-
-                                {notification.reportId && (
-                                    <span className="mt-2 inline-block text-[11px] font-semibold text-[#0D7856]">
-                                        View the report →
-                                    </span>
-                                )}
                             </button>
+
+                            {notification.reportId && (
+                                <Link
+                                    to={`${LOST_FOUND_HOME_ROUTE}/report/${notification.reportId}`}
+                                    className="mt-2 inline-block text-[11px] font-semibold text-[#0D7856] hover:underline"
+                                >
+                                    View the report →
+                                </Link>
+                            )}
                         </li>
                     ))}
                 </ul>

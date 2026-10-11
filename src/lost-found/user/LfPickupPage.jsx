@@ -32,20 +32,25 @@ export default function LfPickupPage() {
         let cancelled = false;
 
         const load = async () => {
+            // Load independently: a missing schedule (404, the normal
+            // walk-in case) must never wipe the availability list.
             try {
-                const [availabilityResponse, scheduleResponse] =
-                    await Promise.all([
-                        lfApi.availability(),
-                        lfApi.scheduleForClaim(claimId),
-                    ]);
-
-                if (cancelled) return;
-
-                setAvailability(availabilityResponse.data || []);
-                setSchedule(scheduleResponse.data || null);
+                const availabilityResponse = await lfApi.availability();
+                if (!cancelled) setAvailability(availabilityResponse.data || []);
             } catch (err) {
                 if (cancelled) return;
                 setError(err.message);
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const scheduleResponse = await lfApi.scheduleForClaim(claimId);
+                if (!cancelled) setSchedule(scheduleResponse.data || null);
+            } catch {
+                // No booked slot is the normal walk-in state - keep
+                // the availability list visible instead of erroring.
+                if (!cancelled) setSchedule(null);
             } finally {
                 if (!cancelled) setLoading(false);
             }

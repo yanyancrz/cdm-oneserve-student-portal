@@ -82,13 +82,18 @@ export default function LfBrowsePage() {
     }, [type, debouncedSearch]);
 
     // Keep the URL in sync with the active tab, so a
-    // filtered view is shareable.
+    // filtered view is shareable. Compares against the live
+    // query value instead of depending on the searchParams
+    // object itself (which would re-run every render).
+    const typeParam = searchParams.get("type") || "";
     useEffect(() => {
+        if (typeParam === (type || "")) return;
         const next = new URLSearchParams(searchParams);
         if (type) next.set("type", type);
         else next.delete("type");
         setSearchParams(next, { replace: true });
-    }, [type, searchParams, setSearchParams]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [type]);
 
     const counts = useMemo(() => {
         const all = reports.length;

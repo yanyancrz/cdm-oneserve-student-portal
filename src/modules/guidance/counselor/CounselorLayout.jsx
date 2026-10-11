@@ -139,6 +139,7 @@ export default function CounselorLayout() {
                 <ModuleBottomNav
                     items={items}
                     brandIcon={HeartHandshake}
+                    brandImage="/brand/guidance-logo.png"
                     brandTitle="CDM OneServe"
                     brandSubtitle="Counselor"
                     homePath="/guidance/counselor"
