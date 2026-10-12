@@ -25,15 +25,35 @@ import {
 // a "view all found" link from the home screen lands here
 // already filtered.
 //
-// Search matches the item name, description and category
-// (server-side first, then a client pass for instantly
-// narrowing what is already loaded).
+// Search is SERVER-side. The backend matches the keyword
+// plus related words across the item name, description,
+// category and location, and returns the rows already
+// ranked - exact title first, broader matches below. A
+// second filter pass here would silently drop the good
+// broad matches (searching "cellphone" must keep
+// "Samsung Smartphone"), so the list shows what the
+// server sent.
 // =====================================================
 
 const TABS = [
     { value: "", label: "All" },
     { value: "Lost", label: "Lost" },
     { value: "Found", label: "Found" },
+];
+
+// Same list as the report form and the home screen - the one set of
+// categories the whole module filters by.
+const CATEGORIES = [
+    "Electronics",
+    "Clothing",
+    "Accessories",
+    "Books & Supplies",
+    "ID & Cards",
+    "Keys",
+    "Umbrella",
+    "Bottle & Container",
+    "Sports Gear",
+    "Other",
 ];
 
 export default function LfBrowsePage() {
@@ -45,6 +65,7 @@ export default function LfBrowsePage() {
     // catalog, while home only filters its own rails.
     const [search, setSearch] = useState(searchParams.get("q") || "");
     const [debouncedSearch, setDebouncedSearch] = useState("");
+    const [category, setCategory] = useState(searchParams.get("category") || "");
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -64,8 +85,12 @@ export default function LfBrowsePage() {
                 setLoading(true);
                 setError("");
 
+                // The server ranks the results - exact title match first,
+                // related words below it. Type and category narrow the
+                // board alongside the search; neither clears the keyword.
                 const response = await lfApi.publicReports({
                     type: type || undefined,
+                    category: category || undefined,
                     search: debouncedSearch || undefined,
                 });
 
@@ -83,21 +108,24 @@ export default function LfBrowsePage() {
         return () => {
             cancelled = true;
         };
-    }, [type, debouncedSearch]);
+    }, [type, category, debouncedSearch]);
 
     // Keep the URL in sync with the active tab, so a
     // filtered view is shareable. Compares against the live
     // query value instead of depending on the searchParams
     // object itself (which would re-run every render).
     const typeParam = searchParams.get("type") || "";
+    const categoryParam = searchParams.get("category") || "";
     useEffect(() => {
-        if (typeParam === (type || "")) return;
+        if (typeParam === (type || "") && categoryParam === (category || "")) return;
         const next = new URLSearchParams(searchParams);
         if (type) next.set("type", type);
         else next.delete("type");
+        if (category) next.set("category", category);
+        else next.delete("category");
         setSearchParams(next, { replace: true });
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [type]);
+    }, [type, category]);
 
     const counts = useMemo(() => {
         const all = reports.length;
@@ -105,20 +133,6 @@ export default function LfBrowsePage() {
         const found = all - lost;
         return { all, lost, found };
     }, [reports]);
-
-    // Client pass over item name + description + category, so the list
-    // narrows instantly even before the debounced server search returns.
-    const query = debouncedSearch.trim().toLowerCase();
-    const visibleReports = useMemo(() => {
-        if (!query) return reports;
-        return reports.filter((r) =>
-            [r.itemName, r.description, r.category]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase()
-                .includes(query)
-        );
-    }, [reports, query]);
 
     return (
         <div className="space-y-4">
@@ -162,23 +176,58 @@ export default function LfBrowsePage() {
                 })}
             </div>
 
+            {/* ---------- category ---------- */}
+            <div
+                className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                role="group"
+                aria-label="Filter by category"
+            >
+                <button
+                    type="button"
+                    onClick={() => setCategory("")}
+                    aria-pressed={category === ""}
+                    className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
+                        category === ""
+                            ? "border-[#106A2E] bg-[#106A2E] text-white"
+                            : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                    }`}
+                >
+                    All categories
+                </button>
+                {CATEGORIES.map((option) => (
+                    <button
+                        key={option}
+                        type="button"
+                        onClick={() => setCategory(category === option ? "" : option)}
+                        aria-pressed={category === option}
+                        className={`shrink-0 rounded-full border px-3 py-1.5 text-[11px] font-semibold transition ${
+                            category === option
+                                ? "border-[#106A2E] bg-[#106A2E] text-white"
+                                : "border-slate-200 bg-white text-slate-500 hover:bg-slate-50"
+                        }`}
+                    >
+                        {option}
+                    </button>
+                ))}
+            </div>
+
             {loading ? (
                 <LfSkeleton rows={4} />
             ) : error ? (
                 <LfNotice tone="bad">{error}</LfNotice>
-            ) : visibleReports.length === 0 ? (
+            ) : reports.length === 0 ? (
                 <LfEmpty
                     icon={PackageSearch}
                     title="Nothing on the board"
                     message={
                         search
-                            ? "No published reports match your search. Try the item name, description or category."
-                            : "No published reports yet. Found something? Report it so its owner can find it."
+                            ? "No published reports match that search. Try a different word - related items are found too, so \"cellphone\" also matches a smartphone."
+                            : "No published reports for this filter yet. Found something? Report it so its owner can find it."
                     }
                 />
             ) : (
                 <ul className="space-y-3">
-                    {visibleReports.map((report) => (
+                    {reports.map((report) => (
                         <BoardRow
                             key={report.reportId}
                             report={report}

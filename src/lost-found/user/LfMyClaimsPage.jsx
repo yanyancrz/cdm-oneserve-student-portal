@@ -359,10 +359,11 @@ function ProofUploader({ claim, onClose, onAttached }) {
             const uploaded = await lfApi.uploadClaimProof(file);
 
             // Re-submitting the claim with the new proof path links the
-            // file to this claim and puts it back in review.
+            // file to this claim and puts it back in review. The claim
+            // no longer carries an explanation, so only the details and
+            // the no-proof reason travel with it.
             await lfApi.updateMyClaim(claim.claimId, {
                 reportId: claim.reportId,
-                ownershipExplanation: claim.ownershipExplanation || claim.verificationNotes || "",
                 identifyingDetails: claim.identifyingDetails || null,
                 noProofReason: claim.noProofReason || null,
                 proofAttachmentPath: uploaded.data?.storedPath,

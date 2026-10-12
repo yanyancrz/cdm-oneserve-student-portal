@@ -32,12 +32,12 @@ import {
 // =====================================================
 // Claim a found item.
 //
-// A claim is the claimant's own statement of ownership.
-// A proof attachment is OPTIONAL - plenty of personal
-// belongings have no receipt or photo - but without one
-// the claimant must say why and describe details that
-// can verify the item is theirs. Nothing here decides
-// anything: the finder (or the admin) reviews it.
+// The claim collects what the reviewer can actually judge:
+// an optional proof attachment, or - when there is none -
+// why there is none plus identifying details that can
+// verify the item is theirs. The old "why do you believe
+// this is yours?" paragraph is gone; the reviewer decides
+// from the proof and the details.
 // =====================================================
 
 const ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
@@ -55,7 +55,6 @@ export default function LfSubmitClaimPage() {
     const [notFound, setNotFound] = useState(false);
     const [existingClaim, setExistingClaim] = useState(null);
 
-    const [explanation, setExplanation] = useState("");
     const [details, setDetails] = useState("");
     const [noProof, setNoProof] = useState(false);
     const [noProofReason, setNoProofReason] = useState("");
@@ -87,7 +86,6 @@ export default function LfSubmitClaimPage() {
                 setExistingClaim(updateClaimId ? null : claim);
 
                 if (updateClaimId && claim?.claimId === updateClaimId) {
-                    setExplanation(claim.ownershipExplanation || "");
                     setDetails(claim.identifyingDetails || "");
                     setNoProofReason(claim.noProofReason || "");
                     setNoProof(Boolean(claim.noProofReason));
@@ -135,11 +133,6 @@ export default function LfSubmitClaimPage() {
     };
 
     const submit = async () => {
-        if (!explanation.trim()) {
-            toast.error("Explain why you believe this item is yours.");
-            return;
-        }
-
         if (!proof) {
             if (!noProofReason.trim()) {
                 toast.error("Explain why you cannot provide proof, or attach one.");
@@ -156,7 +149,6 @@ export default function LfSubmitClaimPage() {
 
         const body = {
             reportId: Number(reportId),
-            ownershipExplanation: explanation.trim(),
             identifyingDetails: details.trim() || null,
             noProofReason: proof ? null : noProofReason.trim() || null,
             proofAttachmentPath: proof?.storedPath || null,
@@ -279,26 +271,9 @@ export default function LfSubmitClaimPage() {
             {/* ---------- STEP 2 - the claim itself ---------- */}
             <LfPanel
                 title="Your claim"
-                subtitle="Everything here is read by the reviewer before any decision"
+                subtitle="Proof or identifying details - what you can show the reviewer"
             >
                 <div className="space-y-4">
-                    <label className="block">
-                        <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
-                            Why do you believe this item is yours? *
-                        </span>
-                        <textarea
-                            rows={4}
-                            value={explanation}
-                            onChange={(event) => setExplanation(event.target.value)}
-                            placeholder="e.g. It is my black umbrella with the blue handle; I left it in the library on Monday afternoon."
-                            maxLength={1000}
-                            className={`${lfInputClass} resize-none leading-6`}
-                        />
-                        <span className="mt-1 block text-right text-[10px] text-slate-400">
-                            {explanation.length}/1000
-                        </span>
-                    </label>
-
                     {/* ---------- optional proof attachment ---------- */}
                     <div>
                         <span className="mb-1.5 block text-[11px] font-semibold uppercase tracking-wide text-slate-500">
@@ -499,7 +474,6 @@ export default function LfSubmitClaimPage() {
 
                             <dl className="mt-4 space-y-2 text-xs">
                                 <SummaryRow label="Item" value={`${formatItemId(report.reportId)} · ${report.itemName}`} />
-                                <SummaryRow label="Explanation" value={explanation.trim()} />
                                 <SummaryRow
                                     label="Identifying details"
                                     value={details.trim() || "None given"}
