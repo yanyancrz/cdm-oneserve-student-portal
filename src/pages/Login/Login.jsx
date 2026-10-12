@@ -522,6 +522,12 @@ export default function Login() {
                     return;
                 }
 
+                // GIS accepts a pixel number only (200-400); "100%" is ignored.
+                // Measure the container so the button matches the Sign In width.
+                const containerWidth = Math.round(
+                    googleButtonRef.current.clientWidth
+                );
+
                 window.google.accounts.id.renderButton(
                     googleButtonRef.current,
                     {
@@ -530,8 +536,8 @@ export default function Login() {
                         size: "large",
                         text: "continue_with",
                         shape: "rectangular",
-                        logo_alignment: "left",
-                        width: "100%",
+                        logo_alignment: "center",
+                        width: Math.min(400, Math.max(200, containerWidth)),
                     }
                 );
             } catch {
@@ -726,23 +732,34 @@ export default function Login() {
 
                                 {/* ---------- GOOGLE SIGN-IN ---------- */}
                                 {googleClientId && (
-                                    <div
-                                        ref={googleButtonRef}
-                                        className="mt-4 w-full"
-                                    />
+                                    <>
+                                        <div className="my-5 flex items-center gap-2.5">
+                                            <span className="h-px flex-1 bg-slate-200" />
+                                            <span className="text-[11px] uppercase tracking-wider text-slate-400">
+                                                or
+                                            </span>
+                                            <span className="h-px flex-1 bg-slate-200" />
+                                        </div>
+
+                                        {/* min-h reserves the space so the card doesn't jump when the
+                                            Google iframe loads; the pulse placeholder sits behind it
+                                            and is covered once the real button renders. */}
+                                        <div className="relative flex min-h-[44px] w-full items-center justify-center overflow-hidden rounded-xl">
+                                            <div className="absolute inset-0 animate-pulse rounded-xl bg-slate-100" />
+                                            <div
+                                                ref={googleButtonRef}
+                                                className="relative z-10 flex w-full justify-center"
+                                            />
+                                        </div>
+                                    </>
                                 )}
 
-                                {/* ---------- DIVIDER ---------- */}
-                                <div className="my-5 flex items-center gap-2.5">
-                                    <span className="h-px flex-1 bg-slate-200" />
-                                    <span className="text-[11px] uppercase tracking-wider text-slate-400">
-                                        New here
-                                    </span>
-                                    <span className="h-px flex-1 bg-slate-200" />
-                                </div>
-
                                 {/* ---------- REGISTER ---------- */}
-                                <p className="text-center text-sm text-slate-500">
+                                <p
+                                    className={`text-center text-sm text-slate-500 ${
+                                        googleClientId ? "mt-6" : "mt-5"
+                                    }`}
+                                >
                                     Don't have an account?{" "}
                                     <Link
                                         to="/register"
