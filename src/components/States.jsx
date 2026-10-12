@@ -1,25 +1,3 @@
-/**
- * Shared loading / empty / error kit.
- *
- * Every module used to grow its own grey blocks: Guidance had this kit,
- * the Library pages each declared a private `Skeleton`, the admin portal
- * had a 418-line one nobody else imported, and the marketplace and
- * lost-found modules had two more of their own. Five copies of the same
- * "pulsing rectangle" is how a design system rots.
- *
- * This is the single source. It is deliberately free of any module
- * context - no accents, no data shapes - so every page can import it.
- *
- * Three rules these follow that the private copies never did:
- *   1. `motion-safe:animate-pulse`, so the blocks stay perfectly still
- *      when the OS asks for reduced motion.
- *   2. One `role="status"` + `sr-only` label on the wrapper, with the
- *      blocks themselves `aria-hidden`, so a screen reader announces
- *      "Loading books..." once instead of reading every grey box.
- *   3. Callers guard with `loading && items.length === 0`, so a skeleton
- *      only ever covers the FIRST load - a background refresh repaints
- *      the list that is already there instead of flashing.
- */
 import { createPortal } from "react-dom";
 
 import { AlertCircle, CheckCircle2, Inbox, Info, Loader2, RefreshCw } from "lucide-react";

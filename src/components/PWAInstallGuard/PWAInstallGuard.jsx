@@ -170,8 +170,30 @@ function InstallRequired() {
     // once the applicant opens it.
     const [showSteps, setShowSteps] = useState(false);
 
+    // The screenshot currently shown full
+    // screen, or null. Tapping a card opens
+    // it so the on-screen steps are readable
+    // on a phone, whatever the orientation.
+    const [zoomed, setZoomed] = useState(null);
+
+    // Escape closes the enlarged screenshot.
+    useEffect(() => {
+        if (!zoomed) return undefined;
+
+        const onKeyDown = (e) => {
+            if (e.key === "Escape") {
+                setZoomed(null);
+            }
+        };
+
+        window.addEventListener("keydown", onKeyDown);
+
+        return () =>
+            window.removeEventListener("keydown", onKeyDown);
+    }, [zoomed]);
+
     return (
-        <div className="min-h-screen bg-[#F7F5EF] flex items-center justify-center p-6">
+        <div className="min-h-screen bg-[#F7F5EF] flex items-center justify-center px-4 py-8 sm:p-6">
 
             {/* BACKGROUND */}
 
@@ -221,20 +243,27 @@ function InstallRequired() {
 
             {/* INSTALL CARD */}
 
+            {/* The card widens once the gallery is open,
+                so the screenshots get real room instead of
+                being squeezed into the compact card. */}
+
             <div
-                className="
+                className={`
                     relative
                     z-10
                     w-full
-                    max-w-md
                     rounded-3xl
                     border
                     border-slate-200
                     bg-white
-                    p-8
+                    p-6
                     text-center
                     shadow-xl
-                "
+                    transition-[max-width]
+                    duration-300
+                    sm:p-8
+                    ${showSteps ? "max-w-2xl" : "max-w-md"}
+                `}
             >
 
                 {/* ICON */}
@@ -356,31 +385,43 @@ function InstallRequired() {
                 </button>
 
                 {/* STEP-BY-STEP GALLERY */}
+                {/* Phones first: the two portrait screenshots sit
+                    side by side on wider screens and stack on a
+                    phone. The two landscape desktop screenshots
+                    always take the full row. */}
 
                 {showSteps && (
-                    <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div className="mt-5 grid grid-cols-1 gap-4 text-left sm:grid-cols-2">
                         <InstallStep
                             image={androidInstall}
                             platform="Android"
                             hint="Chrome: tap the menu, then Install app"
-                        />
-
-                        <InstallStep
-                            image={windowsInstall}
-                            platform="Windows"
-                            hint="Chrome or Edge: open the menu, then Install app"
-                        />
-
-                        <InstallStep
-                            image={macosInstall}
-                            platform="macOS"
-                            hint="Chrome: open the menu, then Install app"
+                            orientation="portrait"
+                            onZoom={setZoomed}
                         />
 
                         <InstallStep
                             image={safariInstall}
                             platform="iPhone / iPad"
                             hint="Safari: tap Share, then Add to Home Screen"
+                            orientation="portrait"
+                            onZoom={setZoomed}
+                        />
+
+                        <InstallStep
+                            image={windowsInstall}
+                            platform="Windows"
+                            hint="Chrome or Edge: open the menu, then Install app"
+                            orientation="landscape"
+                            onZoom={setZoomed}
+                        />
+
+                        <InstallStep
+                            image={macosInstall}
+                            platform="macOS"
+                            hint="Chrome: open the menu, then Install app"
+                            orientation="landscape"
+                            onZoom={setZoomed}
                         />
                     </div>
                 )}
@@ -395,6 +436,50 @@ function InstallRequired() {
 
             </div>
 
+
+            {/* ENLARGED SCREENSHOT */}
+
+            {zoomed && (
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={`Install guide for ${zoomed.platform}`}
+                    onClick={() => setZoomed(null)}
+                    className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/85 p-4"
+                >
+                    <button
+                        type="button"
+                        onClick={() => setZoomed(null)}
+                        aria-label="Close"
+                        className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+                    >
+                        <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        >
+                            <path d="M18 6 6 18M6 6l12 12" />
+                        </svg>
+                    </button>
+
+                    <img
+                        src={zoomed.image}
+                        alt={`How to install CDM OneServe on ${zoomed.platform}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="max-h-[85vh] max-w-full rounded-xl bg-white object-contain"
+                    />
+
+                    <p className="mt-3 text-sm font-medium text-white">
+                        {zoomed.platform}
+                    </p>
+                </div>
+            )}
+
         </div>
     );
 }
@@ -403,28 +488,61 @@ function InstallRequired() {
 // ==================================================
 // ONE INSTALL STEP
 // ==================================================
-// A screenshot card. The image keeps its
-// aspect ratio (object-contain) so the
-// on-screen steps in the screenshot are
-// never cropped, whatever the device.
+// A screenshot card. The image is never
+// cropped (object-contain) and is no longer
+// forced into a fixed-height box, which is
+// what made the portrait phone screenshots
+// tiny:
+//
+//   portrait  - keeps its natural shape, up to
+//               28rem tall, centered.
+//   landscape - fills the card width, up to
+//               22rem tall.
+//
+// Tapping the screenshot opens it full screen.
 
-function InstallStep({ image, platform, hint }) {
+function InstallStep({
+    image,
+    platform,
+    hint,
+    orientation = "landscape",
+    onZoom,
+}) {
+    const isPortrait = orientation === "portrait";
+
     return (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-            <div className="flex h-40 items-center justify-center overflow-hidden rounded-xl bg-white">
+        <div
+            className={`rounded-2xl border border-slate-200 bg-slate-50 p-3 ${
+                isPortrait ? "" : "sm:col-span-2"
+            }`}
+        >
+            <button
+                type="button"
+                onClick={() => onZoom?.({ image, platform })}
+                aria-label={`Enlarge the ${platform} install guide`}
+                className="relative block w-full overflow-hidden rounded-xl bg-white"
+            >
                 <img
                     src={image}
                     alt={`How to install CDM OneServe on ${platform}`}
-                    className="max-h-full max-w-full object-contain"
                     loading="lazy"
+                    className={`block h-auto object-contain ${
+                        isPortrait
+                            ? "mx-auto max-h-[28rem] w-auto max-w-full"
+                            : "max-h-[22rem] w-full"
+                    }`}
                 />
-            </div>
 
-            <p className="mt-2 text-sm font-semibold text-slate-800">
+                <span className="pointer-events-none absolute bottom-2 right-2 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-medium text-white">
+                    Tap to enlarge
+                </span>
+            </button>
+
+            <p className="mt-2.5 text-sm font-semibold text-slate-800">
                 {platform}
             </p>
 
-            <p className="mt-0.5 text-[11px] leading-4 text-slate-500">
+            <p className="mt-0.5 text-xs leading-4 text-slate-500">
                 {hint}
             </p>
         </div>
