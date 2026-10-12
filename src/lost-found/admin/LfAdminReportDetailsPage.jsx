@@ -498,8 +498,8 @@ function ClaimReviewCard({ claim, report, acting, onDecide }) {
                 </div>
             ) : (
                 <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2.5 text-[11px] leading-5 text-amber-800">
-                    No Proof of Ownership Attached. Review the explanation and
-                    the identifying details above before deciding.
+                    No Proof of Ownership Attached. Review the identifying
+                    details and the reason no proof was given before deciding.
                 </p>
             )}
 
