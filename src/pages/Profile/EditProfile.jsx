@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Lock } from "lucide-react";
 import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
 import BackgroundLayout from "../../layouts/BackgroundLayout";
@@ -95,6 +96,15 @@ export default function EditProfile() {
 
     const isFaculty =
         student?.role?.toLowerCase() === "faculty";
+
+    // The name and ID number are locked for good once
+    // the admin has approved the account: they are what
+    // the school record was checked against, so they
+    // must never drift afterwards.
+    const isVerified =
+        student?.accountStatus === "Approved" ||
+        student?.physicalIdVerificationStatus ===
+            "Verified";
 
 
     // ==========================================
@@ -440,6 +450,13 @@ export default function EditProfile() {
                                 "
                             />
 
+                            <p className="mt-1.5 flex items-center gap-1 text-[11px] text-gray-400">
+                                <Lock size={11} aria-hidden="true" />
+                                {isVerified
+                                    ? "Locked. Name and ID number cannot be changed once the admin approves your verification."
+                                    : "Locked. The admin verifies these details before approving your account."}
+                            </p>
+
                         </div>
 
 
@@ -468,6 +485,13 @@ export default function EditProfile() {
                                     border
                                 "
                             />
+
+                            <p className="mt-1.5 flex items-center gap-1 text-[11px] text-gray-400">
+                                <Lock size={11} aria-hidden="true" />
+                                {isVerified
+                                    ? "Locked. Name and ID number cannot be changed once the admin approves your verification."
+                                    : "Locked. The admin verifies these details before approving your account."}
+                            </p>
 
                         </div>
 

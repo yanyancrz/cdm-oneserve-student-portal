@@ -109,6 +109,11 @@ export default function Register() {
     const [loading, setLoading] = useState(false);
     const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
+    // Shown after the Register button is pressed: the
+    // applicant reviews what they typed and confirms it
+    // before the OTP is sent.
+    const [confirming, setConfirming] = useState(false);
+
     const fileInputRef = useRef(null);
     const cameraInputRef = useRef(null);
 
@@ -239,14 +244,13 @@ export default function Register() {
     };
 
     // =========================================================
-    // REGISTER
+    // FORM VALIDATION
     // =========================================================
+    // Shared by the confirmation prompt and the
+    // submit itself, so the prompt only ever
+    // opens on a form that can actually be sent.
 
-    const handleRegister = async () => {
-        // -----------------------------------------------------
-        // REQUIRED FIELD VALIDATION
-        // -----------------------------------------------------
-
+    const validateForm = () => {
         if (
             !idNumber.trim() ||
             !firstName.trim() ||
@@ -255,36 +259,54 @@ export default function Register() {
             !email.trim() ||
             !password.trim()
         ) {
-            toast.error(
-                "Please complete all required fields."
-            );
-
-            return;
+            return "Please complete all required fields.";
         }
-
-        // -----------------------------------------------------
-        // STRONG PASSWORD VALIDATION
-        // -----------------------------------------------------
 
         const weakRule = passwordRules.find((r) => !r.ok);
 
         if (weakRule) {
-            toast.error(
-                `Password is not strong enough: ${weakRule.label.toLowerCase()}.`
-            );
+            return `Password is not strong enough: ${weakRule.label.toLowerCase()}.`;
+        }
 
+        if (!physicalIdFile) {
+            return "Please upload your physical ID.";
+        }
+
+        return null;
+    };
+
+    // =========================================================
+    // REGISTER BUTTON
+    // =========================================================
+    // Does NOT submit yet. It validates, then asks
+    // the applicant to review the details they
+    // entered before anything is sent.
+
+    const handleRegisterClick = () => {
+        const formError = validateForm();
+
+        if (formError) {
+            toast.error(formError);
             return;
         }
 
+        setConfirming(true);
+    };
+
+    // =========================================================
+    // REGISTER
+    // =========================================================
+
+    const handleRegister = async () => {
         // -----------------------------------------------------
-        // PHYSICAL ID VALIDATION
+        // VALIDATION (the same checks the confirmation
+        // prompt already ran before it opened)
         // -----------------------------------------------------
 
-        if (!physicalIdFile) {
-            toast.error(
-                "Please upload your physical ID."
-            );
+        const formError = validateForm();
 
+        if (formError) {
+            toast.error(formError);
             return;
         }
 
@@ -1284,7 +1306,7 @@ export default function Register() {
                         ================================================= */}
 
                         <button
-                            onClick={handleRegister}
+                            onClick={handleRegisterClick}
                             disabled={
                                 !isFormValid ||
                                 loading
@@ -1386,6 +1408,107 @@ export default function Register() {
                     </div>
                 </div>
             </BackgroundLayout>
+
+            {/* =================================================
+                CONFIRMATION PROMPT
+                Opens after the Register button is pressed:
+                the applicant reviews every detail they typed
+                and confirms it before the OTP is sent.
+            ================================================= */}
+
+            {confirming && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Review your registration details"
+                >
+                    <div
+                        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                        onClick={() => setConfirming(false)}
+                    />
+
+                    <div className="relative w-full max-w-sm rounded-[24px] border border-slate-200 bg-white p-6 shadow-2xl shadow-black/10">
+                        <h2 className="text-lg font-semibold text-slate-800">
+                            Review your details
+                        </h2>
+
+                        <p className="mt-1 text-sm text-slate-500">
+                            Is this correct?
+                        </p>
+
+                        <dl className="mt-4 space-y-2.5 text-sm">
+                            <div className="flex items-start justify-between gap-4">
+                                <dt className="text-slate-400">ID Number</dt>
+                                <dd className="text-right font-semibold text-slate-800">
+                                    {idNumber}
+                                </dd>
+                            </div>
+
+                            <div className="flex items-start justify-between gap-4">
+                                <dt className="text-slate-400">I am a</dt>
+                                <dd className="text-right font-semibold text-slate-800">
+                                    {role}
+                                </dd>
+                            </div>
+
+                            <div className="flex items-start justify-between gap-4">
+                                <dt className="text-slate-400">Name</dt>
+                                <dd className="text-right font-semibold text-slate-800">
+                                    {[firstName, middleName, lastName]
+                                        .filter(Boolean)
+                                        .join(" ")}
+                                </dd>
+                            </div>
+
+                            <div className="flex items-start justify-between gap-4">
+                                <dt className="text-slate-400">Email</dt>
+                                <dd className="text-right font-semibold text-slate-800">
+                                    {email}
+                                </dd>
+                            </div>
+
+                            <div className="flex items-start justify-between gap-4">
+                                <dt className="text-slate-400">Password</dt>
+                                <dd className="text-right font-semibold text-slate-800">
+                                    ••••••••
+                                </dd>
+                            </div>
+
+                            <div className="flex items-start justify-between gap-4">
+                                <dt className="text-slate-400">Physical ID</dt>
+                                <dd
+                                    className="max-w-[60%] truncate text-right font-semibold text-slate-800"
+                                    title={physicalIdFile?.name}
+                                >
+                                    {physicalIdFile?.name}
+                                </dd>
+                            </div>
+                        </dl>
+
+                        <div className="mt-6 grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setConfirming(false)}
+                                className="rounded-xl border border-slate-200 bg-slate-50 py-3 text-sm font-semibold text-slate-600 transition hover:bg-white"
+                            >
+                                Edit details
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setConfirming(false);
+                                    handleRegister();
+                                }}
+                                className="rounded-xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition hover:opacity-90 active:scale-[0.98]"
+                            >
+                                Yes, continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </>
     );
 }

@@ -5,6 +5,22 @@ import DeviceSessionWarning from "../../components/AccountSecurity/DeviceSession
 import AIAssistant from "../../components/AIAssistant/AIAssistant";
 import toast from "react-hot-toast";
 
+// Loading placeholders. Purely presentational,
+// so they live at module level - defining them
+// inside the component would reset their state
+// on every render.
+const Bone = ({ className = "" }) => (
+    <div
+        className={`animate-pulse rounded-xl bg-slate-200/70 ${className}`}
+    />
+);
+
+const BoneOnDark = ({ className = "" }) => (
+    <div
+        className={`animate-pulse rounded-lg bg-white/15 ${className}`}
+    />
+);
+
 export default function Dashboard() {
     const navigate = useNavigate();
 
@@ -396,22 +412,6 @@ export default function Dashboard() {
     const profileComplete =
         user?.isProfileComplete;
 
-    const Bone = ({
-        className = ""
-    }) => (
-        <div
-            className={`animate-pulse rounded-xl bg-slate-200/70 ${className}`}
-        />
-    );
-
-    const BoneOnDark = ({
-        className = ""
-    }) => (
-        <div
-            className={`animate-pulse rounded-lg bg-white/15 ${className}`}
-        />
-    );
-
     return (
         <div className="relative min-h-screen overflow-x-hidden bg-[#F6F2E6] md:pt-24">
 
@@ -732,7 +732,17 @@ export default function Dashboard() {
                                         aria-label="Clear search"
                                         className="mr-3 flex h-7 w-7 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
                                     >
-                                        Ã—
+                                        <svg
+                                            width="14"
+                                            height="14"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2.2"
+                                            strokeLinecap="round"
+                                        >
+                                            <path d="M18 6 6 18M6 6l12 12" />
+                                        </svg>
                                     </button>
                                 )}
 
@@ -882,7 +892,19 @@ export default function Dashboard() {
                                                 </span>
 
                                                 <span className="flex h-7 w-7 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition group-hover:text-slate-700">
-                                                    â†’
+                                                    <svg
+                                                        width="14"
+                                                        height="14"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    >
+                                                        <path d="M5 12h14" />
+                                                        <path d="m12 5 7 7-7 7" />
+                                                    </svg>
                                                 </span>
 
                                             </div>
@@ -1071,7 +1093,7 @@ export default function Dashboard() {
 
                                             <p className="mt-1.5 break-all text-sm font-semibold text-slate-800">
                                                 {user?.idNumber ||
-                                                    "â€”"}
+                                                    "—"}
                                             </p>
 
                                         </div>
@@ -1088,9 +1110,9 @@ export default function Dashboard() {
                                             <p className="mt-1.5 line-clamp-2 text-sm font-semibold text-slate-800">
                                                 {isStudent
                                                     ? user?.course ||
-                                                      "â€”"
+                                                      "—"
                                                     : user?.institute ||
-                                                      "â€”"}
+                                                      "—"}
                                             </p>
 
                                         </div>
@@ -1107,9 +1129,9 @@ export default function Dashboard() {
                                             <p className="mt-1.5 line-clamp-2 text-sm font-semibold text-slate-800">
                                                 {isStudent
                                                     ? user?.yearLevel ||
-                                                      "â€”"
+                                                      "—"
                                                     : user?.position ||
-                                                      "â€”"}
+                                                      "—"}
                                             </p>
 
                                         </div>
@@ -1136,39 +1158,71 @@ export default function Dashboard() {
 
 
                             {/* =================================================
-                                ANNOUNCEMENTS (rendered first via order-first)
+                                ADMIN ANNOUNCEMENT
+                                (rendered first via order-first)
                             ================================================= */}
 
-                            {/* =================================================
-                                ANNOUNCEMENTS
-                            ================================================= */}
+                            <div className="order-first lg:col-span-2">
 
-                            <section
-                                className="dashboard-reveal dashboard-delay-3 relative overflow-hidden rounded-[24px] p-5 shadow-lg shadow-black/5 sm:p-6 order-first lg:col-span-2"
-                                style={{
-                                    background:
-                                        `linear-gradient(135deg, ${
-                                            currentAnnouncement.accent ||
-                                            "#F4D35E"
-                                        }, #FFEAB0)`
-                                }}
-                                onTouchStart={
-                                    handleAnnouncementTouchStart
-                                }
-                                onTouchEnd={
-                                    handleAnnouncementTouchEnd
-                                }
-                                onMouseEnter={() =>
-                                    setIsAnnouncementPaused(
-                                        true
-                                    )
-                                }
-                                onMouseLeave={() =>
-                                    setIsAnnouncementPaused(
-                                        false
-                                    )
-                                }
-                            >
+                                <div className="dashboard-reveal dashboard-delay-3 mb-3 flex items-end justify-between">
+
+                                    <div>
+
+                                        <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#173F2C]/60">
+                                            From the admin office
+                                        </p>
+
+                                        <h2 className="mt-1 text-lg font-semibold text-slate-800 sm:text-xl">
+                                            Admin Announcement
+                                        </h2>
+
+                                    </div>
+
+                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
+                                        <svg
+                                            width="12"
+                                            height="12"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <path d="m3 11 18-5v12L3 14v-3z" />
+                                            <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+                                        </svg>
+                                        Official
+                                    </span>
+
+                                </div>
+
+                                <section
+                                    className="dashboard-reveal dashboard-delay-3 relative overflow-hidden rounded-[24px] p-5 shadow-lg shadow-black/5 sm:p-6"
+                                    style={{
+                                        background:
+                                            `linear-gradient(135deg, ${
+                                                currentAnnouncement.accent ||
+                                                "#F4D35E"
+                                            }, #FFEAB0)`
+                                    }}
+                                    onTouchStart={
+                                        handleAnnouncementTouchStart
+                                    }
+                                    onTouchEnd={
+                                        handleAnnouncementTouchEnd
+                                    }
+                                    onMouseEnter={() =>
+                                        setIsAnnouncementPaused(
+                                            true
+                                        )
+                                    }
+                                    onMouseLeave={() =>
+                                        setIsAnnouncementPaused(
+                                            false
+                                        )
+                                    }
+                                >
 
                                 <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,.5),transparent_35%)]" />
 
@@ -1315,7 +1369,18 @@ export default function Dashboard() {
                                                         aria-label="Previous announcement"
                                                         className="flex h-8 w-8 items-center justify-center rounded-full bg-white/45 text-[#10231B] transition hover:bg-white/65"
                                                     >
-                                                        â†
+                                                        <svg
+                                                            width="16"
+                                                            height="16"
+                                                            viewBox="0 0 24 24"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2.2"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                        >
+                                                            <path d="m15 18-6-6 6-6" />
+                                                        </svg>
                                                     </button>
 
 
@@ -1327,7 +1392,18 @@ export default function Dashboard() {
                                                         aria-label="Next announcement"
                                                         className="flex h-8 w-8 items-center justify-center rounded-full bg-white/45 text-[#10231B] transition hover:bg-white/65"
                                                     >
-                                                        â†’
+                                                        <svg
+                                                            width="16"
+                                                            height="16"
+                                                            viewBox="0 0 24 24"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2.2"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                        >
+                                                            <path d="m9 18 6-6-6-6" />
+                                                        </svg>
                                                     </button>
 
                                                 </div>
@@ -1359,6 +1435,8 @@ export default function Dashboard() {
                                 )}
 
                             </section>
+
+                            </div>
 
                     </div>
 

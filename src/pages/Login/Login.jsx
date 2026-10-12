@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
     BookOpen,
@@ -78,7 +78,21 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
+    // Set only when the server has a Google
+    // client ID configured - the button renders
+    // only then, so an unconfigured server shows
+    // the plain password form.
+    const [googleClientId, setGoogleClientId] = useState(null);
+
     const navigate = useNavigate();
+
+    const googleButtonRef = useRef(null);
+
+    // The Google callback reads the latest handler
+    // through this ref, so the Identity Services
+    // initialization (which runs once) never holds a
+    // stale closure.
+    const googleCallbackRef = useRef(null);
 
     const checkPWAAccess = () => {
         // DEV MODE: allow testing directly from localhost/browser
@@ -114,39 +128,50 @@ export default function Login() {
     // HANDLE LOGIN
     // =====================================================
 
-    const handleLogin = async () => {
-        if (!checkPWAAccess()) {
-            return;
-        }
+    // authData lets Google sign-in hand over an
+    // already-verified payload: the password form
+    // fetches it itself, Google has it already.
+    // Everything after this point - session
+    // handling and routing - is identical.
+    const handleLogin = async (authData = null) => {
+        if (!authData) {
+            if (!checkPWAAccess()) {
+                return;
+            }
 
-        if (!email.trim() || !password.trim()) {
-            toast.error("Please enter your email and password.");
-            return;
+            if (!email.trim() || !password.trim()) {
+                toast.error("Please enter your email and password.");
+                return;
+            }
         }
 
         setLoading(true);
 
         try {
-            // ---------- LOGIN REQUEST ----------
-            const response = await fetch(`${API_URL}/api/auth/login`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ email: email.trim(), password }),
-            });
+            let data = authData;
 
-            // ---------- READ RESPONSE ----------
-            let data = {};
+            if (!data) {
+                // ---------- LOGIN REQUEST ----------
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ email: email.trim(), password }),
+                });
 
-            try {
-                data = await response.json();
-            } catch {
+                // ---------- READ RESPONSE ----------
                 data = {};
-            }
 
-            // ---------- LOGIN FAILED ----------
-            if (!response.ok) {
-                toast.error(data?.message || data?.error || "Invalid Email or Password");
-                return;
+                try {
+                    data = await response.json();
+                } catch {
+                    data = {};
+                }
+
+                // ---------- LOGIN FAILED ----------
+                if (!response.ok) {
+                    toast.error(data?.message || data?.error || "Invalid Email or Password");
+                    return;
+                }
             }
 
             // ---------- USER + ROLE ----------
@@ -385,6 +410,144 @@ export default function Login() {
         }
     };
 
+    // =====================================================
+    // GOOGLE SIGN-IN
+    // =====================================================
+    // Sends the Google credential to the server,
+    // which verifies it against Google's own keys,
+    // then finishes the login exactly like the
+    // password form does.
+
+    const handleGoogleCredential = async (response) => {
+        const credential = response?.credential;
+
+        if (!credential) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`${API_URL}/api/auth/google`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ idToken: credential }),
+            });
+
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                toast.error(data?.message || "Google sign-in failed.");
+                return;
+            }
+
+            await handleLogin(data);
+        } catch {
+            toast.error("Unable to connect to API");
+        }
+    };
+
+    // Keep the latest handler reachable from the
+    // one-time Identity Services initialization.
+    useEffect(() => {
+        googleCallbackRef.current = handleGoogleCredential;
+    });
+
+    // =====================================================
+    // GOOGLE SIGN-IN BUTTON
+    // =====================================================
+    // Loads the Google Identity Services script on
+    // demand and renders the official button. A
+    // failure anywhere leaves the password form
+    // working - Google sign-in is additive.
+
+    useEffect(() => {
+        let cancelled = false;
+        let script = null;
+
+        const init = async () => {
+            try {
+                const response = await fetch(`${API_URL}/api/auth/config`);
+
+                if (!response.ok) {
+                    return;
+                }
+
+                const data = await response.json().catch(() => ({}));
+                const clientId = data?.googleClientId;
+
+                if (!clientId || cancelled) {
+                    return;
+                }
+
+                setGoogleClientId(clientId);
+
+                await new Promise((resolve, reject) => {
+                    script = document.createElement("script");
+                    script.src = "https://accounts.google.com/gsi/client";
+                    script.async = true;
+                    script.defer = true;
+                    script.onload = resolve;
+                    script.onerror = reject;
+                    document.head.appendChild(script);
+                });
+
+                if (cancelled || !window.google?.accounts?.id) {
+                    return;
+                }
+
+                window.google.accounts.id.initialize({
+                    client_id: clientId,
+                    callback: (response) =>
+                        googleCallbackRef.current?.(response),
+                    auto_select: false,
+                    cancel_on_tap_outside: true,
+                });
+
+                // The button container only exists once
+                // googleClientId is set - wait for the
+                // re-render if the script won the race.
+                let attempts = 0;
+
+                while (
+                    !googleButtonRef.current &&
+                    attempts < 20 &&
+                    !cancelled
+                ) {
+                    await new Promise((r) =>
+                        window.setTimeout(r, 50)
+                    );
+                    attempts += 1;
+                }
+
+                if (cancelled || !googleButtonRef.current) {
+                    return;
+                }
+
+                window.google.accounts.id.renderButton(
+                    googleButtonRef.current,
+                    {
+                        type: "standard",
+                        theme: "outline",
+                        size: "large",
+                        text: "continue_with",
+                        shape: "rectangular",
+                        logo_alignment: "left",
+                        width: "100%",
+                    }
+                );
+            } catch {
+                // Google sign-in stays unavailable;
+                // the password form above is unaffected.
+            }
+        };
+
+        init();
+
+        return () => {
+            cancelled = true;
+            script?.remove();
+        };
+    }, []);
+
     const handleEnter = (e) => {
         if (e.key === "Enter") {
             handleLogin();
@@ -544,7 +707,7 @@ export default function Login() {
 
                                 {/* ---------- LOGIN BUTTON ---------- */}
                                 <button
-                                    onClick={handleLogin}
+                                    onClick={() => handleLogin()}
                                     disabled={loading}
                                     className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] p-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-70"
                                 >
@@ -560,6 +723,14 @@ export default function Login() {
                                         </>
                                     )}
                                 </button>
+
+                                {/* ---------- GOOGLE SIGN-IN ---------- */}
+                                {googleClientId && (
+                                    <div
+                                        ref={googleButtonRef}
+                                        className="mt-4 w-full"
+                                    />
+                                )}
 
                                 {/* ---------- DIVIDER ---------- */}
                                 <div className="my-5 flex items-center gap-2.5">
