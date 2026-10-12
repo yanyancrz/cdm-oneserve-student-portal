@@ -111,10 +111,10 @@ export default function LfHomePage() {
             <ModuleLoadingScreen
                 imageSrc={FIND_SPLASH_SRC}
                 imageAlt="FIND - Found Item & Notification Desk"
-                icon={PackageSearch}
-                accent="bg-gradient-to-br from-[#7C6CE0] to-[#4A3FA3]"
+                title="FIND"
+                subtitle="Found Item & Notification Desk"
                 label="Opening Lost & Found"
-                text="Opening FIND — Found Item & Notification Desk..."
+                text="Opening FIND..."
             />
         );
     }

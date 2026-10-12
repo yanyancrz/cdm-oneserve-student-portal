@@ -170,20 +170,40 @@ export function Loading({ text = "Loading..." }) {
 }
 
 /**
- * Full-page spinner for the moment a module opens: the route is matched
- * but nothing has been verified yet. Keeps the brand mark on screen so
- * the transition reads as "opening Guidance", not as a blank flash.
+ * Full-page branded splash for the moment a module opens: the route is
+ * matched but the first fetch is still in flight. Keeps the module's logo on
+ * screen so the transition reads as "opening Guidance", not as a blank flash.
+ *
+ * Pass `imageSrc` with the module's WHITE mark (the splash sits on a dark
+ * green gradient, so a dark logo disappears into it), `title`/`subtitle` for
+ * the wordmark, and `text` for the "Opening ..." line. Modules with no logo
+ * file yet pass `icon` + `accent` and get the badge fallback instead.
+ *
+ * FIXED, not `min-h-screen`. The Marketplace and Lost & Found shells render
+ * their pages through <Outlet />, which sits INSIDE a `mx-auto max-w-7xl
+ * px-4 pt-24` main and BELOW their own <ModuleBottomNav>. A plain
+ * `min-h-screen` splash there was confined to that centered column - the
+ * page background showed on both sides on desktop, the module navbar and
+ * header stayed on top of it, and the pt-24 pushed the box below the fold.
+ *
+ * `fixed inset-0 z-[100]` escapes every one of those ancestors, so the
+ * splash covers the whole viewport wherever in the tree it is rendered -
+ * the same result the Library and Guidance gates get by rendering it at
+ * the route level. z-[100] clears the module nav (z-50), the More sheet
+ * (z-[70]) and the FIND assistant (z-40).
  */
 export function ModuleLoadingScreen({
     icon: Icon,
     imageSrc,
     imageAlt = "Loading",
     accent = "bg-slate-800",
+    title,
+    subtitle,
     label,
     text = "Loading...",
 }) {
     return (
-        <div role="status" className="relative flex min-h-screen flex-col items-center justify-center gap-4 overflow-hidden bg-gradient-to-br from-[#10B981] via-[#0E3B22] to-[#052E16] px-6 text-center">
+        <div role="status" className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 overflow-hidden bg-gradient-to-br from-[#10B981] via-[#0E3B22] to-[#052E16] px-6 text-center">
             <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-emerald-300/20 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-24 left-1/4 h-72 w-72 rounded-full bg-cyan-300/10 blur-3xl" />
             <span className="sr-only">{label ?? text}</span>
@@ -205,6 +225,22 @@ export function ModuleLoadingScreen({
                         <Icon size={30} aria-hidden="true" />
                     </div>
                 )
+            )}
+
+            {/* Module wordmark - "what is opening", under the logo. */}
+            {(title || subtitle) && (
+                <div className="min-w-0">
+                    {title && (
+                        <p className="text-xl font-semibold tracking-tight text-white">
+                            {title}
+                        </p>
+                    )}
+                    {subtitle && (
+                        <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[.22em] text-white/50">
+                            {subtitle}
+                        </p>
+                    )}
+                </div>
             )}
 
             <p className="flex items-center gap-2 text-sm text-white/60">

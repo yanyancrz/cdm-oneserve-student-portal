@@ -27,6 +27,10 @@ import {
 } from "../components/marketUi";
 import { ModuleLoadingScreen } from "../../components/States";
 
+// White CDM:OneServe mark. The splash sits on a dark green gradient, so the
+// light-surface logo would vanish into it; the dark-background one does not.
+import marketLogoWhite from "../../assets/images/darklogo.png";
+
 /**
  * The marketplace shop.
  *
@@ -205,8 +209,10 @@ export default function MarketShopPage() {
     if (loading && products.length === 0) {
         return (
             <ModuleLoadingScreen
-                icon={Store}
-                accent="bg-gradient-to-br from-[#178A45] to-[#0E3B22]"
+                imageSrc={marketLogoWhite}
+                imageAlt="CDM OneServe - Marketplace"
+                title="CampusMarket"
+                subtitle="CDM OneServe · Marketplace"
                 label="Opening Marketplace"
                 text="Opening Marketplace..."
             />
