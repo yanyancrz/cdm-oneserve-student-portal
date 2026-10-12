@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
     ArrowLeft,
@@ -473,53 +474,65 @@ export default function LfSubmitClaimPage() {
             </div>
 
             {/* ---------- confirmation summary ---------- */}
-            {confirming && (
-                <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center">
-                    <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl">
-                        <h3 className="flex items-center gap-2 text-sm font-bold text-slate-800">
-                            <CheckCircle2 size={16} className="text-[#106A2E]" aria-hidden="true" />
-                            Confirm your claim
-                        </h3>
-                        <p className="mt-1 text-xs leading-5 text-slate-500">
-                            Please review before submitting. The reviewer decides
-                            after this - nothing is released yet.
-                        </p>
+            {/*
+                PORTALED to the body, not just `fixed`. This page renders
+                inside the Lost & Found layout's `<main class="relative z-10">`,
+                a stacking context that traps a fixed overlay BELOW the module
+                navbar (root-level z-50) - the navbar covered the Submit
+                button. At the body, z-[100] clears the navbar (z-50), the
+                More sheet (z-[70]) and the FIND assistant (z-40).
+                pb-24 lifts the sheet above the floating bar on mobile;
+                sm:pb-4 puts it back as a centered dialog.
+            */}
+            {confirming &&
+                createPortal(
+                    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/40 p-4 pb-24 sm:items-center sm:pb-4">
+                        <div className="max-h-[85vh] w-full max-w-md overflow-y-auto rounded-3xl border border-slate-200 bg-white p-5 shadow-2xl">
+                            <h3 className="flex items-center gap-2 text-sm font-bold text-slate-800">
+                                <CheckCircle2 size={16} className="text-[#106A2E]" aria-hidden="true" />
+                                Confirm your claim
+                            </h3>
+                            <p className="mt-1 text-xs leading-5 text-slate-500">
+                                Please review before submitting. The reviewer decides
+                                after this - nothing is released yet.
+                            </p>
 
-                        <dl className="mt-4 space-y-2 text-xs">
-                            <SummaryRow label="Item" value={`${formatItemId(report.reportId)} · ${report.itemName}`} />
-                            <SummaryRow label="Explanation" value={explanation.trim()} />
-                            <SummaryRow
-                                label="Identifying details"
-                                value={details.trim() || "None given"}
-                            />
-                            <SummaryRow
-                                label="Proof attached"
-                                value={
-                                    proof
-                                        ? `${proof.fileName || "file"} (${proof.contentType})`
-                                        : "No attachment"
-                                }
-                            />
-                            {!proof && (
+                            <dl className="mt-4 space-y-2 text-xs">
+                                <SummaryRow label="Item" value={`${formatItemId(report.reportId)} · ${report.itemName}`} />
+                                <SummaryRow label="Explanation" value={explanation.trim()} />
                                 <SummaryRow
-                                    label="Reason for no proof"
-                                    value={noProofReason.trim() || "Not given"}
-                                    tone="warn"
+                                    label="Identifying details"
+                                    value={details.trim() || "None given"}
                                 />
-                            )}
-                        </dl>
+                                <SummaryRow
+                                    label="Proof attached"
+                                    value={
+                                        proof
+                                            ? `${proof.fileName || "file"} (${proof.contentType})`
+                                            : "No attachment"
+                                    }
+                                />
+                                {!proof && (
+                                    <SummaryRow
+                                        label="Reason for no proof"
+                                        value={noProofReason.trim() || "Not given"}
+                                        tone="warn"
+                                    />
+                                )}
+                            </dl>
 
-                        <div className="mt-5 flex gap-2">
-                            <LfButton onClick={submit} loading={submitting} className="flex-1">
-                                Submit claim
-                            </LfButton>
-                            <LfButton variant="ghost" onClick={() => setConfirming(false)}>
-                                Back
-                            </LfButton>
+                            <div className="mt-5 flex gap-2">
+                                <LfButton onClick={submit} loading={submitting} className="flex-1">
+                                    Submit claim
+                                </LfButton>
+                                <LfButton variant="ghost" onClick={() => setConfirming(false)}>
+                                    Back
+                                </LfButton>
+                            </div>
                         </div>
-                    </div>
-                </div>
-            )}
+                    </div>,
+                    document.body
+                )}
         </div>
     );
 }

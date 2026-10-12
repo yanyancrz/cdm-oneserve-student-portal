@@ -20,6 +20,8 @@
  *      only ever covers the FIRST load - a background refresh repaints
  *      the list that is already there instead of flashing.
  */
+import { createPortal } from "react-dom";
+
 import { AlertCircle, CheckCircle2, Inbox, Info, Loader2, RefreshCw } from "lucide-react";
 
 // =========================================================
@@ -179,18 +181,19 @@ export function Loading({ text = "Loading..." }) {
  * the wordmark, and `text` for the "Opening ..." line. Modules with no logo
  * file yet pass `icon` + `accent` and get the badge fallback instead.
  *
- * FIXED, not `min-h-screen`. The Marketplace and Lost & Found shells render
- * their pages through <Outlet />, which sits INSIDE a `mx-auto max-w-7xl
- * px-4 pt-24` main and BELOW their own <ModuleBottomNav>. A plain
- * `min-h-screen` splash there was confined to that centered column - the
- * page background showed on both sides on desktop, the module navbar and
- * header stayed on top of it, and the pt-24 pushed the box below the fold.
+ * PORTALED to document.body, not just `fixed`. The Marketplace and
+ * Lost & Found shells render their pages through <Outlet />, which sits
+ * INSIDE a `<main class="relative z-10">`. That main is a STACKING CONTEXT:
+ * a `z-[100]` splash inside it still loses to the module navbar's root-level
+ * `z-50`, so the navbar painted over the splash no matter how high its own
+ * z-index went. Rendering through createPortal moves it to the body, where
+ * z-[100] clears the module nav (z-50), the More sheet (z-[70]) and the
+ * FIND assistant (z-40) for real.
  *
- * `fixed inset-0 z-[100]` escapes every one of those ancestors, so the
- * splash covers the whole viewport wherever in the tree it is rendered -
- * the same result the Library and Guidance gates get by rendering it at
- * the route level. z-[100] clears the module nav (z-50), the More sheet
- * (z-[70]) and the FIND assistant (z-40).
+ * The old `min-h-screen` version had a second, related bug: confined to the
+ * centered `max-w-7xl px-4 pt-24` column, it showed the page background on
+ * both sides on desktop and the pt-24 pushed the box below the fold.
+ * `fixed inset-0` fixes that half.
  */
 export function ModuleLoadingScreen({
     icon: Icon,
@@ -202,7 +205,7 @@ export function ModuleLoadingScreen({
     label,
     text = "Loading...",
 }) {
-    return (
+    return createPortal(
         <div role="status" className="fixed inset-0 z-[100] flex flex-col items-center justify-center gap-4 overflow-hidden bg-gradient-to-br from-[#10B981] via-[#0E3B22] to-[#052E16] px-6 text-center">
             <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-emerald-300/20 blur-3xl" />
             <div className="pointer-events-none absolute -bottom-24 left-1/4 h-72 w-72 rounded-full bg-cyan-300/10 blur-3xl" />
@@ -246,7 +249,8 @@ export function ModuleLoadingScreen({
             <p className="flex items-center gap-2 text-sm text-white/60">
                 <Loader2 className="animate-spin" size={16} aria-hidden="true" /> {text}
             </p>
-        </div>
+        </div>,
+        document.body
     );
 }
 
