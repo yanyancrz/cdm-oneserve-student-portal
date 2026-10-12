@@ -1,29 +1,36 @@
 import { useEffect, useState } from "react";
 
+import androidInstall from "../../assets/images/install/android.png";
+import macosInstall from "../../assets/images/install/macos.jpg";
+import safariInstall from "../../assets/images/install/safari.jpg";
+import windowsInstall from "../../assets/images/install/windows.jpg";
+
 export default function PWAInstallGuard({
     children,
 }) {
+
+    // ==========================================
+    // DEVELOPMENT MODE
+    // ==========================================
+    // Kapag localhost / npm run dev:
+    // bypass muna ang PWA installation requirement
+    // para ma-test ang Student/Admin features
+    // gamit ang desktop browser. Nasa initial
+    // state ito (hindi sa effect) para hindi
+    // mag-set ng state habang nagre-render.
+    // ==========================================
+
+    const isDev = import.meta.env.DEV;
+
     const [isInstalled, setIsInstalled] =
-        useState(false);
+        useState(isDev);
 
     const [checking, setChecking] =
-        useState(true);
+        useState(!isDev);
 
     useEffect(() => {
 
-        // ==========================================
-        // DEVELOPMENT MODE
-        // ==========================================
-        // Kapag localhost / npm run dev:
-        // bypass muna ang PWA installation requirement
-        // para ma-test ang Student/Admin features
-        // gamit ang desktop browser.
-        // ==========================================
-
-        if (import.meta.env.DEV) {
-            setIsInstalled(true);
-            setChecking(false);
-
+        if (isDev) {
             console.log(
                 "PWAInstallGuard: Development mode - bypass enabled"
             );
@@ -107,6 +114,10 @@ export default function PWAInstallGuard({
             );
         };
 
+        // isDev is a build-time constant -
+        // it cannot change, so it is not a
+        // real dependency.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // ==========================================
@@ -152,56 +163,12 @@ export default function PWAInstallGuard({
 
 function InstallRequired() {
 
-    const handleInstall = async () => {
-
-        const event =
-            window.__deferredInstallPrompt;
-
-        // ==========================================
-        // INSTALL PROMPT NOT AVAILABLE
-        // ==========================================
-
-        if (!event) {
-
-            alert(
-                "Please use your browser's Install App or Add to Home Screen option."
-            );
-
-            return;
-        }
-
-        // ==========================================
-        // SHOW INSTALL PROMPT
-        // ==========================================
-
-        event.prompt();
-
-        const result =
-            await event.userChoice;
-
-        console.log(
-            "PWA install result:",
-            result.outcome
-        );
-
-        // ==========================================
-        // CLEAR SAVED PROMPT
-        // ==========================================
-
-        window.__deferredInstallPrompt =
-            null;
-
-        // ==========================================
-        // RECHECK AFTER INSTALL
-        // ==========================================
-
-        if (result.outcome === "accepted") {
-
-            setTimeout(() => {
-                window.location.reload();
-            }, 500);
-        }
-    };
+    // The step-by-step gallery stays
+    // hidden until asked for: the
+    // screen stays compact, and the
+    // screenshots are only fetched
+    // once the applicant opens it.
+    const [showSteps, setShowSteps] = useState(false);
 
     return (
         <div className="min-h-screen bg-[#F7F5EF] flex items-center justify-center p-6">
@@ -339,14 +306,21 @@ function InstallRequired() {
                 </div>
 
 
-                {/* INSTALL BUTTON */}
+                {/* HOW TO INSTALL BUTTON */}
 
                 <button
                     type="button"
-                    onClick={handleInstall}
+                    onClick={() =>
+                        setShowSteps((v) => !v)
+                    }
+                    aria-expanded={showSteps}
                     className="
                         mt-6
                         w-full
+                        inline-flex
+                        items-center
+                        justify-center
+                        gap-2
                         rounded-xl
                         bg-[#106A2E]
                         px-5
@@ -360,21 +334,99 @@ function InstallRequired() {
                         active:scale-[0.98]
                     "
                 >
-                    Install CDM OneServe
+                    How to Install
+
+                    <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className={`transition-transform ${
+                            showSteps
+                                ? "rotate-180"
+                                : ""
+                        }`}
+                    >
+                        <path d="m6 9 6 6 6-6" />
+                    </svg>
                 </button>
 
+                {/* STEP-BY-STEP GALLERY */}
+
+                {showSteps && (
+                    <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <InstallStep
+                            image={androidInstall}
+                            platform="Android"
+                            hint="Chrome: tap the menu, then Install app"
+                        />
+
+                        <InstallStep
+                            image={windowsInstall}
+                            platform="Windows"
+                            hint="Chrome or Edge: open the menu, then Install app"
+                        />
+
+                        <InstallStep
+                            image={macosInstall}
+                            platform="macOS"
+                            hint="Chrome: open the menu, then Install app"
+                        />
+
+                        <InstallStep
+                            image={safariInstall}
+                            platform="iPhone / iPad"
+                            hint="Safari: tap Share, then Add to Home Screen"
+                        />
+                    </div>
+                )}
 
                 {/* HELP TEXT */}
 
                 <p className="mt-4 text-xs leading-5 text-slate-400">
-                    If the install button does not
-                    appear, open your browser menu and
-                    select <b>Install app</b> or{" "}
-                    <b>Add to Home Screen</b>.
+                    Once installed, open CDM OneServe
+                    from the Home Screen or desktop -
+                    it then runs in its own window.
                 </p>
 
             </div>
 
+        </div>
+    );
+}
+
+
+// ==================================================
+// ONE INSTALL STEP
+// ==================================================
+// A screenshot card. The image keeps its
+// aspect ratio (object-contain) so the
+// on-screen steps in the screenshot are
+// never cropped, whatever the device.
+
+function InstallStep({ image, platform, hint }) {
+    return (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+            <div className="flex h-40 items-center justify-center overflow-hidden rounded-xl bg-white">
+                <img
+                    src={image}
+                    alt={`How to install CDM OneServe on ${platform}`}
+                    className="max-h-full max-w-full object-contain"
+                    loading="lazy"
+                />
+            </div>
+
+            <p className="mt-2 text-sm font-semibold text-slate-800">
+                {platform}
+            </p>
+
+            <p className="mt-0.5 text-[11px] leading-4 text-slate-500">
+                {hint}
+            </p>
         </div>
     );
 }
