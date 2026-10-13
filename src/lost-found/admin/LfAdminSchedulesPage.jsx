@@ -4,9 +4,11 @@ import {
     CalendarClock,
     CheckCircle2,
     Clock,
+    Eye,
     MapPin,
     Plus,
     Trash2,
+    UserRoundCheck,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -30,10 +32,12 @@ import {
 //
 //   - published windows (create / retire),
 //   - the pickup queue (Awaiting Pickup and
-//     Scheduled first), and
-//   - the handover itself, which returns the
-//     claim, marks the schedule completed and
-//     closes every other active claim.
+//     Scheduled first), where the handover is
+//     recorded with the ACTUAL receiver's name and
+//     Student ID, and
+//   - the completed-pickup records: claimant and
+//     receiver shown side by side, never assumed to
+//     be the same person.
 // =====================================================
 
 export default function LfAdminSchedulesPage() {
@@ -41,6 +45,10 @@ export default function LfAdminSchedulesPage() {
     const [availability, setAvailability] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
+    // "queue" = awaiting pickup / scheduled (handover lives here),
+    // "completed" = recorded handovers, read-only history.
+    const [tab, setTab] = useState("queue");
+    const [inspecting, setInspecting] = useState(null);
 
     const load = async () => {
         try {
@@ -75,6 +83,23 @@ export default function LfAdminSchedulesPage() {
 
     if (error) return <LfNotice tone="bad">{error}</LfNotice>;
 
+    // The queue holds work; completed rows are a record, so they are
+    // switched to with a tab instead of mixed into the live table.
+    const queue = schedules.filter(
+        (schedule) =>
+            schedule.status === "Scheduled" ||
+            schedule.status === "Awaiting Pickup"
+    );
+    const completed = schedules.filter(
+        (schedule) => schedule.status === "Completed"
+    );
+    const otherStatuses = schedules.filter(
+        (schedule) =>
+            schedule.status !== "Completed" &&
+            schedule.status !== "Scheduled" &&
+            schedule.status !== "Awaiting Pickup"
+    );
+
     return (
         <div className="space-y-5">
             <AvailabilityManager
@@ -82,43 +107,90 @@ export default function LfAdminSchedulesPage() {
                 onChanged={load}
             />
 
-            <LfPanel
-                title="Pickup queue"
-                subtitle="Awaiting pickup first, then scheduled, then completed"
-            >
-                {schedules.length === 0 ? (
-                    <LfEmpty
-                        icon={CalendarClock}
-                        title="No pickups yet"
-                        message="When a claim is marked as claimed, its pickup schedule appears here."
-                    />
-                ) : (
-                    <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                        <table className="w-full min-w-[960px] text-left text-xs">
-                            <thead>
-                                <tr className="border-b border-slate-100 text-[10px] uppercase tracking-wide text-slate-400">
-                                    <th className="px-4 py-3 font-semibold">Item</th>
-                                    <th className="px-4 py-3 font-semibold">Claimant</th>
-                                    <th className="px-4 py-3 font-semibold">Slot</th>
-                                    <th className="px-4 py-3 font-semibold">Status</th>
-                                    <th className="px-4 py-3 text-right font-semibold">
-                                        Handover
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                                {schedules.map((schedule) => (
-                                    <ScheduleRow
-                                        key={schedule.scheduleId}
-                                        schedule={schedule}
-                                        onHandover={load}
-                                    />
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+            {/* ---------- tabs: queue vs recorded handovers ---------- */}
+            <div className="flex flex-wrap items-center gap-2">
+                <button
+                    type="button"
+                    onClick={() => setTab("queue")}
+                    aria-pressed={tab === "queue"}
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                        tab === "queue"
+                            ? "bg-[#106A2E] text-white"
+                            : "bg-white text-slate-500 hover:bg-slate-100"
+                    }`}
+                >
+                    Pickup queue ({queue.length})
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setTab("completed")}
+                    aria-pressed={tab === "completed"}
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                        tab === "completed"
+                            ? "bg-[#106A2E] text-white"
+                            : "bg-white text-slate-500 hover:bg-slate-100"
+                    }`}
+                >
+                    Completed pickups ({completed.length})
+                </button>
+                {otherStatuses.length > 0 && (
+                    <span className="ml-auto text-[11px] text-slate-400">
+                        {otherStatuses.length} cancelled
+                    </span>
                 )}
-            </LfPanel>
+            </div>
+
+            {tab === "queue" ? (
+                <LfPanel
+                    title="Pickup queue"
+                    subtitle="Awaiting pickup first, then scheduled - record the handover here"
+                >
+                    {queue.length === 0 ? (
+                        <LfEmpty
+                            icon={CalendarClock}
+                            title="No pickups in the queue"
+                            message="When a claim is approved for pickup, its schedule appears here."
+                        />
+                    ) : (
+                        <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                            <table className="w-full min-w-[960px] text-left text-xs">
+                                <thead>
+                                    <tr className="border-b border-slate-100 text-[10px] uppercase tracking-wide text-slate-400">
+                                        <th className="px-4 py-3 font-semibold">Item</th>
+                                        <th className="px-4 py-3 font-semibold">Claimant</th>
+                                        <th className="px-4 py-3 font-semibold">Slot</th>
+                                        <th className="px-4 py-3 font-semibold">Status</th>
+                                        <th className="px-4 py-3 text-right font-semibold">
+                                            Handover
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-100">
+                                    {queue.map((schedule) => (
+                                        <ScheduleRow
+                                            key={schedule.scheduleId}
+                                            schedule={schedule}
+                                            onHandover={load}
+                                        />
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </LfPanel>
+            ) : (
+                <CompletedPickups
+                    completed={completed}
+                    onInspect={setInspecting}
+                />
+            )}
+
+            {inspecting && (
+                <PickupDetailsModal
+                    schedule={inspecting}
+                    onClose={() => setInspecting(null)}
+                />
+            )}
         </div>
     );
 }
@@ -520,7 +592,7 @@ function ScheduleRow({ schedule, onHandover }) {
 
         if (
             !window.confirm(
-                "Record the handover? The claim completes, the report is marked claimed, and every other active claim on this item is closed."
+                "Record the handover with this receiver? The claim completes, the item is marked returned, and every other active claim on this item is closed."
             )
         )
             return;
@@ -541,6 +613,8 @@ function ScheduleRow({ schedule, onHandover }) {
             setReceivedByStudentId("");
             await onHandover();
         } catch (err) {
+            // The server refuses a second completion of the same record,
+            // so a duplicate click can never write two entries.
             toast.error(err.message);
         } finally {
             setCompleting(false);
@@ -567,7 +641,7 @@ function ScheduleRow({ schedule, onHandover }) {
                     {schedule.claimantName || "—"}
                 </span>
                 <span className="block text-[10px] text-slate-400">
-                    {schedule.claimantEmail}
+                    {schedule.accountStudentId || schedule.claimantEmail}
                 </span>
             </td>
             <td className="px-4 py-3 whitespace-nowrap">
@@ -618,7 +692,7 @@ function ScheduleRow({ schedule, onHandover }) {
                                 value: receivedByName,
                                 onChange: (event) =>
                                     setReceivedByName(event.target.value),
-                                placeholder: "Name",
+                                placeholder: "Full name",
                             })}
                         </div>
                         <div className="w-28">
@@ -648,5 +722,277 @@ function ScheduleRow({ schedule, onHandover }) {
                 )}
             </td>
         </tr>
+    );
+}
+
+// =====================================================
+// RECORDED HANDOVERS
+//
+// The claimant and the person who physically received
+// the item are two different facts, so they are always
+// shown in their own columns: the admin books who the
+// claim belongs to AND who actually took it. They can
+// be the same person, but the UI never assumes it.
+// =====================================================
+
+function CompletedPickups({ completed, onInspect }) {
+    if (completed.length === 0) {
+        return (
+            <LfPanel
+                title="Completed pickups"
+                subtitle="Every recorded handover, newest first"
+            >
+                <LfEmpty
+                    icon={UserRoundCheck}
+                    title="No completed pickups yet"
+                    message="Once you record a handover in the queue, the full record appears here."
+                />
+            </LfPanel>
+        );
+    }
+
+    const rows = [...completed].sort((a, b) =>
+        String(b.completedAt ?? "").localeCompare(String(a.completedAt ?? ""))
+    );
+
+    return (
+        <LfPanel
+            title="Completed pickups"
+            subtitle="Every recorded handover, newest first"
+        >
+            <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                <table className="w-full min-w-[1020px] text-left text-xs">
+                    <thead>
+                        <tr className="border-b border-slate-100 text-[10px] uppercase tracking-wide text-slate-400">
+                            <th className="px-4 py-3 font-semibold">Item</th>
+                            <th className="px-4 py-3 font-semibold">
+                                Claimant (name · ID)
+                            </th>
+                            <th className="px-4 py-3 font-semibold">
+                                Received by (name · ID)
+                            </th>
+                            <th className="px-4 py-3 font-semibold">Completed</th>
+                            <th className="px-4 py-3 font-semibold">Status</th>
+                            <th className="px-4 py-3 text-right font-semibold">
+                                Details
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                        {rows.map((schedule) => (
+                            <tr
+                                key={schedule.scheduleId}
+                                className="transition hover:bg-slate-50/70"
+                            >
+                                <td className="px-4 py-3">
+                                    <span className="flex flex-wrap items-center gap-1.5 font-semibold text-slate-800">
+                                        <span className="rounded-md bg-[#10231B] px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-white ring-1 ring-white/30">
+                                            {formatItemId(schedule.reportId)}
+                                        </span>
+                                        <Link
+                                            to={`/lost-found/admin/reports/${schedule.reportId}`}
+                                            className="hover:text-[#106A2E]"
+                                        >
+                                            {schedule.itemName}
+                                        </Link>
+                                    </span>
+                                </td>
+
+                                {/* ---- claimant: the account that claimed - */}
+                                <td className="px-4 py-3">
+                                    <span className="block font-medium text-slate-700">
+                                        {schedule.claimantName || "—"}
+                                    </span>
+                                    <span className="block text-[10px] text-slate-400">
+                                        {schedule.accountStudentId || "No ID on file"}
+                                    </span>
+                                </td>
+
+                                {/* ---- receiver: who actually took it ---- */}
+                                <td className="px-4 py-3">
+                                    <span className="flex items-center gap-1.5 font-medium text-slate-700">
+                                        <UserRoundCheck
+                                            size={12}
+                                            className="text-[#106A2E]"
+                                            aria-hidden="true"
+                                        />
+                                        {schedule.receivedByName || "—"}
+                                    </span>
+                                    <span className="block text-[10px] text-slate-400">
+                                        {schedule.receivedByStudentId || "No ID recorded"}
+                                    </span>
+                                </td>
+
+                                <td className="px-4 py-3 whitespace-nowrap text-slate-500">
+                                    {formatDateTime(schedule.completedAt)}
+                                </td>
+                                <td className="px-4 py-3">
+                                    <LfStatusChip status="Returned" />
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                    <button
+                                        type="button"
+                                        onClick={() => onInspect(schedule)}
+                                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                                    >
+                                        <Eye size={12} aria-hidden="true" />
+                                        View details
+                                    </button>
+                                </td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </LfPanel>
+    );
+}
+
+// =====================================================
+// The full record of one recorded handover.
+// Read-only: nothing here can be edited after the
+// fact, so a completed record can never be rewritten.
+// =====================================================
+
+function PickupDetailsModal({ schedule, onClose }) {
+    const samePerson =
+        (schedule.claimantName || "").trim().toLowerCase() ===
+        (schedule.receivedByName || "").trim().toLowerCase();
+
+    return (
+        <div
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4"
+            onClick={onClose}
+        >
+            <div
+                className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-3xl bg-white shadow-2xl"
+                onClick={(event) => event.stopPropagation()}
+            >
+                <div className="flex items-start justify-between gap-3 border-b border-slate-100 px-6 py-5">
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                            Pickup record
+                        </p>
+                        <h2 className="mt-0.5 flex flex-wrap items-center gap-2 text-lg font-bold text-slate-800">
+                            <span className="rounded-md bg-[#10231B] px-2 py-1 font-mono text-[11px] font-bold tracking-wide text-white ring-1 ring-white/30">
+                                {formatItemId(schedule.reportId)}
+                            </span>
+                            {schedule.itemName || "Item"}
+                        </h2>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Close"
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200"
+                    >
+                        ×
+                    </button>
+                </div>
+
+                <div className="space-y-5 px-6 py-5">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                        <DetailBlock
+                            label="Claimant"
+                            name={schedule.claimantName || "—"}
+                            second={schedule.accountStudentId || "No ID on file"}
+                            email={schedule.claimantEmail}
+                        />
+                        <DetailBlock
+                            label="Actually received by"
+                            name={schedule.receivedByName || "—"}
+                            second={schedule.receivedByStudentId || "No ID recorded"}
+                            highlight
+                        />
+                    </div>
+
+                    {samePerson && (
+                        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[11px] leading-5 text-emerald-800">
+                            The claimant received the item in person.
+                        </p>
+                    )}
+
+                    <dl className="grid gap-3 text-xs sm:grid-cols-2">
+                        <DetailRow
+                            label="Pickup completed"
+                            value={formatDateTime(schedule.completedAt)}
+                        />
+                        <DetailRow
+                            label="Final status"
+                            value="Returned to owner"
+                        />
+                        <DetailRow
+                            label="Scheduled slot"
+                            value={
+                                schedule.status === "Awaiting Pickup"
+                                    ? "Walk-in pickup"
+                                    : formatDateTime(schedule.scheduledDateTime)
+                            }
+                        />
+                        <DetailRow
+                            label="Pickup location"
+                            value={schedule.pickupLocation || "—"}
+                        />
+                        <DetailRow
+                            label="Recorded at (admin verification)"
+                            value={formatDateTime(schedule.verifiedAt)}
+                        />
+                        <DetailRow
+                            label="Recorded by admin #"
+                            value={
+                                schedule.verifiedByAdminId
+                                    ? String(schedule.verifiedByAdminId)
+                                    : "—"
+                            }
+                        />
+                        <DetailRow
+                            label="Finder"
+                            value={
+                                schedule.finderName
+                                    ? `${schedule.finderName}${schedule.finderEmail ? ` · ${schedule.finderEmail}` : ""}`
+                                    : "—"
+                            }
+                        />
+                    </dl>
+
+                    <p className="rounded-xl bg-slate-50 px-3 py-2.5 text-[11px] leading-5 text-slate-500">
+                        This record is final. The claim is marked returned and
+                        no longer appears on the public board.
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function DetailBlock({ label, name, second, email, highlight }) {
+    return (
+        <div
+            className={`rounded-2xl border p-4 ${
+                highlight
+                    ? "border-[#106A2E]/30 bg-[#106A2E]/5"
+                    : "border-slate-200 bg-slate-50"
+            }`}
+        >
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                {label}
+            </p>
+            <p className="mt-1.5 text-sm font-semibold text-slate-800">{name}</p>
+            {second && (
+                <p className="mt-0.5 text-xs text-slate-500">{second}</p>
+            )}
+            {email && <p className="mt-0.5 text-xs text-slate-400">{email}</p>}
+        </div>
+    );
+}
+
+function DetailRow({ label, value }) {
+    return (
+        <div className="rounded-xl bg-slate-50 px-3 py-2.5">
+            <dt className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+                {label}
+            </dt>
+            <dd className="mt-0.5 text-xs font-medium text-slate-700">{value}</dd>
+        </div>
     );
 }

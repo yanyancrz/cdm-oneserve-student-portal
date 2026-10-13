@@ -3,43 +3,43 @@ import { Link } from "react-router-dom";
 import {
     ArrowRight,
     CalendarClock,
-    CheckCircle2,
-    Clock,
+    ChevronRight,
+    Clock3,
     HandHelping,
     PackageSearch,
     SearchCheck,
-    Sparkles,
-    TrendingUp,
 } from "lucide-react";
 
 import { lfAdminApi } from "../services/lfApi";
-import { LfNotice, LfSkeleton, LfStatusChip, LfTypeTag } from "../components/lfUi";
-import { formatItemId } from "../config/lfTheme";
+import { LfNotice, LfSkeleton } from "../components/lfUi";
 
 // =====================================================
-// The admin overview: the module's health at a glance -
-// what needs review, what is in the pickup queue, and
-// what landed most recently.
+// The admin overview - FOUR sections, nothing else:
+//
+//   1. Reports          2. Claims
+//   3. Pickup           4. Admin Availability
 //
 // Every number comes from the existing endpoints
-// (/admin/stats + /admin/reports); nothing is invented
-// and nothing is calculated differently from before.
+// (/admin/stats + /admin/availability); nothing is
+// invented and nothing is counted differently from the
+// management pages. Each section links to the page that
+// actually manages it.
 // =====================================================
 
 export default function LfAdminOverviewPage() {
     const [stats, setStats] = useState(null);
-    const [reports, setReports] = useState([]);
+    const [availability, setAvailability] = useState([]);
     const [error, setError] = useState("");
 
     const load = useCallback(async () => {
         setError("");
         try {
-            const [statsResponse, reportsResponse] = await Promise.all([
+            const [statsResponse, availabilityResponse] = await Promise.all([
                 lfAdminApi.stats(),
-                lfAdminApi.reports(),
+                lfAdminApi.availability(),
             ]);
             setStats(statsResponse.data);
-            setReports(reportsResponse.data || []);
+            setAvailability(availabilityResponse.data || []);
         } catch (err) {
             setError(err.message);
         }
@@ -68,66 +68,64 @@ export default function LfAdminOverviewPage() {
 
     if (!stats) return <LfSkeleton rows={4} />;
 
-    // Lost / found split comes from the real report rows, so the
-    // two counts can never disagree with the table below them.
-    const lostCount = reports.filter((r) => r.reportType === "Lost").length;
-    const foundCount = reports.filter((r) => r.reportType === "Found").length;
-    const reviewQueue = stats.pendingReports + stats.processingClaims;
+    // The soonest published window, used as the Availability summary.
+    const nextWindow = [...availability]
+        .filter((slot) => slot.isActive)
+        .sort((a, b) =>
+            String(a.startDateTime).localeCompare(String(b.startDateTime))
+        )[0];
 
-    const cards = [
+    const sections = [
         {
-            label: "Total reports",
-            value: stats.totalReports,
-            note: `${foundCount} found · ${lostCount} lost`,
+            key: "reports",
+            title: "Reports",
             icon: PackageSearch,
-            tone: "text-[#106A2E] bg-[#106A2E]/10",
             to: "/lost-found/admin/reports",
+            manageLabel: "Manage reports",
+            rows: [
+                ["Awaiting review", stats.pendingReports, "urgent"],
+                ["Published on board", stats.publishedReports, ""],
+                ["Rejected", stats.rejectedReports, ""],
+                ["Total filed", stats.totalReports, ""],
+            ],
         },
         {
-            label: "Awaiting review",
-            value: reviewQueue,
-            note: `${stats.pendingReports} reports · ${stats.processingClaims} claims`,
-            icon: Clock,
-            tone: "text-amber-600 bg-amber-50",
-            to: "/lost-found/admin/reports",
-            urgent: reviewQueue > 0,
-        },
-        {
-            label: "On the board",
-            value: stats.publishedReports,
-            note: `${stats.rejectedReports} rejected so far`,
-            icon: SearchCheck,
-            tone: "text-[#0D7856] bg-[#0D7856]/10",
-            to: "/lost-found/admin/reports",
-        },
-        {
-            label: "Awaiting pickup",
-            value: stats.awaitingPickupClaims,
-            note: `${stats.totalClaims} claims filed`,
+            key: "claims",
+            title: "Claims",
             icon: HandHelping,
-            tone: "text-sky-700 bg-sky-50",
             to: "/lost-found/admin/claims",
+            manageLabel: "Manage claims",
+            rows: [
+                ["Awaiting a decision", stats.processingClaims, "urgent"],
+                ["Approved, awaiting pickup", stats.awaitingPickupClaims, ""],
+                ["Returned to owners", stats.returnedClaims, ""],
+                ["Rejected", stats.rejectedClaims, ""],
+            ],
         },
         {
-            label: "Returned to owners",
-            value: stats.returnedClaims,
-            note: `${stats.completedPickups} handovers recorded`,
-            icon: CheckCircle2,
-            tone: "text-emerald-700 bg-emerald-50",
+            key: "pickup",
+            title: "Pickup",
+            icon: SearchCheck,
             to: "/lost-found/admin/schedules",
+            manageLabel: "Manage pickups",
+            rows: [
+                ["Awaiting pickup", stats.awaitingPickupClaims, "urgent"],
+                ["Scheduled", stats.scheduledPickups, ""],
+                ["Handovers recorded", stats.completedPickups, ""],
+            ],
         },
         {
-            label: "Recovery at office",
-            value: stats.atAdminOfficeRecovery,
-            note: `${stats.totalRecovery} recovery reports`,
+            key: "availability",
+            title: "Admin Availability",
             icon: CalendarClock,
-            tone: "text-purple-700 bg-purple-50",
+            to: "/lost-found/admin/schedules",
+            manageLabel: "Manage windows",
+            rows: [
+                ["Published windows", availability.filter((slot) => slot.isActive).length, ""],
+                ["Next pickup window", nextWindow ? formatWindow(nextWindow) : "None published", ""],
+            ],
         },
     ];
-
-    const recent = [...reports]
-        .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
-        .slice(0, 6);
 
     return (
         <div className="space-y-5">
@@ -141,217 +139,104 @@ export default function LfAdminOverviewPage() {
                 </p>
             </div>
 
-            {/* ---------- action banner ---------- */}
-            {reviewQueue > 0 && (
-                <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-amber-300 bg-amber-50 px-5 py-4">
-                    <div className="flex items-center gap-3">
-                        <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm">
-                            <Clock size={17} aria-hidden="true" />
-                        </span>
-                        <div>
-                            <p className="text-sm font-semibold text-amber-900">
-                                {reviewQueue} item{reviewQueue === 1 ? "" : "s"} waiting for review
-                            </p>
-                            <p className="mt-0.5 text-xs text-amber-800">
-                                {stats.pendingReports} report
-                                {stats.pendingReports === 1 ? "" : "s"} and{" "}
-                                {stats.processingClaims} claim
-                                {stats.processingClaims === 1 ? "" : "s"} have not been decided yet.
-                            </p>
-                        </div>
-                    </div>
-                    <Link
-                        to="/lost-found/admin/reports"
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-amber-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-amber-700"
-                    >
-                        Open reports <ArrowRight size={13} aria-hidden="true" />
-                    </Link>
-                </div>
-            )}
+            {/* ---------- the four sections ---------- */}
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {sections.map((section) => {
+                    const Icon = section.icon;
 
-            {/* ---------- KPI grid ---------- */}
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                {cards.map((card) => {
-                    const Icon = card.icon;
-
-                    const body = (
-                        <>
-                            <div className="flex items-start justify-between gap-3">
-                                <span className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                                    {card.label}
-                                </span>
-                                <span
-                                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${card.tone}`}
-                                >
+                    return (
+                        <section
+                            key={section.key}
+                            className="flex flex-col rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md"
+                        >
+                            <div className="flex items-center gap-2.5">
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#106A2E]/10 text-[#106A2E]">
                                     <Icon size={17} aria-hidden="true" />
                                 </span>
+                                <h3 className="text-sm font-semibold text-slate-800">
+                                    {section.title}
+                                </h3>
                             </div>
-                            <p className="mt-2.5 text-3xl font-bold tracking-tight text-slate-800">
-                                {card.value}
-                            </p>
-                            <p className="mt-1 flex items-center gap-1 text-xs text-slate-500">
-                                {card.note}
-                                {card.to && (
-                                    <>
-                                        <span aria-hidden="true">·</span>
-                                        <span className="inline-flex items-center gap-0.5 font-semibold text-[#106A2E]">
-                                            Open <ArrowRight size={11} aria-hidden="true" />
-                                        </span>
-                                    </>
-                                )}
-                            </p>
-                        </>
-                    );
 
-                    return card.to ? (
-                        <Link
-                            key={card.label}
-                            to={card.to}
-                            className={`rounded-2xl border bg-white p-5 shadow-sm transition hover:shadow-md focus-visible:ring-2 focus-visible:ring-[#106A2E]/40 ${
-                                card.urgent ? "border-amber-200" : "border-slate-200"
-                            }`}
-                        >
-                            {body}
-                        </Link>
-                    ) : (
-                        <section
-                            key={card.label}
-                            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-                        >
-                            {body}
+                            <dl className="mt-4 flex-1 space-y-2.5">
+                                {section.rows.map(([label, value, tone]) => (
+                                    <div
+                                        key={label}
+                                        className="flex items-center justify-between gap-2 text-xs"
+                                    >
+                                        <dt className="text-slate-500">{label}</dt>
+                                        <dd
+                                            className={`font-semibold ${
+                                                tone === "urgent" && value > 0
+                                                    ? "text-amber-600"
+                                                    : "text-slate-800"
+                                            }`}
+                                        >
+                                            {value}
+                                        </dd>
+                                    </div>
+                                ))}
+                            </dl>
+
+                            <Link
+                                to={section.to}
+                                className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-[#106A2E] px-3.5 py-2 text-[11px] font-semibold text-white transition hover:bg-[#0E3B22] focus-visible:ring-2 focus-visible:ring-[#106A2E]/40"
+                            >
+                                {section.manageLabel}
+                                <ArrowRight size={13} aria-hidden="true" />
+                            </Link>
                         </section>
                     );
                 })}
             </div>
 
-            {/* ---------- breakdowns + recent ---------- */}
-            <div className="grid gap-4 xl:grid-cols-3">
-                <StatusBreakdown
-                    title="Report statuses"
-                    rows={[
-                        ["Pending review", stats.pendingReports],
-                        ["Published", stats.publishedReports],
-                        ["Rejected", stats.rejectedReports],
-                        ["Returned to owner", stats.returnedReports],
-                    ]}
-                />
-                <StatusBreakdown
-                    title="Claim statuses"
-                    rows={[
-                        ["Processing", stats.processingClaims],
-                        ["Awaiting pickup", stats.awaitingPickupClaims],
-                        ["Rejected", stats.rejectedClaims],
-                        ["Returned", stats.returnedClaims],
-                    ]}
-                />
-
-                <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <div className="flex items-center justify-between gap-2">
-                        <h2 className="text-sm font-semibold text-slate-800">
-                            Latest reports
-                        </h2>
-                        <Link
-                            to="/lost-found/admin/reports"
-                            className="text-xs font-semibold text-[#106A2E] hover:underline"
-                        >
-                            See all
-                        </Link>
-                    </div>
-
-                    {recent.length === 0 ? (
-                        <p className="mt-4 text-xs text-slate-400">
-                            Nothing reported yet.
-                        </p>
-                    ) : (
-                        <ul className="mt-3 space-y-1.5">
-                            {recent.map((report) => (
-                                <li key={report.reportId}>
-                                    <Link
-                                        to={`/lost-found/admin/reports/${report.reportId}`}
-                                        className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 transition hover:bg-slate-50"
-                                    >
-                                        <span className="rounded-md bg-[#10231B] px-1.5 py-0.5 font-mono text-[10px] font-bold text-white ring-1 ring-white/30">
-                                            {formatItemId(report.reportId)}
-                                        </span>
-                                        <span className="min-w-0 flex-1 truncate text-xs font-medium text-slate-700">
-                                            {report.itemName}
-                                        </span>
-                                        <LfTypeTag type={report.reportType} />
-                                        <LfStatusChip status={report.status} />
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </section>
-            </div>
-
-            {/* ---------- matches + recovery strip ---------- */}
-            <div className="grid gap-4 sm:grid-cols-3">
-                <MiniStat
-                    icon={Sparkles}
-                    label="Possible matches"
-                    value={stats.totalMatches}
-                    note={`${stats.confirmedMatches} confirmed by their owners`}
-                />
-                <MiniStat
-                    icon={TrendingUp}
-                    label="Handovers recorded"
-                    value={stats.completedPickups}
-                    note={`${stats.scheduledPickups} booked for a window`}
-                />
-                <MiniStat
-                    icon={CalendarClock}
-                    label="Recovery completed"
-                    value={stats.completedRecovery}
-                    note={`${stats.pendingRecovery} still pending`}
-                />
-            </div>
-        </div>
-    );
-}
-
-function StatusBreakdown({ title, rows }) {
-    const max = Math.max(...rows.map(([, value]) => value), 1);
-
-    return (
-        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-800">{title}</h2>
-            <div className="mt-4 space-y-3.5">
-                {rows.map(([label, value]) => (
-                    <div key={label}>
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="text-slate-600">{label}</span>
-                            <span className="font-semibold text-slate-800">{value}</span>
-                        </div>
-                        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-100">
-                            <div
-                                className="h-full rounded-full bg-gradient-to-r from-[#106A2E] to-[#0D7856]"
-                                style={{ width: `${(value / max) * 100}%` }}
-                            />
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </section>
-    );
-}
-
-function MiniStat({ icon: Icon, label, value, note }) {
-    return (
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-center gap-2.5">
-                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-50 text-slate-500">
-                    <Icon size={16} aria-hidden="true" />
-                </span>
-                <div className="min-w-0">
-                    <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                        {label}
+            {/* ---------- what needs attention right now ---------- */}
+            {stats.pendingReports > 0 || stats.processingClaims > 0 ? (
+                <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4">
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white text-amber-600 shadow-sm">
+                        <Clock3 size={17} aria-hidden="true" />
+                    </span>
+                    <p className="text-xs font-medium text-amber-900">
+                        {stats.pendingReports} report
+                        {stats.pendingReports === 1 ? "" : "s"} and{" "}
+                        {stats.processingClaims} claim
+                        {stats.processingClaims === 1 ? "" : "s"} are waiting
+                        for your decision.
                     </p>
-                    <p className="text-xl font-bold text-slate-800">{value}</p>
+                    <Link
+                        to="/lost-found/admin/reports"
+                        className="ml-auto inline-flex items-center gap-1 rounded-xl border border-amber-300 bg-white px-3 py-1.5 text-[11px] font-semibold text-amber-700 transition hover:bg-amber-100"
+                    >
+                        Open the review queue
+                        <ChevronRight size={13} aria-hidden="true" />
+                    </Link>
                 </div>
-            </div>
-            <p className="mt-2 text-[11px] text-slate-500">{note}</p>
+            ) : null}
         </div>
     );
+}
+
+/** "Mar 5, 2026, 9:00 AM - 12:00 PM" for one availability window. */
+function formatWindow(slot) {
+    const start = new Date(slot.startDateTime);
+
+    if (Number.isNaN(start.getTime())) return "Unknown";
+
+    const end = slot.endDateTime ? new Date(slot.endDateTime) : null;
+    const day = start.toLocaleDateString("en-PH", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+    const time = start.toLocaleTimeString("en-PH", {
+        hour: "numeric",
+        minute: "2-digit",
+    });
+
+    return end && !Number.isNaN(end.getTime())
+        ? `${day}, ${time} - ${end.toLocaleTimeString("en-PH", {
+              hour: "numeric",
+              minute: "2-digit",
+          })}`
+        : `${day}, ${time}`;
 }

@@ -226,4 +226,25 @@ export const lfAdminApi = {
         http.delete(`/api/lostfound/schedules/availability/${id}`),
     completeSchedule: (id, body) =>
         http.put(`/api/lostfound/schedules/${id}/complete`, body),
+
+    // ---------------------------------------------------------------
+    // Profile settings - the console administrator's OWN account.
+    // These are the same shared /api/profile endpoints the student
+    // and counselor portals use, so there is no new API surface.
+    // The user id always comes from the signed-in session (the
+    // shared OneServe login), never from an editable field.
+    // ---------------------------------------------------------------
+    me: (email) => http.get(`/api/profile/${encodeURIComponent(email)}`),
+    updateProfile: (body) => http.put("/api/profile/update", body),
+    uploadProfilePhoto: (file, userId) => {
+        const body = new FormData();
+        body.append("file", file);
+        body.append("userId", String(userId));
+        return http.post("/api/profile/upload-photo", body);
+    },
+    requestEmailChange: (body) =>
+        http.post("/api/profile/request-email-change", body),
+    verifyEmailChange: (body) =>
+        http.post("/api/profile/verify-email-change", body),
+    changePassword: (body) => http.post("/api/profile/change-password", body),
 };

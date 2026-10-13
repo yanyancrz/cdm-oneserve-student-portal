@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
     CalendarClock,
     ChevronLeft,
@@ -8,9 +8,11 @@ import {
     LogOut,
     Menu,
     SearchCheck,
+    Settings,
     X,
 } from "lucide-react";
 
+import { API_URL } from "../../config/api";
 import { logout } from "../session";
 import { FIND_LOGO_SRC } from "../components/lfBrand";
 
@@ -41,12 +43,55 @@ const NAV = [
         label: "Pickups",
         icon: CalendarClock,
     },
+    {
+        to: "/lost-found/admin/profile",
+        label: "Profile Settings",
+        icon: Settings,
+    },
 ];
+
+/** The signed-in console user: name + picture from the shared session. */
+function useConsoleAdmin() {
+    const read = () => ({
+        name:
+            localStorage.getItem("userName") ||
+            localStorage.getItem("userEmail") ||
+            "Admin",
+        picture: localStorage.getItem("profilePicture") || "",
+        email: localStorage.getItem("userEmail") || "",
+    });
+
+    const [admin, setAdmin] = useState(read);
+
+    // The Profile page writes the new picture straight to localStorage,
+    // so the header follows wherever the admin updates it from.
+    useEffect(() => {
+        const onFocus = () => setAdmin(read());
+        window.addEventListener("focus", onFocus);
+        window.addEventListener("storage", onFocus);
+        return () => {
+            window.removeEventListener("focus", onFocus);
+            window.removeEventListener("storage", onFocus);
+        };
+    }, []);
+
+    return admin;
+}
+
+/** A stored "/uploads/profile/x.jpg" path -> fetchable URL. */
+function adminPictureUrl(path) {
+    if (!path) return null;
+    const raw = String(path).trim();
+    if (!raw) return null;
+    if (/^(https?:|blob:|data:|\/\/)/i.test(raw)) return raw;
+    return `${API_URL.replace(/\/+$/, "")}${raw.startsWith("/") ? raw : `/${raw}`}`;
+}
 
 export default function LfAdminLayout() {
     const navigate = useNavigate();
     const [collapsed, setCollapsed] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
+    const admin = useConsoleAdmin();
 
     // This shell is separate from the OneServe AdminLayout,
     // so it needs its own way out. Signs them out of
@@ -100,6 +145,29 @@ export default function LfAdminLayout() {
                         >
                             Report board
                         </button>
+
+                        {/* The signed-in administrator - name + picture,
+                            updating as soon as the Profile page saves. */}
+                        <Link
+                            to="/lost-found/admin/profile"
+                            title={`${admin.name}${admin.email ? ` · ${admin.email}` : ""} - profile settings`}
+                            className="flex items-center gap-2 rounded-xl bg-white/10 px-2.5 py-1.5 transition hover:bg-white/20"
+                        >
+                            {adminPictureUrl(admin.picture) ? (
+                                <img
+                                    src={adminPictureUrl(admin.picture)}
+                                    alt={admin.name}
+                                    className="h-7 w-7 shrink-0 rounded-full object-cover ring-1 ring-white/30"
+                                />
+                            ) : (
+                                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-300 text-[11px] font-bold text-[#0E3B22]">
+                                    {admin.name.trim().charAt(0).toUpperCase() || "A"}
+                                </span>
+                            )}
+                            <span className="hidden max-w-[160px] truncate text-[11px] font-semibold text-white sm:block">
+                                {admin.name}
+                            </span>
+                        </Link>
 
                         <button
                             type="button"

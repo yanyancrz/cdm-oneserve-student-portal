@@ -24,6 +24,7 @@ import LfAdminReportsPage from "./admin/LfAdminReportsPage";
 import LfAdminReportDetailsPage from "./admin/LfAdminReportDetailsPage";
 import LfAdminClaimsPage from "./admin/LfAdminClaimsPage";
 import LfAdminSchedulesPage from "./admin/LfAdminSchedulesPage";
+import LfAdminProfilePage from "./admin/LfAdminProfilePage";
 
 // =====================================================
 // LOST & FOUND routes
@@ -105,6 +106,10 @@ export const lostFoundAdminRoutes = (
         <Route
             path="/lost-found/admin/schedules"
             element={<LfAdminSchedulesPage />}
+        />
+        <Route
+            path="/lost-found/admin/profile"
+            element={<LfAdminProfilePage />}
         />
     </Route>
 );

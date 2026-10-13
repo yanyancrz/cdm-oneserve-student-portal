@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
     AlertCircle,
@@ -358,7 +359,6 @@ function ClaimReviewCard({ claim, report, acting, onDecide }) {
     const [reason, setReason] = useState("");
     const [asking, setAsking] = useState(false);
     const [infoMessage, setInfoMessage] = useState("");
-    const [proofOpen, setProofOpen] = useState(false);
 
     const decide = (status, note) => {
         setRejecting(false);
@@ -445,57 +445,7 @@ function ClaimReviewCard({ claim, report, acting, onDecide }) {
 
             {/* ---------- attachment ---------- */}
             {hasProof ? (
-                <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                        <p className="flex min-w-0 items-center gap-2 text-xs font-semibold text-slate-700">
-                            <Paperclip size={13} className="shrink-0 text-[#106A2E]" aria-hidden="true" />
-                            <span className="truncate">
-                                {claim.proofFileName || "Proof of ownership"}
-                            </span>
-                            <span className="shrink-0 text-[10px] font-normal text-slate-400">
-                                {claim.proofContentType}
-                            </span>
-                        </p>
-                        <div className="flex shrink-0 gap-1.5">
-                            <button
-                                type="button"
-                                onClick={() => setProofOpen((open) => !open)}
-                                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
-                            >
-                                {proofOpen ? "Hide" : "Preview"}
-                            </button>
-                            <a
-                                href={claim.proofUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
-                            >
-                                Open
-                            </a>
-                        </div>
-                    </div>
-
-                    {proofOpen && (
-                        <div className="mt-3">
-                            {claim.proofContentType?.startsWith("image/") ? (
-                                <img
-                                    src={claim.proofUrl}
-                                    alt={`Proof from ${claim.claimantName}`}
-                                    className="max-h-80 w-full rounded-xl border border-slate-200 bg-white object-contain"
-                                />
-                            ) : (
-                                <iframe
-                                    src={claim.proofUrl}
-                                    title={`Proof from ${claim.claimantName}`}
-                                    className="h-96 w-full rounded-xl border border-slate-200 bg-white"
-                                />
-                            )}
-                            <p className="mt-2 text-[10px] text-slate-400">
-                                Served only to you, the claimant and the finder.
-                            </p>
-                        </div>
-                    )}
-                </div>
+                <ProofAttachment claim={claim} />
             ) : (
                 <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2.5 text-[11px] leading-5 text-amber-800">
                     No Proof of Ownership Attached. Review the identifying
@@ -644,5 +594,164 @@ function ReasonBox({ title, placeholder, value, onChange, onCancel, onSubmit, to
                 </button>
             </div>
         </div>
+    );
+}
+
+// =====================================================
+// The proof of ownership as the reviewer sees it.
+//
+// The API serves proofs one at a time through the
+// AUTHORIZED /api/lostfound/claims/{id}/proof endpoint -
+// it answers with a root-relative URL, and this SPA is
+// served from a different origin than the API, so the
+// URL is prefixed with API_URL first (exactly like report
+// photos, via lfImageUrl). Without the prefix the <img>
+// resolves against the frontend host, which serves the
+// SPA shell for every path - that is why the file name
+// looked fine but the image never appeared.
+//
+// Access rules are untouched: only the claimant, the
+// finder and the Lost & Found console can read the
+// endpoint; nothing here is made public.
+// =====================================================
+
+function ProofAttachment({ claim }) {
+    const [broken, setBroken] = useState(false);
+    const [zoomed, setZoomed] = useState(false);
+
+    const src = claim.proofUrl ? lfImageUrl(claim.proofUrl) : null;
+    const isImage = Boolean(claim.proofContentType?.startsWith("image/"));
+
+    if (!src) {
+        return (
+            <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] leading-5 text-amber-800">
+                The proof file is no longer available on the server. It may
+                have been removed during account cleanup - ask the finder to
+                re-upload it.
+            </p>
+        );
+    }
+
+    return (
+        <div className="mt-3 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="flex min-w-0 items-center gap-2 text-xs font-semibold text-slate-700">
+                    <Paperclip size={13} className="shrink-0 text-[#106A2E]" aria-hidden="true" />
+                    <span className="truncate">
+                        {claim.proofFileName || "Proof of ownership"}
+                    </span>
+                    <span className="shrink-0 text-[10px] font-normal text-slate-400">
+                        {claim.proofContentType}
+                    </span>
+                </p>
+                <div className="flex shrink-0 gap-1.5">
+                    {isImage && !broken && (
+                        <button
+                            type="button"
+                            onClick={() => setZoomed(true)}
+                            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                        >
+                            View larger
+                        </button>
+                    )}
+                    <a
+                        href={src}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                    >
+                        Open
+                    </a>
+                </div>
+            </div>
+
+            {!broken && (
+                <div className="mt-3">
+                    {isImage ? (
+                        <img
+                            src={src}
+                            alt={`Proof of ownership from ${claim.claimantName || "the claimant"}`}
+                            onClick={() => setZoomed(true)}
+                            onError={() => setBroken(true)}
+                            className="max-h-80 w-full cursor-zoom-in rounded-xl border border-slate-200 bg-white object-contain"
+                        />
+                    ) : (
+                        <iframe
+                            src={src}
+                            title={`Proof of ownership from ${claim.claimantName || "the claimant"}`}
+                            onError={() => setBroken(true)}
+                            className="h-96 w-full rounded-xl border border-slate-200 bg-white"
+                        />
+                    )}
+                    <p className="mt-2 text-[10px] text-slate-400">
+                        Click the image to view it larger. Served only to you,
+                        the claimant and the finder.
+                    </p>
+                </div>
+            )}
+
+            {broken && (
+                <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] leading-5 text-amber-800">
+                    The preview could not be loaded in this browser. The file
+                    is still stored on the server - use Open to view or
+                    download it directly.
+                </p>
+            )}
+
+            {zoomed && (
+                <ProofLightbox
+                    src={src}
+                    title={claim.proofFileName || "Proof of ownership"}
+                    claimant={claim.claimantName}
+                    onClose={() => setZoomed(false)}
+                />
+            )}
+        </div>
+    );
+}
+
+function ProofLightbox({ src, title, claimant, onClose }) {
+    useEffect(() => {
+        const onKey = (event) => {
+            if (event.key === "Escape") onClose();
+        };
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [onClose]);
+
+    return createPortal(
+        <div
+            className="fixed inset-0 z-[80] flex items-center justify-center bg-black/85 p-4"
+            onClick={onClose}
+        >
+            <div
+                className="w-full max-w-5xl"
+                onClick={(event) => event.stopPropagation()}
+            >
+                <div className="mb-2 flex items-center justify-between gap-3">
+                    <p className="min-w-0 truncate text-sm font-semibold text-white">
+                        {title}
+                        {claimant ? (
+                            <span className="ml-2 text-xs font-normal text-white/70">
+                                from {claimant}
+                            </span>
+                        ) : null}
+                    </p>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="shrink-0 rounded-lg bg-white/10 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-white/20"
+                    >
+                        Close (Esc)
+                    </button>
+                </div>
+                <img
+                    src={src}
+                    alt={title}
+                    className="max-h-[82vh] w-full rounded-2xl border border-white/10 object-contain"
+                />
+            </div>
+        </div>,
+        document.body
     );
 }
