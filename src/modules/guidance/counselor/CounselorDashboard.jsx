@@ -32,6 +32,9 @@ export default function CounselorDashboard() {
     const [holidays, setHolidays] = useState({});
     const [selectedDay, setSelectedDay] = useState(todayISO());
 
+    // Student photo paths (email -> wwwroot path).
+    const [pictures, setPictures] = useState({});
+
     const load = useCallback(async (signal) => {
         setError("");
         setLoading(true);
@@ -68,6 +71,62 @@ export default function CounselorDashboard() {
 
         return () => c.abort();
     }, [load]);
+
+    // ── Student profile pictures ─────────────────
+    // The counselor appointments payload includes the
+    // student's email (StudentEmail) but not their photo.
+    // The public GET /api/profile/{email} returns the
+    // wwwroot path, so fetch them in parallel and map
+    // email -> path for the calendar day list.
+    useEffect(() => {
+        const emails = [
+            ...new Set(
+                appts
+                    .map((a) => a.studentEmail || a.email)
+                    .filter(Boolean)
+            ),
+        ];
+
+        if (!emails.length) {
+            setPictures({});
+            return;
+        }
+
+        let cancelled = false;
+
+        Promise.all(
+            emails.map((email) =>
+                fetch(`${API_URL}/api/profile/${encodeURIComponent(email)}`)
+                    .then((r) => (r.ok ? r.json() : null))
+                    .then((d) => ({
+                        email: String(email).toLowerCase(),
+                        picture: d?.profilePicture || null,
+                    }))
+                    .catch(() => null)
+                )
+        ).then((rows) => {
+            if (cancelled) return;
+
+            const map = {};
+            for (const row of rows) {
+                if (row?.email && row.picture) {
+                    map[row.email] = row.picture;
+                }
+            }
+            setPictures(map);
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [appts]);
+
+    // Photo for an appointment: direct from the payload
+    // (if the backend ever includes it) or fetched by email.
+    const pictureFor = (a) =>
+        a.profilePicture ||
+        pictures[String(a.studentEmail || a.email || "").toLowerCase()] ||
+        null;
 
     const respond = async (id, status) => {
         setBusy(id);
@@ -199,9 +258,9 @@ export default function CounselorDashboard() {
                                 <ul className="mt-2 space-y-2">
                                     {dayAppts.map((a) => (
                                         <li key={a.id} className="flex items-center gap-3 rounded-xl bg-slate-50 p-2.5">
-                                            {a.profilePicture ? (
+                                            {pictureFor(a) ? (
                                                 <img
-                                                    src={`${API_URL}${a.profilePicture}`}
+                                                    src={`${API_URL}${pictureFor(a)}`}
                                                     alt={a.studentName}
                                                     className="h-9 w-9 shrink-0 rounded-full object-cover"
                                                 />
@@ -244,6 +303,15 @@ export default function CounselorDashboard() {
                         pending.map((a) => (
                             <article key={a.id} className="rounded-2xl border border-slate-200 bg-white p-3">
                                 <p className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                                    {pictureFor(a) ? (
+                                        <img
+                                            src={`${API_URL}${pictureFor(a)}`}
+                                            alt={a.studentName}
+                                            className="h-9 w-9 shrink-0 rounded-full object-cover"
+                                        />
+                                    ) : (
+                                        <Avatar name={a.studentName} accent="green" size="sm" />
+                                    )}
                                     <span className="truncate">{a.studentName}</span>
                                     <RoleBadge role={a.role} />
                                 </p>
@@ -286,6 +354,15 @@ export default function CounselorDashboard() {
                             return (
                                 <article key={a.id} className="rounded-2xl border border-slate-200 bg-white p-3">
                                     <div className="flex items-center gap-3">
+                                        {pictureFor(a) ? (
+                                            <img
+                                                src={`${API_URL}${pictureFor(a)}`}
+                                                alt={a.studentName}
+                                                className="h-9 w-9 shrink-0 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <Avatar name={a.studentName} accent="green" size="sm" />
+                                        )}
                                         <div className="rounded-xl bg-green-50 px-2.5 py-1.5 text-xs font-bold text-green-700">{a.timeSlot}</div>
                                         <div className="min-w-0 flex-1">
                                             <p className="flex items-center gap-1.5 truncate text-sm font-semibold text-slate-800">
