@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import {
     Plus,
@@ -310,7 +311,7 @@ async function request(url, { method = "GET", body, fallback = "Request failed",
 // ─────────────────────────────────────────────────────────────
 // Small UI pieces
 // ─────────────────────────────────────────────────────────────
-function Initials({ name, size = "w-9 h-9" }) {
+function Initials({ name, size = "w-9 h-9", picture }) {
     const initials = (name || "User")
         .trim()
         .split(/\s+/)
@@ -318,6 +319,24 @@ function Initials({ name, size = "w-9 h-9" }) {
         .slice(0, 2)
         .join("")
         .toUpperCase();
+
+    // Profile photo kung may ibinigay ang API;
+    // kung wala, initials circle pa rin.
+    const photo = picture
+        ? picture.startsWith("http")
+            ? picture
+            : `${API_URL}${picture}`
+        : null;
+
+    if (photo) {
+        return (
+            <img
+                src={photo}
+                alt={name || "User"}
+                className={`${size} rounded-full object-cover flex-shrink-0`}
+            />
+        );
+    }
 
     return (
         <div
@@ -355,6 +374,9 @@ function StatusPill({ status }) {
     );
 }
 
+// Portaled to document.body: AdminLayout renders pages inside a
+// <div class="relative z-10"> stacking context, so a plain fixed z-50
+// modal loses to the layout's fixed z-50 sidebar. z-[60] clears it.
 function Modal({ title, onClose, children, locked = false, size = "max-w-md" }) {
     const ref = useRef(null);
     const titleId = useId();
@@ -371,9 +393,9 @@ function Modal({ title, onClose, children, locked = false, size = "max-w-md" }) 
         return () => document.removeEventListener("keydown", onKey);
     }, [locked, onClose]);
 
-    return (
+    return createPortal(
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-4"
             onMouseDown={(event) => {
                 if (event.target === event.currentTarget && !locked) onClose();
             }}
@@ -404,10 +426,11 @@ function Modal({ title, onClose, children, locked = false, size = "max-w-md" }) 
 
                 <div className="px-5 py-4">{children}</div>
             </div>
-        </div>
+        </div>, document.body
     );
 }
 
+// Portaled like Modal; z-[70] keeps it above any open Modal (z-[60]).
 function ConfirmDialog({ config, onClose }) {
     const [busy, setBusy] = useState(false);
     const cancelRef = useRef(null);
@@ -439,9 +462,9 @@ function ConfirmDialog({ config, onClose }) {
         }
     };
 
-    return (
+    return createPortal(
         <div
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
+            className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-4"
             onMouseDown={(event) => {
                 if (event.target === event.currentTarget && !busy) onClose();
             }}
@@ -491,7 +514,7 @@ function ConfirmDialog({ config, onClose }) {
                     </button>
                 </div>
             </div>
-        </div>
+        </div>, document.body
     );
 }
 
@@ -1323,11 +1346,15 @@ function RowMenu({ items, label }) {
                 <MoreHorizontal size={17} />
             </button>
 
-            {pos && (
+            {/* Menu portaled to body so the fixed z-50 sidebar can't
+                cover it on narrow screens; z-[55] sits above the
+                sidebar but below modals (z-[60]/z-[70]). */}
+            {pos &&
+                createPortal(
                 <div
                     ref={menuRef}
                     role="menu"
-                    className="fixed z-40 w-44 rounded-xl border border-[#E5E1D8] bg-white p-1 shadow-lg"
+                    className="fixed z-[55] w-44 rounded-xl border border-[#E5E1D8] bg-white p-1 shadow-lg"
                     style={{ top: pos.top, left: pos.left }}
                 >
                     {items.map((item) => {
@@ -1352,7 +1379,7 @@ function RowMenu({ items, label }) {
                             </button>
                         );
                     })}
-                </div>
+                </div>, document.body
             )}
         </>
     );
@@ -2243,7 +2270,7 @@ export default function Users() {
                                         >
                                             <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-3">
-                                                    <Initials name={u.fullName} />
+                                                    <Initials name={u.fullName} picture={u.profilePicture} />
 
                                                     <div className="min-w-0">
                                                         <p className="truncate font-medium text-gray-800">
@@ -2298,7 +2325,7 @@ export default function Users() {
                                     className={`px-4 py-4 ${u.status === "Deleted" ? "opacity-60" : ""}`}
                                 >
                                     <div className="flex items-start gap-3">
-                                        <Initials name={u.fullName} />
+                                        <Initials name={u.fullName} picture={u.profilePicture} />
 
                                         <div className="min-w-0 flex-1">
                                             <p className="truncate font-medium text-gray-800">{u.fullName}</p>
@@ -2426,7 +2453,7 @@ export default function Users() {
             {modal === "view" && activeUser && (
                 <Modal title="User details" onClose={closeModal}>
                     <div className="mb-4 flex items-center gap-3">
-                        <Initials name={activeUser.fullName} size="w-11 h-11" />
+                        <Initials name={activeUser.fullName} size="w-11 h-11" picture={activeUser.profilePicture} />
 
                         <div className="min-w-0">
                             <p className="truncate font-medium text-gray-800">{activeUser.fullName}</p>

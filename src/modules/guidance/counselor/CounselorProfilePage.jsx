@@ -12,6 +12,7 @@ import {
     UserRound,
 } from "lucide-react";
 
+import { API_URL } from "../../../config/api";
 import { useGuidanceMe } from "../components/GuidanceGate";
 import { ACCENTS, Avatar } from "../components/GuidanceUi";
 import ProfileSheet from "./ProfileSheet";
@@ -48,7 +49,15 @@ export default function CounselorProfilePage() {
             {/* Identity card */}
             <section className="rounded-3xl border border-black/[0.05] bg-white p-5 shadow-sm">
                 <div className="flex items-center gap-4">
-                    <Avatar name={me.fullName} accent="green" size="lg" />
+                    {me.profilePicture ? (
+                        <img
+                            src={`${API_URL}${me.profilePicture}`}
+                            alt={me.fullName}
+                            className="h-14 w-14 shrink-0 rounded-full object-cover"
+                        />
+                    ) : (
+                        <Avatar name={me.fullName} accent="green" size="lg" />
+                    )}
 
                     <div className="min-w-0 flex-1">
                         <h2 className="truncate text-base font-semibold text-slate-800">

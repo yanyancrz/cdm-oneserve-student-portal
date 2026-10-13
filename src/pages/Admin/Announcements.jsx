@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import {
     Megaphone,
@@ -149,6 +150,9 @@ function Switch({ checked, onChange, disabled, label }) {
     );
 }
 
+// Portaled to document.body: AdminLayout renders pages inside a
+// <div class="relative z-10"> stacking context, so a plain fixed z-50
+// dialog loses to the layout's fixed z-50 sidebar. z-[60] clears it.
 function ConfirmDialog({ title, description, confirmLabel, busy, onConfirm, onCancel }) {
     const cancelRef = useRef(null);
 
@@ -164,9 +168,9 @@ function ConfirmDialog({ title, description, confirmLabel, busy, onConfirm, onCa
         return () => document.removeEventListener("keydown", onKey);
     }, [busy, onCancel]);
 
-    return (
+    return createPortal(
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
             onMouseDown={(event) => {
                 if (event.target === event.currentTarget && !busy) onCancel();
             }}
@@ -210,7 +214,7 @@ function ConfirmDialog({ title, description, confirmLabel, busy, onConfirm, onCa
                     </button>
                 </div>
             </div>
-        </div>
+        </div>, document.body
     );
 }
 

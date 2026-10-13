@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { API_URL } from "../../config/api";
 import toast from "react-hot-toast";
 
@@ -1157,15 +1158,22 @@ export default function RegistrationVerification() {
 
             {/* =========================================================
                 DETAILS MODAL
+
+                Portaled to document.body: AdminLayout renders pages inside
+                <div class="relative z-10">, a stacking context, so a plain
+                fixed z-50 modal loses to the layout's fixed z-50 sidebar
+                and the sidebar ends up covering the form. Escaping that
+                context via createPortal lets z-[60] clear the sidebar.
             ========================================================= */}
 
-            {selectedRegistration && (
+            {selectedRegistration &&
+                createPortal(
 
                 <div
                     className="
                         fixed
                         inset-0
-                        z-50
+                        z-[60]
                         bg-black/50
                         backdrop-blur-[2px]
                         flex
@@ -1733,21 +1741,26 @@ export default function RegistrationVerification() {
 
                     </div>
 
-                </div>
+                </div>, document.body
 
             )}
 
             {/* =========================================================
                 ACTION CONFIRMATION MODAL
+
+                Also portaled to document.body (see DETAILS MODAL) so it
+                clears the fixed z-50 sidebar; z-[70] stacks it above
+                the details modal (z-[60]).
             ========================================================= */}
 
-            {actionModal && (
+            {actionModal &&
+                createPortal(
 
                 <div
                     className="
                         fixed
                         inset-0
-                        z-[60]
+                        z-[70]
                         bg-black/50
                         backdrop-blur-[2px]
                         flex
@@ -1998,7 +2011,7 @@ export default function RegistrationVerification() {
 
                     </div>
 
-                </div>
+                </div>, document.body
 
             )}
 

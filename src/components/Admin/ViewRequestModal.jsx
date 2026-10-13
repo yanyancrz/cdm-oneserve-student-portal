@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import { API_URL } from "../../config/api";
 
 export default function ViewRequestModal({
@@ -8,6 +9,11 @@ export default function ViewRequestModal({
 }) {
 
     if (!request) return null;
+
+    // Portaled to document.body: AdminLayout renders pages inside a
+    // <div class="relative z-10"> stacking context, so a plain fixed
+    // z-50 overlay loses to the layout's fixed z-50 sidebar. z-[60]
+    // at the body level clears it.
 
     const statusStyles = {
         pending: "bg-amber-100 text-amber-700",
@@ -38,7 +44,7 @@ export default function ViewRequestModal({
         </div>
     );
 
-    return (
+    return createPortal(
 
         <div
             className="
@@ -49,7 +55,7 @@ export default function ViewRequestModal({
                 flex
                 items-center
                 justify-center
-                z-50
+                z-[60]
                 p-4
             "
         >
@@ -305,7 +311,7 @@ export default function ViewRequestModal({
 
             </div>
 
-        </div>
+        </div>, document.body
 
     );
 }

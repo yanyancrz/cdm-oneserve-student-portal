@@ -3,8 +3,10 @@ import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
 import { CalendarCheck2, CheckCircle2, Clock, Users } from "lucide-react";
 
+import { API_URL } from "../../../config/api";
 import { useGuidanceMe } from "../components/GuidanceGate";
 import { ErrorBox, Loading } from "../components/GuidanceStates";
+import { Avatar } from "../components/GuidanceUi";
 import RoleBadge from "../components/RoleBadge";
 import StatusBadge from "../components/StatusBadge";
 import MonthCalendar from "../components/MonthCalendar";
@@ -120,9 +122,21 @@ export default function CounselorDashboard() {
         <main className="space-y-4 p-4">
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex items-center justify-between gap-2">
-                    <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-800">{profile?.title || "Guidance Counselor"}</p>
-                        <p className="text-xs text-slate-500">{[profile?.department, profile?.room].filter(Boolean).join(" • ") || me.email}</p>
+                    <div className="flex min-w-0 items-center gap-3">
+                        {me.profilePicture ? (
+                            <img
+                                src={`${API_URL}${me.profilePicture}`}
+                                alt={me.fullName}
+                                className="h-11 w-11 shrink-0 rounded-full object-cover"
+                            />
+                        ) : (
+                            <Avatar name={me.fullName} accent="green" size="md" />
+                        )}
+
+                        <div className="min-w-0">
+                            <p className="text-sm font-semibold text-slate-800">{profile?.title || "Guidance Counselor"}</p>
+                            <p className="text-xs text-slate-500">{[profile?.department, profile?.room].filter(Boolean).join(" • ") || me.email}</p>
+                        </div>
                     </div>
 
                     <button
@@ -185,6 +199,15 @@ export default function CounselorDashboard() {
                                 <ul className="mt-2 space-y-2">
                                     {dayAppts.map((a) => (
                                         <li key={a.id} className="flex items-center gap-3 rounded-xl bg-slate-50 p-2.5">
+                                            {a.profilePicture ? (
+                                                <img
+                                                    src={`${API_URL}${a.profilePicture}`}
+                                                    alt={a.studentName}
+                                                    className="h-9 w-9 shrink-0 rounded-full object-cover"
+                                                />
+                                            ) : (
+                                                <Avatar name={a.studentName} accent="green" size="sm" />
+                                            )}
                                             <div className="rounded-lg bg-white px-2 py-1 text-[11px] font-bold text-green-700 shadow-sm">
                                                 {a.timeSlot}
                                             </div>
