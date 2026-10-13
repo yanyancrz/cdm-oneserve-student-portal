@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 
-import { lfAdminApi } from "../services/lfApi";
+import { lfAdminApi, lfApi } from "../services/lfApi";
 import {
     formatDate,
     formatDateTime,
@@ -601,14 +601,20 @@ function ReasonBox({ title, placeholder, value, onChange, onCancel, onSubmit, to
 // The proof of ownership as the reviewer sees it.
 //
 // The API serves proofs one at a time through the
-// AUTHORIZED /api/lostfound/claims/{id}/proof endpoint -
-// it answers with a root-relative URL, and this SPA is
-// served from a different origin than the API, so the
-// URL is prefixed with API_URL first (exactly like report
-// photos, via lfImageUrl). Without the prefix the <img>
-// resolves against the frontend host, which serves the
-// SPA shell for every path - that is why the file name
-// looked fine but the image never appeared.
+// AUTHORIZED /api/lostfound/claims/{id}/proof endpoint.
+// Two things about that shape drive this component:
+//
+//   1. It answers with a ROOT-RELATIVE URL, and this SPA
+//      is served from a different origin than the API -
+//      the URL is prefixed with API_URL (like report
+//      photos) or the request never reaches the service.
+//   2. The endpoint needs an Authorization header, which
+//      an <img src> or an <a href> cannot send. So the
+//      bytes are FETCHED with the session token here
+//      (lfApi.claimProofBlobUrl) and rendered from an
+//      object URL - which is why the proof appears ON
+//      this page instead of opening a new tab that
+//      answers 401.
 //
 // Access rules are untouched: only the claimant, the
 // finder and the Lost & Found console can read the
@@ -616,19 +622,68 @@ function ReasonBox({ title, placeholder, value, onChange, onCancel, onSubmit, to
 // =====================================================
 
 function ProofAttachment({ claim }) {
-    const [broken, setBroken] = useState(false);
+    const [objectUrl, setObjectUrl] = useState(null);
+    const [state, setState] = useState("loading"); // loading | ready | error
+    const [message, setMessage] = useState("");
     const [zoomed, setZoomed] = useState(false);
 
-    const src = claim.proofUrl ? lfImageUrl(claim.proofUrl) : null;
+    useEffect(() => {
+        let created = null;
+        let cancelled = false;
+
+        (async () => {
+            setState("loading");
+            setMessage("");
+            try {
+                created = await lfApi.claimProofBlobUrl(claim.claimId);
+                if (cancelled) {
+                    URL.revokeObjectURL(created);
+                    return;
+                }
+                setObjectUrl(created);
+                setState("ready");
+            } catch (error) {
+                if (cancelled) return;
+                setMessage(error.message || "The proof file could not be loaded.");
+                setState("error");
+            }
+        })();
+
+        // The blob URL dies with the component, or with the preview.
+        return () => {
+            cancelled = true;
+            if (created) URL.revokeObjectURL(created);
+        };
+    }, [claim.claimId]);
+
     const isImage = Boolean(claim.proofContentType?.startsWith("image/"));
 
-    if (!src) {
+    const onDownload = () => {
+        try {
+            const link = document.createElement("a");
+            link.href = objectUrl;
+            link.download = claim.proofFileName || "proof-of-ownership";
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch {
+            toast.error("The file could not be downloaded.");
+        }
+    };
+
+    if (state === "error") {
         return (
-            <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] leading-5 text-amber-800">
-                The proof file is no longer available on the server. It may
-                have been removed during account cleanup - ask the finder to
-                re-upload it.
-            </p>
+            <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3">
+                <p className="flex min-w-0 items-center gap-2 text-xs font-semibold text-slate-700">
+                    <Paperclip size={13} className="shrink-0 text-[#106A2E]" aria-hidden="true" />
+                    <span className="truncate">
+                        {claim.proofFileName || "Proof of ownership"}
+                    </span>
+                </p>
+                <p className="mt-2 rounded-xl border border-amber-200 bg-white px-3 py-2.5 text-[11px] leading-5 text-amber-800">
+                    {message}
+                </p>
+            </div>
         );
     }
 
@@ -644,63 +699,66 @@ function ProofAttachment({ claim }) {
                         {claim.proofContentType}
                     </span>
                 </p>
-                <div className="flex shrink-0 gap-1.5">
-                    {isImage && !broken && (
+                {state === "ready" && (
+                    <div className="flex shrink-0 gap-1.5">
+                        {isImage && (
+                            <button
+                                type="button"
+                                onClick={() => setZoomed(true)}
+                                className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                            >
+                                View larger
+                            </button>
+                        )}
                         <button
                             type="button"
-                            onClick={() => setZoomed(true)}
+                            onClick={onDownload}
                             className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
                         >
-                            View larger
+                            Download
                         </button>
-                    )}
-                    <a
-                        href={src}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
-                    >
-                        Open
-                    </a>
-                </div>
+                    </div>
+                )}
             </div>
 
-            {!broken && (
-                <div className="mt-3">
-                    {isImage ? (
-                        <img
-                            src={src}
-                            alt={`Proof of ownership from ${claim.claimantName || "the claimant"}`}
-                            onClick={() => setZoomed(true)}
-                            onError={() => setBroken(true)}
-                            className="max-h-80 w-full cursor-zoom-in rounded-xl border border-slate-200 bg-white object-contain"
-                        />
-                    ) : (
-                        <iframe
-                            src={src}
-                            title={`Proof of ownership from ${claim.claimantName || "the claimant"}`}
-                            onError={() => setBroken(true)}
-                            className="h-96 w-full rounded-xl border border-slate-200 bg-white"
-                        />
-                    )}
+            {/* ---------- the file itself, right here on the page ---------- */}
+            {state === "loading" && (
+                <div className="mt-3 flex h-64 items-center justify-center rounded-xl border border-slate-200 bg-white text-[11px] text-slate-400">
+                    Loading the proof file…
+                </div>
+            )}
+
+            {state === "ready" && isImage && (
+                <>
+                    <img
+                        src={objectUrl}
+                        alt={`Proof of ownership from ${claim.claimantName || "the claimant"}`}
+                        onClick={() => setZoomed(true)}
+                        className="mt-3 max-h-80 w-full cursor-zoom-in rounded-xl border border-slate-200 bg-white object-contain"
+                    />
                     <p className="mt-2 text-[10px] text-slate-400">
                         Click the image to view it larger. Served only to you,
                         the claimant and the finder.
                     </p>
-                </div>
+                </>
             )}
 
-            {broken && (
-                <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-[11px] leading-5 text-amber-800">
-                    The preview could not be loaded in this browser. The file
-                    is still stored on the server - use Open to view or
-                    download it directly.
-                </p>
+            {state === "ready" && !isImage && (
+                <>
+                    <iframe
+                        src={objectUrl}
+                        title={`Proof of ownership from ${claim.claimantName || "the claimant"}`}
+                        className="mt-3 h-96 w-full rounded-xl border border-slate-200 bg-white"
+                    />
+                    <p className="mt-2 text-[10px] text-slate-400">
+                        Served only to you, the claimant and the finder.
+                    </p>
+                </>
             )}
 
             {zoomed && (
                 <ProofLightbox
-                    src={src}
+                    src={objectUrl}
                     title={claim.proofFileName || "Proof of ownership"}
                     claimant={claim.claimantName}
                     onClose={() => setZoomed(false)}

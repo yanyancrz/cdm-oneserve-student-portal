@@ -170,6 +170,40 @@ export const lfApi = {
     claimProofUrl: (claimId) =>
         `${API_URL}/api/lostfound/claims/${claimId}/proof`,
 
+    /**
+     * Loads the proof FILE, token and all, and hands back an object URL.
+     *
+     * An <img src> or a plain link cannot send an Authorization header,
+     * and the proof endpoint is [Authorize] - so the bytes are fetched
+     * here with the session token and turned into a blob URL. That is
+     * what lets the preview render ON the claim page instead of opening
+     * a new tab that answers 401.
+     *
+     * The caller owns the returned URL and must URL.revokeObjectURL() it
+     * when the preview goes away.
+     */
+    claimProofBlobUrl: async (claimId) => {
+        const token = getToken();
+        const response = await fetch(
+            `${API_URL}/api/lostfound/claims/${claimId}/proof`,
+            {
+                headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }
+        );
+
+        if (!response.ok) {
+            throw new LostFoundApiError(
+                response.status === 403
+                    ? "Your session can no longer view this proof. Log in again as the finder or the FIND admin."
+                    : `The proof file could not be loaded (HTTP ${response.status}).`,
+                { status: response.status }
+            );
+        }
+
+        const blob = await response.blob();
+        return URL.createObjectURL(blob);
+    },
+
     // Pickup schedules (view-only: students walk in during published
     // windows, nobody books a slot)
     availability: () => http.get("/api/lostfound/schedules/availability"),
