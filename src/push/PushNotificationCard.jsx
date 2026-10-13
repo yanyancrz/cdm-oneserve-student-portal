@@ -37,7 +37,9 @@ export function PushNotificationCard() {
                     // A real notification through the whole chain proves it works,
                     // and is the only way for a user to know it is fine.
                     const test = await push.sendTest();
-                    if (!test.ok && test.error) {
+                    if (test.ok && test.message) {
+                        toast.success(test.message);
+                    } else if (!test.ok && test.error) {
                         toast.error(test.error);
                     }
                 } else if (result.error) {
@@ -53,8 +55,11 @@ export function PushNotificationCard() {
         setBusy(true);
         try {
             const test = await push.sendTest();
-            if (test.ok) toast.success("Test notification sent.");
-            else toast.error(test.error || "Could not send the test.");
+            if (test.ok) {
+                toast.success(test.message || "Test notification sent.");
+            } else {
+                toast.error(test.error || "Could not send the test.");
+            }
         } finally {
             setBusy(false);
         }

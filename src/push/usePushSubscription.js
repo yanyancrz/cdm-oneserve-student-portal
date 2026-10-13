@@ -254,8 +254,12 @@ export function usePushSubscription() {
 
     const sendTest = useCallback(async () => {
         try {
-            await pushClient.sendTest();
-            return { ok: true };
+            const body = await pushClient.sendTest();
+            // The API only QUEUES the message - the Node
+            // push-service delivers it, so surface its
+            // "queued, arrives in a few seconds" message
+            // instead of claiming it was already delivered.
+            return { ok: true, message: body?.message };
         } catch (error) {
             return { ok: false, error: error?.message };
         }
