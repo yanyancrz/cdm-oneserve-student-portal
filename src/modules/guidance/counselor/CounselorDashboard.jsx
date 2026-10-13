@@ -156,7 +156,13 @@ export default function CounselorDashboard() {
     const dayAppts = (selectedDay ? byDate[selectedDay] || [] : []).sort(byWhen);
 
     const markAttendance = async (id, status) => {
-        if (status === "NoShow" && !window.confirm("Mark as no-show? The session will be terminated.")) return;
+        if (
+            status === "NoShow" &&
+            !window.confirm(
+                "Mark as no-show now? Sessions with no arrival are terminated as no-show automatically 30 minutes after the start."
+            )
+        )
+            return;
         setBusy(id);
         try {
             await guidanceApi.updateAppointmentStatus(id, status);
@@ -376,8 +382,8 @@ export default function CounselorDashboard() {
                                     </div>
                                     {expired ? (
                                         <div className="mt-2">
-                                            <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-[11px] font-medium text-red-700">
-                                                30 minutes past with no arrival.
+                                            <p className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-[11px] font-medium leading-5 text-red-700">
+                                                No arrival 30 minutes past the start - terminated as no-show automatically.
                                             </p>
                                             <button
                                                 type="button"
@@ -385,7 +391,7 @@ export default function CounselorDashboard() {
                                                 onClick={() => markAttendance(a.id, "NoShow")}
                                                 className="w-full rounded-lg border border-red-200 bg-red-50 py-2 text-xs font-semibold text-red-700 disabled:opacity-60"
                                             >
-                                                No-show - terminate
+                                                No-show - terminate now
                                             </button>
                                         </div>
                                     ) : (

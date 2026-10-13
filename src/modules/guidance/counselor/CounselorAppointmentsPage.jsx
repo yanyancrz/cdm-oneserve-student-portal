@@ -218,7 +218,7 @@ export default function CounselorAppointmentsPage() {
                                 appointment={a}
                                 isBusy={isBusy}
                                 onArrived={() => act(a.id, "Arrived")}
-                                onNoShow={() => act(a.id, "NoShow", "Mark this student as no-show? The session will be terminated.")}
+                                onNoShow={() => act(a.id, "NoShow", "Mark this student as no-show now? Sessions with no arrival are terminated as no-show automatically 30 minutes after the start.")}
                             />
                         )}
 
@@ -295,7 +295,10 @@ export default function CounselorAppointmentsPage() {
 /**
  * The ONLY action on a Confirmed appointment is arrival tracking.
  * Arrived unlocks 30 minutes before the session starts; 30 minutes
- * after the start with no arrival, the session is terminated as no-show.
+ * after the start with no arrival, the server terminates the session
+ * as no-show by itself (see GuidanceCounselorService.AutoTerminateNoShowsAsync).
+ * The button remains as a manual fallback for anyone the job has not
+ * reached yet.
  */
 function ConfirmedArrivalBox({ appointment, isBusy, onArrived, onNoShow }) {
     const btn = "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition active:scale-95 disabled:opacity-60";
@@ -305,12 +308,13 @@ function ConfirmedArrivalBox({ appointment, isBusy, onArrived, onNoShow }) {
         return (
             <div className="mt-3 space-y-2">
                 <p className="rounded-lg bg-red-50 px-3 py-2 text-[11px] font-medium leading-5 text-red-700">
-                    30 minutes past the start with no arrival. Terminate the session as no-show.
+                    No arrival 30 minutes past the start. This session is terminated
+                    as a no-show automatically - terminate it now only if you want it gone sooner.
                 </p>
                 <div className="flex gap-2">
                     <button type="button" disabled={isBusy} onClick={onNoShow}
                         className={`${btn} border border-red-200 bg-red-50 text-red-700`}>
-                        <X size={14} aria-hidden="true" /> No-show - terminate
+                        <X size={14} aria-hidden="true" /> No-show - terminate now
                     </button>
                 </div>
             </div>

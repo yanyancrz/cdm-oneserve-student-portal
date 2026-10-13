@@ -10,14 +10,85 @@
  * The permission prompt is only ever raised by this toggle - it is never
  * triggered automatically, so nobody gets a browser dialog they did not ask for.
  */
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 import { usePushSubscription } from "./usePushSubscription.js";
+import * as pushClient from "./pushClient.js";
+
+/**
+ * How the "Send a test notification" flow reports itself.
+ *
+ * The API only queues the message; the separate Node push-service
+ * delivers it. So after the POST we poll /api/push/test-status and show
+ * what actually happened - including "still queued", which is the state
+ * the user sees when the notification service is not running. That is the
+ * difference between "the button is broken" and "the button worked but
+ * nothing is delivering".
+ */
+const TEST_POLL_ATTEMPTS = 20;
+const TEST_POLL_INTERVAL_MS = 2000;
+
+const STATUS_TEXT = {
+    queued: "Queued - waiting for the notification service to deliver...",
+    delivered: "Delivered - the notification should be in your system tray now.",
+    pending:
+        "Still queued after a minute. The notification service (push-service) " +
+        "is probably not running or cannot reach the database. On the server, run: " +
+        "node push-service/scripts/diagnose.mjs",
+};
+
+function statusClass(kind) {
+    if (kind === "delivered") return "text-emerald-600";
+    if (kind === "pending") return "text-amber-600";
+    if (kind === "failed" || kind === "error") return "text-red-600";
+    return "text-slate-400";
+}
 
 export function PushNotificationCard() {
     const push = usePushSubscription();
     const [busy, setBusy] = useState(false);
+    const [testState, setTestState] = useState(null);
+
+    // Polling must die with the component.
+    const cancelled = useRef(false);
+    useEffect(() => {
+        cancelled.current = false;
+        return () => {
+            cancelled.current = true;
+        };
+    }, []);
+
+    const pollDelivery = useCallback(async () => {
+        for (let attempt = 1; attempt <= TEST_POLL_ATTEMPTS; attempt += 1) {
+            await new Promise((resolve) =>
+                setTimeout(resolve, TEST_POLL_INTERVAL_MS)
+            );
+
+            if (cancelled.current) return;
+
+            try {
+                const row = await pushClient.getTestStatus();
+
+                if (!row?.exists) continue;
+                if (row.status === "Sent") {
+                    setTestState({ kind: "delivered" });
+                    return;
+                }
+                if (row.status === "Failed") {
+                    setTestState({ kind: "failed", error: row.lastError });
+                    return;
+                }
+                // Pending / Processing: keep polling.
+            } catch {
+                // An API without the endpoint (not redeployed yet): the
+                // toast already said "queued", which is the old truth.
+                return;
+            }
+        }
+
+        if (!cancelled.current) setTestState({ kind: "pending" });
+    }, []);
 
     async function toggle() {
         setBusy(true);
@@ -26,6 +97,7 @@ export function PushNotificationCard() {
                 const result = await push.disable();
                 if (result.ok) {
                     toast.success("Notifications off for this device.");
+                    setTestState(null);
                 } else if (result.error) {
                     toast.error(result.error);
                 }
@@ -39,7 +111,9 @@ export function PushNotificationCard() {
                     const test = await push.sendTest();
                     if (test.ok && test.message) {
                         toast.success(test.message);
-                    } else if (!test.ok && test.error) {
+                        setTestState({ kind: "queued" });
+                        void pollDelivery();
+                    } else if (test.error) {
                         toast.error(test.error);
                     }
                 } else if (result.error) {
@@ -53,11 +127,14 @@ export function PushNotificationCard() {
 
     async function resendTest() {
         setBusy(true);
+        setTestState({ kind: "queued" });
         try {
             const test = await push.sendTest();
             if (test.ok) {
                 toast.success(test.message || "Test notification sent.");
+                await pollDelivery();
             } else {
+                setTestState({ kind: "error", error: test.error });
                 toast.error(test.error || "Could not send the test.");
             }
         } finally {
@@ -120,17 +197,31 @@ export function PushNotificationCard() {
             ) : null}
 
             {push.subscribed ? (
-                <button
-                    type="button"
-                    onClick={resendTest}
-                    disabled={busy}
-                    className="
-                        mt-3 text-xs font-semibold text-[#106A2E]
-                        hover:underline disabled:opacity-60
-                    "
-                >
-                    Send a test notification
-                </button>
+                <>
+                    <button
+                        type="button"
+                        onClick={resendTest}
+                        disabled={busy}
+                        className="
+                            mt-3 text-xs font-semibold text-[#106A2E]
+                            hover:underline disabled:opacity-60
+                        "
+                    >
+                        Send a test notification
+                    </button>
+
+                    {testState ? (
+                        <p
+                            className={`mt-1 text-[11px] leading-relaxed ${statusClass(
+                                testState.kind
+                            )}`}
+                        >
+                            {testState.kind === "failed" || testState.kind === "error"
+                                ? `${testState.kind === "failed" ? "Failed" : "Error"}: ${testState.error ?? "unknown"}`
+                                : STATUS_TEXT[testState.kind]}
+                        </p>
+                    ) : null}
+                </>
             ) : null}
 
             <p className="mt-3 text-[11px] text-slate-400">

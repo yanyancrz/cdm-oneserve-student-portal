@@ -147,7 +147,7 @@ export default function MyAppointmentsPage() {
                     <p className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] font-medium leading-5 text-amber-800">
                         <Clock3 size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
                         Please arrive on time - your {a.timeSlot} session is today. Each session is 30 minutes.
-                        Arriving over 30 minutes late terminates the session.
+                        Arriving over 30 minutes late automatically terminates the session as a no-show.
                     </p>
                 )}
 

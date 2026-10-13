@@ -347,7 +347,38 @@ Or use the ready-made helper: `npm run send --prefix push-service -- "Title" "Bo
 
 ---
 
-## 8. Vercel deployment (SPA rewrites — required)
+## 8. "The test succeeded but no notification appeared"
+
+The test button is NOT the delivery. It only writes a row into `PushOutbox`
+and returns; the Node service is what actually sends. If the worker is not
+running, tests queue forever and the tray stays empty - so a green
+"queued" toast proves nothing on its own.
+
+```powershell
+# 1. Is the worker alive? (server it shares the database with)
+curl http://127.0.0.1:4100/health        # cycles must climb; database "connected"
+
+# 2. One-shot diagnosis of the whole chain (subscriptions, outbox, logs)
+node push-service/scripts/diagnose.mjs
+```
+
+Reading the results:
+
+| Observation | Meaning |
+|---|---|
+| `Pending` rows pile up, `cycles` stuck | worker not running / stuck - `npm start` (or `pm2 restart`) it |
+| `PushDeliveryLogs` shows 410 | that browser's subscription expired - toggle notifications off/on on `/profile` |
+| `PushDeliveryLogs` shows 401/403 + no Sent rows ever | VAPID keys differ between `.env`, `appsettings.json` and `push-service/.env` |
+| worker ok + `Sent` in the log but still no tray notification | browser side: DevTools → Application → Service Workers must be **activated**, and `Notification.permission === "granted"` (HTTPS only) |
+
+From the deployed site, `GET /api/push/test-status` (JWT required) returns
+the status of the caller's latest test row (`Pending` / `Sent` / `Failed`
++ `lastError`); the Profile card polls it and says "still queued" when the
+delivery service is down.
+
+---
+
+## 9. Vercel deployment (SPA rewrites — required)
 
 **`vercel.json` is required.** Without it, Vercel serves only real files and answers every deep link with its own platform 404 (`404 NOT_FOUND` plus a Request ID), so React Router never sees the request. In-app navigation keeps working, which is why the bug hides until someone refreshes, opens a shared link, or taps a push notification while the PWA is closed.
 

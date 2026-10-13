@@ -184,3 +184,21 @@ export async function sendTest(pushSubscriptionId) {
     }
     return body;
 }
+
+/**
+ * What the outbox recorded for the most recent test notification.
+ *
+ * POST /api/push/test only QUEUES the message - the Node push-service
+ * delivers it - so the button alone can never prove it arrived. The API
+ * exposes the row's status (Pending / Processing / Sent / Failed) so the
+ * UI can tell the truth instead of claiming success.
+ */
+export async function getTestStatus() {
+    const response = await request("/api/push/test-status");
+
+    const body = await toJson(response);
+    if (!response.ok) {
+        throw new Error(body?.message || "Could not read the test status.");
+    }
+    return body;
+}
