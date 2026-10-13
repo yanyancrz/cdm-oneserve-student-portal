@@ -1483,6 +1483,49 @@ export default function Users() {
         loadUsers();
     }, [loadUsers]);
 
+    // ── Profile pictures ────────────────────────────────
+    // GET /api/auth/users doesn't include profilePicture,
+    // but the public GET /api/profile/{email} does (the file
+    // lives in wwwroot/uploads/profile). Fetch them in
+    // parallel and map email -> path so the table can show
+    // each user's photo instead of the initials circle.
+    const [pictures, setPictures] = useState({});
+
+    useEffect(() => {
+        if (!users.length) {
+            setPictures({});
+            return;
+        }
+
+        let cancelled = false;
+
+        Promise.all(
+            users.map((u) =>
+                fetch(`${API_URL}/api/profile/${encodeURIComponent(u.email)}`)
+                    .then((r) => (r.ok ? r.json() : null))
+                    .then((d) => ({
+                        email: String(u.email || "").toLowerCase(),
+                        picture: d?.profilePicture || null,
+                    }))
+                    .catch(() => null)
+                )
+        ).then((rows) => {
+            if (cancelled) return;
+
+            const map = {};
+            for (const row of rows) {
+                if (row?.email && row.picture) {
+                    map[row.email] = row.picture;
+                }
+            }
+            setPictures(map);
+        });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [users]);
+
     // ── Filters ─────────────────────────────────────────────
     const showInstituteFilter = roleFilter === "Student" || roleFilter === "Faculty";
     const showCourseFilter = roleFilter === "Student";
@@ -2270,7 +2313,7 @@ export default function Users() {
                                         >
                                             <td className="px-5 py-3.5">
                                                 <div className="flex items-center gap-3">
-                                                    <Initials name={u.fullName} picture={u.profilePicture} />
+                                                    <Initials name={u.fullName} picture={pictures[u.email?.toLowerCase()]} />
 
                                                     <div className="min-w-0">
                                                         <p className="truncate font-medium text-gray-800">
@@ -2325,7 +2368,7 @@ export default function Users() {
                                     className={`px-4 py-4 ${u.status === "Deleted" ? "opacity-60" : ""}`}
                                 >
                                     <div className="flex items-start gap-3">
-                                        <Initials name={u.fullName} picture={u.profilePicture} />
+                                        <Initials name={u.fullName} picture={pictures[u.email?.toLowerCase()]} />
 
                                         <div className="min-w-0 flex-1">
                                             <p className="truncate font-medium text-gray-800">{u.fullName}</p>
@@ -2453,7 +2496,7 @@ export default function Users() {
             {modal === "view" && activeUser && (
                 <Modal title="User details" onClose={closeModal}>
                     <div className="mb-4 flex items-center gap-3">
-                        <Initials name={activeUser.fullName} size="w-11 h-11" picture={activeUser.profilePicture} />
+                        <Initials name={activeUser.fullName} size="w-11 h-11" picture={pictures[activeUser.email?.toLowerCase()]} />
 
                         <div className="min-w-0">
                             <p className="truncate font-medium text-gray-800">{activeUser.fullName}</p>
