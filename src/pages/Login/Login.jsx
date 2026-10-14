@@ -633,7 +633,7 @@ export default function Login() {
                                     <img
                                         src={CdmLogo}
                                         alt="CDM OneServe"
-                                        className="h-20 w-auto object-contain"
+                                        className="h-28 w-auto object-contain"
                                     />
                                 </div>
 
