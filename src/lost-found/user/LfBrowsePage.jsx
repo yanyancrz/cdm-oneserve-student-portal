@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { PackageSearch, SearchCheck } from "lucide-react";
+import { PackageSearch, SearchCheck, UserCheck } from "lucide-react";
 
 import { lfApi } from "../services/lfApi";
 import { LOST_FOUND_HOME_ROUTE } from "../session";
@@ -18,12 +18,16 @@ import {
 
 // =====================================================
 // The board. Lost and found reports live side by side;
-// only published reports are visible, and a report whose
-// item was handed over drops off on its own.
+// only published reports are visible. A handed-over
+// FOUND report stays on the board with its claimant, so
+// the campus can see the item went back to its owner -
+// only handed-over lost reports drop off (the owner has
+// the item back, so there is nothing left to look for).
 //
 // The type filter is also the URL query (?type=Found), so
 // a "view all found" link from the home screen lands here
 // already filtered.
+// =====================================================
 //
 // Search is SERVER-side. The backend matches the keyword
 // plus related words across the item name, description,
@@ -245,6 +249,7 @@ export default function LfBrowsePage() {
 function BoardRow({ report, onOpen }) {
     const image = lfImageUrl(report.imagePath);
     const isFound = report.reportType === "Found";
+    const isReturned = Boolean(report.isReturned);
 
     return (
         <li>
@@ -273,23 +278,51 @@ function BoardRow({ report, onOpen }) {
                         {report.location && <span>{report.location}</span>}
                         <span>{formatDate(report.dateLostFound)}</span>
                     </span>
+                    {isReturned && (
+                        <span className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-emerald-700">
+                            <UserCheck size={12} aria-hidden="true" className="shrink-0" />
+                            <span className="truncate">
+                                Claimed by {claimedByText(report)}
+                            </span>
+                        </span>
+                    )}
                 </span>
                 <span className="flex shrink-0 flex-col items-end gap-1.5">
-                    <span
-                        className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
-                        style={{
-                            backgroundColor: isFound
-                                ? `${LF_COLORS.secondary}14`
-                                : `${LF_COLORS.primary}14`,
-                            color: isFound ? LF_COLORS.secondary : LF_COLORS.primary,
-                        }}
-                    >
-                        {isFound ? "Found" : "Lost"}
-                    </span>
+                    {isReturned ? (
+                        <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+                            Returned
+                        </span>
+                    ) : (
+                        <span
+                            className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide"
+                            style={{
+                                backgroundColor: isFound
+                                    ? `${LF_COLORS.secondary}14`
+                                    : `${LF_COLORS.primary}14`,
+                                color: isFound ? LF_COLORS.secondary : LF_COLORS.primary,
+                            }}
+                        >
+                            {isFound ? "Found" : "Lost"}
+                        </span>
+                    )}
                     <LfStatusChip status={report.status} />
                     <SearchCheck size={14} className="text-slate-300" aria-hidden="true" />
                 </span>
             </button>
         </li>
     );
+}
+
+// Who the board shows as the claimant: the receiver name the
+// admin typed at pickup, plus the claimant account in
+// parentheses when it names somebody else. Never a student ID.
+function claimedByText(report) {
+    const receiver = String(report.returnedToName || "").trim();
+    const account = String(report.claimedByName || "").trim();
+
+    if (receiver && account && receiver.toLowerCase() !== account.toLowerCase()) {
+        return `${receiver} (${account})`;
+    }
+
+    return receiver || account || "claimed";
 }

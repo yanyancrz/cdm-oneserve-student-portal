@@ -6,6 +6,7 @@ import {
     PackageSearch,
     Pencil,
     Trash2,
+    UserCheck,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -85,7 +86,9 @@ export default function LfReportDetailsPage() {
     const isPending = report?.status === "Pending";
     const isFound = report?.reportType === "Found";
     const isLost = report?.reportType === "Lost";
-    const canClaim = isFound && report?.status === "Published" && !isOwner;
+    const isReturned = Boolean(report?.isReturned);
+    // A handed-over item stays visible but can no longer be claimed.
+    const canClaim = isFound && report?.status === "Published" && !isOwner && !isReturned;
     const canRecover = isLost && report?.status === "Published" && !isOwner;
 
     const onDelete = async () => {
@@ -197,6 +200,27 @@ export default function LfReportDetailsPage() {
                 </div>
             </LfPanel>
 
+            {/* ---------- handed over: who claimed it ---------- */}
+            {isReturned && (
+                <LfPanel title="Returned" subtitle="This item went back to its owner">
+                    <div className="flex items-start gap-3">
+                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+                            <UserCheck size={17} aria-hidden="true" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                            <p className="text-sm font-semibold text-slate-800">
+                                Claimed by {claimedByText(report)}
+                            </p>
+                            <p className="mt-0.5 text-xs text-slate-500">
+                                {report.returnedAt
+                                    ? `Handed over ${formatDateTime(report.returnedAt)} at the OneServe Student Affairs Office`
+                                    : "Handed over at the OneServe Student Affairs Office"}
+                            </p>
+                        </div>
+                    </div>
+                </LfPanel>
+            )}
+
             {/* ---------- recovery on this report ---------- */}
             {recovery && (
                 <LfPanel
@@ -293,6 +317,20 @@ function DetailRow({ label, value }) {
             <dd className="mt-0.5 text-xs font-medium text-slate-700">{value}</dd>
         </div>
     );
+}
+
+// Who the page shows as the claimant: the receiver name the
+// admin typed at pickup, plus the claimant account in
+// parentheses when it names somebody else. Never a student ID.
+function claimedByText(report) {
+    const receiver = String(report?.returnedToName || "").trim();
+    const account = String(report?.claimedByName || "").trim();
+
+    if (receiver && account && receiver.toLowerCase() !== account.toLowerCase()) {
+        return `${receiver} (${account})`;
+    }
+
+    return receiver || account || "claimed";
 }
 
 function ClaimsList({ reportId }) {

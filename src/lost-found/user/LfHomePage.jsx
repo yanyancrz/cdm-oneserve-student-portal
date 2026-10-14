@@ -501,7 +501,13 @@ function RecentReportCard({ report, onOpen }) {
 
                     <span className="mt-1.5 flex flex-wrap items-center gap-1.5">
                         <LfTypeTag type={report.reportType} />
-                        <LfStatusChip status={report.status} />
+                        {report.isReturned ? (
+                            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                                Returned
+                            </span>
+                        ) : (
+                            <LfStatusChip status={report.status} />
+                        )}
                     </span>
 
                     <span className="mt-1.5 block truncate text-[11px] text-slate-500">
