@@ -9,7 +9,7 @@
  */
 import mysql from "mysql2/promise";
 
-const API = "http://localhost:5212";
+const API = process.env.PROBE_API ?? "http://localhost:5212";
 const stamp = Date.now().toString().slice(-6);
 
 const c = await mysql.createConnection({
