@@ -4,7 +4,6 @@ import {
     BookOpen,
     Eye,
     EyeOff,
-    GraduationCap,
     Lock,
     LogIn,
     Mail,
@@ -17,6 +16,7 @@ import toast from "react-hot-toast";
 
 import LoadingModal from "../../components/LoadingModal/LoadingModal";
 import BackgroundLayout from "../../layouts/BackgroundLayout";
+import CdmLogo from "../../assets/images/cdm-logo.png";
 import { API_URL } from "../../config/api";
 import { isPWAInstalled } from "../../utils/pwa";
 import { LIBRARY_HOME_ROUTE, clearSession } from "../../library-admin/utils/session";
@@ -629,17 +629,13 @@ export default function Login() {
                         <section className="flex flex-col items-center">
                             <div className="login-reveal-delay relative z-10 w-full max-w-sm rounded-[28px] border border-slate-200 bg-white p-9 shadow-xl shadow-black/5">
                                 {/* Brand (same on mobile and desktop) */}
-                                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] shadow-lg shadow-emerald-900/20">
-                                    <GraduationCap size={26} className="text-white" />
+                                <div className="mx-auto mb-7 flex justify-center">
+                                    <img
+                                        src={CdmLogo}
+                                        alt="CDM OneServe"
+                                        className="h-20 w-auto object-contain"
+                                    />
                                 </div>
-
-                                <h2 className="text-center text-xl font-semibold text-slate-800">
-                                    CDM OneServe
-                                </h2>
-
-                                <p className="mb-7 mt-1 text-center text-sm text-slate-400">
-                                    An Integrated Campus Service Management
-                                </p>
 
                                 {/* ---------- EMAIL ---------- */}
                                 <div className="mb-3.5">
