@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Megaphone } from "lucide-react";
-import Logo from "../assets/images/lightlogo.png";
+import Logo from "../assets/images/cdm-white.png";
 import BackgroundImage from "../assets/images/admin-bg.png";
 import { API_URL } from "../config/api";
 
