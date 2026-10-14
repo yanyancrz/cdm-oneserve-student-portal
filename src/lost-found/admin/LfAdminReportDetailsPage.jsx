@@ -658,19 +658,6 @@ function ProofAttachment({ claim }) {
 
     const isImage = Boolean(claim.proofContentType?.startsWith("image/"));
 
-    const onDownload = () => {
-        try {
-            const link = document.createElement("a");
-            link.href = objectUrl;
-            link.download = claim.proofFileName || "proof-of-ownership";
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-        } catch {
-            toast.error("The file could not be downloaded.");
-        }
-    };
-
     if (state === "error") {
         return (
             <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3">
@@ -710,13 +697,6 @@ function ProofAttachment({ claim }) {
                                 View larger
                             </button>
                         )}
-                        <button
-                            type="button"
-                            onClick={onDownload}
-                            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
-                        >
-                            Download
-                        </button>
                     </div>
                 )}
             </div>

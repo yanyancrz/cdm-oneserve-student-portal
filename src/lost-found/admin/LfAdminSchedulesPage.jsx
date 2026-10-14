@@ -16,10 +16,13 @@ import { lfAdminApi } from "../services/lfApi";
 import {
     formatDateTime,
     formatItemId,
+    isExactItemIdMatch,
 } from "../config/lfTheme";
 import {
     LfButton,
     LfEmpty,
+    LfItemIdEmpty,
+    LfItemIdSearch,
     lfField,
     LfNotice,
     LfPanel,
@@ -736,6 +739,12 @@ function ScheduleRow({ schedule, onHandover }) {
 // =====================================================
 
 function CompletedPickups({ completed, onInspect }) {
+    // Draft = what is typed. Applied = what the table filters on, set by
+    // Enter / Search / Clear - same exact Item ID algorithm as the admin
+    // reports and claims lists.
+    const [draft, setDraft] = useState("");
+    const [applied, setApplied] = useState("");
+
     if (completed.length === 0) {
         return (
             <LfPanel
@@ -755,11 +764,48 @@ function CompletedPickups({ completed, onInspect }) {
         String(b.completedAt ?? "").localeCompare(String(a.completedAt ?? ""))
     );
 
+    const searching = applied.trim().length > 0;
+
+    // Exact match only: "1", "001" and "#001" are the same item;
+    // "10", "0012" or "LF-2026-001" match nothing.
+    const visible = searching
+        ? rows.filter((schedule) => isExactItemIdMatch(schedule.reportId, applied))
+        : rows;
+
+    const clearSearch = () => {
+        setDraft("");
+        setApplied("");
+    };
+
     return (
         <LfPanel
             title="Completed pickups"
             subtitle="Every recorded handover, newest first"
         >
+            {/* ---------- toolbar: exact Item ID search ---------- */}
+            <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+                <p className="text-xs text-slate-500">
+                    {completed.length} total
+                    {searching ? ` · ${visible.length} matching` : ""}
+                </p>
+                <div className="w-full sm:w-96">
+                    <LfItemIdSearch
+                        value={draft}
+                        onChange={setDraft}
+                        onSubmit={setApplied}
+                        onClear={clearSearch}
+                        loading={false}
+                    />
+                </div>
+            </div>
+
+            {visible.length === 0 ? (
+                <LfItemIdEmpty
+                    icon={UserRoundCheck}
+                    recordNoun="pickup"
+                    onClear={clearSearch}
+                />
+            ) : (
             <div className="overflow-x-auto rounded-2xl border border-slate-200">
                 <table className="w-full min-w-[1020px] text-left text-xs">
                     <thead>
@@ -779,7 +825,7 @@ function CompletedPickups({ completed, onInspect }) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                        {rows.map((schedule) => (
+                        {visible.map((schedule) => (
                             <tr
                                 key={schedule.scheduleId}
                                 className="transition hover:bg-slate-50/70"
@@ -844,6 +890,7 @@ function CompletedPickups({ completed, onInspect }) {
                     </tbody>
                 </table>
             </div>
+            )}
         </LfPanel>
     );
 }
