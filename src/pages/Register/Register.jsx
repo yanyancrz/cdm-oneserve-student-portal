@@ -41,6 +41,26 @@ const STRENGTH = [
     { label: "Strong", bar: "bg-emerald-600", text: "text-emerald-700" },
 ];
 
+// =========================================================
+// PNM SCHOOL EMAIL DOMAINS
+// A school email already proves the person belongs to the
+// school: no physical ID upload, and the account activates
+// right after OTP (no admin review). Must match the
+// backend's AuthController domains exactly.
+// =========================================================
+
+const STUDENT_EMAIL_DOMAIN = "@student.pnm.edu.ph";
+const FACULTY_EMAIL_DOMAIN = "@pnm.edu.ph";
+
+const getSchoolRole = (email) => {
+    const normalized = String(email || "").trim().toLowerCase();
+
+    if (normalized.endsWith(STUDENT_EMAIL_DOMAIN)) return "Student";
+    if (normalized.endsWith(FACULTY_EMAIL_DOMAIN)) return "Faculty";
+
+    return null;
+};
+
 function PasswordStrength({ rules, password }) {
     if (!password) return null;
 
@@ -114,10 +134,50 @@ export default function Register() {
     // before the OTP is sent.
     const [confirming, setConfirming] = useState(false);
 
+    // Asked once when the page opens: "Do you have a PNM
+    // account?" A "yes" points the applicant at their school
+    // email, which skips the ID upload and auto-verifies.
+    const [askingPnm, setAskingPnm] = useState(true);
+
     const fileInputRef = useRef(null);
     const cameraInputRef = useRef(null);
 
     const navigate = useNavigate();
+
+    // The email decides the flow: a PNM school email hides
+    // the physical ID upload and activates the account
+    // right after OTP.
+    const schoolRole = getSchoolRole(email);
+
+    // When a school email is typed, select its account type
+    // automatically so the role can never mismatch it, and
+    // drop any ID the applicant picked before switching.
+    const handleEmailChange = (value) => {
+        setEmail(value);
+
+        const detected = getSchoolRole(value);
+
+        if (detected && detected !== role) {
+            setRole(detected);
+        }
+
+        if (detected && physicalIdFile) {
+            if (physicalIdPreview) {
+                URL.revokeObjectURL(physicalIdPreview);
+            }
+
+            setPhysicalIdFile(null);
+            setPhysicalIdPreview("");
+
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+
+            if (cameraInputRef.current) {
+                cameraInputRef.current.value = "";
+            }
+        }
+    };
 
     // =========================================================
     // FORM VALIDATION
@@ -134,7 +194,8 @@ export default function Register() {
         email.trim() &&
         password.trim() &&
         isPasswordStrong &&
-        physicalIdFile;
+        // A PNM school email needs no ID upload.
+        (schoolRole ? true : physicalIdFile);
 
     // =========================================================
     // HANDLE PHYSICAL ID FILE
@@ -268,7 +329,13 @@ export default function Register() {
             return `Password is not strong enough: ${weakRule.label.toLowerCase()}.`;
         }
 
-        if (!physicalIdFile) {
+        // A school email belongs to one account type only.
+        if (schoolRole && role !== schoolRole) {
+            return `This email is a PNM ${schoolRole} email. Please select ${schoolRole} as your account type.`;
+        }
+
+        // A PNM school email needs no ID upload.
+        if (!schoolRole && !physicalIdFile) {
             return "Please upload your physical ID.";
         }
 
@@ -314,15 +381,21 @@ export default function Register() {
 
         try {
             // =================================================
-            // UPLOAD PHYSICAL ID FIRST
+            // UPLOAD PHYSICAL ID FIRST (personal emails only)
+            // A PNM school email already proves school
+            // membership, so there is nothing to upload.
             // =================================================
 
-            setUploadingPhoto(true);
+            let physicalIdDocument = null;
 
-            const physicalIdDocument =
-                await uploadPhysicalId();
+            if (!schoolRole) {
+                setUploadingPhoto(true);
 
-            setUploadingPhoto(false);
+                physicalIdDocument =
+                    await uploadPhysicalId();
+
+                setUploadingPhoto(false);
+            }
 
             // =================================================
             // REGISTER ACCOUNT
@@ -880,7 +953,7 @@ export default function Register() {
 
                             <input
                                 type="email"
-                                placeholder="you@cdm.edu.ph"
+                                placeholder="you@student.pnm.edu.ph"
                                 className="
                                     w-full
                                     px-4
@@ -897,11 +970,28 @@ export default function Register() {
                                 "
                                 value={email}
                                 onChange={(e) =>
-                                    setEmail(
+                                    handleEmailChange(
                                         e.target.value
                                     )
                                 }
                             />
+
+                            {schoolRole && (
+                                <p className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[11px] leading-5 text-emerald-800">
+                                    PNM {schoolRole} email detected — no
+                                    ID upload needed. After the OTP,
+                                    your account is verified automatically.
+                                </p>
+                            )}
+
+                            {!schoolRole && email.includes("@") && (
+                                <p className="mt-2 text-[11px] text-slate-400">
+                                    Tip: use your PNM school email
+                                    (@student.pnm.edu.ph for students,
+                                    @pnm.edu.ph for faculty) to skip the
+                                    ID upload and get verified automatically.
+                                </p>
+                            )}
                         </div>
 
                         {/* =================================================
@@ -988,9 +1078,13 @@ export default function Register() {
                         </div>
 
                         {/* =================================================
-                            PHYSICAL ID
+                            PHYSICAL ID (personal emails only)
+                            A PNM school email already proves school
+                            membership, so this whole section is
+                            hidden and nothing is uploaded.
                         ================================================= */}
 
+                        {!schoolRole && (
                         <div className="mb-6">
                             <div
                                 className="
@@ -1300,6 +1394,7 @@ export default function Register() {
                                 school ID. Make sure the information is readable.
                             </p>
                         </div>
+                        )}
 
                         {/* =================================================
                             REGISTER BUTTON
@@ -1410,6 +1505,89 @@ export default function Register() {
             </BackgroundLayout>
 
             {/* =================================================
+                PNM ACCOUNT PROMPT
+                Opens first when the page loads: applicants with
+                a school email skip the ID upload and are
+                verified automatically after OTP.
+            ================================================= */}
+
+            {askingPnm && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Do you have a PNM account"
+                >
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
+                    <div className="relative w-full max-w-sm rounded-[24px] border border-slate-200 bg-white p-6 shadow-2xl shadow-black/10">
+                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] shadow-lg shadow-emerald-900/20">
+                            <svg
+                                width="26"
+                                height="26"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="white"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <rect
+                                    x="2"
+                                    y="4"
+                                    width="20"
+                                    height="16"
+                                    rx="2"
+                                />
+
+                                <path d="m22 7-10 6L2 7" />
+                            </svg>
+                        </div>
+
+                        <h2 className="text-center text-lg font-semibold text-slate-800">
+                            Do you have a PNM account?
+                        </h2>
+
+                        <p className="mt-1 text-center text-sm leading-6 text-slate-500">
+                            With your school email, there is{" "}
+                            <span className="font-semibold text-[#106A2E]">
+                                no ID upload
+                            </span>{" "}
+                            and your account is{" "}
+                            <span className="font-semibold text-[#106A2E]">
+                                verified automatically
+                            </span>{" "}
+                            after the OTP.
+                        </p>
+
+                        <div className="mt-2 rounded-xl bg-slate-50 px-3 py-2.5 text-center text-[11px] leading-5 text-slate-500">
+                            Students: @student.pnm.edu.ph
+                            <br />
+                            Faculty: @pnm.edu.ph
+                        </div>
+
+                        <div className="mt-5 grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setAskingPnm(false)}
+                                className="rounded-xl border border-slate-200 bg-slate-50 py-3 text-sm font-semibold text-slate-600 transition hover:bg-white"
+                            >
+                                No, continue
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setAskingPnm(false)}
+                                className="rounded-xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition hover:opacity-90 active:scale-[0.98]"
+                            >
+                                Yes, I have one
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* =================================================
                 CONFIRMATION PROMPT
                 Opens after the Register button is pressed:
                 the applicant reviews every detail they typed
@@ -1479,11 +1657,20 @@ export default function Register() {
                                 <dt className="text-slate-400">Physical ID</dt>
                                 <dd
                                     className="max-w-[60%] truncate text-right font-semibold text-slate-800"
-                                    title={physicalIdFile?.name}
+                                    title={schoolRole ? "Not needed - PNM email" : physicalIdFile?.name}
                                 >
-                                    {physicalIdFile?.name}
+                                    {schoolRole
+                                        ? "Not needed - PNM email ✓"
+                                        : physicalIdFile?.name}
                                 </dd>
                             </div>
+
+                            {schoolRole && (
+                                <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-800">
+                                    Your PNM email verifies you automatically
+                                    after the OTP - no admin review needed.
+                                </p>
+                            )}
                         </dl>
 
                         <div className="mt-6 grid grid-cols-2 gap-2">
