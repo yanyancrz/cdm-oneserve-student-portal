@@ -56,6 +56,7 @@ import Users from "./pages/Admin/Users";
 import ServiceHeads from "./pages/Admin/ServiceHeads";
 import AdminProfile from "./pages/Admin/AdminProfile";
 import Announcements from "./pages/Admin/Announcements";
+import SchoolRecords from "./pages/Admin/SchoolRecords";
 
 
 // ==========================================
@@ -247,6 +248,7 @@ function App() {
                     <Route path="/admin/verification" element={<RegistrationVerification />} />
                     <Route path="/admin/users" element={<Users />} />
                     <Route path="/admin/service-heads" element={<ServiceHeads />} />
+                    <Route path="/admin/school-records" element={<SchoolRecords />} />
                     <Route path="/admin/profile" element={<AdminProfile />} />
                     <Route path="/admin/announcements" element={<Announcements />} />
                 </Route>

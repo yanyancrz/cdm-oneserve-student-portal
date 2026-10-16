@@ -9,14 +9,39 @@ export default function SetupProfile() {
     const navigate = useNavigate();
 
     // =========================================================
-    // USER ROLE
-    // Role is already selected during Registration.
-    // It is read from localStorage after login.
+    // ID NUMBER (from Registration - read-only here)
+    // Set at login from the authenticated user record, which
+    // carries the ID submitted during Registration.
     // =========================================================
-    const role =
-    localStorage.getItem("role") ||
-    localStorage.getItem("userRole") ||
-    "";
+    const registeredIdNumber =
+        localStorage.getItem("idNumber") ||
+        localStorage.getItem("otpIdNumber") ||
+        "";
+
+    // =========================================================
+    // ROLE
+    // Pre-selected from Registration/Login, but the user
+    // confirms it here via "I am a Student or Faculty".
+    // =========================================================
+    const storedRole =
+        localStorage.getItem("role") ||
+        localStorage.getItem("userRole") ||
+        "";
+
+    const [role, setRole] = useState(storedRole || "");
+
+    // =========================================================
+    // NAME FIELDS (completed here, not in Registration)
+    // =========================================================
+    const [firstName, setFirstName] = useState(
+        localStorage.getItem("firstName") || ""
+    );
+    const [middleName, setMiddleName] = useState(
+        localStorage.getItem("middleName") || ""
+    );
+    const [lastName, setLastName] = useState(
+        localStorage.getItem("lastName") || ""
+    );
 
     const [contactNumber, setContactNumber] = useState("");
     const [course, setCourse] = useState("");
@@ -27,6 +52,14 @@ export default function SetupProfile() {
     const [profilePicture, setProfilePicture] = useState(null);
 
     const [saving, setSaving] = useState(false);
+
+    // Dynamic ID label that follows the selected role.
+    const idLabel =
+        role === "Student"
+            ? "Student ID Number"
+            : role === "Faculty"
+              ? "Faculty ID Number"
+              : "ID Number";
 
     // =========================================================
     // SAVE PROFILE
@@ -48,16 +81,30 @@ export default function SetupProfile() {
         // BASIC VALIDATION
         // -----------------------------------------------------
 
-        if (!contactNumber.trim()) {
+        if (!role) {
             toast.error(
-                "Please enter your contact number."
+                "Please select whether you are a Student or Faculty."
             );
             return;
         }
 
-        if (!role) {
+        if (!firstName.trim()) {
             toast.error(
-                "Account role not found. Please login again."
+                "Please enter your first name."
+            );
+            return;
+        }
+
+        if (!lastName.trim()) {
+            toast.error(
+                "Please enter your last name."
+            );
+            return;
+        }
+
+        if (!contactNumber.trim()) {
+            toast.error(
+                "Please enter your contact number."
             );
             return;
         }
@@ -163,6 +210,8 @@ export default function SetupProfile() {
 
             // =================================================
             // SAVE PROFILE
+            // idNumber is NOT sent as an editable field: it was
+            // fixed at Registration and is shown disabled above.
             // =================================================
 
             const response = await fetch(
@@ -176,6 +225,9 @@ export default function SetupProfile() {
 
                     body: JSON.stringify({
                         userId,
+                        firstName: firstName.trim(),
+                        middleName: middleName.trim(),
+                        lastName: lastName.trim(),
                         contactNumber,
                         role,
                         course,
@@ -203,10 +255,31 @@ export default function SetupProfile() {
             // SAVE LOCAL STORAGE
             // =================================================
 
-            // Keep role from Registration/Login.
             localStorage.setItem(
                 "role",
                 role
+            );
+
+            localStorage.setItem(
+                "firstName",
+                firstName.trim()
+            );
+
+            localStorage.setItem(
+                "middleName",
+                middleName.trim()
+            );
+
+            localStorage.setItem(
+                "lastName",
+                lastName.trim()
+            );
+
+            localStorage.setItem(
+                "userName",
+                [firstName.trim(), middleName.trim(), lastName.trim()]
+                    .filter(Boolean)
+                    .join(" ")
             );
 
             localStorage.setItem(
@@ -404,6 +477,218 @@ export default function SetupProfile() {
                     </div>
 
                     <div className="space-y-4">
+
+                        {/* =================================================
+                            ID NUMBER (from Registration - disabled)
+                        ================================================= */}
+
+                        <div>
+
+                            <label className="
+                                text-sm
+                                text-gray-600
+                            ">
+                                {idLabel}
+                            </label>
+
+                            <input
+                                type="text"
+                                value={registeredIdNumber}
+                                disabled
+                                readOnly
+                                placeholder="From your registration"
+                                title="From your registration - cannot be changed here"
+                                className="
+                                    w-full
+                                    mt-1
+                                    p-3
+                                    rounded-xl
+                                    border
+                                    border-gray-200
+                                    bg-gray-100
+                                    text-gray-500
+                                    cursor-not-allowed
+                                    outline-none
+                                "
+                            />
+
+                            <p className="
+                                text-[11px]
+                                text-gray-400
+                                mt-1
+                            ">
+                                From your registration — cannot be changed here.
+                            </p>
+
+                        </div>
+
+                        {/* =================================================
+                            I AM A (Student / Faculty)
+                        ================================================= */}
+
+                        <div>
+
+                            <label className="
+                                text-sm
+                                text-gray-600
+                            ">
+                                I am a
+                            </label>
+
+                            <div className="grid grid-cols-2 gap-2 mt-1">
+                                <button
+                                    type="button"
+                                    onClick={() => setRole("Student")}
+                                    className={`
+                                        py-3
+                                        rounded-xl
+                                        border
+                                        text-sm
+                                        font-medium
+                                        transition-all
+                                        ${
+                                            role === "Student"
+                                                ? "border-[#106A2E] bg-emerald-50 text-[#106A2E]"
+                                                : "border-gray-200 bg-gray-50 text-gray-500 hover:bg-white"
+                                        }
+                                    `}
+                                >
+                                    Student
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setRole("Faculty")}
+                                    className={`
+                                        py-3
+                                        rounded-xl
+                                        border
+                                        text-sm
+                                        font-medium
+                                        transition-all
+                                        ${
+                                            role === "Faculty"
+                                                ? "border-[#106A2E] bg-emerald-50 text-[#106A2E]"
+                                                : "border-gray-200 bg-gray-50 text-gray-500 hover:bg-white"
+                                        }
+                                    `}
+                                >
+                                    Faculty
+                                </button>
+                            </div>
+
+                        </div>
+
+                        {/* =================================================
+                            FIRST NAME
+                        ================================================= */}
+
+                        <div>
+
+                            <label className="
+                                text-sm
+                                text-gray-600
+                            ">
+                                First Name <span className="text-red-500">*</span>
+                            </label>
+
+                            <input
+                                type="text"
+                                placeholder="Juan"
+                                value={firstName}
+                                onChange={(e) =>
+                                    setFirstName(
+                                        e.target.value
+                                    )
+                                }
+                                className="
+                                    w-full
+                                    mt-1
+                                    p-3
+                                    rounded-xl
+                                    border
+                                    border-gray-200
+                                    bg-gray-50
+                                    focus:border-[#106A2E]
+                                    outline-none
+                                "
+                            />
+
+                        </div>
+
+                        {/* =================================================
+                            MIDDLE NAME
+                        ================================================= */}
+
+                        <div>
+
+                            <label className="
+                                text-sm
+                                text-gray-600
+                            ">
+                                Middle Name <span className="text-gray-400">(Optional)</span>
+                            </label>
+
+                            <input
+                                type="text"
+                                placeholder="Santos"
+                                value={middleName}
+                                onChange={(e) =>
+                                    setMiddleName(
+                                        e.target.value
+                                    )
+                                }
+                                className="
+                                    w-full
+                                    mt-1
+                                    p-3
+                                    rounded-xl
+                                    border
+                                    border-gray-200
+                                    bg-gray-50
+                                    focus:border-[#106A2E]
+                                    outline-none
+                                "
+                            />
+
+                        </div>
+
+                        {/* =================================================
+                            LAST NAME
+                        ================================================= */}
+
+                        <div>
+
+                            <label className="
+                                text-sm
+                                text-gray-600
+                            ">
+                                Last Name <span className="text-red-500">*</span>
+                            </label>
+
+                            <input
+                                type="text"
+                                placeholder="Dela Cruz"
+                                value={lastName}
+                                onChange={(e) =>
+                                    setLastName(
+                                        e.target.value
+                                    )
+                                }
+                                className="
+                                    w-full
+                                    mt-1
+                                    p-3
+                                    rounded-xl
+                                    border
+                                    border-gray-200
+                                    bg-gray-50
+                                    focus:border-[#106A2E]
+                                    outline-none
+                                "
+                            />
+
+                        </div>
 
                         {/* =================================================
                             CONTACT NUMBER

@@ -1,353 +1,84 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { Eye, EyeOff, Check, X } from "lucide-react";
 import LoadingModal from "../../components/LoadingModal/LoadingModal";
 import { API_URL } from "../../config/api";
 import BackgroundLayout from "../../layouts/BackgroundLayout";
 
 // =========================================================
-// STRONG PASSWORD RULES
+// REGISTER (new flow)
+// Fields: Student/Faculty ID Number + Email + Role only.
+// No physical ID, no names, no password here.
+// After submit, the backend emails the user their login
+// credentials. Names + role confirmation move to Setup Profile.
 // =========================================================
 
-const getPasswordRules = (pw, idNumber = "", email = "") => {
-    const emailName = email.split("@")[0].trim().toLowerCase();
-    const lower = pw.toLowerCase();
-    const id = idNumber.trim().toLowerCase();
-
-    return [
-        { key: "len", label: "At least 8 characters", ok: pw.length >= 8 },
-        { key: "upper", label: "An uppercase letter (A-Z)", ok: /[A-Z]/.test(pw) },
-        { key: "lower", label: "A lowercase letter (a-z)", ok: /[a-z]/.test(pw) },
-        { key: "digit", label: "A number (0-9)", ok: /\d/.test(pw) },
-        { key: "symbol", label: "A symbol (! @ # $ % ...)", ok: /[^A-Za-z0-9\s]/.test(pw) },
-        { key: "space", label: "No spaces", ok: pw.length > 0 && !/\s/.test(pw) },
-        {
-            key: "personal",
-            label: "Not your email name or ID number",
-            ok:
-                pw.length > 0 &&
-                !(emailName.length >= 3 && lower.includes(emailName)) &&
-                !(id.length >= 3 && lower.includes(id)),
-        },
-    ];
-};
-
-const STRENGTH = [
-    { label: "Too weak", bar: "bg-red-500", text: "text-red-600" },
-    { label: "Weak", bar: "bg-orange-500", text: "text-orange-600" },
-    { label: "Fair", bar: "bg-amber-500", text: "text-amber-600" },
-    { label: "Good", bar: "bg-lime-500", text: "text-lime-600" },
-    { label: "Strong", bar: "bg-emerald-600", text: "text-emerald-700" },
-];
-
-// =========================================================
-// PNM SCHOOL EMAIL DOMAINS
-// A school email already proves the person belongs to the
-// school: no physical ID upload, and the account activates
-// right after OTP (no admin review). Must match the
-// backend's AuthController domains exactly.
-// =========================================================
-
-const STUDENT_EMAIL_DOMAIN = "@student.pnm.edu.ph";
-const FACULTY_EMAIL_DOMAIN = "@pnm.edu.ph";
-
-const getSchoolRole = (email) => {
-    const normalized = String(email || "").trim().toLowerCase();
-
-    if (normalized.endsWith(STUDENT_EMAIL_DOMAIN)) return "Student";
-    if (normalized.endsWith(FACULTY_EMAIL_DOMAIN)) return "Faculty";
-
-    return null;
-};
-
-function PasswordStrength({ rules, password }) {
-    if (!password) return null;
-
-    const passed = rules.filter((r) => r.ok).length;
-    const level =
-        passed >= rules.length
-            ? 4
-            : Math.min(3, Math.floor((passed / rules.length) * 4));
-    const filled = level === 4 ? 4 : Math.max(1, level);
-    const info = STRENGTH[level];
-
-    return (
-        <div className="mt-2.5" aria-live="polite">
-            <div className="flex gap-1">
-                {[0, 1, 2, 3].map((i) => (
-                    <span
-                        key={i}
-                        className={`h-1.5 flex-1 rounded-full transition-colors ${
-                            i < filled ? info.bar : "bg-slate-200"
-                        }`}
-                    />
-                ))}
-            </div>
-
-            <p className={`mt-1 text-[11px] font-semibold ${info.text}`}>
-                {info.label}
-            </p>
-
-            <ul className="mt-1.5 grid grid-cols-1 gap-y-0.5 sm:grid-cols-2 sm:gap-x-3">
-                {rules.map((r) => (
-                    <li
-                        key={r.key}
-                        className={`flex items-center gap-1.5 text-[11px] ${
-                            r.ok ? "text-emerald-700" : "text-slate-400"
-                        }`}
-                    >
-                        {r.ok ? (
-                            <Check size={12} aria-hidden="true" />
-                        ) : (
-                            <X size={12} aria-hidden="true" />
-                        )}
-                        {r.label}
-                    </li>
-                ))}
-            </ul>
-        </div>
-    );
-}
+const isValidEmail = (value) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || "").trim());
 
 export default function Register() {
     const [idNumber, setIdNumber] = useState("");
-
-    // Name fields
-    const [firstName, setFirstName] = useState("");
-    const [middleName, setMiddleName] = useState("");
-    const [lastName, setLastName] = useState("");
-
     const [role, setRole] = useState("");
     const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
-
-    const [physicalIdFile, setPhysicalIdFile] = useState(null);
-    const [physicalIdPreview, setPhysicalIdPreview] = useState("");
 
     const [loading, setLoading] = useState(false);
-    const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
     // Shown after the Register button is pressed: the
     // applicant reviews what they typed and confirms it
-    // before the OTP is sent.
+    // before anything is sent.
     const [confirming, setConfirming] = useState(false);
-
-    // Asked once when the page opens: "Do you have a PNM
-    // account?" A "yes" points the applicant at their school
-    // email, which skips the ID upload and auto-verifies.
-    const [askingPnm, setAskingPnm] = useState(true);
-
-    const fileInputRef = useRef(null);
-    const cameraInputRef = useRef(null);
 
     const navigate = useNavigate();
 
-    // The email decides the flow: a PNM school email hides
-    // the physical ID upload and activates the account
-    // right after OTP.
-    const schoolRole = getSchoolRole(email);
+    // Dynamic ID label: locked to the selected role.
+    const idLabel =
+        role === "Student"
+            ? "Student ID Number"
+            : role === "Faculty"
+              ? "Faculty ID Number"
+              : "ID Number";
 
-    // When a school email is typed, select its account type
-    // automatically so the role can never mismatch it, and
-    // drop any ID the applicant picked before switching.
-    const handleEmailChange = (value) => {
-        setEmail(value);
-
-        const detected = getSchoolRole(value);
-
-        if (detected && detected !== role) {
-            setRole(detected);
-        }
-
-        if (detected && physicalIdFile) {
-            if (physicalIdPreview) {
-                URL.revokeObjectURL(physicalIdPreview);
-            }
-
-            setPhysicalIdFile(null);
-            setPhysicalIdPreview("");
-
-            if (fileInputRef.current) {
-                fileInputRef.current.value = "";
-            }
-
-            if (cameraInputRef.current) {
-                cameraInputRef.current.value = "";
-            }
-        }
-    };
+    const idPlaceholder =
+        role === "Student"
+            ? "2024-00123"
+            : role === "Faculty"
+              ? "FAC-00123"
+              : "Enter your ID number";
 
     // =========================================================
-    // FORM VALIDATION
+    // FORM VALIDATION (shared by confirm prompt + submit)
     // =========================================================
-
-    const passwordRules = getPasswordRules(password, idNumber, email);
-    const isPasswordStrong = passwordRules.every((r) => r.ok);
-
-    const isFormValid =
-        idNumber.trim() &&
-        firstName.trim() &&
-        lastName.trim() &&
-        role &&
-        email.trim() &&
-        password.trim() &&
-        isPasswordStrong &&
-        // A PNM school email needs no ID upload.
-        (schoolRole ? true : physicalIdFile);
-
-    // =========================================================
-    // HANDLE PHYSICAL ID FILE
-    // =========================================================
-
-    const handlePhysicalIdChange = (file) => {
-        if (!file) return;
-
-        const allowedTypes = [
-            "image/jpeg",
-            "image/png",
-            "image/webp",
-        ];
-
-        if (!allowedTypes.includes(file.type)) {
-            toast.error(
-                "Please upload a JPG, PNG, or WEBP image."
-            );
-
-            return;
-        }
-
-        const maxSize = 5 * 1024 * 1024;
-
-        if (file.size > maxSize) {
-            toast.error(
-                "Physical ID image must be 5 MB or smaller."
-            );
-
-            return;
-        }
-
-        if (physicalIdPreview) {
-            URL.revokeObjectURL(physicalIdPreview);
-        }
-
-        setPhysicalIdFile(file);
-
-        const previewUrl =
-            URL.createObjectURL(file);
-
-        setPhysicalIdPreview(previewUrl);
-    };
-
-    // =========================================================
-    // REMOVE PHYSICAL ID
-    // =========================================================
-
-    const removePhysicalId = () => {
-        if (physicalIdPreview) {
-            URL.revokeObjectURL(
-                physicalIdPreview
-            );
-        }
-
-        setPhysicalIdFile(null);
-        setPhysicalIdPreview("");
-
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
-
-        if (cameraInputRef.current) {
-            cameraInputRef.current.value = "";
-        }
-    };
-
-    // =========================================================
-    // UPLOAD PHYSICAL ID
-    // =========================================================
-
-    const uploadPhysicalId = async () => {
-        if (!physicalIdFile) {
-            throw new Error(
-                "Please upload your physical ID."
-            );
-        }
-
-        const formData = new FormData();
-
-        formData.append(
-            "file",
-            physicalIdFile
-        );
-
-        const response = await fetch(
-            `${API_URL}/api/auth/upload-physical-id`,
-            {
-                method: "POST",
-                body: formData,
-            }
-        );
-
-        const data =
-            await response
-                .json()
-                .catch(() => ({}));
-
-        if (!response.ok) {
-            throw new Error(
-                data?.message ||
-                "Failed to upload physical ID."
-            );
-        }
-
-        return data.physicalIdDocument;
-    };
-
-    // =========================================================
-    // FORM VALIDATION
-    // =========================================================
-    // Shared by the confirmation prompt and the
-    // submit itself, so the prompt only ever
-    // opens on a form that can actually be sent.
 
     const validateForm = () => {
-        if (
-            !idNumber.trim() ||
-            !firstName.trim() ||
-            !lastName.trim() ||
-            !role ||
-            !email.trim() ||
-            !password.trim()
-        ) {
-            return "Please complete all required fields.";
+        if (!role) {
+            return "Please select whether you are a Student or Faculty.";
         }
 
-        const weakRule = passwordRules.find((r) => !r.ok);
-
-        if (weakRule) {
-            return `Password is not strong enough: ${weakRule.label.toLowerCase()}.`;
+        if (!idNumber.trim()) {
+            return `Please enter your ${idLabel}.`;
         }
 
-        // A school email belongs to one account type only.
-        if (schoolRole && role !== schoolRole) {
-            return `This email is a PNM ${schoolRole} email. Please select ${schoolRole} as your account type.`;
+        if (!email.trim()) {
+            return "Please enter your email address.";
         }
 
-        // A PNM school email needs no ID upload.
-        if (!schoolRole && !physicalIdFile) {
-            return "Please upload your physical ID.";
+        if (!isValidEmail(email)) {
+            return "Please enter a valid email address.";
         }
 
         return null;
     };
 
+    const isFormValid =
+        role &&
+        idNumber.trim() &&
+        email.trim() &&
+        isValidEmail(email) &&
+        !loading;
+
     // =========================================================
-    // REGISTER BUTTON
+    // REGISTER BUTTON (opens the review prompt)
     // =========================================================
-    // Does NOT submit yet. It validates, then asks
-    // the applicant to review the details they
-    // entered before anything is sent.
 
     const handleRegisterClick = () => {
         const formError = validateForm();
@@ -365,11 +96,6 @@ export default function Register() {
     // =========================================================
 
     const handleRegister = async () => {
-        // -----------------------------------------------------
-        // VALIDATION (the same checks the confirmation
-        // prompt already ran before it opened)
-        // -----------------------------------------------------
-
         const formError = validateForm();
 
         if (formError) {
@@ -380,164 +106,78 @@ export default function Register() {
         setLoading(true);
 
         try {
-            // =================================================
-            // UPLOAD PHYSICAL ID FIRST (personal emails only)
-            // A PNM school email already proves school
-            // membership, so there is nothing to upload.
-            // =================================================
+            const response = await fetch(
+                `${API_URL}/api/auth/register`,
+                {
+                    method: "POST",
 
-            let physicalIdDocument = null;
+                    headers: {
+                        "Content-Type":
+                            "application/json",
+                    },
 
-            if (!schoolRole) {
-                setUploadingPhoto(true);
+                    body: JSON.stringify({
+                        idNumber:
+                            idNumber.trim(),
 
-                physicalIdDocument =
-                    await uploadPhysicalId();
+                        role,
 
-                setUploadingPhoto(false);
-            }
-
-            // =================================================
-            // REGISTER ACCOUNT
-            // =================================================
-            //
-            // IMPORTANT:
-            // We no longer send "fullName".
-            //
-            // The backend receives:
-            // firstName
-            // middleName
-            // lastName
-            //
-            // The backend will compare the submitted name
-            // against the official School Record.
-            // =================================================
-
-            const response =
-                await fetch(
-                    `${API_URL}/api/auth/register`,
-                    {
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type":
-                                "application/json",
-                        },
-
-                        body: JSON.stringify({
-                            firstName:
-                                firstName.trim(),
-
-                            middleName:
-                                middleName.trim(),
-
-                            lastName:
-                                lastName.trim(),
-
-                            idNumber:
-                                idNumber.trim(),
-
-                            role,
-
-                            email:
-                                email.trim(),
-
-                            password,
-
-                            physicalIdDocument,
-                        }),
-                    }
-                );
+                        email:
+                            email.trim(),
+                    }),
+                }
+            );
 
             const data =
                 await response.text();
 
             // =================================================
-            // SUCCESS
+            // SUCCESS -> credentials are emailed, go to login
             // =================================================
 
             if (response.ok) {
                 toast.success(
-                    "OTP Sent!"
+                    "Registered! Check your email for your login credentials."
                 );
-
-                // -------------------------------------------------
-                // SAVE EMAIL FOR OTP PAGE
-                // -------------------------------------------------
-
-                localStorage.setItem(
-                    "otpEmail",
-                    email.trim()
-                );
-
-                // -------------------------------------------------
-                // OPTIONAL: SAVE ID NUMBER
-                // -------------------------------------------------
-                //
-                // This can be useful if the OTP page needs it.
-                // -------------------------------------------------
-
-                localStorage.setItem(
-                    "otpIdNumber",
-                    idNumber.trim()
-                );
-
-                // -------------------------------------------------
-                // GO TO OTP PAGE
-                // -------------------------------------------------
 
                 setTimeout(() => {
-                    navigate("/otp");
-                }, 1000);
+                    navigate("/");
+                }, 1200);
+
+                return;
             }
 
             // =================================================
             // ERROR
             // =================================================
 
-            else {
-                let errorMessage =
-                    "Registration failed.";
+            let errorMessage =
+                "Registration failed.";
 
-                try {
-                    const parsedData =
-                        JSON.parse(data);
+            try {
+                const parsedData =
+                    JSON.parse(data);
 
+                errorMessage =
+                    parsedData?.message ||
+                    parsedData?.title ||
+                    errorMessage;
+            } catch {
+                if (data) {
                     errorMessage =
-                        parsedData?.message ||
-                        parsedData?.title ||
-                        errorMessage;
-                } catch {
-                    if (data) {
-                        errorMessage =
-                            data;
-                    }
+                        data;
                 }
-
-                toast.error(
-                    errorMessage
-                );
             }
-        }
 
-        // =====================================================
-        // NETWORK / SERVER ERROR
-        // =====================================================
-
-        catch (error) {
-            setUploadingPhoto(false);
-
+            toast.error(
+                errorMessage
+            );
+        } catch (error) {
             toast.error(
                 error.message ||
                 "Registration failed."
             );
-        }
-
-        // =====================================================
-        // FINALLY
-        // =====================================================
-
-        finally {
+        } finally {
             setLoading(false);
         }
     };
@@ -550,11 +190,7 @@ export default function Register() {
         <>
             {loading && (
                 <LoadingModal
-                    message={
-                        uploadingPhoto
-                            ? "Uploading physical ID..."
-                            : "Sending OTP to your email..."
-                    }
+                    message="Submitting registration..."
                 />
             )}
 
@@ -672,58 +308,20 @@ export default function Register() {
                                 text-slate-400
                                 text-center
                                 mt-1
-                                mb-7
+                                mb-5
                             "
                         >
                             Register for your CDM OneServe account
                         </p>
 
-                        {/* =================================================
-                            ID NUMBER
-                        ================================================= */}
-
-                        <div className="mb-3.5">
-                            <label
-                                className="
-                                    block
-                                    text-xs
-                                    font-medium
-                                    text-slate-500
-                                    mb-1.5
-                                "
-                            >
-                                ID Number
-
-                                <span className="text-red-500 ml-1">
-                                    *
-                                </span>
-                            </label>
-
-                            <input
-                                type="text"
-                                placeholder="2024-00123"
-                                className="
-                                    w-full
-                                    px-4
-                                    py-3
-                                    rounded-xl
-                                    border
-                                    border-slate-200
-                                    bg-slate-50
-                                    text-sm
-                                    text-slate-700
-                                    outline-none
-                                    focus:border-[#106A2E]
-                                    focus:bg-white
-                                "
-                                value={idNumber}
-                                onChange={(e) =>
-                                    setIdNumber(
-                                        e.target.value
-                                    )
-                                }
-                            />
-                        </div>
+                        <p className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[11px] leading-5 text-emerald-800">
+                            After you register, your login credentials
+                            will be sent to your email. Use them to log
+                            in, then complete your profile.
+                            <br />
+                            Only official School Record ID numbers can
+                            register — IDs are verified against the database.
+                        </p>
 
                         {/* =================================================
                             ACCOUNT TYPE
@@ -740,6 +338,10 @@ export default function Register() {
                                 "
                             >
                                 I am a
+
+                                <span className="text-red-500 ml-1">
+                                    *
+                                </span>
                             </label>
 
                             <div className="grid grid-cols-2 gap-2">
@@ -790,7 +392,7 @@ export default function Register() {
                         </div>
 
                         {/* =================================================
-                            FIRST NAME
+                            ID NUMBER (dynamic label, from Registration)
                         ================================================= */}
 
                         <div className="mb-3.5">
@@ -803,7 +405,7 @@ export default function Register() {
                                     mb-1.5
                                 "
                             >
-                                First Name
+                                {idLabel}
 
                                 <span className="text-red-500 ml-1">
                                     *
@@ -812,7 +414,7 @@ export default function Register() {
 
                             <input
                                 type="text"
-                                placeholder="Juan"
+                                placeholder={idPlaceholder}
                                 className="
                                     w-full
                                     px-4
@@ -827,103 +429,9 @@ export default function Register() {
                                     focus:border-[#106A2E]
                                     focus:bg-white
                                 "
-                                value={firstName}
+                                value={idNumber}
                                 onChange={(e) =>
-                                    setFirstName(
-                                        e.target.value
-                                    )
-                                }
-                            />
-                        </div>
-
-                        {/* =================================================
-                            MIDDLE NAME
-                        ================================================= */}
-
-                        <div className="mb-3.5">
-                            <label
-                                className="
-                                    block
-                                    text-xs
-                                    font-medium
-                                    text-slate-500
-                                    mb-1.5
-                                "
-                            >
-                                Middle Name
-
-                                <span className="text-slate-400 ml-1">
-                                    (Optional)
-                                </span>
-                            </label>
-
-                            <input
-                                type="text"
-                                placeholder="Santos"
-                                className="
-                                    w-full
-                                    px-4
-                                    py-3
-                                    rounded-xl
-                                    border
-                                    border-slate-200
-                                    bg-slate-50
-                                    text-sm
-                                    text-slate-700
-                                    outline-none
-                                    focus:border-[#106A2E]
-                                    focus:bg-white
-                                "
-                                value={middleName}
-                                onChange={(e) =>
-                                    setMiddleName(
-                                        e.target.value
-                                    )
-                                }
-                            />
-                        </div>
-
-                        {/* =================================================
-                            LAST NAME
-                        ================================================= */}
-
-                        <div className="mb-3.5">
-                            <label
-                                className="
-                                    block
-                                    text-xs
-                                    font-medium
-                                    text-slate-500
-                                    mb-1.5
-                                "
-                            >
-                                Last Name
-
-                                <span className="text-red-500 ml-1">
-                                    *
-                                </span>
-                            </label>
-
-                            <input
-                                type="text"
-                                placeholder="Dela Cruz"
-                                className="
-                                    w-full
-                                    px-4
-                                    py-3
-                                    rounded-xl
-                                    border
-                                    border-slate-200
-                                    bg-slate-50
-                                    text-sm
-                                    text-slate-700
-                                    outline-none
-                                    focus:border-[#106A2E]
-                                    focus:bg-white
-                                "
-                                value={lastName}
-                                onChange={(e) =>
-                                    setLastName(
+                                    setIdNumber(
                                         e.target.value
                                     )
                                 }
@@ -934,7 +442,7 @@ export default function Register() {
                             EMAIL
                         ================================================= */}
 
-                        <div className="mb-3.5">
+                        <div className="mb-6">
                             <label
                                 className="
                                     block
@@ -953,7 +461,7 @@ export default function Register() {
 
                             <input
                                 type="email"
-                                placeholder="you@student.pnm.edu.ph"
+                                placeholder="you@example.com"
                                 className="
                                     w-full
                                     px-4
@@ -970,431 +478,12 @@ export default function Register() {
                                 "
                                 value={email}
                                 onChange={(e) =>
-                                    handleEmailChange(
+                                    setEmail(
                                         e.target.value
                                     )
                                 }
                             />
-
-                            {schoolRole && (
-                                <p className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[11px] leading-5 text-emerald-800">
-                                    PNM {schoolRole} email detected — no
-                                    ID upload needed. After the OTP,
-                                    your account is verified automatically.
-                                </p>
-                            )}
-
-                            {!schoolRole && email.includes("@") && (
-                                <p className="mt-2 text-[11px] text-slate-400">
-                                    Tip: use your PNM school email
-                                    (@student.pnm.edu.ph for students,
-                                    @pnm.edu.ph for faculty) to skip the
-                                    ID upload and get verified automatically.
-                                </p>
-                            )}
                         </div>
-
-                        {/* =================================================
-                            PASSWORD
-                        ================================================= */}
-
-                        <div className="mb-5">
-                            <label
-                                className="
-                                    block
-                                    text-xs
-                                    font-medium
-                                    text-slate-500
-                                    mb-1.5
-                                "
-                            >
-                                Password
-
-                                <span className="text-red-500 ml-1">
-                                    *
-                                </span>
-                            </label>
-
-                            <div className="relative">
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    autoComplete="new-password"
-                                    placeholder="Enter Password"
-                                    className="
-                                        w-full
-                                        pl-4
-                                        pr-11
-                                        py-3
-                                        rounded-xl
-                                        border
-                                        border-slate-200
-                                        bg-slate-50
-                                        text-sm
-                                        text-slate-700
-                                        outline-none
-                                        focus:border-[#106A2E]
-                                        focus:bg-white
-                                    "
-                                    value={password}
-                                    onChange={(e) =>
-                                        setPassword(
-                                            e.target.value
-                                        )
-                                    }
-                                />
-
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setShowPassword((v) => !v)
-                                    }
-                                    aria-label={
-                                        showPassword
-                                            ? "Hide password"
-                                            : "Show password"
-                                    }
-                                    className="
-                                        absolute
-                                        right-3
-                                        top-1/2
-                                        -translate-y-1/2
-                                        p-1
-                                        text-slate-400
-                                        hover:text-slate-600
-                                    "
-                                >
-                                    {showPassword ? (
-                                        <EyeOff size={18} />
-                                    ) : (
-                                        <Eye size={18} />
-                                    )}
-                                </button>
-                            </div>
-
-                            <PasswordStrength
-                                rules={passwordRules}
-                                password={password}
-                            />
-                        </div>
-
-                        {/* =================================================
-                            PHYSICAL ID (personal emails only)
-                            A PNM school email already proves school
-                            membership, so this whole section is
-                            hidden and nothing is uploaded.
-                        ================================================= */}
-
-                        {!schoolRole && (
-                        <div className="mb-6">
-                            <div
-                                className="
-                                    flex
-                                    items-center
-                                    justify-between
-                                    mb-1.5
-                                "
-                            >
-                                <label
-                                    className="
-                                        block
-                                        text-xs
-                                        font-medium
-                                        text-slate-500
-                                    "
-                                >
-                                    Physical ID
-
-                                    <span className="text-red-500 ml-1">
-                                        *
-                                    </span>
-                                </label>
-
-                                <span
-                                    className="
-                                        text-[10px]
-                                        text-slate-400
-                                    "
-                                >
-                                    Supporting Document
-                                </span>
-                            </div>
-
-                            <div
-                                className="
-                                    border
-                                    border-dashed
-                                    border-slate-300
-                                    rounded-2xl
-                                    bg-slate-50
-                                    p-4
-                                "
-                            >
-                                {!physicalIdPreview ? (
-                                    <div className="text-center">
-                                        <div
-                                            className="
-                                                w-12
-                                                h-12
-                                                rounded-xl
-                                                bg-emerald-50
-                                                flex
-                                                items-center
-                                                justify-center
-                                                mx-auto
-                                                mb-2
-                                            "
-                                        >
-                                            <svg
-                                                width="22"
-                                                height="22"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="#106A2E"
-                                                strokeWidth="2"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                            >
-                                                <rect
-                                                    x="3"
-                                                    y="4"
-                                                    width="18"
-                                                    height="16"
-                                                    rx="2"
-                                                />
-
-                                                <circle
-                                                    cx="9"
-                                                    cy="10"
-                                                    r="2"
-                                                />
-
-                                                <path d="M14 9h4M14 13h4M7 16h11" />
-                                            </svg>
-                                        </div>
-
-                                        <p
-                                            className="
-                                                text-xs
-                                                font-medium
-                                                text-slate-700
-                                            "
-                                        >
-                                            Upload your physical school ID
-                                        </p>
-
-                                        <p
-                                            className="
-                                                text-[10px]
-                                                text-slate-400
-                                                mt-1
-                                                mb-3
-                                            "
-                                        >
-                                            JPG, PNG, or WEBP • Max 5 MB
-                                        </p>
-
-                                        <div
-                                            className="
-                                                flex
-                                                items-center
-                                                justify-center
-                                                gap-2
-                                            "
-                                        >
-                                            {/* UPLOAD */}
-
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    fileInputRef.current?.click()
-                                                }
-                                                className="
-                                                    px-3
-                                                    py-2
-                                                    rounded-lg
-                                                    bg-white
-                                                    border
-                                                    border-slate-200
-                                                    text-xs
-                                                    font-medium
-                                                    text-slate-700
-                                                    hover:border-[#106A2E]
-                                                    hover:text-[#106A2E]
-                                                    transition
-                                                "
-                                            >
-                                                Upload Photo
-                                            </button>
-
-                                            {/* CAMERA */}
-
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    cameraInputRef.current?.click()
-                                                }
-                                                className="
-                                                    px-3
-                                                    py-2
-                                                    rounded-lg
-                                                    bg-gradient-to-br
-                                                    from-[#106A2E]
-                                                    to-[#0E3B22]
-                                                    text-white
-                                                    text-xs
-                                                    font-medium
-                                                    hover:opacity-90
-                                                    transition
-                                                "
-                                            >
-                                                Take Photo
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div>
-                                        <div
-                                            className="
-                                                relative
-                                                overflow-hidden
-                                                rounded-xl
-                                                bg-slate-100
-                                            "
-                                        >
-                                            <img
-                                                src={
-                                                    physicalIdPreview
-                                                }
-                                                alt="Physical ID preview"
-                                                className="
-                                                    w-full
-                                                    h-40
-                                                    object-cover
-                                                "
-                                            />
-
-                                            <button
-                                                type="button"
-                                                onClick={
-                                                    removePhysicalId
-                                                }
-                                                className="
-                                                    absolute
-                                                    top-2
-                                                    right-2
-                                                    w-8
-                                                    h-8
-                                                    rounded-full
-                                                    bg-black/60
-                                                    text-white
-                                                    flex
-                                                    items-center
-                                                    justify-center
-                                                    hover:bg-black/75
-                                                "
-                                                title="Remove photo"
-                                            >
-                                                ×
-                                            </button>
-                                        </div>
-
-                                        <div
-                                            className="
-                                                flex
-                                                items-center
-                                                justify-between
-                                                mt-3
-                                            "
-                                        >
-                                            <div className="min-w-0">
-                                                <p
-                                                    className="
-                                                        text-xs
-                                                        font-medium
-                                                        text-slate-700
-                                                        truncate
-                                                    "
-                                                >
-                                                    {
-                                                        physicalIdFile.name
-                                                    }
-                                                </p>
-
-                                                <p
-                                                    className="
-                                                        text-[10px]
-                                                        text-slate-400
-                                                    "
-                                                >
-                                                    {(
-                                                        physicalIdFile.size /
-                                                        (1024 * 1024)
-                                                    ).toFixed(2)}{" "}
-                                                    MB
-                                                </p>
-                                            </div>
-
-                                            <button
-                                                type="button"
-                                                onClick={() =>
-                                                    fileInputRef.current?.click()
-                                                }
-                                                className="
-                                                    text-xs
-                                                    font-medium
-                                                    text-[#106A2E]
-                                                    hover:underline
-                                                    ml-3
-                                                "
-                                            >
-                                                Change
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* NORMAL FILE INPUT */}
-
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept="image/jpeg,image/png,image/webp"
-                                    className="hidden"
-                                    onChange={(e) =>
-                                        handlePhysicalIdChange(
-                                            e.target.files?.[0]
-                                        )
-                                    }
-                                />
-
-                                {/* CAMERA INPUT */}
-
-                                <input
-                                    ref={cameraInputRef}
-                                    type="file"
-                                    accept="image/*"
-                                    capture="environment"
-                                    className="hidden"
-                                    onChange={(e) =>
-                                        handlePhysicalIdChange(
-                                            e.target.files?.[0]
-                                        )
-                                    }
-                                />
-                            </div>
-
-                            <p
-                                className="
-                                    text-[10px]
-                                    text-slate-400
-                                    mt-2
-                                "
-                            >
-                                Please upload a clear photo of your physical
-                                school ID. Make sure the information is readable.
-                            </p>
-                        </div>
-                        )}
 
                         {/* =================================================
                             REGISTER BUTTON
@@ -1427,11 +516,7 @@ export default function Register() {
                             "
                         >
                             {loading
-                                ? (
-                                    uploadingPhoto
-                                        ? "Uploading ID..."
-                                        : "Sending OTP..."
-                                )
+                                ? "Submitting..."
                                 : "Register"
                             }
                         </button>
@@ -1505,93 +590,7 @@ export default function Register() {
             </BackgroundLayout>
 
             {/* =================================================
-                PNM ACCOUNT PROMPT
-                Opens first when the page loads: applicants with
-                a school email skip the ID upload and are
-                verified automatically after OTP.
-            ================================================= */}
-
-            {askingPnm && (
-                <div
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Do you have a PNM account"
-                >
-                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
-
-                    <div className="relative w-full max-w-sm rounded-[24px] border border-slate-200 bg-white p-6 shadow-2xl shadow-black/10">
-                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] shadow-lg shadow-emerald-900/20">
-                            <svg
-                                width="26"
-                                height="26"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="white"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            >
-                                <rect
-                                    x="2"
-                                    y="4"
-                                    width="20"
-                                    height="16"
-                                    rx="2"
-                                />
-
-                                <path d="m22 7-10 6L2 7" />
-                            </svg>
-                        </div>
-
-                        <h2 className="text-center text-lg font-semibold text-slate-800">
-                            Do you have a PNM account?
-                        </h2>
-
-                        <p className="mt-1 text-center text-sm leading-6 text-slate-500">
-                            With your school email, there is{" "}
-                            <span className="font-semibold text-[#106A2E]">
-                                no ID upload
-                            </span>{" "}
-                            and your account is{" "}
-                            <span className="font-semibold text-[#106A2E]">
-                                verified automatically
-                            </span>{" "}
-                            after the OTP.
-                        </p>
-
-                        <div className="mt-2 rounded-xl bg-slate-50 px-3 py-2.5 text-center text-[11px] leading-5 text-slate-500">
-                            Students: @student.pnm.edu.ph
-                            <br />
-                            Faculty: @pnm.edu.ph
-                        </div>
-
-                        <div className="mt-5 grid grid-cols-2 gap-2">
-                            <button
-                                type="button"
-                                onClick={() => setAskingPnm(false)}
-                                className="rounded-xl border border-slate-200 bg-slate-50 py-3 text-sm font-semibold text-slate-600 transition hover:bg-white"
-                            >
-                                No, continue
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setAskingPnm(false)}
-                                className="rounded-xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition hover:opacity-90 active:scale-[0.98]"
-                            >
-                                Yes, I have one
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* =================================================
                 CONFIRMATION PROMPT
-                Opens after the Register button is pressed:
-                the applicant reviews every detail they typed
-                and confirms it before the OTP is sent.
             ================================================= */}
 
             {confirming && (
@@ -1617,13 +616,6 @@ export default function Register() {
 
                         <dl className="mt-4 space-y-2.5 text-sm">
                             <div className="flex items-start justify-between gap-4">
-                                <dt className="text-slate-400">ID Number</dt>
-                                <dd className="text-right font-semibold text-slate-800">
-                                    {idNumber}
-                                </dd>
-                            </div>
-
-                            <div className="flex items-start justify-between gap-4">
                                 <dt className="text-slate-400">I am a</dt>
                                 <dd className="text-right font-semibold text-slate-800">
                                     {role}
@@ -1631,46 +623,23 @@ export default function Register() {
                             </div>
 
                             <div className="flex items-start justify-between gap-4">
-                                <dt className="text-slate-400">Name</dt>
+                                <dt className="text-slate-400">{idLabel}</dt>
                                 <dd className="text-right font-semibold text-slate-800">
-                                    {[firstName, middleName, lastName]
-                                        .filter(Boolean)
-                                        .join(" ")}
+                                    {idNumber}
                                 </dd>
                             </div>
 
                             <div className="flex items-start justify-between gap-4">
                                 <dt className="text-slate-400">Email</dt>
-                                <dd className="text-right font-semibold text-slate-800">
+                                <dd className="text-right font-semibold text-slate-800 break-all">
                                     {email}
                                 </dd>
                             </div>
 
-                            <div className="flex items-start justify-between gap-4">
-                                <dt className="text-slate-400">Password</dt>
-                                <dd className="text-right font-semibold text-slate-800">
-                                    ••••••••
-                                </dd>
-                            </div>
-
-                            <div className="flex items-start justify-between gap-4">
-                                <dt className="text-slate-400">Physical ID</dt>
-                                <dd
-                                    className="max-w-[60%] truncate text-right font-semibold text-slate-800"
-                                    title={schoolRole ? "Not needed - PNM email" : physicalIdFile?.name}
-                                >
-                                    {schoolRole
-                                        ? "Not needed - PNM email ✓"
-                                        : physicalIdFile?.name}
-                                </dd>
-                            </div>
-
-                            {schoolRole && (
-                                <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-800">
-                                    Your PNM email verifies you automatically
-                                    after the OTP - no admin review needed.
-                                </p>
-                            )}
+                            <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-800">
+                                Your login credentials will be sent to
+                                this email after you continue.
+                            </p>
                         </dl>
 
                         <div className="mt-6 grid grid-cols-2 gap-2">
