@@ -124,7 +124,7 @@ export default function BottomNavigation() {
             key: "clinic",
             label: "Clinic",
             icon: faStethoscope,
-            url: "https://clinic.cdmoneserve.vercel.app",
+            path: "/clinic",
         },
 
         {

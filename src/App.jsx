@@ -57,6 +57,19 @@ import ServiceHeads from "./pages/Admin/ServiceHeads";
 import AdminProfile from "./pages/Admin/AdminProfile";
 import Announcements from "./pages/Admin/Announcements";
 
+
+// ==========================================
+// CLINIC PAGES
+// ==========================================
+
+import Clinic from "./pages/Clinic/Clinic";
+import MedicalRecords from "./pages/Clinic/MedicalRecords";
+import MedicalRecordDetails from "./pages/Clinic/MedicalRecordDetails";
+import VitalSigns from "./pages/Clinic/VitalSigns";
+import VitalSignDetails from "./pages/Clinic/VitalSignDetails";
+import DentalRecords from "./pages/Clinic/DentalRecords";
+import Referrals from "./pages/Clinic/Referrals";
+
 // ==========================================
 // LIBRARY ADMINISTRATION MODULE (Head / Staff)
 // ==========================================
@@ -189,6 +202,22 @@ function App() {
                     <Route path="/library/reserve" element={<ReserveBook />} />
                     <Route path="/library/loans" element={<BorrowHistory />} />
                     <Route path="/library/access-pass" element={<AccessPass />} />
+
+
+                    {/* Clinic Monitoring System */}
+                    <Route path="/clinic" element={<Clinic />} />
+                    <Route path="/clinic/medical-records" element={<MedicalRecords />} />
+                    <Route
+                        path="/clinic/medical-records/:medicalRecordId"
+                        element={<MedicalRecordDetails />}
+                    />
+                    <Route path="/clinic/vital-signs" element={<VitalSigns />} />
+                    <Route
+                        path="/clinic/vital-signs/:vitalSignLogId"
+                        element={<VitalSignDetails />}
+                    />
+                    <Route path="/clinic/dental-records" element={<DentalRecords />} />
+                    <Route path="/clinic/referrals" element={<Referrals />} />
 
 
                     {/* CampusMarket (buyer side) - Student / Faculty */}

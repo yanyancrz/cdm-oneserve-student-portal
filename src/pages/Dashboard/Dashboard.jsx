@@ -181,7 +181,7 @@ export default function Dashboard() {
             key: "clinic",
             title: "Clinic",
             subtitle: "Health services",
-            url: "https://clinic.cdmoneserve.vercel.app",
+            route: "/clinic",
             accent: "#E4574C",
             glow: "rgba(228,87,76,.14)",
             icon: (
@@ -195,7 +195,7 @@ export default function Dashboard() {
                     strokeLinecap="round"
                     strokeLinejoin="round"
                 >
-                    <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
                 </svg>
             )
         },

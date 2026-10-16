@@ -12,7 +12,8 @@ export default function StudentLayout() {
         location.pathname.startsWith("/library") ||
         location.pathname.startsWith("/guidance") ||
         location.pathname.startsWith("/marketplace") ||
-        location.pathname.startsWith("/lost-found");
+        location.pathname.startsWith("/lost-found") ||
+        location.pathname.startsWith("/clinic");
 
     return (
         <BackgroundLayout>
