@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
     ChevronDown,
+    CreditCard,
+    IdCard,
     PackageSearch,
     Search,
     ShoppingBag,
@@ -13,6 +15,7 @@ import {
 import toast from "react-hot-toast";
 
 import { buyerApi } from "../services/marketApi";
+import { MARKET_HOME_ROUTE } from "../session";
 import { CATEGORIES, isLowStock, subCategoriesFor } from "../config/marketVocabulary";
 import { countItems, useMarketCart } from "./marketCartCount";
 import { formatPeso, initials } from "../utils/format";
@@ -223,6 +226,14 @@ export default function MarketShopPage() {
         <div className="space-y-4">
             <WelcomeCard />
 
+            {/* Campus services.
+                These live here rather than in the bottom bar on purpose: the bar
+                already overflows into a "More" sheet past four tabs, and pushing
+                Shop or Cart behind that sheet to make room would cost more than
+                it gains. A strip on the page the buyer lands on is both visible
+                and free. */}
+            <CampusServicesStrip />
+
             {/* Search */}
             <div className="relative">
                 <Search
@@ -432,6 +443,65 @@ function WelcomeCard() {
                 )}
             </div>
         </section>
+    );
+}
+
+/**
+ * Campus services: the canteen pre-order entry, the campus card and the ID
+ * claim.
+ *
+ * A strip rather than three more bottom tabs, so the existing navigation shape
+ * is untouched (see the note at the call site). Both cards read localStorage
+ * directly rather than fetching: they are navigation, not data, and the two
+ * screens they open load their own real data. The card shows a placeholder
+ * balance until opened rather than a number that could be stale or wrong.
+ */
+function CampusServicesStrip() {
+    const navigate = useNavigate();
+
+    return (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <ServiceTile
+                icon={<UtensilsCrossed size={18} />}
+                title="Canteen Pre-Order"
+                hint="Book a pickup slot and skip the queue."
+                onClick={() => navigate(`${MARKET_HOME_ROUTE}/canteen`)}
+            />
+
+            <ServiceTile
+                icon={<CreditCard size={18} />}
+                title="Campus Card"
+                hint="Check your balance and every movement."
+                onClick={() => navigate(`${MARKET_HOME_ROUTE}/card`)}
+            />
+
+            <ServiceTile
+                icon={<IdCard size={18} />}
+                title="My ID"
+                hint="Claim a replacement campus ID."
+                onClick={() => navigate(`${MARKET_HOME_ROUTE}/id-claim`)}
+            />
+        </div>
+    );
+}
+
+/** One entry point in the campus services strip. */
+function ServiceTile({ icon, title, hint, onClick }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="group flex items-start gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#106A2E]/30 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#106A2E]/30"
+        >
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#106A2E]/8 text-[#106A2E] transition group-hover:bg-[#106A2E] group-hover:text-white">
+                {icon}
+            </span>
+
+            <span className="min-w-0">
+                <span className="block text-xs font-semibold text-slate-800">{title}</span>
+                <span className="mt-0.5 block text-[10px] leading-4 text-slate-400">{hint}</span>
+            </span>
+        </button>
     );
 }
 

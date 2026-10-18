@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
 import { MessageCircle, Send } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -102,7 +103,15 @@ export default function MarketChatPage() {
             <MarketNotice tone="info" icon={<MessageCircle size={14} />}>
                 Questions about an order, a uniform size or campus delivery? Message
                 Marketplace Staff here. One thread per account, so your history stays
-                together.
+                together. For something the stall cannot settle &mdash; a refund
+                dispute, a damaged item, feedback &mdash;{" "}
+                <Link
+                    to="/marketplace/support"
+                    className="font-semibold text-[#106A2E] underline"
+                >
+                    send a support request
+                </Link>{" "}
+                to the administrators instead.
             </MarketNotice>
 
             <MarketPanel className="flex flex-1 flex-col">

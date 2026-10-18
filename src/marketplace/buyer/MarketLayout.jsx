@@ -4,8 +4,10 @@ import {
     ClipboardList,
     HelpCircle,
     Home,
+    LifeBuoy,
     ShoppingBag,
     ShoppingCart,
+    Store,
 } from "lucide-react";
 
 import { MARKET_HOME_ROUTE, isBuyerRole } from "../session";
@@ -63,6 +65,11 @@ function MarketShell() {
 
     const items = [
         { label: "Shop", path: MARKET_HOME_ROUTE, icon: Home, end: true },
+        // Storefronts. Placed before Cart because it is now a primary way in:
+        // ModuleBottomNav keeps the first four as pill tabs and pushes the rest
+        // behind "More", so Shop / Cart / Orders / Stores stay visible and Help
+        // moves into the sheet.
+        { label: "Stores", path: `${MARKET_HOME_ROUTE}/stores`, icon: Store },
         {
             label: "Cart",
             path: `${MARKET_HOME_ROUTE}/cart`,
@@ -71,6 +78,7 @@ function MarketShell() {
         },
         { label: "Orders", path: `${MARKET_HOME_ROUTE}/orders`, icon: ClipboardList },
         { label: "Help", path: `${MARKET_HOME_ROUTE}/chat`, icon: HelpCircle },
+        { label: "Support", path: `${MARKET_HOME_ROUTE}/support`, icon: LifeBuoy },
     ];
 
     return (

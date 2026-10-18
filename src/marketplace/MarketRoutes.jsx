@@ -12,10 +12,22 @@ import MarketCartPage from "./buyer/MarketCartPage";
 import MarketCheckoutPage from "./buyer/MarketCheckoutPage";
 import MarketOrdersPage from "./buyer/MarketOrdersPage";
 import MarketChatPage from "./buyer/MarketChatPage";
+import MarketSupportPage from "./buyer/MarketSupportPage";
+import MarketCanteenPage from "./buyer/MarketCanteenPage";
+import MarketCardPage from "./buyer/MarketCardPage";
+import MarketStoresPage from "./buyer/MarketStoresPage";
+import MarketStorePage from "./buyer/MarketStorePage";
+import MarketStoreTeamPage from "./buyer/MarketStoreTeamPage";
+import MarketStoreInsightsPage from "./buyer/MarketStoreInsightsPage";
+import MarketApplyToSellPage from "./buyer/MarketApplyToSellPage";
+import MarketIdClaimsPage from "./buyer/MarketIdClaimsPage";
 import MarketStaffLayout from "./staff/MarketStaffLayout";
 import MarketStaffGate from "./staff/MarketStaffGate";
 import MarketStaffDashboard from "./staff/MarketStaffDashboard";
 import MarketStaffOrdersPage from "./staff/MarketStaffOrdersPage";
+import MarketStaffClaimsPage from "./staff/MarketStaffClaimsPage";
+import MarketStaffCardsPage from "./staff/MarketStaffCardsPage";
+import MarketStaffIdClaimsPage from "./staff/MarketStaffIdClaimsPage";
 import MarketStaffDeliveriesPage from "./staff/MarketStaffDeliveriesPage";
 import MarketStaffProductsPage from "./staff/MarketStaffProductsPage";
 import MarketStaffInventoryPage from "./staff/MarketStaffInventoryPage";
@@ -25,6 +37,10 @@ import MarketStaffTransactionsPage from "./staff/MarketStaffTransactionsPage";
 import MarketStaffSettingsPage from "./staff/MarketStaffSettingsPage";
 import MarketStaffAccountsPage from "./staff/MarketStaffAccountsPage";
 import MarketStaffWorkspacesPage from "./staff/MarketStaffWorkspacesPage";
+import MarketStaffStoresPage from "./staff/MarketStaffStoresPage";
+import MarketStaffSellerApplicationsPage from "./staff/MarketStaffSellerApplicationsPage";
+import MarketStaffRefundsPage from "./staff/MarketStaffRefundsPage";
+import MarketStaffModerationPage from "./staff/MarketStaffModerationPage";
 import MarketStaffAuditPage from "./staff/MarketStaffAuditPage";
 import { useIsMarketHead } from "./staff/MarketStaffGate";
 import MarketAdminGate from "./admin/MarketAdminGate";
@@ -71,6 +87,24 @@ export const marketBuyerRoutes = (
         <Route path="orders" element={<MarketOrdersPage />} />
         <Route path="orders/:orderId" element={<MarketOrdersPage />} />
         <Route path="chat" element={<MarketChatPage />} />
+        {/* Support tickets go to the administrators, unlike the store chat. */}
+        <Route path="support" element={<MarketSupportPage />} />
+        {/* Campus services: the canteen pre-order, the campus card and the
+            Student/Faculty ID claim. */}
+        <Route path="canteen" element={<MarketCanteenPage />} />
+        <Route path="card" element={<MarketCardPage />} />
+        <Route path="id-claim" element={<MarketIdClaimsPage />} />
+        {/* Storefronts. The team screen is store-OWNER only, but it lives on the
+            buyer side because a store owner is a Student or Faculty account in
+            this model - not a marketplace staff login. The server refuses a
+            non-owner with a 403 either way. */}
+        <Route path="stores" element={<MarketStoresPage />} />
+        <Route path="stores/:storeId" element={<MarketStorePage />} />
+        <Route path="stores/:storeId/team" element={<MarketStoreTeamPage />} />
+        {/* Sales & forecast. Owner or a member with the "analytics" permission. */}
+        <Route path="stores/:storeId/insights" element={<MarketStoreInsightsPage />} />
+        {/* Seller onboarding. Any buyer may apply; the Head reviews. */}
+        <Route path="sell" element={<MarketApplyToSellPage />} />
     </Route>
 );
 
@@ -100,6 +134,12 @@ export const marketStaffRoutes = (
         <Route element={<RequireOperator />}>
             <Route path="/marketplace/staff/orders" element={<MarketStaffOrdersPage />} />
             <Route path="/marketplace/staff/orders/:orderId" element={<MarketStaffOrdersPage />} />
+            {/* Claim verification, campus card top-ups and the ID claim queue -
+                the counter screens. Operator-only, like the rest of the counter. */}
+            <Route path="/marketplace/staff/claims" element={<MarketStaffClaimsPage />} />
+            <Route path="/marketplace/staff/cards" element={<MarketStaffCardsPage />} />
+            <Route path="/marketplace/staff/id-claims" element={<MarketStaffIdClaimsPage />} />
+            <Route path="/marketplace/staff/refunds" element={<MarketStaffRefundsPage />} />
             <Route path="/marketplace/staff/deliveries" element={<MarketStaffDeliveriesPage />} />
             <Route path="/marketplace/staff/products" element={<MarketStaffProductsPage />} />
             <Route path="/marketplace/staff/inventory" element={<MarketStaffInventoryPage />} />
@@ -122,6 +162,18 @@ export const marketStaffRoutes = (
                 <Route
                     path="/marketplace/staff/workspaces"
                     element={<MarketStaffWorkspacesPage />}
+                />
+                <Route
+                    path="/marketplace/staff/stores"
+                    element={<MarketStaffStoresPage />}
+                />
+                <Route
+                    path="/marketplace/staff/seller-applications"
+                    element={<MarketStaffSellerApplicationsPage />}
+                />
+                <Route
+                    path="/marketplace/staff/moderation"
+                    element={<MarketStaffModerationPage />}
                 />
                 <Route
                     path="/marketplace/staff/audit"

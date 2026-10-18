@@ -3,6 +3,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
     ChevronRight,
     ClipboardList,
+    CreditCard,
     MapPin,
     PackageCheck,
     Search,
@@ -329,6 +330,7 @@ function StaffOrderDetail({ orderId, onBack }) {
     const [order, setOrder] = useState(null);
     const [loading, setLoading] = useState(true);
     const [advancing, setAdvancing] = useState(false);
+    const [confirmingCash, setConfirmingCash] = useState(false);
 
     useEffect(() => {
         let cancelled = false;
@@ -365,6 +367,22 @@ function StaffOrderDetail({ orderId, onBack }) {
             toast.error(err.message);
         } finally {
             setAdvancing(false);
+        }
+    };
+
+    const confirmCash = async () => {
+        setConfirmingCash(true);
+
+        try {
+            const response = await staffApi.confirmCash(orderId);
+            toast.success(response.message || "Cash confirmed.");
+
+            const refreshed = await staffApi.order(orderId);
+            setOrder(refreshed.data);
+        } catch (err) {
+            toast.error(err.message);
+        } finally {
+            setConfirmingCash(false);
         }
     };
 
@@ -475,6 +493,45 @@ function StaffOrderDetail({ orderId, onBack }) {
                             consumed.
                         </p>
                     )}
+
+                    {/* Cash confirmation is a separate step from releasing or
+                        completing: it stamps PaidAt at the moment the money changes
+                        hands, so a cash order can be paid before it is collected,
+                        and the audit can say when the cash was received. */}
+                    {order.paymentMethod === "cash" && order.paymentStatus === "unpaid" ? (
+                        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                            <p className="text-[10px] font-semibold uppercase tracking-[.14em] text-amber-700">
+                                Cash still pending
+                            </p>
+                            <p className="mt-1 text-[11px] leading-5 text-amber-800">
+                                The buyer has not paid yet. Confirm when the cash
+                                changes hands at the counter - this stamps the
+                                payment time without touching the order's progress.
+                            </p>
+                            <MarketButton
+                                size="sm"
+                                className="mt-2"
+                                onClick={confirmCash}
+                                disabled={confirmingCash}
+                            >
+                                {confirmingCash ? "Confirming..." : "Confirm cash received"}
+                            </MarketButton>
+                        </div>
+                    ) : null}
+
+                    {order.paymentMethod === "cash" && order.paymentStatus === "paid" ? (
+                        <div className="mt-4 flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2">
+                            <CreditCard size={13} className="shrink-0 text-emerald-500" />
+                            <span className="text-[10px] font-semibold uppercase tracking-[.14em] text-emerald-700">
+                                Cash confirmed
+                            </span>
+                            {order.paidAt ? (
+                                <span className="ml-auto text-[10px] text-emerald-700">
+                                    {formatDateTime(order.paidAt)}
+                                </span>
+                            ) : null}
+                        </div>
+                    ) : null}
                 </div>
             </MarketPanel>
 

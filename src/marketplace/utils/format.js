@@ -25,6 +25,23 @@ export function formatPesoShort(centavos) {
     return `PHP ${amount.toLocaleString("en-PH", { maximumFractionDigits: 0 })}`;
 }
 
+/**
+ * A signed amount, for the campus card ledger: -45000 -> "-PHP 450.00".
+ *
+ * The sign belongs to the value, not to the string, so the caller passes the
+ * signed centavos the API already sends and never re-derives the direction.
+ */
+export function formatPesoSigned(centavos, { withSymbol = true } = {}) {
+    const value = Number(centavos) || 0;
+    const amount = (Math.abs(value) / 100).toLocaleString("en-PH", {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+
+    if (value < 0) return `-${withSymbol ? "PHP " : ""}${amount}`;
+    return `${withSymbol ? "PHP " : ""}${amount}`;
+}
+
 /** Centavos -> a number the <input type="number"> inputs can edit. */
 export function centavosToPesos(centavos) {
     return ((Number(centavos) || 0) / 100).toFixed(2);

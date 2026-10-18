@@ -96,21 +96,13 @@ export function getAccountType() {
 }
 
 /**
- * Is this the Marketplace Head?
+ * The role the shared OneServe login stored, normalised for comparison.
  *
- * The Head is a module owner created in Admin > Users, the same way the Library
- * Head and Guidance Head are. They operate the marketplace AND manage its staff
- * accounts, so they land in the same staff portal - the Staff Accounts screen is
- * simply only rendered for them.
- *
- * Decided from the stored role, which the shared login already saved. The server
- * re-checks the same thing on every call, so tampering with localStorage gets a
- * 403 and nothing else.
+ * There is deliberately no `isHeadRole()` here any more. It read the role out of
+ * localStorage, which the Marketplace Head guards must never trust: the live
+ * check is the server-verified `useIsMarketHead()` from MarketStaffGate, which
+ * asks /api/marketplace/staff/me and /head/me who the caller actually is.
  */
-export function isHeadRole() {
-    return getStoredRole() === "marketplaceadmin";
-}
-
 function getStoredRole() {
     return (
         localStorage.getItem("role") || localStorage.getItem("userRole") || ""
