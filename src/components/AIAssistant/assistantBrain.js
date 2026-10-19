@@ -292,6 +292,33 @@ export function answerAssistant(rawText) {
         };
     }
 
+    // ---- campus service offices: locations ----
+    // (must come before the generic "places" block below, because
+    //  "places" also matches "where"/"location"/"office" queries)
+    if (
+        has(
+            text,
+            "location",
+            "saan",
+            "where",
+            "office",
+            "opisina",
+            "room",
+            "building",
+            "campus service",
+            "clinic",
+            "library",
+            "lost and found",
+            "guidance",
+            "counseling"
+        )
+    ) {
+        return {
+            text: "Here are the locations of the campus service offices:\n\n1. Clinic\nThe CDM Clinic is located on the first floor of the Admin Building, near the Student Center Office and beside the Registrar's Office.\n\n2. Library\nThe CDM Library is located on the second floor of the Admin Building, beside CDM's Guidance and Counseling Office.\n\n3. Lost and Found\nThe CDM Lost and Found Office is located along the side of the Old Building, beside the Student Center Office and the ROTC Office.\n\n4. Guidance and Counseling Office\nThe CDM Guidance and Counseling Office is located on the 2nd floor of Admin Building, beside CDM Library.",
+            links: [],
+        };
+    }
+
     // ---- places ----
     if (
         has(
@@ -345,4 +372,5 @@ export const ASSISTANT_SUGGESTIONS = [
     { label: "Borrow a book", ask: "How do I borrow a book?" },
     { label: "Book counseling", ask: "I want to talk to a counselor" },
     { label: "Report lost item", ask: "I lost my wallet" },
+    { label: "Campus offices", ask: "Where are the campus service offices?" },
 ];
