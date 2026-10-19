@@ -1336,10 +1336,6 @@ export default function Users() {
                             <DetailRow label="Institute">{activeUser.institute || "—"}</DetailRow>
                         )}
 
-                        <DetailRow label="Verified via">
-                            <VerificationPill method={getVerificationMethod(activeUser)} />
-                        </DetailRow>
-
                         <DetailRow label="Status">
                             <StatusPill status={activeUser.status} />
                         </DetailRow>
