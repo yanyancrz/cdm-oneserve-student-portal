@@ -2,6 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from "../../config/api";
 
+const Bone = ({ className = "" }) => (
+    <div className={`animate-pulse rounded-xl bg-slate-200/70 ${className}`} />
+);
+
+const BoneOnDark = ({ className = "" }) => (
+    <div
+        className={`animate-pulse rounded-lg bg-white/15 ${className}`}
+    />
+);
+
 export default function AdminDashboard() {
     const navigate = useNavigate();
 
