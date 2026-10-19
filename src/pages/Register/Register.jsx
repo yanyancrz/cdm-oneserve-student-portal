@@ -8,7 +8,7 @@ import BackgroundLayout from "../../layouts/BackgroundLayout";
 // =========================================================
 // REGISTER (new flow)
 // Fields: Student/Faculty ID Number + Email + Role only.
-// No physical ID, no names, no password here.
+// No names, no password here.
 // After submit, the backend emails the user their login
 // credentials. Names + role confirmation move to Setup Profile.
 // =========================================================

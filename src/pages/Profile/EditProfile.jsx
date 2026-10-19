@@ -102,9 +102,7 @@ export default function EditProfile() {
     // the school record was checked against, so they
     // must never drift afterwards.
     const isVerified =
-        student?.accountStatus === "Approved" ||
-        student?.physicalIdVerificationStatus ===
-            "Verified";
+        student?.accountStatus === "Approved";
 
 
     // ==========================================

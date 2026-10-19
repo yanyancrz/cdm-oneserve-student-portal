@@ -7,9 +7,6 @@ export default function AdminDashboard() {
 
     const [dashboard, setDashboard] = useState({
         totalUsers: 0,
-        pendingPhysicalId: 0,
-        verifiedPhysicalId: 0,
-        rejectedPhysicalId: 0,
         recentActivity: [],
         modules: [],
     });
@@ -91,9 +88,6 @@ export default function AdminDashboard() {
 
                 setDashboard({
                     totalUsers: data.totalUsers ?? 0,
-                    pendingPhysicalId: data.pendingPhysicalId ?? 0,
-                    verifiedPhysicalId: data.verifiedPhysicalId ?? 0,
-                    rejectedPhysicalId: data.rejectedPhysicalId ?? 0,
                     recentActivity: data.recentActivity ?? [],
                     modules:
                         data.modules?.length > 0
@@ -113,9 +107,6 @@ export default function AdminDashboard() {
                 // endpoint is not ready yet.
                 setDashboard({
                     totalUsers: 0,
-                    pendingPhysicalId: 0,
-                    verifiedPhysicalId: 0,
-                    rejectedPhysicalId: 0,
                     recentActivity: [],
                     modules: defaultModules,
                 });
@@ -151,30 +142,6 @@ export default function AdminDashboard() {
             icon: "users",
             bg: "#ECE9E2",
             color: "#1F1F1F",
-        },
-        {
-            label: "Pending Physical ID",
-            value: dashboard.pendingPhysicalId,
-            description: "Needs verification",
-            icon: "clock",
-            bg: "#FCEFCB",
-            color: "#A16207",
-        },
-        {
-            label: "Verified Physical ID",
-            value: dashboard.verifiedPhysicalId,
-            description: "Successfully verified",
-            icon: "check",
-            bg: "#E1F0E4",
-            color: "#106A2E",
-        },
-        {
-            label: "Rejected ID",
-            value: dashboard.rejectedPhysicalId,
-            description: "Verification rejected",
-            icon: "x",
-            bg: "#F6E3E1",
-            color: "#9F3434",
         },
     ];
 
@@ -293,7 +260,7 @@ export default function AdminDashboard() {
 
                     {/* STATS */}
                     <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-5 mb-8">
-                        {[1, 2, 3, 4].map((item) => (
+                        {[1].map((item) => (
                             <div
                                 key={item}
                                 className="bg-white rounded-2xl p-5 border border-[#1F1F1F]/[0.05]"
@@ -303,14 +270,6 @@ export default function AdminDashboard() {
                                 <Bone className="w-32 h-3" />
                             </div>
                         ))}
-                    </div>
-
-                    {/* PHYSICAL ID */}
-                    <div className="bg-white rounded-2xl p-6 mb-8">
-                        <Bone className="w-52 h-5 mb-4" />
-                        <Bone className="w-full h-3 mb-2" />
-                        <Bone className="w-2/3 h-3 mb-5" />
-                        <Bone className="w-40 h-10 rounded-full" />
                     </div>
 
                     {/* LOWER GRID */}
@@ -480,138 +439,6 @@ export default function AdminDashboard() {
                         ))}
 
                     </div>
-                </section>
-
-                {/* ==================================================
-                    PHYSICAL ID VERIFICATION
-                ================================================== */}
-
-                <section className="mb-8">
-
-                    <div
-                        className="
-                            bg-white
-                            rounded-2xl
-                            border
-                            border-[#1F1F1F]/[0.05]
-                            overflow-hidden
-                        "
-                    >
-
-                        <div className="p-6 lg:p-7">
-
-                            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-
-                                <div className="flex items-start gap-4">
-
-                                    <div
-                                        className="
-                                            w-12
-                                            h-12
-                                            rounded-2xl
-                                            flex
-                                            items-center
-                                            justify-center
-                                            flex-shrink-0
-                                        "
-                                        style={{
-                                            background: "#FCEFCB",
-                                            color: "#A16207",
-                                        }}
-                                    >
-                                        <Icon type="shield" size={24} />
-                                    </div>
-
-                                    <div>
-
-                                        <p className="text-xs uppercase tracking-[0.15em] text-[#A16207] font-semibold mb-1">
-                                            Verification Center
-                                        </p>
-
-                                        <h2 className="font-display text-2xl text-[#1F1F1F]">
-                                            Physical ID Verification
-                                        </h2>
-
-                                        <p className="text-sm text-gray-500 mt-1 max-w-xl">
-                                            Review submitted physical IDs and verify
-                                            student and faculty accounts.
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
-                                <button
-                                    onClick={() =>
-                                        navigate(
-                                            "/admin/verification"
-                                        )
-                                    }
-                                    className="
-                                        inline-flex
-                                        items-center
-                                        justify-center
-                                        gap-2
-                                        px-5
-                                        py-2.5
-                                        rounded-full
-                                        text-sm
-                                        font-medium
-                                        text-white
-                                        transition
-                                        hover:opacity-90
-                                        whitespace-nowrap
-                                    "
-                                    style={{
-                                        background: "#106A2E",
-                                    }}
-                                >
-                                    Review Physical IDs
-                                    <Icon type="arrow" size={15} />
-                                </button>
-
-                            </div>
-
-                            {/* VERIFICATION SUMMARY */}
-
-                            <div className="grid grid-cols-3 gap-3 mt-7">
-
-                                <div className="bg-[#F7F5EF] rounded-xl p-4">
-                                    <p className="text-xs text-gray-500 mb-1">
-                                        Pending
-                                    </p>
-
-                                    <p className="font-display text-2xl text-[#A16207]">
-                                        {dashboard.pendingPhysicalId}
-                                    </p>
-                                </div>
-
-                                <div className="bg-[#F7F5EF] rounded-xl p-4">
-                                    <p className="text-xs text-gray-500 mb-1">
-                                        Verified
-                                    </p>
-
-                                    <p className="font-display text-2xl text-[#106A2E]">
-                                        {dashboard.verifiedPhysicalId}
-                                    </p>
-                                </div>
-
-                                <div className="bg-[#F7F5EF] rounded-xl p-4">
-                                    <p className="text-xs text-gray-500 mb-1">
-                                        Rejected
-                                    </p>
-
-                                    <p className="font-display text-2xl text-[#9F3434]">
-                                        {dashboard.rejectedPhysicalId}
-                                    </p>
-                                </div>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
                 </section>
 
                 {/* ==================================================
@@ -899,50 +726,7 @@ export default function AdminDashboard() {
                         Quick Actions
                     </h2>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-                        <button
-                            onClick={() =>
-                                navigate("/admin/verification")
-                            }
-                            className="
-                                bg-white
-                                rounded-2xl
-                                border
-                                border-[#1F1F1F]/[0.05]
-                                p-5
-                                text-left
-                                hover:shadow-md
-                                hover:-translate-y-0.5
-                                transition-all
-                            "
-                        >
-                            <div
-                                className="
-                                    w-10
-                                    h-10
-                                    rounded-xl
-                                    flex
-                                    items-center
-                                    justify-center
-                                    mb-4
-                                "
-                                style={{
-                                    background: "#FCEFCB",
-                                    color: "#A16207",
-                                }}
-                            >
-                                <Icon type="shield" size={19} />
-                            </div>
-
-                            <p className="font-medium text-sm">
-                                Physical ID Verification
-                            </p>
-
-                            <p className="text-xs text-gray-500 mt-1">
-                                Review pending submissions
-                            </p>
-                        </button>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                         <button
                             onClick={() => navigate("/admin/users")}

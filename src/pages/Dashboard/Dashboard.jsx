@@ -379,10 +379,6 @@ export default function Dashboard() {
         user?.accountStatus ||
         "Approved";
 
-    const physicalIdStatus =
-        user?.physicalIdVerificationStatus ||
-        "Verified";
-
     const profileComplete =
         user?.isProfileComplete;
 
@@ -563,13 +559,6 @@ export default function Dashboard() {
                                                     <p className="text-sm font-semibold text-white">
                                                         {
                                                             accountStatus
-                                                        }
-                                                    </p>
-
-                                                    <p className="mt-0.5 text-[11px] text-white/50">
-                                                        Physical ID:{" "}
-                                                        {
-                                                            physicalIdStatus
                                                         }
                                                     </p>
                                                 </>
@@ -800,7 +789,7 @@ export default function Dashboard() {
 
                             </div>
 
-
+                            
                             <span className="hidden rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-medium text-slate-400 sm:inline-flex">
                                 Services
                             </span>

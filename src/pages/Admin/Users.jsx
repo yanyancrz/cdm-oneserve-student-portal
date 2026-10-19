@@ -16,7 +16,6 @@ import {
     ChevronRight,
     RotateCcw,
     Mail,
-    ShieldCheck,
 } from "lucide-react";
 import { API_URL } from "../../config/api";
 import {
@@ -71,7 +70,7 @@ import {
 // ─────────────────────────────────────────────────────────────
 const ROLE_FILTERS = ["All", "Student", "Faculty"];
 const MEMBER_ROLE_OPTIONS = ["Student", "Faculty"];
-const VERIFICATION_FILTERS = ["All verification", "PNM Email", "Physical ID", "Not verified"];
+const VERIFICATION_FILTERS = ["All verification", "PNM Email", "Not verified"];
 
 // Students + faculty only - heads and admins live on ServiceHeads.jsx.
 const isMemberRole = (role) => role === "Student" || role === "Faculty";
@@ -91,7 +90,6 @@ function MemberForm({ onCancel, onSubmit, submitting, serverError }) {
         contactNumber: "",
         password: "",
         confirmPassword: "",
-        idVerified: false,
     });
     const [localError, setLocalError] = useState("");
 
@@ -151,7 +149,6 @@ function MemberForm({ onCancel, onSubmit, submitting, serverError }) {
             yearLevel: isStudent ? form.yearLevel.trim() : "",
             contactNumber: form.contactNumber.trim(),
             password: form.password,
-            idVerified: form.idVerified,
         });
     };
 
@@ -159,7 +156,7 @@ function MemberForm({ onCancel, onSubmit, submitting, serverError }) {
         <form onSubmit={handleSubmit} className="space-y-3">
             <p className="rounded-lg bg-emerald-50 px-3 py-2 text-[11px] leading-4 text-emerald-700">
                 Direktang gumagawa ng Student o Faculty account. Aktibo ito at makaka-login agad ang
-                user. I-check ang box sa ibaba kung na-verify mo na ang ID niya.
+                user.
             </p>
 
             <SelectField
@@ -238,27 +235,6 @@ function MemberForm({ onCancel, onSubmit, submitting, serverError }) {
                 onChange={update("contactNumber")}
                 placeholder="e.g. 09123456789"
             />
-
-            {/* ID verification */}
-            <label className="flex items-start gap-2 rounded-lg border border-[#E5E1D8] px-3 py-2.5 cursor-pointer">
-                <input
-                    type="checkbox"
-                    checked={form.idVerified}
-                    onChange={(e) => setForm((f) => ({ ...f, idVerified: e.target.checked }))}
-                    className="mt-0.5 accent-[#106A2E]"
-                />
-
-                <span className="text-xs text-gray-600 leading-4">
-                    <span className="font-semibold text-gray-800">
-                        {isStudent
-                            ? "Nagpakita ng ID / confirmed enrolled"
-                            : "Nagpakita ng ID / confirmed faculty"}
-                    </span>
-                    <br />
-                    I-check kung na-verify mo na nang personal. Mamarkahan ang account bilang Verified
-                    at maitatala sa activity log.
-                </span>
-            </label>
 
             <PasswordFields
                 password={form.password}
@@ -577,7 +553,6 @@ export default function Users() {
             { key: "Pending", kind: "status", label: "Pending", value: count("Pending"), icon: Clock3, tone: "bg-amber-50 text-amber-600", number: "text-amber-600" },
             { key: "Suspended", kind: "status", label: "Suspended", value: count("Suspended"), icon: Ban, tone: "bg-red-50 text-red-500", number: "text-red-600" },
             { key: "PNM Email", kind: "verification", label: "Verified via PNM email", value: countMethod("PNM Email"), icon: Mail, tone: "bg-emerald-50 text-emerald-700", number: "text-emerald-700" },
-            { key: "Physical ID", kind: "verification", label: "Verified via physical ID", value: countMethod("Physical ID"), icon: ShieldCheck, tone: "bg-blue-50 text-blue-700", number: "text-blue-700" },
         ];
     }, [users]);
 
@@ -647,7 +622,6 @@ export default function Users() {
                     course: form.course || null,
                     yearLevel: form.yearLevel || null,
                     contactNumber: form.contactNumber || null,
-                    idVerified: !!form.idVerified,
                 },
             });
 
@@ -658,7 +632,6 @@ export default function Users() {
                 fullName: form.fullName,
                 email: form.email,
                 password: form.password,
-                idVerified: form.idVerified,
             });
 
             await loadUsers({ silent: true });
@@ -1361,12 +1334,6 @@ export default function Users() {
 
                         {activeUser.role === "Faculty" && (
                             <DetailRow label="Institute">{activeUser.institute || "—"}</DetailRow>
-                        )}
-
-                        {(activeUser.role === "Student" || activeUser.role === "Faculty") && (
-                            <DetailRow label="ID verification">
-                                {activeUser.physicalIdVerificationStatus || "Not verified"}
-                            </DetailRow>
                         )}
 
                         <DetailRow label="Verified via">

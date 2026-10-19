@@ -105,14 +105,6 @@ export function VerificationPill({ method }) {
         );
     }
 
-    if (method === "Physical ID") {
-        return (
-            <span className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-blue-50 text-blue-700">
-                Physical ID
-            </span>
-        );
-    }
-
     return <span className="text-xs text-gray-300">—</span>;
 }
 
@@ -743,10 +735,6 @@ export function CredentialsModal({ data, onClose }) {
         { label: "Email", value: data.email, copy: true },
         { label: "Password", value: data.password, copy: true },
     ];
-
-    if (data.idVerified !== undefined) {
-        rows.push({ label: "ID verification", value: data.idVerified ? "Verified" : "Not verified" });
-    }
 
     return (
         <Modal title={`${roleLabel(data.role)} account created`} onClose={onClose}>

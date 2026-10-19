@@ -51,7 +51,6 @@ import AdminLayout from "./layouts/AdminLayout";
 // ADMIN PAGES
 // ==========================================
 import AdminDashboard from "./pages/Admin/AdminDashboard";
-import RegistrationVerification from "./pages/Admin/RegistrationVerification";
 import Users from "./pages/Admin/Users";
 import ServiceHeads from "./pages/Admin/ServiceHeads";
 import AdminProfile from "./pages/Admin/AdminProfile";
@@ -232,7 +231,6 @@ function App() {
                     }
                 >
                     <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                    <Route path="/admin/verification" element={<RegistrationVerification />} />
                     <Route path="/admin/users" element={<Users />} />
                     <Route path="/admin/service-heads" element={<ServiceHeads />} />
                     <Route path="/admin/school-records" element={<SchoolRecords />} />

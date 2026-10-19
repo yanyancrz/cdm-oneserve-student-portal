@@ -129,39 +129,22 @@ export const thClass =
     "sticky top-0 z-10 bg-white text-left font-semibold text-gray-500 px-5 py-3 text-xs border-b border-[#E5E1D8]";
 
 // ─────────────────────────────────────────────────────────────
-// Verification method (physical ID vs PNM email)
+// Verification method (PNM email)
 // ─────────────────────────────────────────────────────────────
 // Must match AuthController.GetSchoolRoleForEmail exactly: a
 // school email already proves school membership, so those
-// accounts carry no ID document and were verified by the
-// email itself. Anyone with an uploaded document went
-// through ID review - including school emails from before
-// the auto-verify feature, and in-person admin checks that
-// leave no document behind.
+// accounts are verified by the email itself.
 export const STUDENT_EMAIL_DOMAIN = "@student.pnm.edu.ph";
 export const FACULTY_EMAIL_DOMAIN = "@pnm.edu.ph";
 
 export function getVerificationMethod(user) {
-    if (user?.physicalIdDocument) return "Physical ID";
-
     const email = String(user?.email || "").trim().toLowerCase();
 
     if (email.endsWith(STUDENT_EMAIL_DOMAIN) || email.endsWith(FACULTY_EMAIL_DOMAIN)) {
         return "PNM Email";
     }
 
-    const verification = String(user?.physicalIdVerificationStatus || "").toLowerCase();
-
-    // Verified by an admin in person (e.g. the Add Student /
-    // Faculty checkbox) - an ID was shown, just never uploaded.
-    if (verification === "verified" || verification === "approved") return "Physical ID";
-
     return "Not verified";
-}
-
-export function isVerifiedStatus(user) {
-    const verification = String(user?.physicalIdVerificationStatus || "").toLowerCase();
-    return verification === "verified" || verification === "approved";
 }
 
 // ─────────────────────────────────────────────────────────────

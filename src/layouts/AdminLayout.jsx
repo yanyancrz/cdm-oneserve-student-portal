@@ -1,9 +1,7 @@
-import { useEffect, useState } from "react";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Megaphone } from "lucide-react";
 import Logo from "../assets/images/cdm-white.png";
 import BackgroundImage from "../assets/images/admin-bg.png";
-import { API_URL } from "../config/api";
 
 // Route ng Login page. Palitan kung iba ang path.
 const LOGIN_PATH = "/";
@@ -28,54 +26,6 @@ const SESSION_KEYS = [
 export default function AdminLayout() {
     const navigate = useNavigate();
     const location = useLocation();
-
-    // =====================================================
-    // PENDING VERIFICATION COUNT
-    // Recent number of Physical ID submissions awaiting
-    // review, shown as a badge on the "Registration
-    // Verification" sidebar item. Uses the same endpoint
-    // the page itself uses, polled every 30 seconds so
-    // the sidebar stays fresh without reloading.
-    // =====================================================
-
-    const [pendingVerificationCount, setPendingVerificationCount] =
-        useState(null);
-
-    useEffect(() => {
-        let cancelled = false;
-
-        const loadPendingCount = async () => {
-            try {
-                const response = await fetch(
-                    `${API_URL}/api/admin/registration-verification/pending`
-                );
-
-                if (!response.ok) {
-                    return;
-                }
-
-                const data = await response.json();
-
-                if (!cancelled) {
-                    setPendingVerificationCount(
-                        Array.isArray(data) ? data.length : 0
-                    );
-                }
-            } catch {
-                // The badge is informational - it must never
-                // break the sidebar, so fail silently.
-            }
-        };
-
-        loadPendingCount();
-
-        const timer = setInterval(loadPendingCount, 30000);
-
-        return () => {
-            cancelled = true;
-            clearInterval(timer);
-        };
-    }, []);
 
     // =====================================================
     // LOGOUT
@@ -137,28 +87,6 @@ export default function AdminLayout() {
                         height="5"
                         rx="1.5"
                     />
-                </svg>
-            ),
-        },
-
-        {
-            label: "Registration Verification",
-            path: "/admin/verification",
-            badge: pendingVerificationCount,
-            icon: (
-                <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                >
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="m16 11 2 2 4-4" />
                 </svg>
             ),
         },
@@ -317,8 +245,6 @@ export default function AdminLayout() {
                         const isActive =
                             location.pathname === item.path;
 
-                        const badge = item.badge;
-
                         return (
                             <button
                                 key={item.path}
@@ -367,34 +293,6 @@ export default function AdminLayout() {
                                     "
                                 >
                                     {item.icon}
-
-                                    {badge != null &&
-                                        badge > 0 && (
-                                            <span
-                                                className="
-                                                    absolute
-                                                    -right-1.5
-                                                    -top-1.5
-                                                    flex
-                                                    h-4
-                                                    min-w-4
-                                                    items-center
-                                                    justify-center
-                                                    rounded-full
-                                                    bg-amber-400
-                                                    px-1
-                                                    text-[9px]
-                                                    font-bold
-                                                    leading-none
-                                                    text-[#0E3B22]
-                                                    lg:hidden
-                                                "
-                                            >
-                                                {badge > 9
-                                                    ? "9+"
-                                                    : badge}
-                                            </span>
-                                        )}
                                 </span>
 
                                 <span
@@ -406,32 +304,6 @@ export default function AdminLayout() {
                                 >
                                     {item.label}
                                 </span>
-
-                                {badge != null &&
-                                    badge > 0 && (
-                                        <span
-                                            className="
-                                                hidden
-                                                text-[#0E3B22]
-                                                lg:ml-auto
-                                                lg:inline-flex
-                                                lg:items-center
-                                                lg:justify-center
-                                                lg:min-w-5
-                                                lg:rounded-full
-                                                lg:bg-amber-400
-                                                lg:px-1.5
-                                                lg:py-0.5
-                                                lg:text-[11px]
-                                                lg:font-bold
-                                                lg:leading-none
-                                            "
-                                        >
-                                            {badge > 99
-                                                ? "99+"
-                                                : badge}
-                                        </span>
-                                    )}
                             </button>
                         );
                     })}
