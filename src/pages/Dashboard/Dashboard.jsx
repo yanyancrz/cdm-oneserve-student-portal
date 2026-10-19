@@ -40,7 +40,6 @@ export default function Dashboard() {
 
     const touchStartX = useRef(null);
 
-
     useEffect(() => {
         const email =
             localStorage.getItem("userEmail");
@@ -80,7 +79,6 @@ export default function Dashboard() {
         loadProfile();
     }, [navigate]);
 
-   
     useEffect(() => {
         const loadAnnouncements = async () => {
             try {
@@ -124,7 +122,6 @@ export default function Dashboard() {
         loadAnnouncements();
     }, []);
 
-   
     const isLoading = !user;
 
     const userName =
@@ -150,8 +147,6 @@ export default function Dashboard() {
 
     const isStudent =
         userRole.toLowerCase() === "student";
-
-   
 
     const services = [
         {
@@ -267,8 +262,6 @@ export default function Dashboard() {
                 )
         );
 
-   
-
     const fallbackAnnouncement = {
         id: "empty-announcement",
         title: "No announcements yet",
@@ -288,7 +281,6 @@ export default function Dashboard() {
               ]
             : fallbackAnnouncement;
 
-    
     const goToNextAnnouncement = () => {
         if (announcements.length <= 1) {
             return;
@@ -375,13 +367,40 @@ export default function Dashboard() {
         setIsAnnouncementPaused(false);
     };
 
+    const schoolInfo = [
+        {
+            label: isStudent ? "Student ID" : "Faculty ID",
+            value: user?.idNumber || "—"
+        },
+        {
+            label: isStudent ? "Program" : "Institute",
+            value: isStudent
+                ? user?.course || "—"
+                : user?.institute || "—"
+        },
+        {
+            label: isStudent ? "Year Level" : "Position",
+            value: isStudent
+                ? user?.yearLevel || "—"
+                : user?.position || "—"
+        },
+        {
+            label: "Status",
+            value: isStudent ? "Enrolled" : "Active"
+        }
+    ];
 
-    const accountStatus =
-        user?.accountStatus ||
-        "Approved";
-
-    const profileComplete =
-        user?.isProfileComplete;
+    const openService = (service) => {
+        if (service.route) {
+            navigate(service.route);
+        } else if (service.url) {
+            window.open(
+                service.url,
+                "_blank",
+                "noopener,noreferrer"
+            );
+        }
+    };
 
     return (
         <div className="relative min-h-screen overflow-x-hidden bg-[#F6F2E6] md:pt-24">
@@ -522,113 +541,38 @@ export default function Dashboard() {
                             </div>
 
 
-                            {/* STATUS */}
+                            {/* SCHOOL INFORMATION */}
 
-                            <div className="w-full lg:w-[310px]">
+                            <div className="w-full lg:w-[340px]">
 
                                 <div className="rounded-2xl border border-white/10 bg-white/[0.08] p-4 backdrop-blur-xl">
 
-                                    <div className="mb-3 flex items-center justify-between">
-
-                                        <span className="text-[10px] font-semibold uppercase tracking-[.16em] text-white/50">
-                                            Account Status
-                                        </span>
-
-                                        <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-amber-300">
-
-                                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-300" />
-
-                                            LIVE
-
-                                        </span>
-
-                                    </div>
-
-
-                                    <div className="mb-4 flex items-center justify-between">
-
-                                        <div>
-
-                                            {isLoading ? (
-                                                <>
-                                                    <BoneOnDark className="h-4 w-24" />
-
-                                                    <BoneOnDark className="mt-2 h-3 w-32" />
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <p className="text-sm font-semibold text-white">
-                                                        {
-                                                            accountStatus
-                                                        }
-                                                    </p>
-                                                </>
-                                            )}
-
-                                        </div>
-
-
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-300/10 text-amber-300">
-
-                                            <svg
-                                                width="18"
-                                                height="18"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="1.8"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                            >
-                                                <path d="M12 3l7 3v5c0 4.8-3 8.2-7 10-4-1.8-7-5.2-7-10V6l7-3z" />
-                                                <path d="m9 12 2 2 4-4" />
-                                            </svg>
-
-                                        </div>
-
-                                    </div>
-
+                                    <p className="mb-3 text-[10px] font-semibold uppercase tracking-[.16em] text-white/50">
+                                        My School Information
+                                    </p>
 
                                     <div className="grid grid-cols-2 gap-2">
 
-                                        <div className="rounded-xl border border-white/10 bg-black/10 p-3">
+                                        {schoolInfo.map((item) => (
+                                            <div
+                                                key={item.label}
+                                                className="rounded-xl border border-white/10 bg-black/10 p-3"
+                                            >
 
-                                            <p className="text-[9px] uppercase tracking-wider text-white/40">
-                                                {isStudent
-                                                    ? "Enrollment"
-                                                    : "Employment"}
-                                            </p>
-
-                                            {isLoading ? (
-                                                <BoneOnDark className="mt-1.5 h-3 w-14" />
-                                            ) : (
-                                                <p className="mt-1 text-xs font-semibold text-white">
-                                                    {isStudent
-                                                        ? "Enrolled"
-                                                        : "Active"}
+                                                <p className="text-[9px] uppercase tracking-wider text-white/40">
+                                                    {item.label}
                                                 </p>
-                                            )}
 
-                                        </div>
+                                                {isLoading ? (
+                                                    <BoneOnDark className="mt-1.5 h-3 w-16" />
+                                                ) : (
+                                                    <p className="mt-1 line-clamp-2 break-words text-xs font-semibold text-white">
+                                                        {item.value}
+                                                    </p>
+                                                )}
 
-
-                                        <div className="rounded-xl border border-white/10 bg-black/10 p-3">
-
-                                            <p className="text-[9px] uppercase tracking-wider text-white/40">
-                                                Profile
-                                            </p>
-
-                                            {isLoading ? (
-                                                <BoneOnDark className="mt-1.5 h-3 w-14" />
-                                            ) : (
-                                                <p className="mt-1 text-xs font-semibold text-white">
-                                                    {profileComplete
-                                                        ? "Complete"
-                                                        : "Active"}
-                                                </p>
-                                            )}
-
-                                        </div>
+                                            </div>
+                                        ))}
 
                                     </div>
 
@@ -689,14 +633,6 @@ export default function Dashboard() {
                             </div>
                         </section>
                     )}
-
-
-                    {/* =================================================
-                        EVENT CALENDAR
-                    ================================================= */}
-                    <section className="dashboard-reveal dashboard-delay-1 mb-5">
-                        <EventCalendar />
-                    </section>
 
 
                     {/* =================================================
@@ -798,7 +734,7 @@ export default function Dashboard() {
 
                             </div>
 
-                            
+
                             <span className="hidden rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-medium text-slate-400 sm:inline-flex">
                                 Services
                             </span>
@@ -846,23 +782,11 @@ export default function Dashboard() {
                                                 service.key
                                             }
                                             type="button"
-                                            onClick={() => {
-                                                if (
-                                                    service.route
-                                                ) {
-                                                    navigate(
-                                                        service.route
-                                                    );
-                                                } else if (
-                                                    service.url
-                                                ) {
-                                                    window.open(
-                                                        service.url,
-                                                        "_blank",
-                                                        "noopener,noreferrer"
-                                                    );
-                                                }
-                                            }}
+                                            onClick={() =>
+                                                openService(
+                                                    service
+                                                )
+                                            }
                                             className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/5 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/30"
                                         >
 
@@ -972,23 +896,11 @@ export default function Dashboard() {
                                                 service.key
                                             }
                                             type="button"
-                                            onClick={() => {
-                                                if (
-                                                    service.route
-                                                ) {
-                                                    navigate(
-                                                        service.route
-                                                    );
-                                                } else if (
-                                                    service.url
-                                                ) {
-                                                    window.open(
-                                                        service.url,
-                                                        "_blank",
-                                                        "noopener,noreferrer"
-                                                    );
-                                                }
-                                            }}
+                                            onClick={() =>
+                                                openService(
+                                                    service
+                                                )
+                                            }
                                             className="group min-w-[150px] rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm transition-all duration-300 active:scale-[0.97]"
                                         >
 
@@ -1041,426 +953,294 @@ export default function Dashboard() {
 
 
                     {/* =================================================
-                        LOWER GRID
-                        Announcements render first (full width) via
-                        lg:order-first, then School Info and Recent
-                        Activity side by side below.
+                        ADMIN ANNOUNCEMENT
                     ================================================= */}
 
-                    <div className="grid grid-cols-1 gap-5 sm:gap-6 lg:grid-cols-2">
+                    <div className="mb-5">
 
-                            {/* SCHOOL INFORMATION */}
+                        <div className="dashboard-reveal dashboard-delay-3 mb-3 flex items-end justify-between">
 
-                            <section className="dashboard-reveal dashboard-delay-3 overflow-hidden rounded-[24px] border border-slate-200 bg-white shadow-sm">
+                            <div>
 
-                                <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 sm:px-6">
+                                <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#173F2C]/60">
+                                    From the admin office
+                                </p>
 
-                                    <div>
+                                <h2 className="mt-1 text-lg font-semibold text-slate-800 sm:text-xl">
+                                    Admin Announcement
+                                </h2>
 
-                                        <p className="text-[10px] font-semibold uppercase tracking-[.18em] text-amber-700/50">
-                                            Connected Record
-                                        </p>
+                            </div>
 
-                                        <h2 className="mt-1 text-base font-semibold text-slate-800">
-                                            My School Information
-                                        </h2>
-
-                                    </div>
-
-
-                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-2.5 py-1 text-[10px] font-semibold text-amber-700">
-
-                                        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-
-                                        Synced
-
-                                    </span>
-
-                                </div>
-
-
-                                {isLoading ? (
-                                    <div className="grid grid-cols-2 gap-px bg-slate-100">
-
-                                        {Array.from({
-                                            length: 4
-                                        }).map(
-                                            (_, index) => (
-                                                <div
-                                                    key={
-                                                        index
-                                                    }
-                                                    className="bg-white p-5"
-                                                >
-
-                                                    <Bone className="h-2.5 w-16" />
-
-                                                    <Bone className="mt-3 h-4 w-24" />
-
-                                                </div>
-                                            )
-                                        )}
-
-                                    </div>
-                                ) : (
-                                    <div className="grid grid-cols-2 gap-px bg-slate-100 sm:grid-cols-4">
-
-                                        <div className="bg-white p-4">
-
-                                            <p className="text-[10px] uppercase tracking-wider text-slate-400">
-                                                {isStudent
-                                                    ? "Student ID"
-                                                    : "Faculty ID"}
-                                            </p>
-
-                                            <p className="mt-1.5 break-all text-sm font-semibold text-slate-800">
-                                                {user?.idNumber ||
-                                                    "—"}
-                                            </p>
-
-                                        </div>
-
-
-                                        <div className="bg-white p-4">
-
-                                            <p className="text-[10px] uppercase tracking-wider text-slate-400">
-                                                {isStudent
-                                                    ? "Program"
-                                                    : "Institute"}
-                                            </p>
-
-                                            <p className="mt-1.5 line-clamp-2 text-sm font-semibold text-slate-800">
-                                                {isStudent
-                                                    ? user?.course ||
-                                                      "—"
-                                                    : user?.institute ||
-                                                      "—"}
-                                            </p>
-
-                                        </div>
-
-
-                                        <div className="bg-white p-4">
-
-                                            <p className="text-[10px] uppercase tracking-wider text-slate-400">
-                                                {isStudent
-                                                    ? "Year Level"
-                                                    : "Position"}
-                                            </p>
-
-                                            <p className="mt-1.5 line-clamp-2 text-sm font-semibold text-slate-800">
-                                                {isStudent
-                                                    ? user?.yearLevel ||
-                                                      "—"
-                                                    : user?.position ||
-                                                      "—"}
-                                            </p>
-
-                                        </div>
-
-
-                                        <div className="bg-white p-4">
-
-                                            <p className="text-[10px] uppercase tracking-wider text-slate-400">
-                                                Status
-                                            </p>
-
-                                            <p className="mt-1.5 text-sm font-semibold text-amber-700">
-                                                {isStudent
-                                                    ? "Enrolled"
-                                                    : "Active"}
-                                            </p>
-
-                                        </div>
-
-                                    </div>
-                                )}
-
-                            </section>
-
-
-                            {/* =================================================
-                                ADMIN ANNOUNCEMENT
-                                (rendered first via order-first)
-                            ================================================= */}
-
-                            <div className="order-first lg:col-span-2">
-
-                                <div className="dashboard-reveal dashboard-delay-3 mb-3 flex items-end justify-between">
-
-                                    <div>
-
-                                        <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-[#173F2C]/60">
-                                            From the admin office
-                                        </p>
-
-                                        <h2 className="mt-1 text-lg font-semibold text-slate-800 sm:text-xl">
-                                            Admin Announcement
-                                        </h2>
-
-                                    </div>
-
-                                    <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
-                                        <svg
-                                            width="12"
-                                            height="12"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="currentColor"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                        >
-                                            <path d="m3 11 18-5v12L3 14v-3z" />
-                                            <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
-                                        </svg>
-                                        Official
-                                    </span>
-
-                                </div>
-
-                                <section
-                                    className="dashboard-reveal dashboard-delay-3 relative overflow-hidden rounded-[24px] p-5 shadow-lg shadow-black/5 sm:p-6"
-                                    style={{
-                                        background:
-                                            `linear-gradient(135deg, ${
-                                                currentAnnouncement.accent ||
-                                                "#F4D35E"
-                                            }, #FFEAB0)`
-                                    }}
-                                    onTouchStart={
-                                        handleAnnouncementTouchStart
-                                    }
-                                    onTouchEnd={
-                                        handleAnnouncementTouchEnd
-                                    }
-                                    onMouseEnter={() =>
-                                        setIsAnnouncementPaused(
-                                            true
-                                        )
-                                    }
-                                    onMouseLeave={() =>
-                                        setIsAnnouncementPaused(
-                                            false
-                                        )
-                                    }
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold text-emerald-700">
+                                <svg
+                                    width="12"
+                                    height="12"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
                                 >
+                                    <path d="m3 11 18-5v12L3 14v-3z" />
+                                    <path d="M11.6 16.8a3 3 0 1 1-5.8-1.6" />
+                                </svg>
+                                Official
+                            </span>
 
-                                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,.5),transparent_35%)]" />
+                        </div>
 
-                                <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full border border-white/30" />
+                        <section
+                            className="dashboard-reveal dashboard-delay-3 relative overflow-hidden rounded-[24px] p-5 shadow-lg shadow-black/5 sm:p-6"
+                            style={{
+                                background:
+                                    `linear-gradient(135deg, ${
+                                        currentAnnouncement.accent ||
+                                        "#F4D35E"
+                                    }, #FFEAB0)`
+                            }}
+                            onTouchStart={
+                                handleAnnouncementTouchStart
+                            }
+                            onTouchEnd={
+                                handleAnnouncementTouchEnd
+                            }
+                            onMouseEnter={() =>
+                                setIsAnnouncementPaused(
+                                    true
+                                )
+                            }
+                            onMouseLeave={() =>
+                                setIsAnnouncementPaused(
+                                    false
+                                )
+                            }
+                        >
+
+                            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,.5),transparent_35%)]" />
+
+                            <div className="pointer-events-none absolute -right-10 -top-10 h-36 w-36 rounded-full border border-white/30" />
 
 
-                                {announcementsLoading ? (
-                                    <div className="relative z-10">
+                            {announcementsLoading ? (
+                                <div className="relative z-10">
 
-                                        <div className="mb-4 flex items-center justify-between">
+                                    <div className="mb-4 flex items-center justify-between">
 
-                                            <div>
+                                        <div>
 
-                                                <div className="h-2.5 w-24 animate-pulse rounded bg-white/40" />
+                                            <div className="h-2.5 w-24 animate-pulse rounded bg-white/40" />
 
-                                                <div className="mt-2 h-4 w-16 animate-pulse rounded-full bg-white/40" />
+                                            <div className="mt-2 h-4 w-16 animate-pulse rounded-full bg-white/40" />
 
+                                        </div>
+
+
+                                        <div className="flex gap-1.5">
+
+                                            {Array.from({
+                                                length: 3
+                                            }).map(
+                                                (_, index) => (
+                                                    <div
+                                                        key={
+                                                            index
+                                                        }
+                                                        className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40"
+                                                    />
+                                                )
+                                            )}
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <div className="h-5 w-3/4 animate-pulse rounded bg-white/40" />
+
+                                    <div className="mt-3 h-3 w-full animate-pulse rounded bg-white/40" />
+
+                                    <div className="mt-1.5 h-3 w-2/3 animate-pulse rounded bg-white/40" />
+
+                                </div>
+                            ) : (
+                                <div className="relative z-10">
+
+                                    <div className="mb-4 flex items-center justify-between">
+
+                                        <div>
+
+                                            <span className="text-[9px] font-bold uppercase tracking-[.2em] text-[#173026]/60">
+                                                Campus Broadcast
+                                            </span>
+
+
+                                            <div className="mt-1.5 inline-flex rounded-full bg-white/45 px-2 py-1 text-[9px] font-bold text-[#173026]/70">
+                                                {
+                                                    currentAnnouncement.tag
+                                                }
                                             </div>
 
+                                        </div>
 
+
+                                        {announcements.length >
+                                            1 && (
                                             <div className="flex gap-1.5">
 
-                                                {Array.from({
-                                                    length: 3
-                                                }).map(
-                                                    (_, index) => (
-                                                        <div
+                                                {announcements.map(
+                                                    (
+                                                        item,
+                                                        index
+                                                    ) => (
+                                                        <button
+                                                            type="button"
                                                             key={
+                                                                item.id ||
+                                                                item.key ||
                                                                 index
                                                             }
-                                                            className="h-1.5 w-1.5 animate-pulse rounded-full bg-white/40"
+                                                            onClick={() =>
+                                                                setAnnouncementIndex(
+                                                                    index
+                                                                )
+                                                            }
+                                                            aria-label={`Announcement ${
+                                                                index +
+                                                                1
+                                                            }`}
+                                                            className={`
+                                                                h-1.5
+                                                                rounded-full
+                                                                transition-all
+                                                                ${
+                                                                    index ===
+                                                                    announcementIndex
+                                                                        ? "w-5 bg-[#173026]"
+                                                                        : "w-1.5 bg-[#173026]/25"
+                                                                }
+                                                            `}
                                                         />
                                                     )
                                                 )}
 
                                             </div>
-
-                                        </div>
-
-
-                                        <div className="h-5 w-3/4 animate-pulse rounded bg-white/40" />
-
-                                        <div className="mt-3 h-3 w-full animate-pulse rounded bg-white/40" />
-
-                                        <div className="mt-1.5 h-3 w-2/3 animate-pulse rounded bg-white/40" />
+                                        )}
 
                                     </div>
-                                ) : (
-                                    <div className="relative z-10">
-
-                                        <div className="mb-4 flex items-center justify-between">
-
-                                            <div>
-
-                                                <span className="text-[9px] font-bold uppercase tracking-[.2em] text-[#173026]/60">
-                                                    Campus Broadcast
-                                                </span>
 
 
-                                                <div className="mt-1.5 inline-flex rounded-full bg-white/45 px-2 py-1 text-[9px] font-bold text-[#173026]/70">
-                                                    {
-                                                        currentAnnouncement.tag
-                                                    }
-                                                </div>
+                                    <div className="flex items-end justify-between gap-3">
 
-                                            </div>
+                                        <div className="min-w-0">
+
+                                            <h2 className="text-xl font-bold leading-tight text-[#10231B]">
+                                                {
+                                                    currentAnnouncement.title
+                                                }
+                                            </h2>
 
 
-                                            {announcements.length >
-                                                1 && (
-                                                <div className="flex gap-1.5">
-
-                                                    {announcements.map(
-                                                        (
-                                                            item,
-                                                            index
-                                                        ) => (
-                                                            <button
-                                                                type="button"
-                                                                key={
-                                                                    item.id ||
-                                                                    item.key ||
-                                                                    index
-                                                                }
-                                                                onClick={() =>
-                                                                    setAnnouncementIndex(
-                                                                        index
-                                                                    )
-                                                                }
-                                                                aria-label={`Announcement ${
-                                                                    index +
-                                                                    1
-                                                                }`}
-                                                                className={`
-                                                                    h-1.5
-                                                                    rounded-full
-                                                                    transition-all
-                                                                    ${
-                                                                        index ===
-                                                                        announcementIndex
-                                                                            ? "w-5 bg-[#173026]"
-                                                                            : "w-1.5 bg-[#173026]/25"
-                                                                    }
-                                                                `}
-                                                            />
-                                                        )
-                                                    )}
-
-                                                </div>
-                                            )}
+                                            <p className="mt-2 text-xs leading-5 text-[#10231B]/70">
+                                                {
+                                                    currentAnnouncement.message
+                                                }
+                                            </p>
 
                                         </div>
 
 
-                                        <div className="flex items-end justify-between gap-3">
+                                        {announcements.length >
+                                            1 && (
+                                            <div className="flex shrink-0 gap-1.5">
 
-                                            <div className="min-w-0">
-
-                                                <h2 className="text-xl font-bold leading-tight text-[#10231B]">
-                                                    {
-                                                        currentAnnouncement.title
+                                                <button
+                                                    type="button"
+                                                    onClick={
+                                                        goToPreviousAnnouncement
                                                     }
-                                                </h2>
+                                                    aria-label="Previous announcement"
+                                                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/45 text-[#10231B] transition hover:bg-white/65"
+                                                >
+                                                    <svg
+                                                        width="16"
+                                                        height="16"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2.2"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    >
+                                                        <path d="m15 18-6-6 6-6" />
+                                                    </svg>
+                                                </button>
 
 
-                                                <p className="mt-2 text-xs leading-5 text-[#10231B]/70">
-                                                    {
-                                                        currentAnnouncement.message
+                                                <button
+                                                    type="button"
+                                                    onClick={
+                                                        goToNextAnnouncement
                                                     }
-                                                </p>
+                                                    aria-label="Next announcement"
+                                                    className="flex h-8 w-8 items-center justify-center rounded-full bg-white/45 text-[#10231B] transition hover:bg-white/65"
+                                                >
+                                                    <svg
+                                                        width="16"
+                                                        height="16"
+                                                        viewBox="0 0 24 24"
+                                                        fill="none"
+                                                        stroke="currentColor"
+                                                        strokeWidth="2.2"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                    >
+                                                        <path d="m9 18 6-6-6-6" />
+                                                    </svg>
+                                                </button>
 
                                             </div>
-
-
-                                            {announcements.length >
-                                                1 && (
-                                                <div className="flex shrink-0 gap-1.5">
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={
-                                                            goToPreviousAnnouncement
-                                                        }
-                                                        aria-label="Previous announcement"
-                                                        className="flex h-8 w-8 items-center justify-center rounded-full bg-white/45 text-[#10231B] transition hover:bg-white/65"
-                                                    >
-                                                        <svg
-                                                            width="16"
-                                                            height="16"
-                                                            viewBox="0 0 24 24"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            strokeWidth="2.2"
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                        >
-                                                            <path d="m15 18-6-6 6-6" />
-                                                        </svg>
-                                                    </button>
-
-
-                                                    <button
-                                                        type="button"
-                                                        onClick={
-                                                            goToNextAnnouncement
-                                                        }
-                                                        aria-label="Next announcement"
-                                                        className="flex h-8 w-8 items-center justify-center rounded-full bg-white/45 text-[#10231B] transition hover:bg-white/65"
-                                                    >
-                                                        <svg
-                                                            width="16"
-                                                            height="16"
-                                                            viewBox="0 0 24 24"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            strokeWidth="2.2"
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                        >
-                                                            <path d="m9 18 6-6-6-6" />
-                                                        </svg>
-                                                    </button>
-
-                                                </div>
-                                            )}
-
-                                        </div>
-
-
-                                        {!isAnnouncementPaused &&
-                                            announcements.length >
-                                                1 && (
-                                                <div className="mt-5 h-1 overflow-hidden rounded-full bg-black/10">
-
-                                                    <div
-                                                        key={
-                                                            announcementIndex
-                                                        }
-                                                        className="h-full rounded-full bg-[#10231B]/55"
-                                                        style={{
-                                                            animation:
-                                                                "announcementProgress 6s linear forwards"
-                                                        }}
-                                                    />
-
-                                                </div>
-                                            )}
+                                        )}
 
                                     </div>
-                                )}
 
-                            </section>
 
-                            </div>
+                                    {!isAnnouncementPaused &&
+                                        announcements.length >
+                                            1 && (
+                                            <div className="mt-5 h-1 overflow-hidden rounded-full bg-black/10">
+
+                                                <div
+                                                    key={
+                                                        announcementIndex
+                                                    }
+                                                    className="h-full rounded-full bg-[#10231B]/55"
+                                                    style={{
+                                                        animation:
+                                                            "announcementProgress 6s linear forwards"
+                                                    }}
+                                                />
+
+                                            </div>
+                                        )}
+
+                                </div>
+                            )}
+
+                        </section>
 
                     </div>
+
+
+                    {/* =================================================
+                        EVENT CALENDAR
+                    ================================================= */}
+
+                    <section className="dashboard-reveal dashboard-delay-4 mb-5">
+                        <EventCalendar />
+                    </section>
+
 
                 </div>
 
