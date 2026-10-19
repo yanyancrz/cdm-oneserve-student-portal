@@ -1,5 +1,5 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Megaphone } from "lucide-react";
+import { Megaphone, CalendarDays } from "lucide-react";
 import Logo from "../assets/images/cdm-white.png";
 import BackgroundImage from "../assets/images/admin-bg.png";
 
@@ -135,6 +135,12 @@ export default function AdminLayout() {
             label: "Announcements",
             path: "/admin/announcements",
             icon: <Megaphone size={18} />,
+        },
+
+        {
+            label: "Events",
+            path: "/admin/events",
+            icon: <CalendarDays size={18} />,
         },
 
         {

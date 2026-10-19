@@ -55,6 +55,7 @@ import Users from "./pages/Admin/Users";
 import ServiceHeads from "./pages/Admin/ServiceHeads";
 import AdminProfile from "./pages/Admin/AdminProfile";
 import Announcements from "./pages/Admin/Announcements";
+import Events from "./pages/Admin/Events";
 import SchoolRecords from "./pages/Admin/SchoolRecords";
 
 
@@ -236,6 +237,7 @@ function App() {
                     <Route path="/admin/school-records" element={<SchoolRecords />} />
                     <Route path="/admin/profile" element={<AdminProfile />} />
                     <Route path="/admin/announcements" element={<Announcements />} />
+<Route path="/admin/events" element={<Events />} />
                 </Route>
 
                 {/* ================= LIBRARY ADMINISTRATION (Head / Staff) ================= */}
