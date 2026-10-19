@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { API_URL } from "../../config/api";
 import DeviceSessionWarning from "../../components/AccountSecurity/DeviceSessionWarning";
 import AIAssistant from "../../components/AIAssistant/AIAssistant";
+import EventCalendar from "../../components/EventCalendar/EventCalendar";
 import toast from "react-hot-toast";
 
 // Loading placeholders. Purely presentational,
@@ -688,6 +689,14 @@ export default function Dashboard() {
                             </div>
                         </section>
                     )}
+
+
+                    {/* =================================================
+                        EVENT CALENDAR
+                    ================================================= */}
+                    <section className="dashboard-reveal dashboard-delay-1 mb-5">
+                        <EventCalendar />
+                    </section>
 
 
                     {/* =================================================

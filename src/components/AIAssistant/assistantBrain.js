@@ -41,8 +41,91 @@ const has = (text, ...words) =>
         return tokens.some((token) => token.includes(word));
     });
 
+// ---- campus service offices ----
+//
+// One entry per office, each with its own location, so a question about one
+// office is answered with just that office - not the whole list. `keywords` are
+// what a student might type for it (English and Tagalog share these names).
+const CAMPUS_OFFICES = [
+    {
+        name: "Clinic",
+        keywords: ["clinic"],
+        // `where` and `near` feed the location cards in the chat; `location` is
+        // the same information as one plain sentence, kept for text-only callers.
+        where: "1st floor · Admin Building",
+        near: ["Near the Student Center Office", "Beside the Registrar's Office"],
+        location:
+            "The CDM Clinic is located on the first floor of the Admin Building, near the Student Center Office and beside the Registrar's Office.",
+    },
+    {
+        name: "Library",
+        keywords: ["library", "lib"],
+        where: "2nd floor · Admin Building",
+        near: ["Beside the Guidance and Counseling Office"],
+        location:
+            "The CDM Library is located on the second floor of the Admin Building, beside CDM's Guidance and Counseling Office.",
+    },
+    {
+        name: "Lost and Found",
+        keywords: ["lost and found", "lost & found", "lost found"],
+        where: "Along the side of the Old Building",
+        near: ["Beside the Student Center Office", "Beside the ROTC Office"],
+        location:
+            "The CDM Lost and Found Office is located along the side of the Old Building, beside the Student Center Office and the ROTC Office.",
+    },
+    {
+        name: "Guidance and Counseling Office",
+        keywords: ["guidance", "counsel"],
+        where: "2nd floor · Admin Building",
+        near: ["Beside the Library"],
+        location:
+            "The CDM Guidance and Counseling Office is located on the 2nd floor of Admin Building, beside CDM Library.",
+    },
+];
+
+const LOCATION_WORDS = [
+    "location",
+    "saan",
+    "where",
+    "office",
+    "opisina",
+    "room",
+    "building",
+    "campus service",
+];
+
+/** The offices the person actually named. Empty when none. */
+const officesNamed = (text) =>
+    CAMPUS_OFFICES.filter((office) => has(text, ...office.keywords));
+
+/** "Where is the library?"-style: a location word plus an office (or "service"). */
+const asksOfficeLocation = (text) =>
+    has(text, ...LOCATION_WORDS) &&
+    (officesNamed(text).length > 0 || has(text, "service"));
+
 /**
- * @returns {{ text: string, links: Array<{ label: string, to: string }> }}
+ * Whether a message is asking where a campus office is.
+ *
+ * Exported so the chat UI asks the brain instead of keeping its own copy of the
+ * keywords - the two can never disagree about what a location question is.
+ */
+export function isLocationQuestion(rawText) {
+    return asksOfficeLocation(norm(rawText).trim());
+}
+
+/**
+ * `text` and `links` are always present. Optional extras the chat UI draws:
+ *   - `lead` + `offices`: a location answer, shown as cards instead of `text`
+ *     (`text` is still the full answer for any caller that does not draw cards)
+ *   - `suggestions`: quick-reply chips offered after an answer we could not give
+ *
+ * @returns {{
+ *   text: string,
+ *   links: Array<{ label: string, to: string }>,
+ *   lead?: string,
+ *   offices?: Array<{ name: string, where: string, near: string[] }>,
+ *   suggestions?: Array<{ label: string, ask: string }>
+ * }}
  */
 export function answerAssistant(rawText) {
     const text = norm(rawText).trim();
@@ -57,22 +140,34 @@ export function answerAssistant(rawText) {
     // ---- campus service offices: locations ----
     // (must come FIRST so it takes priority over guidance/library/lost&found
     //  blocks that also match their own keywords)
-    if (
-        has(
-            text,
-            "location",
-            "saan",
-            "where",
-            "office",
-            "opisina",
-            "room",
-            "building",
-            "campus service"
-        ) &&
-        has(text, "clinic", "library", "lost and found", "guidance", "counseling", "service")
-    ) {
+    if (asksOfficeLocation(text)) {
+        const named = officesNamed(text);
+
+        // Named one office: just that one. Named several, or asked about the
+        // campus services in general: every office that applies.
+        const shown = named.length > 0 ? named : CAMPUS_OFFICES;
+        const offices = shown.map(({ name, where, near }) => ({ name, where, near }));
+
+        if (named.length === 1) {
+            return {
+                text: named[0].location,
+                lead: `Here's where to find the ${named[0].name}.`,
+                offices,
+                links: [],
+            };
+        }
+
+        const lead =
+            named.length > 0
+                ? "Here are the locations you asked about:"
+                : "Here are the locations of the campus service offices:";
+
         return {
-            text: "Here are the locations of the campus service offices:\n\n1. Clinic\nThe CDM Clinic is located on the first floor of the Admin Building, near the Student Center Office and beside the Registrar's Office.\n\n2. Library\nThe CDM Library is located on the second floor of the Admin Building, beside CDM's Guidance and Counseling Office.\n\n3. Lost and Found\nThe CDM Lost and Found Office is located along the side of the Old Building, beside the Student Center Office and the ROTC Office.\n\n4. Guidance and Counseling Office\nThe CDM Guidance and Counseling Office is located on the 2nd floor of Admin Building, beside CDM Library.",
+            text: `${lead}\n\n${shown
+                .map((office, index) => `${index + 1}. ${office.name}\n${office.location}`)
+                .join("\n\n")}`,
+            lead,
+            offices,
             links: [],
         };
     }
@@ -93,7 +188,7 @@ export function answerAssistant(rawText) {
         )
     ) {
         return {
-            text: "Hello! I'm the OneServe Assistant. I can point you to books, food orders, counseling, or lost items - what do you need?",
+            text: "Hello! I'm the OneServe Assistant. I can help with books, counseling, lost items, or where a campus office is - what do you need?",
             links: [],
         };
     }
@@ -101,7 +196,7 @@ export function answerAssistant(rawText) {
     // ---- library: access pass / QR (most specific first) ----
     if (has(text, "access pass", "qr", "scanner", "scan", "pass")) {
         return {
-            text: "Your Library Access Pass is a QR code you show at the circulation desk when claiming a reserved book. Open it here:",
+            text: "Your **Library Access Pass** is a QR code you show at the circulation desk to claim a reserved book.",
             links: [{ label: "Open my Access Pass", to: "/library/access-pass" }],
         };
     }
@@ -124,7 +219,7 @@ export function answerAssistant(rawText) {
         )
     ) {
         return {
-            text: "Check your due dates in Loans - returning late bans you from borrowing until the end of the semester, so renew or return before the due date. Anything overdue shows there first.",
+            text: "Check your due dates in **Loans**. Anything overdue shows there first.\n\nReturning late means a **borrowing ban until the end of the semester**, so renew or return before the due date.",
             links: [{ label: "Open my Loans", to: "/library/loans" }],
         };
     }
@@ -164,7 +259,9 @@ export function answerAssistant(rawText) {
             "library",
             "aklat",
             "basa"
-        )
+        ) &&
+        // "book an appointment" / "book counseling" is guidance, not the library.
+        !has(text, "appointment", "counsel", "guidance")
     ) {
         return {
             text: "In the Library you can browse the catalog, reserve a copy, and track it until pickup. Start here:",
@@ -356,11 +453,12 @@ export function answerAssistant(rawText) {
 
     // ---- fallback: never bluff, always offer a way forward ----
     return {
-        text: "I'm not sure about that one yet - I know the Library, Guidance and Lost & Found best. Try one of these, or rephrase with a word like 'book', 'order', 'appointment' or 'lost'.",
+        text: "I'm not sure about that one yet. I can help with the Library, Guidance, Lost & Found, and where campus offices are. Try one of these:",
         links: [
             { label: "Library", to: "/library" },
             { label: "Guidance", to: "/guidance" },
         ],
+        suggestions: FALLBACK_SUGGESTIONS,
     };
 }
 
@@ -370,4 +468,12 @@ export const ASSISTANT_SUGGESTIONS = [
     { label: "Library location", ask: "Where is the library?" },
     { label: "Lost & Found location", ask: "Where is the lost and found office?" },
     { label: "Guidance location", ask: "Where is the guidance office?" },
+];
+
+/** Offered under an answer we could not give, so there is always a next tap. */
+export const FALLBACK_SUGGESTIONS = [
+    { label: "Borrow a book", ask: "How do I borrow a book?" },
+    { label: "Book counseling", ask: "I want to book a counseling appointment" },
+    { label: "Lost an item", ask: "I lost my wallet" },
+    { label: "Clinic location", ask: "Where is the clinic?" },
 ];

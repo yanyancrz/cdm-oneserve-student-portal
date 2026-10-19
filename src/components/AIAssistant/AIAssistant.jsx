@@ -1,15 +1,144 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { SendHorizontal, Sparkles, ThumbsDown, ThumbsUp, X } from "lucide-react";
-import { ASSISTANT_SUGGESTIONS, answerAssistant } from "./assistantBrain";
+import { MapPin, SendHorizontal, Sparkles, ThumbsDown, ThumbsUp, X } from "lucide-react";
+import { ASSISTANT_SUGGESTIONS, answerAssistant, isLocationQuestion } from "./assistantBrain";
 import { API_URL } from "../../config/api";
 
 let nextId = 1;
 
+// ---- answer rendering ----
+//
+// Bot answers (the on-device brain and the AI alike) are plain text that may
+// carry a little markdown. This turns it into paragraphs, lists and bold - and
+// never touches innerHTML, so nothing an answer contains can inject markup.
+
+/** **bold** only; everything else stays literal text. */
+function renderInline(text) {
+    return text.split(/(\*\*[^*]+\*\*)/g).map((part, index) =>
+        part.length > 4 && part.startsWith("**") && part.endsWith("**") ? (
+            <strong key={index} className="font-semibold text-slate-900">
+                {part.slice(2, -2)}
+            </strong>
+        ) : (
+            part
+        )
+    );
+}
+
+/** Lines -> paragraphs, headings and consecutive-line lists. */
+function parseBlocks(text) {
+    const blocks = [];
+    let list = null;
+
+    const flush = () => {
+        if (list) blocks.push(list);
+        list = null;
+    };
+
+    for (const rawLine of String(text || "").split("\n")) {
+        const line = rawLine.trim();
+
+        if (!line) {
+            flush();
+            continue;
+        }
+
+        const bullet = line.match(/^[-*•]\s+(.*)$/);
+        const numbered = line.match(/^\d+[.)]\s+(.*)$/);
+        const heading = line.match(/^#{1,6}\s+(.*)$/);
+
+        if (bullet || numbered) {
+            const ordered = Boolean(numbered);
+
+            if (!list || list.ordered !== ordered) {
+                flush();
+                list = { type: "list", ordered, items: [] };
+            }
+
+            list.items.push((numbered || bullet)[1]);
+            continue;
+        }
+
+        flush();
+        blocks.push(
+            heading
+                ? { type: "heading", text: heading[1] }
+                : { type: "p", text: line }
+        );
+    }
+
+    flush();
+    return blocks;
+}
+
+function RichText({ text }) {
+    return (
+        <div className="space-y-1.5">
+            {parseBlocks(text).map((block, index) => {
+                if (block.type === "list") {
+                    const Tag = block.ordered ? "ol" : "ul";
+
+                    return (
+                        <Tag
+                            key={index}
+                            className={`space-y-1 pl-5 marker:text-slate-400 ${
+                                block.ordered ? "list-decimal" : "list-disc"
+                            }`}
+                        >
+                            {block.items.map((item, itemIndex) => (
+                                <li key={itemIndex}>{renderInline(item)}</li>
+                            ))}
+                        </Tag>
+                    );
+                }
+
+                if (block.type === "heading") {
+                    return (
+                        <p key={index} className="font-semibold text-slate-900">
+                            {renderInline(block.text)}
+                        </p>
+                    );
+                }
+
+                return <p key={index}>{renderInline(block.text)}</p>;
+            })}
+        </div>
+    );
+}
+
+/** One campus office: name, where it is, and what it is next to. */
+function OfficeCard({ office }) {
+    return (
+        <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <div className="flex items-start gap-2.5">
+                <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#106A2E]/10 text-[#106A2E]">
+                    <MapPin size={16} aria-hidden="true" />
+                </span>
+
+                <div className="min-w-0">
+                    <p className="text-sm font-semibold text-slate-900">{office.name}</p>
+
+                    <p className="mt-0.5 text-[13px] font-medium text-[#106A2E]">
+                        {office.where}
+                    </p>
+
+                    {office.near?.length > 0 && (
+                        <ul className="mt-1.5 space-y-0.5 text-[13px] leading-5 text-slate-600">
+                            {office.near.map((item) => (
+                                <li key={item}>{item}</li>
+                            ))}
+                        </ul>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 const greeting = () => ({
     id: nextId++,
     from: "bot",
-    text: "Hi! I'm your OneServe Assistant. Ask me about books, food orders, counseling, or lost items.",
+    text: "Hi! I'm your OneServe Assistant. Ask me about books, counseling, lost items, or where a campus office is.",
     links: [],
     source: "local",
 });
@@ -90,10 +219,9 @@ export default function AIAssistant() {
 
         // For location/campus office queries we always use the on-device brain,
         // because it has the curated location data that the remote AI lacks.
-        const isLocationQuery =
-            /location|saan|where|office|opisina|room|building|clinic|library|lost and found|guidance|counseling/i.test(
-                text
-            );
+        // The brain decides what counts as one, so a question that merely
+        // mentions "library" (borrowing, due dates) is no longer forced local.
+        const isLocationQuery = isLocationQuestion(text);
 
         if (isLocationQuery) {
             setMessages((prev) => [
@@ -160,6 +288,9 @@ export default function AIAssistant() {
         }
     };
 
+    // Quick-reply chips only stay on the newest message.
+    const lastMessageId = messages[messages.length - 1]?.id;
+
     return (
         <>
             {/* Floating entry point. Above the bottom nav, below modals. */}
@@ -216,17 +347,31 @@ export default function AIAssistant() {
                                 className={`flex ${message.from === "user" ? "justify-end" : "justify-start"}`}
                             >
                                 <div
-                                    className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-[13px] leading-5 ${
+                                    className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-6 ${
+                                        message.offices?.length > 0 ? "w-[85%]" : ""
+                                    } ${
                                         message.from === "user"
                                             ? "bg-[#106A2E] text-white"
                                             : "border border-slate-200 bg-white text-slate-700 shadow-sm"
                                     }`}
                                 >
-                                    <p className="whitespace-pre-line">{message.text}</p>
+                                    {message.from === "user" ? (
+                                        <p className="whitespace-pre-line">{message.text}</p>
+                                    ) : message.offices?.length > 0 ? (
+                                        <div className="space-y-2">
+                                            {message.lead && <p>{message.lead}</p>}
+
+                                            {message.offices.map((office) => (
+                                                <OfficeCard key={office.name} office={office} />
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <RichText text={message.text} />
+                                    )}
 
                                     {message.from === "bot" && message.source === "ai" && (
                                         <div className="mt-2 flex items-center gap-1.5">
-                                            <span className="mr-1 text-[10px] text-slate-400">
+                                            <span className="mr-1 text-[11px] text-slate-400">
                                                 AI answer · helpful?
                                             </span>
                                             <button
@@ -268,13 +413,30 @@ export default function AIAssistant() {
                                                         setOpen(false);
                                                         navigate(link.to);
                                                     }}
-                                                    className="rounded-full bg-[#106A2E]/10 px-3 py-1.5 text-[11px] font-semibold text-[#106A2E] transition hover:bg-[#106A2E]/20"
+                                                    className="rounded-full bg-[#106A2E]/10 px-3 py-1.5 text-xs font-semibold text-[#106A2E] transition hover:bg-[#106A2E]/20"
                                                 >
                                                     {link.label} →
                                                 </button>
                                             ))}
                                         </div>
                                     )}
+
+                                    {message.suggestions?.length > 0 &&
+                                        message.id === lastMessageId &&
+                                        !typing && (
+                                            <div className="mt-2.5 flex flex-wrap gap-1.5">
+                                                {message.suggestions.map((item) => (
+                                                    <button
+                                                        key={item.label}
+                                                        type="button"
+                                                        onClick={() => send(item.ask)}
+                                                        className="rounded-full border border-[#106A2E]/25 bg-[#106A2E]/5 px-3 py-1.5 text-xs font-semibold text-[#106A2E] transition hover:bg-[#106A2E]/10"
+                                                    >
+                                                        {item.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                 </div>
                             </div>
                         ))}
@@ -306,7 +468,7 @@ export default function AIAssistant() {
                                     key={item.label}
                                     type="button"
                                     onClick={() => send(item.ask)}
-                                    className="shrink-0 rounded-full border border-[#106A2E]/25 bg-[#106A2E]/5 px-3 py-1.5 text-[11px] font-semibold text-[#106A2E] transition hover:bg-[#106A2E]/10"
+                                    className="shrink-0 rounded-full border border-[#106A2E]/25 bg-[#106A2E]/5 px-3 py-1.5 text-xs font-semibold text-[#106A2E] transition hover:bg-[#106A2E]/10"
                                 >
                                     {item.label}
                                 </button>
@@ -330,7 +492,7 @@ export default function AIAssistant() {
                             type="text"
                             value={input}
                             onChange={(event) => setInput(event.target.value)}
-                            placeholder="Ask about books, orders..."
+                            placeholder="Ask about books, lost items, locations..."
                             maxLength={300}
                             autoComplete="off"
                             className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-[#106A2E] focus:bg-white"
