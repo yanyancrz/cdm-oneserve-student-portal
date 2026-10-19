@@ -268,7 +268,7 @@ export default function CounselorFormModal({ counselor, onClose, onSaved }) {
                                     className={input}
                                     value={idNumber}
                                     onChange={(e) => setIdNumber(e.target.value)}
-                                    placeholder="22-00000"
+                                    placeholder="26-00000"
                                     required
                                 />
                             </Field>

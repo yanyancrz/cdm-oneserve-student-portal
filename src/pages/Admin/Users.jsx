@@ -184,7 +184,7 @@ function MemberForm({ onCancel, onSubmit, submitting, serverError }) {
                 required
                 value={form.idNumber}
                 onChange={update("idNumber")}
-                placeholder={isStudent ? "e.g. 23-13133" : "e.g. EMP-2024-001"}
+                placeholder={isStudent ? "e.g. 26-00000" : "e.g. EMP-2024-001"}
             />
 
             {isStudent && (

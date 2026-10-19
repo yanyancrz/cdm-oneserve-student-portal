@@ -230,7 +230,7 @@ export default function SchoolRecords() {
                     <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_160px_auto]">
                         <input
                             type="text"
-                            placeholder="ID Number (e.g. 23-00387)"
+                            placeholder="ID Number (e.g. 26-00000)"
                             value={idNumber}
                             onChange={(e) => setIdNumber(e.target.value)}
                             className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2.5 text-sm outline-none focus:border-[#106A2E] focus:bg-white"
