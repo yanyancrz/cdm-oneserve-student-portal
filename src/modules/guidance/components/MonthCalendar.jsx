@@ -17,6 +17,7 @@ const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
  *     disabled?: boolean, disabledReason?: string,
  *     dots?: number,        // appointment count dots (capped at 3 visually)
  *     holiday?: string,     // holiday name - red-tinted cell
+ *     leave?: string,       // counselor on leave - amber-tinted cell (label/reason)
  *     weekend?: boolean,
  *   }
  * @param {string} [props.initialMonth] "YYYY-MM" to open on (defaults to value/today)
@@ -114,17 +115,19 @@ export default function MonthCalendar({ value, onSelect, minDate, maxDate, dayIn
                             type="button"
                             disabled={disabled}
                             onClick={() => onSelect?.(iso)}
-                            title={info.holiday || info.disabledReason || iso}
-                            aria-label={`${iso}${info.holiday ? `, ${info.holiday}` : ""}${selected ? ", selected" : ""}`}
+                            title={info.holiday || info.leave || info.disabledReason || iso}
+                            aria-label={`${iso}${info.holiday ? `, ${info.holiday}` : ""}${info.leave ? `, on leave: ${info.leave}` : ""}${selected ? ", selected" : ""}`}
                             aria-pressed={selected}
                             className={`relative flex min-h-[44px] flex-col items-center justify-center rounded-xl py-1 text-xs font-semibold transition active:scale-95 ${
                                 selected
                                     ? "bg-[#106A2E] text-white shadow-sm"
-                                    : disabled
-                                      ? "cursor-not-allowed text-slate-300"
-                                      : info.holiday
-                                        ? "bg-red-50 text-red-700 ring-1 ring-red-200 hover:bg-red-100"
-                                        : "bg-slate-50 text-slate-700 hover:ring-2 hover:ring-[#106A2E]/30"
+                                    : info.holiday
+                                      ? `bg-red-50 text-red-700 ring-1 ring-red-200 ${disabled ? "cursor-not-allowed" : "hover:bg-red-100"}`
+                                      : info.leave
+                                        ? `bg-amber-50 text-amber-700 ring-1 ring-amber-200 ${disabled ? "cursor-not-allowed" : "hover:bg-amber-100"}`
+                                        : disabled
+                                          ? "cursor-not-allowed text-slate-300"
+                                          : "bg-slate-50 text-slate-700 hover:ring-2 hover:ring-[#106A2E]/30"
                             }`}
                         >
                             <span>{dayNum}</span>
@@ -143,6 +146,12 @@ export default function MonthCalendar({ value, onSelect, minDate, maxDate, dayIn
                             {info.holiday && !selected && (
                                 <span className="max-w-full truncate px-0.5 text-[8px] font-bold leading-tight text-red-500">
                                     Holiday
+                                </span>
+                            )}
+
+                            {info.leave && !info.holiday && !selected && (
+                                <span className="max-w-full truncate px-0.5 text-[8px] font-bold leading-tight text-amber-600">
+                                    Leave
                                 </span>
                             )}
                         </button>

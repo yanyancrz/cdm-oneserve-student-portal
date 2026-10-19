@@ -43,12 +43,6 @@ const authHeaders = () => {
     return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-const peso = (value) =>
-    `₱${Number(value || 0).toLocaleString("en-PH", {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-    })}`;
-
 const formatDate = (iso) =>
     iso
         ? new Date(iso).toLocaleDateString("en-US", {
@@ -139,7 +133,6 @@ export default function LibraryAdminDashboard() {
     const stats = data?.stats;
     const overdue = data?.overdue ?? [];
     const activities = data?.activities ?? [];
-    const finePerDay = data?.finePerDay ?? 10;
 
     const metrics = [
         {
@@ -319,7 +312,7 @@ export default function LibraryAdminDashboard() {
                                 </h2>
 
                                 <p className="mt-0.5 text-xs text-slate-400">
-                                    Fine rate: {peso(finePerDay)} per day
+                                    A late return bans borrowing until the end of the semester
                                 </p>
                             </div>
 
@@ -388,10 +381,6 @@ export default function LibraryAdminDashboard() {
                                                     : "days"}{" "}
                                                 late
                                             </span>
-
-                                            <p className="mt-1.5 text-sm font-semibold text-red-600">
-                                                {peso(item.fine)}
-                                            </p>
                                         </div>
                                     </li>
                                 ))}

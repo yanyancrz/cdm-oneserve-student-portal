@@ -1,11 +1,15 @@
-// Philippine public holidays (Nager.Date public API - LIBRE, walang API
-// key at walang signup: https://date.nager.at/api/v3/PublicHolidays/2026/PH).
+// Philippine public holidays.
 //
-// Bakit walang key: ang Nager.Date ay bukas na public-holiday API. Kung gusto
-// ng may-key na provider (hal. Calendarific), palitan lang ang HOLIDAY_URL at
-// magdagdag ng `?api_key=...` - ang cache at helper functions dito ay pareho.
+// The list is served by OUR API (GET /api/guidance/holidays?year=YYYY), which
+// fetches the same public data (Nager.Date, no key, no signup) and caches it
+// server-side. Routing it through the backend means the calendar the student
+// and the counselor see and the rule the server enforces when booking always
+// agree - there is one holiday source, not two.
+//
+// The result is still cached in localStorage for a year, so the app makes at
+// most one holiday request per year.
 
-const HOLIDAY_URL = (year) => `https://date.nager.at/api/v3/PublicHolidays/${year}/PH`;
+import { guidanceApi } from "../services/guidanceApi";
 
 const cacheKey = (year) => `ph_holidays_${year}`;
 
@@ -19,20 +23,16 @@ export async function getPHHolidays(year, signal) {
         if (raw) return JSON.parse(raw);
     } catch { /* corrupted cache - refetch */ }
 
-    const response = await fetch(HOLIDAY_URL(year), { signal });
-    if (!response.ok) throw new Error(`Holiday service returned ${response.status}.`);
+    const data = await guidanceApi.getHolidays(year, signal);
+    const map = data?.holidays || {};
 
-    const list = await response.json();
-    const map = {};
-
-    for (const h of list || []) {
-        // Nager: { date: "2026-01-01", localName, name, ... }
-        if (h?.date) map[h.date] = h.localName || h.name || "Public holiday";
+    // Only cache a real list. An empty one means the provider was unreachable,
+    // so it must not be remembered for the whole year.
+    if (Object.keys(map).length > 0) {
+        try {
+            localStorage.setItem(cacheKey(year), JSON.stringify(map));
+        } catch { /* storage unavailable - memory copy still returned */ }
     }
-
-    try {
-        localStorage.setItem(cacheKey(year), JSON.stringify(map));
-    } catch { /* storage unavailable - memory copy still returned */ }
 
     return map;
 }

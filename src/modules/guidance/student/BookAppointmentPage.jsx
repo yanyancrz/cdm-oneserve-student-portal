@@ -54,7 +54,7 @@ export default function BookAppointmentPage() {
     const [, setTick] = useState(0);
 
     // PH holidays (cached, one call per year) + per-day availability marks
-    // for the date calendar: { "2026-11-05": { offDay, free } }.
+    // for the date calendar: { "2026-11-05": { offDay, free, offReason, holiday } }.
     const [holidays, setHolidays] = useState({});
     const [marks, setMarks] = useState({});
     const marksRef = useRef({});
@@ -213,10 +213,15 @@ export default function BookAppointmentPage() {
                     if (r.status === "fulfilled") {
                         const v = r.value || {};
                         const free = (v.availableSlots || []).length;
-                        marksRef.current[key] = { offDay: !!v.offDay, free };
+                        marksRef.current[key] = {
+                            offDay: !!v.offDay,
+                            free,
+                            offReason: v.offReason || "",
+                            holiday: v.holiday || "",
+                        };
                         next[iso] = marksRef.current[key];
                     } else if (r.reason?.name !== "AbortError") {
-                        marksRef.current[key] = { offDay: true, free: 0 };
+                        marksRef.current[key] = { offDay: true, free: 0, offReason: "", holiday: "" };
                         next[iso] = marksRef.current[key];
                     }
                 });
@@ -404,8 +409,13 @@ export default function BookAppointmentPage() {
                                                 return { disabled: true, disabledReason: holidays[iso], holiday: holidays[iso] };
                                             const mark = marks[iso];
                                             if (!mark) return {};
-                                            if (mark.offDay)
+                                            if (mark.holiday)
+                                                return { disabled: true, disabledReason: `Holiday: ${mark.holiday}`, holiday: mark.holiday };
+                                            if (mark.offDay) {
+                                                if (mark.offReason)
+                                                    return { disabled: true, disabledReason: `Counselor on leave: ${mark.offReason}`, leave: mark.offReason };
                                                 return { disabled: true, disabledReason: "Counselor not scheduled" };
+                                            }
                                             if (mark.free === 0)
                                                 return { disabled: true, disabledReason: "Fully booked" };
                                             return { dots: 1 };
@@ -419,6 +429,9 @@ export default function BookAppointmentPage() {
                                     </span>
                                     <span className="flex items-center gap-1.5">
                                         <span className="h-2 w-2 rounded-full bg-red-400" /> Holiday - unavailable
+                                    </span>
+                                    <span className="flex items-center gap-1.5">
+                                        <span className="h-2 w-2 rounded-full bg-amber-400" /> On leave - unavailable
                                     </span>
                                     {date && (
                                         <span className="font-semibold text-[#106A2E]">
@@ -451,7 +464,13 @@ export default function BookAppointmentPage() {
                             ) : slotError ? (
                                 <ErrorBox message={slotError} onRetry={() => loadSlots(counselorId, date)} />
                             ) : day?.offDay ? (
-                                <Note>This counselor is not scheduled on that day. Please choose a different date.</Note>
+                                <Note>
+                                    {day.holiday
+                                        ? `This date is a holiday (${day.holiday}). Please choose a different date.`
+                                        : day.offReason
+                                          ? `Your counselor is unavailable on this date: ${day.offReason}. Please choose a different date.`
+                                          : "This counselor is not scheduled on that day. Please choose a different date."}
+                                </Note>
                             ) : day && allSlots.length === 0 ? (
                                 <Note>No time slots for this date. Please try another date.</Note>
                             ) : day && free.length === 0 ? (

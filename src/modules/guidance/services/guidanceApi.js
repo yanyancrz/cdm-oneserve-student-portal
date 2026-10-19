@@ -62,6 +62,12 @@ export const guidanceApi = {
     getStudentMe: (signal) => guidanceFetch("/student/me", { signal }),
     getCounselorMe: (signal) => guidanceFetch("/counselor/me", { signal }),
 
+    // ---- shared: PH public holidays ----
+    // Served by the API (cached there) so the calendar the student sees and the
+    // rule the server enforces on booking always agree. -> { year, holidays }
+    getHolidays: (year, signal) =>
+        guidanceFetch(`/holidays?year=${encodeURIComponent(year)}`, { signal }),
+
     // ---- student: counselors, availability, appointments ----
     getCounselors: (signal) =>
         guidanceFetch("/student/counselors", { signal }).then((d) => d.counselors || []),

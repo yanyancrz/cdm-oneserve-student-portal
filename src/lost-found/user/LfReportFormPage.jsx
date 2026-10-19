@@ -26,7 +26,7 @@ import {
 //
 // The photo is uploaded FIRST and the returned
 // root-relative path is submitted with the form -
-// the same upload-then-submit order the marketplace
+// the same upload-then-submit order uses
 // uses, so a failed upload never produces a report
 // with a broken photo reference.
 // =====================================================

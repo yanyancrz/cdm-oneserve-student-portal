@@ -7,12 +7,9 @@ import { portalHomeForRole } from "../PortalLink/BackToPortal";
 // =====================================================
 // Module navigation - the shared shell every module uses
 //
-// WHY ONE COMPONENT AND NOT A COPY
 // The Library bottom nav was the reference: a floating card on mobile, a fixed
-// top bar on desktop, and a "Portal" tab that leaves the module entirely. The
-// marketplace then grew its own, differently-shaped bar - full-width, flat
-// background, dark header above it. Two modules, one system, and no way to tell
-// which is the "real" one.
+// top bar on desktop, and a "Portal" tab that leaves the module entirely. Two modules,
+// one system, and no way to tell which is the "real" one.
 //
 // Extracting it here means a change to the bar's shape, spacing or active state
 // lands in both modules at once. That is the whole point of doing this.
@@ -23,7 +20,7 @@ import { portalHomeForRole } from "../PortalLink/BackToPortal";
  *   action items: `{ label, icon, onClick, active?, badge? }` - for tabs that
  *   open an in-page sheet instead of navigating (the counselor's Alerts). The
  *   caller owns what `active` means; for a route item the URL decides.
- *   `badge` is a number rendered as a pill on the icon - used by the marketplace
+ *   `badge` is a number rendered as a pill on the icon - for the cart count. Omit it and the slot renders nothing.
  *   for the cart count. Omit it and the slot renders nothing.
  * @param {Component} props.brandIcon
  * @param {string} props.brandTitle     e.g. "CDM OneServe"
@@ -66,8 +63,8 @@ export default function ModuleBottomNav({
     // glowing dot. So on mobile the first few - the frequent ones, set by
     // the caller's ordering - stay as tabs, the rest go behind a "More"
     // sheet. On desktop there is room in the top bar, so ENERYTHING is
-    // shown there. For a module with four or fewer tabs (Library, the
-    // market store) there is no overflow and no "More" tab at all.
+    // shown there. For a module with four or fewer tabs there is no overflow
+    // and no "More" tab at all.
     const location = useLocation();
     const [moreOpen, setMoreOpen] = useState(false);
 

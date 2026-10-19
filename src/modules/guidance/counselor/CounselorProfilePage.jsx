@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
     BarChart3,
     CalendarClock,
@@ -24,7 +25,7 @@ import { signOut } from "../utils/session";
 const QUICK_LINKS = [
     { to: "/guidance/counselor/availability", label: "Availability", icon: CalendarClock, note: "Your weekly schedule" },
     { to: "/guidance/counselor/records", label: "Records", icon: FolderOpen, note: "Session notes & summaries" },
-    { to: "/guidance/counselor/reports", label: "Reports", icon: BarChart3, note: "Appointment statistics" },
+    { to: "/guidance/counselor/reports", label: "Reports", icon: BarChart3, note: "Analytics & insights" },
 ];
 
 const A = ACCENTS.green;
@@ -190,7 +191,12 @@ export default function CounselorProfilePage() {
                     profile={profile}
                     email={me.email}
                     onClose={() => setEditing(false)}
-                    onDone={() => setEditing(false)}
+                    onDone={() => {
+                        setEditing(false);
+                        toast.success("Profile updated.");
+                        // Refresh `me` so the card reflects the saved values.
+                        refreshMe?.();
+                    }}
                 />
             )}
 

@@ -159,7 +159,7 @@ export function Loading({ text = "Loading..." }) {
  * the wordmark, and `text` for the "Opening ..." line. Modules with no logo
  * file yet pass `icon` + `accent` and get the badge fallback instead.
  *
- * PORTALED to document.body, not just `fixed`. The Marketplace and
+ * PORTALED to document.body, not just `fixed`. The
  * Lost & Found shells render their pages through <Outlet />, which sits
  * INSIDE a `<main class="relative z-10">`. That main is a STACKING CONTEXT:
  * a `z-[100]` splash inside it still loses to the module navbar's root-level

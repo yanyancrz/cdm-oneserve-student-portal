@@ -22,7 +22,6 @@ import { isPWAInstalled } from "../../utils/pwa";
 import { LIBRARY_HOME_ROUTE, clearSession } from "../../library-admin/utils/session";
 import { rememberSessionKey } from "../../session/deviceSession";
 import { GUIDANCE_HEAD_HOME_ROUTE } from "../../guidance-admin/utils/session";
-import { MARKET_STAFF_HOME_ROUTE } from "../../marketplace/session";
 import { LOST_FOUND_ADMIN_HOME_ROUTE } from "../../lost-found/session";
 
 // =====================================================
@@ -34,43 +33,7 @@ const SERVICES = [
     { name: "Library", description: "Books, reservations, and e-resources", icon: BookOpen },
     { name: "Guidance", description: "Counseling and student support", icon: MessageCircleHeart },
     { name: "Lost & Found", description: "Report and claim lost items", icon: SearchCheck },
-    { name: "Marketplace", description: "Campus store and supplies", icon: ShoppingBag },
 ];
-
-/**
- * Who is this account inside the marketplace - operator, Head, or neither?
- *
- * The operator keeps a normal Student/Faculty OneServe role, so the JWT cannot
- * answer this - the marketplace can. Any failure resolves to null so a login is
- * never blocked by an unreachable endpoint.
- *
- * Returns the actor payload, NOT a boolean, because the endpoint accepts staff
- * OR head and its status code cannot tell them apart. `isHead` is the only thing
- * that separates the two, and getting it wrong greets the Marketplace Head as
- * "Marketplace Staff".
- */
-async function getMarketplaceActor(token) {
-    if (!token) return null;
-
-    try {
-        const response = await fetch(`${API_URL}/api/marketplace/staff/me`, {
-            headers: {
-                Accept: "application/json",
-                Authorization: `Bearer ${token}`,
-            },
-        });
-
-        if (!response.ok) return null;
-
-        // { success, data } envelope - data is null on a refusal, and response.ok
-        // already covers that, so unwrapping is safe here.
-        const body = await response.json();
-
-        return body?.data ?? null;
-    } catch {
-        return null;
-    }
-}
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -223,48 +186,6 @@ export default function Login() {
             localStorage.setItem("profilePicture", user.profilePicture || "");
             localStorage.setItem("isProfileComplete", String(user.isProfileComplete ?? false));
 
-            // ---------- MARKETPLACE HEAD, then MARKETPLACE STAFF ----------
-            // The Head is checked FIRST, and the two signals are OR'd on purpose.
-            //
-            // The ordering is the whole bug. /staff/me resolves staff OR head
-            // (GetOperatorAsync - the Head operates too), so it answers 200 for
-            // both and its status code cannot separate them. Testing "is staff"
-            // first therefore swallowed the Head: correct landing page by
-            // accident, wrong greeting, and - the part that actually mattered -
-            // the desktop-only rule below never ran, so a Head signed in
-            // happily on a phone and only hit the route guard afterwards.
-            //
-            // `role` is OR'd in because it is the one signal that survives the
-            // endpoint being unreachable: if the probe fails, isMarketActor is
-            // null but MarketplaceAdmin in the JWT still routes them correctly
-            // instead of dumping the Head onto the student dashboard.
-            const isMarketActor = await getMarketplaceActor(data.token);
-            const isMarketHead = isMarketActor?.isHead === true || role === "marketplaceadmin";
-
-            // Desktop only. The counter is run from a phone, so an OPERATOR has no
-            // such limit; the Head's half of the console is supervisory. Rejected
-            // here rather than at the route guard so the reason is given once,
-            // immediately, instead of after a successful-looking sign-in. Same
-            // rule the Library Head and Guidance Head follow.
-            if (isMarketHead) {
-                if (!isDesktop) {
-                    rejectLogin(
-                        "The Marketplace Head portal is for desktop and laptop devices only."
-                    );
-                    return;
-                }
-
-                toast.success("Welcome, Marketplace Head!");
-                navigate(MARKET_STAFF_HOME_ROUTE, { replace: true });
-                return;
-            }
-
-            if (isMarketActor) {
-                toast.success("Welcome, Marketplace Staff!");
-                navigate(MARKET_STAFF_HOME_ROUTE, { replace: true });
-                return;
-            }
-
             // ---------- LIBRARY STAFF: any device, directly to scanner ----------
             if (isLibraryStaff) {
                 toast.success("Welcome, Library Staff!");
@@ -340,12 +261,6 @@ export default function Login() {
                 navigate(LOST_FOUND_ADMIN_HOME_ROUTE, { replace: true });
                 return;
             }
-
-            // NOTE: the Marketplace Head is handled ABOVE, next to the staff check, because
-            // it is the same portal and the same endpoint. It used to have its own
-            // branch down here, which never ran: the "is staff?" probe came first
-            // and answered true for the Head too, so the greeting and the
-            // desktop-only rule here were both dead code.
 
             // ---------- OTHER ADMIN MODULES: desktop only ----------
             if (

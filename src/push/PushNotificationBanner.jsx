@@ -2,7 +2,7 @@
  * The opt-in prompt for browser notifications.
  *
  * Why this exists: the Profile page lives inside the student layout, so a
- * librarian, marketplace staff member, counselor or admin could never reach
+ * librarian, staff member, counselor or admin could never reach
  * the toggle. This banner is the one entry point every role sees.
  *
  * Rules it follows:
@@ -93,8 +93,8 @@ export function PushNotificationBanner() {
                             Turn on campus notifications?
                         </h2>
                         <p className="mt-0.5 text-xs leading-relaxed text-slate-500">
-                            Lost &amp; found, library, guidance, marketplace
-                            orders and account updates - even when OneServe is
+                            Lost &amp; found, library, guidance, orders
+                            and account updates - even when OneServe is
                             closed.
                         </p>
                     </div>

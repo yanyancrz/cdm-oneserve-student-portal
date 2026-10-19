@@ -164,7 +164,7 @@ export function PushNotificationCard() {
                         Campus Notifications
                     </h2>
                     <p className="mt-1 text-xs text-slate-500 leading-relaxed">
-                        Lost &amp; found, library, guidance, marketplace orders and
+                        Lost &amp; found, library, guidance, orders and
                         account updates - even while the app is closed.
                     </p>
                 </div>

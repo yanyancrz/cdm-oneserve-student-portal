@@ -19,8 +19,13 @@ function Field({ label, hint, children }) {
     );
 }
 
+const toDateInput = (value) => (value ? String(value).slice(0, 10) : "");
+
 const toForm = (s) => ({
-    overdueFinePerDay: String(s.overdueFinePerDay),
+    firstSemStart: toDateInput(s.firstSemStart),
+    firstSemEnd: toDateInput(s.firstSemEnd),
+    secondSemStart: toDateInput(s.secondSemStart),
+    secondSemEnd: toDateInput(s.secondSemEnd),
     studentBorrowLimit: String(s.studentBorrowLimit),
     facultyBorrowLimit: String(s.facultyBorrowLimit),
     defaultLoanDays: String(s.defaultLoanDays),
@@ -64,13 +69,6 @@ export default function LibrarySettingsPage() {
     const submit = async (e) => {
         e.preventDefault();
 
-        const fine = Number(values.overdueFinePerDay);
-
-        if (!Number.isFinite(fine) || fine < 0 || fine > 1000) {
-            toast.error("The fine must be between 0 and 1,000.");
-            return;
-        }
-
         for (const key of ["studentBorrowLimit", "facultyBorrowLimit"]) {
             const n = Number(values[key]);
             if (!Number.isInteger(n) || n < 1 || n > 50) {
@@ -102,7 +100,7 @@ export default function LibrarySettingsPage() {
 
     return (
         <>
-            <LibraryPageHeader title="Library Settings" description="Fines, borrowing limits, and loan durations." />
+            <LibraryPageHeader title="Library Settings" description="Semester calendar, borrowing limits, and loan durations." />
 
             {error && !settings ? (
                 <div className="rounded-2xl border border-red-100 bg-white p-10 text-center shadow-sm">
@@ -124,11 +122,25 @@ export default function LibrarySettingsPage() {
                     className="max-w-3xl space-y-6 rounded-2xl border border-black/[0.05] bg-white p-6 shadow-sm"
                 >
                     <div>
-                        <h2 className="text-sm font-semibold text-[#1F1F1F]">Fines</h2>
+                        <h2 className="text-sm font-semibold text-[#1F1F1F]">Semester calendar &amp; borrowing ban</h2>
 
-                        <div className="mt-3 max-w-xs">
-                            <Field label="Overdue fine per day (PHP)" hint="Charged for each day a book is overdue.">
-                                <input type="number" min={0} max={1000} step="0.01" className={input} {...bind("overdueFinePerDay")} />
+                        <p className="mt-1 text-xs text-gray-500">
+                            A late return bans the patron from borrowing until the end of the current semester.
+                            Set the semester dates so the ban can be lifted automatically.
+                        </p>
+
+                        <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <Field label="First Sem start">
+                                <input type="date" className={input} {...bind("firstSemStart")} />
+                            </Field>
+                            <Field label="First Sem end">
+                                <input type="date" className={input} {...bind("firstSemEnd")} />
+                            </Field>
+                            <Field label="Second Sem start">
+                                <input type="date" className={input} {...bind("secondSemStart")} />
+                            </Field>
+                            <Field label="Second Sem end">
+                                <input type="date" className={input} {...bind("secondSemEnd")} />
                             </Field>
                         </div>
                     </div>
@@ -164,8 +176,8 @@ export default function LibrarySettingsPage() {
                     </div>
 
                     <p className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-500">
-                        Changes apply to new transactions. Overdue fines of books not yet returned use the new rate.
-                        Fines already recorded do not change.
+                        Changes apply to new transactions. A late return bans the patron from borrowing until the
+                        end of the current semester.
                     </p>
 
                     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-black/[0.06] pt-4">

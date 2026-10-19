@@ -1,7 +1,6 @@
 import { CheckCircle2 } from "lucide-react";
 
 import { formatDate } from "../../utils/dateUtils";
-import { formatPeso } from "../../utils/currencyUtils";
 
 function Row({ label, value }) {
     return (
@@ -30,7 +29,6 @@ export default function BorrowReceipt({ receipt, onBorrowAnother, onDone }) {
                 <Row label="Call no." value={receipt.callNo} />
                 <Row label="Borrowed" value={formatDate(receipt.borrowDate)} />
                 <Row label="Due date" value={formatDate(receipt.dueDate)} />
-                <Row label="Overdue fine" value={`${formatPeso(receipt.finePerDay)} per day`} />
                 <Row label="Slots left" value={String(receipt.remainingSlots)} />
                 <Row label="Processed by" value={receipt.processedBy} />
             </dl>

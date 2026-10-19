@@ -12,7 +12,6 @@ export const EXPORT_DATASETS = [
     { value: "borrows", label: "Borrow transactions", usesRange: true },
     { value: "returns", label: "Return transactions", usesRange: true },
     { value: "reservations", label: "Reservations", usesRange: true },
-    { value: "fines", label: "Fine records", usesRange: true },
 ];
 
 export const RANGE_PRESETS = [

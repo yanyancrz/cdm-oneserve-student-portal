@@ -4,21 +4,18 @@ import { CheckCircle2 } from "lucide-react";
 
 import Modal from "../common/Modal";
 import ReturnDetails from "./ReturnDetails";
-import FineCalculator from "./FineCalculator";
-import { CONDITIONS, PAYMENT_STATUSES } from "../../config/returnOptions";
+import { CONDITIONS } from "../../config/returnOptions";
 import { returnService } from "../../services/returnService";
-import { formatPeso } from "../../utils/currencyUtils";
+import { formatDate } from "../../utils/dateUtils";
 
 export default function ReturnConfirmationModal({ loan, onClose, onDone }) {
     const [condition, setCondition] = useState("Good");
-    const [paymentStatus, setPaymentStatus] = useState("");
     const [saving, setSaving] = useState(false);
     const [result, setResult] = useState(null);
 
     if (!loan) return null;
 
-    const hasFine = loan.fine > 0;
-    const ready = Boolean(condition) && (!hasFine || Boolean(paymentStatus));
+    const ready = Boolean(condition);
 
     const submit = async () => {
         setSaving(true);
@@ -27,7 +24,6 @@ export default function ReturnConfirmationModal({ loan, onClose, onDone }) {
             const data = await returnService.submit({
                 transactionId: loan.transactionId,
                 condition,
-                paymentStatus: hasFine ? paymentStatus : null,
             });
 
             setResult(data);
@@ -67,16 +63,18 @@ export default function ReturnConfirmationModal({ loan, onClose, onDone }) {
                 <dl className="mt-5 space-y-1.5 text-sm">
                     <div className="flex justify-between"><dt className="text-gray-500">Condition</dt><dd className="font-medium">{result.condition}</dd></div>
                     <div className="flex justify-between"><dt className="text-gray-500">Days overdue</dt><dd className="font-medium">{result.overdueDays}</dd></div>
-                    <div className="flex justify-between"><dt className="text-gray-500">Fine</dt><dd className="font-medium">{formatPeso(result.fine)}</dd></div>
-                    {result.paymentStatus && (
-                        <div className="flex justify-between"><dt className="text-gray-500">Payment</dt><dd className="font-medium">{result.paymentStatus}</dd></div>
-                    )}
                     <div className="flex justify-between">
                         <dt className="text-gray-500">Copy</dt>
                         <dd className="font-medium">{result.copyReturnedToShelf ? "Back on shelf" : "Kept off shelf"}</dd>
                     </div>
                     <div className="flex justify-between"><dt className="text-gray-500">Processed by</dt><dd className="font-medium">{result.processedBy}</dd></div>
                 </dl>
+
+                {result.bannedUntil && (
+                    <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                        Borrowing suspended until {formatDate(result.bannedUntil)}.
+                    </div>
+                )}
             </Modal>
         );
     }
@@ -111,8 +109,6 @@ export default function ReturnConfirmationModal({ loan, onClose, onDone }) {
             <div className="space-y-5">
                 <ReturnDetails loan={loan} />
 
-                <FineCalculator loan={loan} />
-
                 <fieldset>
                     <legend className="mb-2 text-xs font-medium text-gray-600">Book condition</legend>
 
@@ -141,25 +137,6 @@ export default function ReturnConfirmationModal({ loan, onClose, onDone }) {
                         ))}
                     </div>
                 </fieldset>
-
-                {hasFine && (
-                    <label className="block">
-                        <span className="mb-1 block text-xs font-medium text-gray-600">
-                            Fine payment status <span className="text-red-500">*</span>
-                        </span>
-                        <select
-                            value={paymentStatus}
-                            disabled={saving}
-                            onChange={(e) => setPaymentStatus(e.target.value)}
-                            className="w-full rounded-lg border border-black/[0.1] px-3 py-2 text-sm outline-none focus:border-[#106A2E]"
-                        >
-                            <option value="">Choose...</option>
-                            {PAYMENT_STATUSES.map((p) => (
-                                <option key={p.value} value={p.value}>{p.label}</option>
-                            ))}
-                        </select>
-                    </label>
-                )}
             </div>
         </Modal>
     );

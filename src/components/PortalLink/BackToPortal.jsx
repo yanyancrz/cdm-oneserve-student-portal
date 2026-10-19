@@ -8,12 +8,6 @@ import { Link } from "react-router-dom";
 // back out. Without it the only way out is editing the URL or hitting the
 // browser back button repeatedly, which on a phone is genuinely disorienting.
 //
-// ONE PLACE, so all of them behave the same. Guidance previously had a "Portal"
-// tab in its own bottom nav; Library had nothing at all; Marketplace had a
-// back arrow that went to the previous screen rather than to OneServe - which is
-// a different thing, and can walk you further away from the portal rather than
-// toward it.
-//
 // WHERE IT GOES depends on who is signed in, because OneServe has two
 // dashboards:
 //   Student / Faculty / Staff / Head  ->  the mobile Student Dashboard
@@ -38,7 +32,6 @@ const PORTAL_ROLES = new Set([
     "guidanceadmin",
     "lostfoundadmin",
     "clinicadmin",
-    "marketplaceadmin",
 ]);
 
 /**
@@ -67,7 +60,7 @@ function currentRole() {
 }
 
 const SIZES = {
-    // A dark header (the marketplace shells).
+    // A dark header.
     onDark: "text-white/60 hover:bg-white/10 hover:text-white focus-visible:ring-white/40",
     // A light header or sidebar.
     onLight:
@@ -80,7 +73,7 @@ const SIZES = {
  * The "Back to Portal" control.
  *
  * `tone` picks the palette, because it is rendered on dark green in the
- * marketplace shells and on white in the library ones. There is no default that
+ * shells and on white in the library ones. There is no default that
  * works everywhere, and guessing wrong means unreadable text - so it is explicit.
  */
 export default function BackToPortal({

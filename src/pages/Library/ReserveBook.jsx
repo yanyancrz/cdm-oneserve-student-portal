@@ -41,6 +41,7 @@ const ENDPOINTS = {
         `${API_URL}/api/library/access-pass/${userId}`,
     loans: (userId) =>
         `${API_URL}/api/library/borrow/current/${userId}`,
+    policy: `${API_URL}/api/library/policy`,
 };
 
 const HOLD_HOURS = 48;
@@ -102,6 +103,13 @@ const formatDateTime = (iso) =>
         day: "numeric",
         hour: "numeric",
         minute: "2-digit",
+    });
+
+const formatBanDate = (iso) =>
+    new Date(iso).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
     });
 
 const getAvailability = (book) => {
@@ -591,6 +599,9 @@ export default function Dashboard() {
     const [selectedBook, setSelectedBook] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
+    // The current user's borrowing ban, if any (from the library policy).
+    const [bannedUntil, setBannedUntil] = useState(null);
+
     // =====================================================
     // LOAD PROFILE, PASS, LOANS
     // =====================================================
@@ -667,6 +678,39 @@ export default function Dashboard() {
             cancelled = true;
         };
     }, [navigate]);
+
+    // =====================================================
+    // LOAD LIBRARY POLICY (borrowing ban)
+    // =====================================================
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadPolicy = async () => {
+            try {
+                const response = await fetch(ENDPOINTS.policy, {
+                    headers: authHeaders(),
+                });
+
+                if (!response.ok) return;
+
+                const payload = await response.json();
+                const data = payload?.data ?? payload;
+
+                if (!cancelled) {
+                    setBannedUntil(data?.bannedUntil ?? null);
+                }
+            } catch {
+                // No policy available: nothing to show.
+            }
+        };
+
+        loadPolicy();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     // =====================================================
     // RESERVATION STORAGE (browser-only for now)
@@ -763,6 +807,13 @@ export default function Dashboard() {
     const slotsLeft = Math.max(0, borrowLimit - loanCount - reservedCopies);
 
     const isCleared = overdueLoans.length === 0;
+
+    const banDate = bannedUntil ? new Date(bannedUntil) : null;
+    const isBanned = Boolean(
+        banDate &&
+            !Number.isNaN(banDate.getTime()) &&
+            banDate.getTime() > Date.now()
+    );
 
     // =====================================================
     // BOOKS (kasama ang local availability)
@@ -992,6 +1043,29 @@ export default function Dashboard() {
                             </p>
                         </div>
                     </button>
+                )}
+
+                {/* BORROWING BAN */}
+
+                {isBanned && (
+                    <div className="mb-5 flex w-full items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left">
+                        <ShieldAlert
+                            size={20}
+                            className="mt-0.5 shrink-0 text-amber-600"
+                        />
+
+                        <div>
+                            <p className="text-sm font-semibold text-amber-800">
+                                Borrowing suspended until{" "}
+                                {formatBanDate(bannedUntil)}
+                            </p>
+
+                            <p className="mt-0.5 text-xs text-amber-700/80">
+                                A late return bans you from borrowing until the
+                                end of the current semester.
+                            </p>
+                        </div>
+                    </div>
                 )}
 
                 {/* ACCESS PASS */}
@@ -1304,8 +1378,9 @@ export default function Dashboard() {
                                     hours at the circulation desk.
                                 </li>
                                 <li>
-                                    Overdue books trigger an SMS notice. There
-                                    is no daily cash fine.
+                                    Returning a book late bans you from
+                                    borrowing until the end of the current
+                                    semester.
                                 </li>
                                 <li>
                                     For a lost or damaged book, bring an

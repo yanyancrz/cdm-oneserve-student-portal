@@ -49,7 +49,7 @@ export function answerAssistant(rawText) {
 
     if (!text) {
         return {
-            text: "Ask me anything about the Library, Marketplace, Guidance, or Lost & Found.",
+            text: "Ask me anything about the Library, Guidance, or Lost & Found.",
             links: [],
         };
     }
@@ -83,7 +83,7 @@ export function answerAssistant(rawText) {
         };
     }
 
-    // ---- library: loans, due dates, fines, renewals, returns ----
+    // ---- library: loans, due dates, bans, renewals, returns ----
     if (
         has(
             text,
@@ -101,7 +101,7 @@ export function answerAssistant(rawText) {
         )
     ) {
         return {
-            text: "Check your due dates in Loans - returning late adds a daily fine, so renew or return before the due date. Anything overdue shows there first.",
+            text: "Check your due dates in Loans - returning late bans you from borrowing until the end of the semester, so renew or return before the due date. Anything overdue shows there first.",
             links: [{ label: "Open my Loans", to: "/library/loans" }],
         };
     }
@@ -149,88 +149,6 @@ export function answerAssistant(rawText) {
                 { label: "Browse books", to: "/library/books" },
                 { label: "Reserve a book", to: "/library/reserve" },
                 { label: "Library home", to: "/library" },
-            ],
-        };
-    }
-
-    // ---- marketplace: tracking / cancelling ----
-    if (
-        has(
-            text,
-            "track",
-            "tracking",
-            "status",
-            "nasaan",
-            "saan na",
-            "cancel",
-            "kansela",
-            "order ko",
-            "my order"
-        )
-    ) {
-        return {
-            text: "Track every order in one place - each stall's order moves on its own timeline, and you can cancel while it is still early.",
-            links: [{ label: "Track my orders", to: "/marketplace/orders" }],
-        };
-    }
-
-    // ---- marketplace: payment / delivery ----
-    if (
-        has(
-            text,
-            "bayad",
-            "payment",
-            "cash",
-            "gcash",
-            "deliver",
-            "delivery",
-            "pickup",
-            "pick up",
-            "hatid"
-        )
-    ) {
-        return {
-            text: "Payment is cash on pickup or on campus delivery. Delivery stays inside the campus - you pick an approved campus location at checkout, never a home address.",
-            links: [{ label: "Go to checkout", to: "/marketplace/checkout" }],
-        };
-    }
-
-    // ---- marketplace: shop / food / uniforms ----
-    if (
-        has(
-            text,
-            "buy",
-            "bili",
-            "bumili",
-            "order",
-            "orderin",
-            "umorder",
-            "shop",
-            "store",
-            "food",
-            "pagkain",
-            "meal",
-            "meryenda",
-            "uniform",
-            "merch",
-            "merchandise",
-            "market",
-            "canteen",
-            "kantin",
-            "stall",
-            "menu",
-            "ulam",
-            "magkano",
-            "how much",
-            "price",
-            "presyo"
-        )
-    ) {
-        return {
-            text: "The Marketplace has the CDM BusinessHub (uniforms and merch, at the Canteen) and the FoodHub - Main FoodHub at the Old Building Lobby and Stall 1 near the Canteen. What are you craving?",
-            links: [
-                { label: "Open Marketplace", to: "/marketplace" },
-                { label: "My cart", to: "/marketplace/cart" },
             ],
         };
     }
@@ -391,7 +309,7 @@ export function answerAssistant(rawText) {
         has(text, "saan", "where", "location", "office", "opisina", "room")
     ) {
         return {
-            text: "Pickups for approved Lost & Found claims happen at the OneServe Student Affairs Office. Food stalls: Main FoodHub at the Old Building Lobby, Stall 1 near the Canteen; uniforms and merch at the BusinessHub in the Canteen.",
+            text: "Pickups for approved Lost & Found claims happen at the OneServe Student Affairs Office.",
             links: [],
         };
     }
@@ -414,10 +332,9 @@ export function answerAssistant(rawText) {
 
     // ---- fallback: never bluff, always offer a way forward ----
     return {
-        text: "I'm not sure about that one yet - I know the Library, Marketplace, Guidance and Lost & Found best. Try one of these, or rephrase with a word like 'book', 'order', 'appointment' or 'lost'.",
+        text: "I'm not sure about that one yet - I know the Library, Guidance and Lost & Found best. Try one of these, or rephrase with a word like 'book', 'order', 'appointment' or 'lost'.",
         links: [
             { label: "Library", to: "/library" },
-            { label: "Marketplace", to: "/marketplace" },
             { label: "Guidance", to: "/guidance" },
         ],
     };
@@ -426,7 +343,6 @@ export function answerAssistant(rawText) {
 /** Quick chips shown when the chat opens. Real destinations, no dead ends. */
 export const ASSISTANT_SUGGESTIONS = [
     { label: "Borrow a book", ask: "How do I borrow a book?" },
-    { label: "Track my order", ask: "Where is my order?" },
     { label: "Book counseling", ask: "I want to talk to a counselor" },
     { label: "Report lost item", ask: "I lost my wallet" },
 ];

@@ -10,7 +10,10 @@ export const settingsService = {
 
     async update(values) {
         const response = await api.put(BASE, {
-            overdueFinePerDay: Number(values.overdueFinePerDay),
+            firstSemStart: values.firstSemStart || null,
+            firstSemEnd: values.firstSemEnd || null,
+            secondSemStart: values.secondSemStart || null,
+            secondSemEnd: values.secondSemEnd || null,
             studentBorrowLimit: Number(values.studentBorrowLimit),
             facultyBorrowLimit: Number(values.facultyBorrowLimit),
             defaultLoanDays: Number(values.defaultLoanDays),

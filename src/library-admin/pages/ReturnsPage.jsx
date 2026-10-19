@@ -11,7 +11,6 @@ import StatusBadge from "../components/common/StatusBadge";
 
 import { returnService } from "../services/returnService";
 import { formatDate } from "../utils/dateUtils";
-import { formatPeso } from "../utils/currencyUtils";
 
 const PAGE_SIZE = 10;
 
@@ -87,7 +86,7 @@ export default function ReturnsPage() {
 
     return (
         <>
-            <LibraryPageHeader title="Returns" description="Process returns, book condition, and fines." />
+            <LibraryPageHeader title="Returns" description="Process returns and record the book condition." />
 
             <div className="space-y-4">
                 <ReturnSearch
@@ -144,7 +143,6 @@ export default function ReturnsPage() {
                                             <th className="px-3 py-3 font-medium">Book</th>
                                             <th className="px-3 py-3 font-medium">Due</th>
                                             <th className="px-3 py-3 font-medium">Status</th>
-                                            <th className="px-3 py-3 text-right font-medium">Fine</th>
                                             <th className="px-5 py-3 text-right font-medium">Action</th>
                                         </tr>
                                     </thead>
@@ -166,9 +164,6 @@ export default function ReturnsPage() {
                                                     <StatusBadge tone={l.isOverdue ? "red" : "green"}>
                                                         {l.isOverdue ? `${l.overdueDays}d overdue` : "On loan"}
                                                     </StatusBadge>
-                                                </td>
-                                                <td className="px-3 py-3 text-right text-gray-700">
-                                                    {l.fine > 0 ? formatPeso(l.fine) : "—"}
                                                 </td>
                                                 <td className="px-5 py-3 text-right">
                                                     <button

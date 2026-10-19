@@ -19,7 +19,7 @@ Two options were considered. **This implementation uses the dedicated Node servi
  MySQL PushSubscriptions ───────────────────────────────┐
                                                         │
  Business event (Lost&Found / Library / Guidance /      │ readable
- Marketplace / Account verification / Announcements)    │
+ Account verification / Announcements)                  │
    │ PushDispatcher.EnqueueAsync(...)                   │
    ▼                                                    │
  MySQL PushOutbox   (Pending, deduped)                 │
@@ -228,7 +228,7 @@ LOG_LEVEL=info
 | `src/push/PushNotificationBanner.jsx` | new | opt-in prompt (non-student roles) |
 | `src/App.jsx` | modified | mounts sync + banner |
 | `src/pages/Profile/Profile.jsx` | modified | inserts the card |
-| `src/components/BottomNavigation/BottomNavigation.jsx` | modified | Marketplace notifications |
+| `src/components/BottomNavigation/BottomNavigation.jsx` | modified | notification routing |
 | `public/icons/icon-512.png` | new | the manifest already referenced it |
 | `push-service/**` | new | Node delivery service |
 | `eslint.config.js` | modified | ignore `push-service` |

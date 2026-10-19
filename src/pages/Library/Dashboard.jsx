@@ -144,10 +144,11 @@ const getAvailability = (book) => {
     };
 };
 
-const formatPeso = (value) =>
-    Number(value || 0).toLocaleString("en-PH", {
-        style: "currency",
-        currency: "PHP",
+const formatBanDate = (iso) =>
+    new Date(iso).toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
     });
 
 // Grey blocks come from the shared kit: it respects "reduce motion" and
@@ -549,6 +550,7 @@ export default function Dashboard() {
                 setPolicy({
                     settings: data?.settings ?? null,
                     terms: toArray(data?.terms),
+                    bannedUntil: data?.bannedUntil ?? null,
                 });
             } catch {
                 if (!cancelled) setPolicy(null);
@@ -596,7 +598,15 @@ export default function Dashboard() {
 
     const loanDays = settings?.defaultLoanDays ?? 7;
     const holdDays = settings?.reservationPickupDays ?? 3;
-    const finePerDay = Number(settings?.overdueFinePerDay ?? 0) || 0;
+
+    const bannedUntil = policy?.bannedUntil
+        ? new Date(policy.bannedUntil)
+        : null;
+    const isBanned = Boolean(
+        bannedUntil &&
+            !Number.isNaN(bannedUntil.getTime()) &&
+            bannedUntil.getTime() > Date.now()
+    );
 
     const terms = policy?.terms ?? [];
     const visibleTerms = showAllTerms ? terms : terms.slice(0, TERMS_PREVIEW);
@@ -607,9 +617,8 @@ export default function Dashboard() {
               { label: "Borrow limit", value: `${borrowLimit} books` },
               { label: "Loan period", value: `${loanDays} days` },
               { label: "Reservation hold", value: `${holdDays} days` },
-              ...(finePerDay > 0
-                  ? [{ label: "Overdue fine", value: `${formatPeso(finePerDay)} / day` }]
-                  : []),
+              { label: "Late return", value: "1-semester ban" },
+              { label: "Lost book", value: "Replace exact copy" },
           ]
         : [];
 
@@ -894,6 +903,29 @@ export default function Dashboard() {
                             </p>
                         </div>
                     </button>
+                )}
+
+                {/* BORROWING BAN */}
+
+                {isBanned && (
+                    <div className="mb-5 flex w-full items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left">
+                        <ShieldAlert
+                            size={20}
+                            className="mt-0.5 shrink-0 text-amber-600"
+                        />
+
+                        <div>
+                            <p className="text-sm font-semibold text-amber-800">
+                                Borrowing suspended until{" "}
+                                {formatBanDate(bannedUntil)}
+                            </p>
+
+                            <p className="mt-0.5 text-xs text-amber-700/80">
+                                A late return bans you from borrowing until the
+                                end of the current semester.
+                            </p>
+                        </div>
+                    </div>
                 )}
 
                 {/* ACCESS PASS */}
@@ -1384,9 +1416,9 @@ export default function Dashboard() {
                                         days at the circulation desk.
                                     </li>
                                     <li>
-                                        {finePerDay > 0
-                                            ? `Overdue books are charged ${formatPeso(finePerDay)} per day.`
-                                            : "There is no daily cash fine."}
+                                        Returning a book late bans you from
+                                        borrowing until the end of the current
+                                        semester.
                                     </li>
                                     <li>
                                         For a lost or damaged book, bring an

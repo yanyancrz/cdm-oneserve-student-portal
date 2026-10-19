@@ -506,19 +506,6 @@ export default function BorrowHistory() {
                                                     )}
                                                 </div>
 
-                                                {/* FINE */}
-
-                                                {!isReservation &&
-                                                    Number(raw.fine ?? 0) >
-                                                        0 && (
-                                                        <span className="mt-2 inline-block rounded-lg bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-600">
-                                                            Fine: ₱
-                                                            {Number(
-                                                                raw.fine
-                                                            ).toFixed(2)}
-                                                        </span>
-                                                    )}
-
                                                 {/* RESERVATION ACTIONS */}
 
                                                 {entry.liveStatus ===

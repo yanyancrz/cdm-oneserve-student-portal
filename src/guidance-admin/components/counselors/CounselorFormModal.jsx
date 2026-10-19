@@ -132,6 +132,11 @@ export default function CounselorFormModal({ counselor, onClose, onSaved }) {
         return null;
     };
 
+    // Live validity so the Create/Save button stays greyed out until the form is
+    // complete and correct. validate() is the single source of truth and is
+    // reused by the submit guard below, so the button can never drift from it.
+    const canSubmit = !validate();
+
     const submit = async (event) => {
         event.preventDefault();
 
@@ -187,33 +192,41 @@ export default function CounselorFormModal({ counselor, onClose, onSaved }) {
             title={isEdit ? "Edit counselor" : "Add counselor"}
             size="lg"
             footer={
-                <>
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        disabled={busy}
-                        className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        form="counselor-form"
-                        disabled={busy}
-                        className="rounded-lg bg-[#106A2E] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-60"
-                    >
-                        {busy ? "Saving..." : isEdit ? "Save changes" : "Create account"}
-                    </button>
-                </>
+                // The notice sits in the footer (bottom of the dialog) so it is
+                // always in view next to the button, even when the form is tall
+                // and scrolled. The empty flex-1 keeps the buttons right-aligned
+                // when there is nothing to report.
+                <div className="flex w-full flex-wrap items-center justify-between gap-x-3 gap-y-2">
+                    <div className="min-w-0 flex-1 text-xs sm:text-sm">
+                        {formError && (
+                            <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-red-600">
+                                {formError}
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="flex shrink-0 items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            disabled={busy}
+                            className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:opacity-50"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            type="submit"
+                            form="counselor-form"
+                            disabled={busy || !canSubmit}
+                            className="rounded-lg bg-[#106A2E] px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 disabled:opacity-100"
+                        >
+                            {busy ? "Saving..." : isEdit ? "Save changes" : "Create account"}
+                        </button>
+                    </div>
+                </div>
             }
         >
             <form id="counselor-form" onSubmit={submit} className="space-y-4">
-                {formError && (
-                    <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
-                        {formError}
-                    </p>
-                )}
-
                 <div className="grid gap-4 sm:grid-cols-2">
                     <Field>
                         <label className={label} htmlFor="c-fullname">

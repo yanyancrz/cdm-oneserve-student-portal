@@ -89,16 +89,6 @@ import BlockRoles from "./components/RoleGuard/BlockRoles";
 import { GUIDANCE_COUNSELOR_HOME } from "./modules/guidance/config/guidanceRoutes";
 
 // =====================================================
-// CAMPUSMARKET (marketplace)
-// A module INSIDE OneServe. Three portals that stay apart:
-//   /marketplace/*        buyer  - Student / Faculty (inside StudentLayout)
-//   /marketplace/staff/*  staff  - the ONE Marketplace Staff account (desktop)
-//   /marketplace/admin/*  admin  - the OneServe Admin, monitoring only (desktop)
-// There is no marketplace login: the shared one above issues the single JWT.
-// =====================================================
-import { marketBuyerRoutes, marketStaffRoutes, marketAdminRoutes } from "./marketplace/MarketRoutes";
-
-// =====================================================
 // LOST & FOUND (FIND, integrated)
 // A module INSIDE OneServe:
 //   /lost-found/*        user      - Student / Faculty (inside StudentLayout)
@@ -221,9 +211,6 @@ function App() {
                     <Route path="/clinic/referrals" element={<Referrals />} />
 
 
-                    {/* CampusMarket (buyer side) - Student / Faculty */}
-                    {marketBuyerRoutes}
-
                     {/* Guidance Counseling (student side) - opened from the dashboard */}
                     {guidanceStudentRoutes}
 
@@ -258,12 +245,6 @@ function App() {
 
                 {/* ================= GUIDANCE ADMINISTRATION (Guidance Head) ================= */}
                 {guidanceHeadRoutes}
-
-                {/* ================= CAMPUSMARKET STAFF (the one staff account) ================= */}
-                {marketStaffRoutes}
-
-                {/* ================= CAMPUSMARKET MONITORING (OneServe Admin, read-only) ================= */}
-                {marketAdminRoutes}
 
                 {/* ================= LOST & FOUND CONSOLE (module owner, desktop) ================= */}
                 {lostFoundAdminRoutes}

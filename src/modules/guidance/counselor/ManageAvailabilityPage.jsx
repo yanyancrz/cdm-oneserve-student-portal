@@ -4,8 +4,10 @@ import { CalendarClock, CalendarX2, Plus, Trash2 } from "lucide-react";
 
 import { CardListSkeleton, Empty, ErrorBox, Note } from "../components/GuidanceStates";
 import { ACCENTS, fieldClass } from "../components/GuidanceUi";
+import MonthCalendar from "../components/MonthCalendar";
 import { guidanceApi } from "../services/guidanceApi";
 import { todayISO } from "../utils/dateTime";
+import { getPHHolidays } from "../utils/phHolidays";
 import RescheduleSheet from "./RescheduleSheet";
 
 const DAYS = [
@@ -49,6 +51,7 @@ export default function ManageAvailabilityPage() {
     // One-date day-offs (the weekly blocks repeat on their own, so next
     // week is automatically back to normal).
     const [dayOffs, setDayOffs] = useState([]);
+    const [holidays, setHolidays] = useState({});
     const [dayOffDate, setDayOffDate] = useState("");
     const [dayOffReason, setDayOffReason] = useState("");
     const [affected, setAffected] = useState(null); // appointments on the picked date
@@ -115,6 +118,21 @@ export default function ManageAvailabilityPage() {
         return () => c.abort();
     }, [load]);
 
+    // PH holidays (server-cached, one call per year). Shown as unavailable on
+    // the calendar below so the counselor sees exactly what students see.
+    useEffect(() => {
+        const c = new AbortController();
+        const year = new Date().getFullYear();
+        Promise.allSettled([getPHHolidays(year, c.signal), getPHHolidays(year + 1, c.signal)]).then(([a, b]) => {
+            if (c.signal.aborted) return;
+            setHolidays({
+                ...(a.status === "fulfilled" ? a.value : {}),
+                ...(b.status === "fulfilled" ? b.value : {}),
+            });
+        });
+        return () => c.abort();
+    }, []);
+
     const add = async () => {
         setAddError("");
         if (end <= start) return setAddError("End time must be after start time.");
@@ -161,18 +179,26 @@ export default function ManageAvailabilityPage() {
     // Who has an appointment on the picked day-off date? They must be
     // rescheduled first - setting the day off blocks NEW bookings, but
     // existing appointments stay until moved.
-    const checkDay = async () => {
-        if (!dayOffDate) return toast.error("Pick a date first.");
-        if (dayOffDate < todayISO()) return toast.error("Cannot mark a past date as a day off.");
+    const checkDay = async (dateArg) => {
+        const target = dateArg || dayOffDate;
+        if (!target) return toast.error("Pick a date first.");
+        if (target < todayISO()) return toast.error("Cannot mark a past date as a day off.");
         setCheckingDay(true);
         try {
-            const list = await guidanceApi.getCounselorAppointments({ date: dayOffDate });
+            const list = await guidanceApi.getCounselorAppointments({ date: target });
             setAffected(list.filter((a) => ["Pending", "Confirmed", "Arrived"].includes(a.status)));
         } catch (e) {
             toast.error(e.message || "Could not check that date.");
         } finally {
             setCheckingDay(false);
         }
+    };
+
+    // Calendar click: remember the date and immediately see who is booked.
+    const selectDayOff = (iso) => {
+        setDayOffDate(iso);
+        setAffected(null);
+        checkDay(iso);
     };
 
     const saveDayOff = async () => {
@@ -207,6 +233,23 @@ export default function ManageAvailabilityPage() {
 
     const dayIsOn = (idx) => slots.some((s) => s.dayOfWeek === idx && s.isActive);
 
+    const dayOffByDate = {};
+    for (const d of dayOffs) dayOffByDate[d.date] = d;
+
+    // What the calendar cell should show for a date: an existing day off
+    // (amber, with the reason), a PH holiday (red), a weekend, or nothing.
+    const dayOffDateInfo = (iso) => {
+        const off = dayOffByDate[iso];
+        if (off) return { leave: off.reason || "On leave", disabled: true, disabledReason: "Already marked as a day off" };
+        if (holidays[iso]) return { holiday: holidays[iso], disabled: true, disabledReason: `Holiday: ${holidays[iso]}` };
+
+        const [yy, mm, dd] = iso.split("-").map(Number);
+        const dow = new Date(yy, mm - 1, dd).getDay();
+        if (dow === 0 || dow === 6) return { weekend: true, disabled: true, disabledReason: "Weekend" };
+
+        return {};
+    };
+
     return (
         <main className="space-y-3 p-4">
             {/* SUMMARY */}
@@ -224,7 +267,7 @@ export default function ManageAvailabilityPage() {
                         </p>
                         <p className="mt-0.5 text-xs leading-5 text-white/80">
                             Students book 30-minute slots inside these blocks, Monday to Friday.
-                            Lunch (12–1 PM) and PH holidays are always unavailable.
+                            Lunch (12–1 PM), PH holidays and any day off you set are unavailable.
                         </p>
                     </div>
                 </div>
@@ -366,38 +409,41 @@ export default function ManageAvailabilityPage() {
                     <div className="min-w-0 flex-1">
                         <h2 className="text-sm font-bold text-slate-700">Day off (one date)</h2>
                         <p className="text-[11px] text-slate-400">
-                            Closes a single date. Next week is automatically back to the weekly schedule.
+                            Pick a date to close it for bookings. Next week is automatically back to the
+                            weekly schedule, and your reason is shown to students.
                         </p>
                     </div>
                 </div>
 
-                <div className="mt-3 flex gap-2">
-                    <input
-                        type="date"
-                        aria-label="Day-off date"
-                        min={todayISO()}
+                <div className="mt-3">
+                    <MonthCalendar
                         value={dayOffDate}
-                        onChange={(e) => { setDayOffDate(e.target.value); setAffected(null); }}
-                        className={fieldClass("green")}
+                        onSelect={selectDayOff}
+                        minDate={todayISO()}
+                        dayInfo={dayOffDateInfo}
                     />
-                    <button
-                        type="button"
-                        onClick={checkDay}
-                        disabled={checkingDay || !dayOffDate}
-                        className="shrink-0 rounded-xl bg-[#106A2E] px-4 text-xs font-semibold text-white transition active:scale-95 disabled:opacity-60"
-                    >
-                        {checkingDay ? "Checking…" : "Check"}
-                    </button>
                 </div>
 
-                <input
-                    aria-label="Day-off reason (optional)"
-                    value={dayOffReason}
-                    onChange={(e) => setDayOffReason(e.target.value)}
-                    placeholder="Reason (optional, e.g. seminar)"
-                    maxLength={200}
-                    className={`${fieldClass("green")} mt-2`}
-                />
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-slate-500">
+                    <span className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-amber-400" /> Day off / leave
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                        <span className="h-2 w-2 rounded-full bg-red-400" /> Holiday - unavailable
+                    </span>
+                    {checkingDay && <span className="font-semibold text-[#106A2E]">Checking {dayOffDate}…</span>}
+                </div>
+
+                {dayOffDate && (
+                    <input
+                        aria-label="Day-off reason (optional)"
+                        value={dayOffReason}
+                        onChange={(e) => setDayOffReason(e.target.value)}
+                        placeholder="Reason (optional, e.g. seminar) - students will see this"
+                        maxLength={200}
+                        className={`${fieldClass("green")} mt-2`}
+                    />
+                )}
 
                 {affected !== null && (
                     <div className="mt-3 rounded-xl bg-slate-50 p-3">

@@ -24,7 +24,7 @@ const TABS = [
 ];
 
 // Student Guidance shell. Uses the shared <ModuleBottomNav>, the same bar the
-// Library and Marketplace use: a floating pill on mobile, a fixed top bar on
+// the library and this module use a floating pill on mobile, a fixed top bar on
 // desktop, and a "Portal" tab that leaves the module for OneServe. It
 // previously had its own full-width fixed bottom bar, which put Guidance at
 // its own third style - one system, so one bar.

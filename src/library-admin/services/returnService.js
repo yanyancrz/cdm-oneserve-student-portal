@@ -19,11 +19,10 @@ export const returnService = {
         return response.data;
     },
 
-    async submit({ transactionId, condition, paymentStatus }) {
+    async submit({ transactionId, condition }) {
         const response = await api.post(BASE, {
             transactionId,
             condition,
-            paymentStatus: paymentStatus || null,
         });
         return response.data;
     },

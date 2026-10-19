@@ -6,7 +6,7 @@ import ModuleBottomNav from "./ModuleBottomNav";
 // Library navigation
 //
 // A thin wrapper over the shared <ModuleBottomNav>. The markup that used to be
-// duplicated here is now in one place, so the Library and the Marketplace cannot
+// duplicated here is now in one place, so the Library and the others cannot
 // drift apart - they are the same bar with different tabs.
 // =====================================================
 

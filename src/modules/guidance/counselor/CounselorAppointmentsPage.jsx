@@ -55,7 +55,7 @@ export default function CounselorAppointmentsPage() {
             toast.success(r.message || "Updated.");
             setItems((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
         } catch (e) {
-            toast.error(e.message || "Action failed.");
+            toast.error(e.message || "Could not update the appointment.");
             load();
         } finally {
             setBusy(null);

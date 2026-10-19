@@ -130,7 +130,13 @@ export default function RescheduleSheet({ appointment, onClose, onDone }) {
                         ) : slotError ? (
                             <ErrorBox message={slotError} />
                         ) : day?.offDay ? (
-                            <Note>You have no availability on that day.</Note>
+                            <Note>
+                                {day.holiday
+                                    ? `That date is a holiday (${day.holiday}).`
+                                    : day.offReason
+                                      ? `You are marked unavailable on that day: ${day.offReason}.`
+                                      : "You have no availability on that day."}
+                            </Note>
                         ) : day?.studentBusy ? (
                             <Note tone="error">This student already has another appointment on that date.</Note>
                         ) : day && free.length === 0 ? (

@@ -4,7 +4,6 @@ import Modal from "../common/Modal";
 import StatusBadge from "../common/StatusBadge";
 import { accountTone } from "./StudentTable";
 import { studentService } from "../../services/studentService";
-import { formatPeso } from "../../utils/currencyUtils";
 import { formatDate } from "../../utils/dateUtils";
 
 
@@ -52,7 +51,6 @@ export function LoansTable({ rows, showStatus }) {
                             <th className="px-3 py-2 font-medium">Due</th>
                             <th className="px-3 py-2 font-medium">Returned</th>
                             {showStatus && <th className="px-3 py-2 font-medium">Status</th>}
-                            <th className="py-2 pl-3 text-right font-medium">Fine</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-black/[0.04]">
@@ -79,9 +77,6 @@ export function LoansTable({ rows, showStatus }) {
                                         </StatusBadge>
                                     </td>
                                 )}
-                                <td className="py-2.5 pl-3 text-right text-gray-700">
-                                    {Number(r.fine) > 0 ? formatPeso(r.fine) : "—"}
-                                </td>
                             </tr>
                         ))}
                     </tbody>

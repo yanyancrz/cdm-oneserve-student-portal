@@ -1,6 +1,5 @@
 import { CheckCircle2 } from "lucide-react";
 
-import { formatPeso } from "../../utils/currencyUtils";
 import { formatDate } from "../../utils/dateUtils";
 import { Skeleton } from "../common/Skeleton";
 
@@ -39,10 +38,6 @@ function SkeletonRow({ index }) {
             <td className="px-3 py-3">
                 <Skeleton className="ml-auto h-5 w-8 rounded-full" />
             </td>
-
-            <td className="px-5 py-3">
-                <Skeleton className="ml-auto h-3.5 w-16" />
-            </td>
         </tr>
     );
 }
@@ -52,7 +47,7 @@ export default function OverdueTable({ items = [], loading = false }) {
         <section className="rounded-2xl border border-black/[0.05] bg-white shadow-sm">
             <div className="border-b border-black/[0.05] px-5 py-4">
                 <h2 className="text-sm font-semibold text-[#1F1F1F]">Overdue Books</h2>
-                <p className="text-xs text-gray-500">Fines are computed by the server.</p>
+                <p className="text-xs text-gray-500">A late return bans the patron from borrowing until the end of the semester.</p>
             </div>
 
             {!loading && items.length === 0 ? (
@@ -77,8 +72,7 @@ export default function OverdueTable({ items = [], loading = false }) {
                                 <th className="px-3 py-3 font-medium">Book</th>
                                 <th className="px-3 py-3 font-medium">Borrowed</th>
                                 <th className="px-3 py-3 font-medium">Due</th>
-                                <th className="px-3 py-3 text-right font-medium">Days</th>
-                                <th className="px-5 py-3 text-right font-medium">Fine</th>
+                                <th className="px-5 py-3 text-right font-medium">Days</th>
                             </tr>
                         </thead>
 
@@ -99,13 +93,10 @@ export default function OverdueTable({ items = [], loading = false }) {
                                           </td>
                                           <td className="px-3 py-3 text-gray-600">{formatDate(row.borrowDate)}</td>
                                           <td className="px-3 py-3 text-gray-600">{formatDate(row.dueDate)}</td>
-                                          <td className="px-3 py-3 text-right">
+                                          <td className="px-5 py-3 text-right">
                                               <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-600">
                                                   {row.overdueDays}
                                               </span>
-                                          </td>
-                                          <td className="px-5 py-3 text-right font-medium text-[#1F1F1F]">
-                                              {formatPeso(row.fine)}
                                           </td>
                                       </tr>
                                   ))}

@@ -3,7 +3,7 @@ import { API_URL } from "../../config/api";
 // =====================================================
 // Resolving a stored report photo into a URL the browser can load
 //
-// Same reasoning as the marketplace's marketImageUrl: the API
+// The API
 // stores photos as ROOT-RELATIVE paths ("/uploads/lostfound/
 // ab12....jpg"), but the frontend is served from a different
 // origin than the API. Prefixing with API_URL turns the stored

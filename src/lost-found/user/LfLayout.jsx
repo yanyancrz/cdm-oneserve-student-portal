@@ -13,7 +13,7 @@ import { LF_UNAUTHORIZED_EVENT, lfApi } from "../services/lfApi";
 import { LOST_FOUND_HOME_ROUTE, isLostFoundAdminRole } from "../session";
 import { FIND_LOGO_SRC } from "../components/lfBrand";
 import LfAssistant from "../components/LfAssistant";
-import { AmbientBackground } from "../../marketplace/components/marketUi";
+import { AmbientBackground } from "../../components/AmbientBackground";
 import ModuleBottomNav from "../../components/BottomNavigation/ModuleBottomNav";
 
 // =====================================================
@@ -22,7 +22,7 @@ import ModuleBottomNav from "../../components/BottomNavigation/ModuleBottomNav";
 // Mobile, inside the StudentLayout route group so it already
 // has the PWA and device guards. StudentLayout hides the
 // OneServe bottom navigation across /lost-found, so this shell
-// supplies its own navigation, exactly like the marketplace
+// supplies its own navigation, exactly like the
 // buyer shell does.
 //
 // The Lost & Found admin is deliberately NOT routed here:

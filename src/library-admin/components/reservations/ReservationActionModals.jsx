@@ -183,7 +183,6 @@ function Receipt({ receipt }) {
         ["Due date", formatDate(receipt.dueDate)],
         ["Loan period", `${receipt.loanDays} days`],
         ["Slots left", String(receipt.remainingSlots)],
-        ["Overdue fine", `₱${Number(receipt.finePerDay).toFixed(2)} per day`],
         ["Processed by", receipt.processedBy],
     ];
 
@@ -282,7 +281,7 @@ export function ClaimReservationModal({ item, onConfirm, onClose }) {
                             onChange={(e) => setAccepted(e.target.checked)}
                             className="mt-0.5 h-4 w-4 rounded border-gray-300 accent-[#106A2E]"
                         />
-                        <span>The patron has been told the borrowing terms, including the fine for late returns.</span>
+                        <span>The patron has been told the borrowing terms: a late return bans borrowing until the end of the current semester, and a lost or damaged book must be replaced with an exact copy.</span>
                     </label>
                 </div>
             )}

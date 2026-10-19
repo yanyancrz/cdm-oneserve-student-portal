@@ -26,9 +26,10 @@
     const FALLBACK_LOAN_DAYS = 7;
 
 
-    // Borrow limits and loan period set by the Library Head.
-    // Returns null if the server cannot be reached, so the page keeps working.
-    async function fetchPolicySettings() {
+    // Borrow limits, loan period, and the current borrowing ban set by the
+    // Library Head. Returns null if the server cannot be reached, so the page
+    // keeps working.
+    async function fetchPolicy() {
 
         try {
 
@@ -50,8 +51,12 @@
             }
 
             const payload = await response.json();
+            const data = payload?.data ?? payload;
 
-            return (payload?.data ?? payload)?.settings ?? null;
+            return {
+                settings: data?.settings ?? null,
+                bannedUntil: data?.bannedUntil ?? null,
+            };
 
         } catch {
 
@@ -79,6 +84,19 @@
         if (!date) {
             return "—";
         }
+
+        return new Date(date).toLocaleDateString(
+            "en-US",
+            {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
+            }
+        );
+    }
+
+
+    function formatBanDate(date) {
 
         return new Date(date).toLocaleDateString(
             "en-US",
@@ -139,6 +157,10 @@
 
         // Library Settings (borrow limit, loan period)
         const [settings, setSettings] =
+            useState(null);
+
+        // The current user's borrowing ban, if any.
+        const [bannedUntil, setBannedUntil] =
             useState(null);
 
 
@@ -247,10 +269,11 @@
 
             let cancelled = false;
 
-            fetchPolicySettings().then((data) => {
+            fetchPolicy().then((data) => {
 
                 if (!cancelled) {
-                    setSettings(data);
+                    setSettings(data?.settings ?? null);
+                    setBannedUntil(data?.bannedUntil ?? null);
                 }
 
             });
@@ -374,6 +397,20 @@
 
         const loanDays =
             settings?.defaultLoanDays ?? FALLBACK_LOAN_DAYS;
+
+
+        // =========================================================
+        // BORROWING BAN
+        // =========================================================
+
+        const banDate =
+            bannedUntil ? new Date(bannedUntil) : null;
+
+        const isBanned = Boolean(
+            banDate &&
+            !Number.isNaN(banDate.getTime()) &&
+            banDate.getTime() > Date.now()
+        );
 
 
         // =========================================================
@@ -894,6 +931,15 @@
                     <PageHeader
                         title="Book Details"
                     />
+
+
+                    {isBanned && (
+                        <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                            Borrowing suspended until{" "}
+                            {formatBanDate(bannedUntil)}. A late return bans
+                            borrowing until the end of the current semester.
+                        </div>
+                    )}
 
 
                     {/* =================================================

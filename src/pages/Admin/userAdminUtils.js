@@ -15,12 +15,12 @@ export const USER_ROLE_OPTIONS = ["Student", "Faculty", "Admin"];
 export const STATUS_FILTERS = ["All statuses", "Active", "Pending", "Suspended", "Rejected", "Deleted"];
 export const PAGE_SIZES = [10, 25, 50];
 
-// "Marketplace" is included because CampusMarket is a module INSIDE OneServe, in
-// exactly the same position as the other five: the OneServe Admin creates the
-// module Head here, and that Head then manages the module's own staff accounts in
-// the module portal. The backend already maps "Marketplace" -> MarketplaceAdmin
-// and already refuses a second Head for the same module.
-export const ADMIN_MODULES = ["Lost & Found", "Clinic", "Guidance", "Library", "Marketplace"];
+
+
+
+
+
+export const ADMIN_MODULES = ["Lost & Found", "Clinic", "Guidance", "Library"];
 
 export const ADMIN_ROLES = [
     "Admin",
@@ -28,7 +28,6 @@ export const ADMIN_ROLES = [
     "ClinicAdmin",
     "GuidanceAdmin",
     "LibraryAdmin",
-    "MarketplaceAdmin",
 ];
 
 export const ROLE_LABELS = {
@@ -37,7 +36,6 @@ export const ROLE_LABELS = {
     LostFoundAdmin: "Lost & Found Head",
     ClinicAdmin: "Clinic Head",
     GuidanceAdmin: "Guidance Head",
-    MarketplaceAdmin: "Marketplace Head",
     LibraryAdmin: "Library Head",
     LibraryStaff: "Library Staff",
     Student: "Student",
@@ -75,7 +73,6 @@ export const ROLE_STYLES = {
     ClinicAdmin: HEAD_STYLE,
     GuidanceAdmin: HEAD_STYLE,
     LibraryAdmin: HEAD_STYLE,
-    MarketplaceAdmin: HEAD_STYLE,
     LibraryStaff: "bg-amber-100 text-amber-700",
     Student: "bg-[#106A2E]/10 text-[#106A2E]",
     Faculty: "bg-[#0E3B22]/10 text-[#0E3B22]",

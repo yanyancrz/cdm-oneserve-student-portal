@@ -135,7 +135,7 @@ export default function CounselorDashboard() {
             toast.success(status === "Confirmed" ? "Appointment confirmed." : "Request declined.");
             await load();
         } catch (e) {
-            toast.error(e.message || "Action failed.");
+            toast.error(e.message || "Could not update the appointment.");
             load();
         } finally {
             setBusy(null);
@@ -169,7 +169,7 @@ export default function CounselorDashboard() {
             toast.success(status === "Arrived" ? "Marked as arrived." : "Marked as no-show.");
             await load();
         } catch (e) {
-            toast.error(e.message || "Action failed.");
+            toast.error(e.message || "Could not update the appointment.");
             load();
         } finally {
             setBusy(null);

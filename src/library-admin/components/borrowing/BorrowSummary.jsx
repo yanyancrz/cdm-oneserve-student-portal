@@ -1,6 +1,5 @@
 import { LOAN_DAY_OPTIONS, previewDueDate } from "../../config/borrowOptions";
 import { formatDate } from "../../utils/dateUtils";
-import { formatPeso } from "../../utils/currencyUtils";
 
 export default function BorrowSummary({
     patron,
@@ -11,7 +10,6 @@ export default function BorrowSummary({
     onAcceptedChange,
     onConfirm,
     submitting,
-    finePerDay = 10,
 }) {
     const ready = Boolean(patron?.canBorrow && book && accepted);
 
@@ -70,8 +68,9 @@ export default function BorrowSummary({
                             className="mt-0.5"
                         />
                         <span>
-                            The patron has been told the borrowing terms: return by the due date, and an overdue fine
-                            of {formatPeso(finePerDay)} per day applies.
+                            The patron has been told the borrowing terms: return by the due date. A late return bans
+                            borrowing until the end of the current semester, and a lost or damaged book must be
+                            replaced with an exact copy.
                         </span>
                     </label>
 

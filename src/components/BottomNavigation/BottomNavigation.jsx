@@ -11,8 +11,6 @@ import {
     faCommentDots,
     faBell,
     faTableCellsLarge,
-    faStore,
-    faBagShopping,
     faChevronDown,
     faCircleCheck,
     faTriangleExclamation,
@@ -31,7 +29,7 @@ const NOTIFICATION_POLL_MS = 30 * 1000;
 //
 // Decided by the first word of its Type, e.g. GUIDANCE_APPOINTMENT_REQUEST
 // is Guidance. Every module should start its notification Types with its
-// own name (GUIDANCE_, LIBRARY_, CLINIC_, LOSTFOUND_, MARKETPLACE_).
+// own name (GUIDANCE_, LIBRARY_, CLINIC_, LOSTFOUND_).
 // "match" also lists the older Library names (reservation-created, ...).
 // =========================================================
 
@@ -56,13 +54,6 @@ const NOTIFICATION_MODULES = [
         icon: faStethoscope,
         chip: "bg-sky-50 text-sky-700",
         match: ["CLINIC"],
-    },
-    {
-        key: "marketplace",
-        label: "Marketplace",
-        icon: faBagShopping,
-        chip: "bg-amber-50 text-amber-700",
-        match: ["MARKETPLACE", "MARKET", "ORDER"],
     },
     {
         key: "lost-found",
@@ -141,12 +132,7 @@ export default function BottomNavigation() {
             path: "/guidance",
         },
 
-        {
-            key: "marketplace",
-            label: "Marketplace",
-            icon: faStore,
-            path: "/marketplace",
-        },
+        
 
     ];
 
@@ -529,33 +515,7 @@ export default function BottomNavigation() {
                 );
             }
 
-            // Marketplace order notices: order list for a buyer, staff queue
-            // for staff (same home the role redirects to at login).
-            if (
-                ["MARKETPLACE", "MARKET", "ORDER"].includes(
-                    String(notification.type || "")
-                        .toUpperCase()
-                        .split(/[^A-Z]+/)[0]
-                )
-            ) {
-                const role = String(
-                    localStorage.getItem("role") ||
-                        localStorage.getItem("userRole") ||
-                        ""
-                )
-                    .trim()
-                    .toLowerCase();
-
-                closeMenu();
-
-                navigate(
-                    role === "marketplaceadmin" ||
-                        role === "marketplacestaff" ||
-                        role === "marketplacehead"
-                        ? "/marketplace/staff/orders"
-                        : "/marketplace/orders"
-                );
-            }
+            
 
             if (notification.isRead) {
                 return;
