@@ -407,7 +407,6 @@ export default function Users() {
         setSearch("");
         setRoleFilter("All");
         setStatusFilter("All statuses");
-        setVerificationFilter("All verification");
         setInstituteFilter("All institutes");
         setCourseFilter("All courses");
     };
@@ -515,7 +514,7 @@ export default function Users() {
 
     useEffect(() => {
         setPage(1);
-    }, [search, roleFilter, statusFilter, verificationFilter, instituteFilter, courseFilter, sort, pageSize]);
+    }, [search, roleFilter, statusFilter, instituteFilter, courseFilter, sort, pageSize]);
 
     const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
     const currentPage = Math.min(page, totalPages);
@@ -536,17 +535,11 @@ export default function Users() {
     }, [users]);
 
     const applyStatFilter = (stat) => {
-        if (stat.kind === "verification") {
-            setVerificationFilter(stat.key);
-        } else {
-            setStatusFilter(stat.key);
-        }
+        setStatusFilter(stat.key);
     };
 
     const isStatSelected = (stat) =>
-        stat.kind === "verification"
-            ? verificationFilter === stat.key
-            : statusFilter === stat.key;
+        statusFilter === stat.key;
 
     // ── Modal helpers ───────────────────────────────────────
     const openAddMember = () => {
