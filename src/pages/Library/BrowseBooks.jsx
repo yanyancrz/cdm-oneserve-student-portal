@@ -198,6 +198,8 @@ export default function BrowseBooks() {
 
     const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
+    const [selectedBook, setSelectedBook] = useState(null);
+
     const {
         books,
         loading,
