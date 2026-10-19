@@ -48,7 +48,6 @@ import {
     formatDate,
     getInstitute,
     getInstituteFromCourse,
-    getVerificationMethod,
     ghostButton,
     iconButton,
     isAdminRole,
@@ -68,7 +67,6 @@ import {
 // ─────────────────────────────────────────────────────────────
 const ROLE_FILTERS = ["All", "Student", "Faculty"];
 const MEMBER_ROLE_OPTIONS = ["Student", "Faculty"];
-const VERIFICATION_FILTERS = ["All verification", "Not verified"];
 
 // Students + faculty only - heads and admins live on ServiceHeads.jsx.
 const isMemberRole = (role) => role === "Student" || role === "Faculty";
@@ -263,7 +261,6 @@ export default function Users() {
     const [search, setSearch] = useState("");
     const [roleFilter, setRoleFilter] = useState("All");
     const [statusFilter, setStatusFilter] = useState("All statuses");
-    const [verificationFilter, setVerificationFilter] = useState("All verification");
     const [instituteFilter, setInstituteFilter] = useState("All institutes");
     const [courseFilter, setCourseFilter] = useState("All courses");
 
@@ -434,7 +431,6 @@ export default function Users() {
                     u.course,
                     u.yearLevel,
                     u.status,
-                    getVerificationMethod(u),
                 ]
                     .filter(Boolean)
                     .some((value) => String(value).toLowerCase().includes(query));
@@ -443,10 +439,6 @@ export default function Users() {
 
             const matchesStatus = statusFilter === "All statuses" || u.status === statusFilter;
 
-            const matchesVerification =
-                verificationFilter === "All verification" ||
-                getVerificationMethod(u) === verificationFilter;
-
             const matchesInstitute =
                 instituteFilter === "All institutes" ||
                 getInstitute(u) === instituteFilter;
@@ -454,14 +446,13 @@ export default function Users() {
             const matchesCourse =
                 !showCourseFilter || courseFilter === "All courses" || u.course === courseFilter;
 
-            return matchesSearch && matchesRole && matchesStatus && matchesVerification && matchesInstitute && matchesCourse;
+            return matchesSearch && matchesRole && matchesStatus && matchesInstitute && matchesCourse;
         });
     }, [
         users,
         search,
         roleFilter,
         statusFilter,
-        verificationFilter,
         instituteFilter,
         courseFilter,
         showCourseFilter,
@@ -480,13 +471,6 @@ export default function Users() {
     }
     if (statusFilter !== "All statuses") {
         activeChips.push({ key: "status", label: statusFilter, clear: () => setStatusFilter("All statuses") });
-    }
-    if (verificationFilter !== "All verification") {
-        activeChips.push({
-            key: "verification",
-            label: `Verified via ${verificationFilter}`,
-            clear: () => setVerificationFilter("All verification"),
-        });
     }
     if (instituteFilter !== "All institutes") {
         activeChips.push({
@@ -993,19 +977,6 @@ export default function Users() {
                         {STATUS_FILTERS.map((status) => (
                             <option key={status} value={status}>
                                 {status}
-                            </option>
-                        ))}
-                    </select>
-
-                    <select
-                        value={verificationFilter}
-                        onChange={(e) => setVerificationFilter(e.target.value)}
-                        aria-label="Filter by verification method"
-                        className={selectClass}
-                    >
-                        {VERIFICATION_FILTERS.map((method) => (
-                            <option key={method} value={method}>
-                                {method === "All verification" ? method : `Verified via ${method}`}
                             </option>
                         ))}
                     </select>
