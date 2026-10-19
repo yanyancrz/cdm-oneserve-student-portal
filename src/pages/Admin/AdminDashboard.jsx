@@ -7,7 +7,8 @@ export default function AdminDashboard() {
 
     const [dashboard, setDashboard] = useState({
         totalUsers: 0,
-        recentActivity: [],
+        totalStudents: 0,
+        totalFaculty: 0,
         modules: [],
     });
 
@@ -25,6 +26,11 @@ export default function AdminDashboard() {
 
     const defaultModules = [
         {
+            name: "Lost & Found",
+            icon: "🔍",
+            status: "Online",
+        },
+        {
             name: "Library",
             icon: "📚",
             status: "Online",
@@ -37,11 +43,6 @@ export default function AdminDashboard() {
         {
             name: "Guidance",
             icon: "💬",
-            status: "Online",
-        },
-        {
-            name: "Lost & Found",
-            icon: "🔎",
             status: "Online",
         },
     ];
@@ -88,7 +89,8 @@ export default function AdminDashboard() {
 
                 setDashboard({
                     totalUsers: data.totalUsers ?? 0,
-                    recentActivity: data.recentActivity ?? [],
+                    totalStudents: data.totalStudents ?? 0,
+                    totalFaculty: data.totalFaculty ?? 0,
                     modules:
                         data.modules?.length > 0
                             ? data.modules
@@ -107,7 +109,8 @@ export default function AdminDashboard() {
                 // endpoint is not ready yet.
                 setDashboard({
                     totalUsers: 0,
-                    recentActivity: [],
+                    totalStudents: 0,
+                    totalFaculty: 0,
                     modules: defaultModules,
                 });
             } finally {
@@ -139,6 +142,22 @@ export default function AdminDashboard() {
             label: "Total Users",
             value: dashboard.totalUsers,
             description: "Registered accounts",
+            icon: "users",
+            bg: "#ECE9E2",
+            color: "#1F1F1F",
+        },
+        {
+            label: "Total Students",
+            value: dashboard.totalStudents,
+            description: "Student accounts",
+            icon: "users",
+            bg: "#ECE9E2",
+            color: "#1F1F1F",
+        },
+        {
+            label: "Total Faculty",
+            value: dashboard.totalFaculty,
+            description: "Faculty accounts",
             icon: "users",
             bg: "#ECE9E2",
             color: "#1F1F1F",
@@ -240,351 +259,244 @@ export default function AdminDashboard() {
     );
 
     // --------------------------------------------------
-    // LOADING SCREEN
+    // LOWER CONTENT
     // --------------------------------------------------
 
-    if (isLoading) {
-        return (
-            <div className="min-h-screen bg-[#F7F5EF]">
-                <main className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8">
+    const lowerContent = (
+        <div className="px-5 sm:px-6 pb-5">
 
-                    {/* TOP BAR */}
-                    <div className="flex items-center justify-between mb-9">
-                        <div>
-                            <Bone className="w-28 h-3 mb-3" />
-                            <Bone className="w-60 h-8" />
-                        </div>
+            {/* ==================================================
+                STATS
+            ================================================== */}
 
-                        <Bone className="w-10 h-10 rounded-full" />
-                    </div>
+            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-5">
 
-                    {/* STATS */}
-                    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-5 mb-8">
-                        {[1].map((item) => (
-                            <div
-                                key={item}
-                                className="bg-white rounded-2xl p-5 border border-[#1F1F1F]/[0.05]"
-                            >
-                                <Bone className="w-28 h-3 mb-4" />
-                                <Bone className="w-16 h-8 mb-3" />
-                                <Bone className="w-32 h-3" />
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* LOWER GRID */}
-                    <div className="grid lg:grid-cols-2 gap-6">
-
-                        <div className="bg-white rounded-2xl p-6">
-                            <Bone className="w-40 h-5 mb-6" />
-
-                            {[1, 2, 3, 4].map((item) => (
-                                <div
-                                    key={item}
-                                    className="flex items-center gap-3 mb-5"
-                                >
-                                    <Bone className="w-9 h-9 rounded-full" />
-
-                                    <div className="flex-1">
-                                        <Bone className="w-40 h-3 mb-2" />
-                                        <Bone className="w-28 h-2.5" />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        <div className="bg-white rounded-2xl p-6">
-                            <Bone className="w-32 h-5 mb-6" />
-
-                            {[1, 2, 3, 4, 5].map((item) => (
-                                <div
-                                    key={item}
-                                    className="flex items-center justify-between mb-5"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <Bone className="w-9 h-9 rounded-xl" />
-                                        <Bone className="w-28 h-3" />
-                                    </div>
-
-                                    <Bone className="w-16 h-3" />
-                                </div>
-                            ))}
-                        </div>
-
-                    </div>
-                </main>
-            </div>
-        );
-    }
-
-    // --------------------------------------------------
-    // MAIN DASHBOARD
-    // --------------------------------------------------
-
-    return (
-        <div className="min-h-screen bg-[#F7F5EF] text-[#1F1F1F] overflow-x-hidden">
-
-            <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap');
-
-                .font-display {
-                    font-family: 'Fraunces', serif;
-                }
-            `}</style>
-
-            <main className="w-full max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8">
-
-                {/* ==================================================
-                    TOP BAR
-                ================================================== */}
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-9">
-
-                    <div>
-
-                        <h1 className="font-display text-2xl lg:text-3xl text-[#1F1F1F]">
-                            Good morning, {adminName}
-                        </h1>
-
-                        <p className="text-sm text-gray-500 mt-1">
-                            Here's what's happening across CDM OneServe.
-                        </p>
-                    </div>
-                </div>
-
-                {/* ==================================================
-                    LOAD ERROR
-                ================================================== */}
-
-                {loadError && (
-                    <div className="mb-6 px-4 py-3 rounded-xl bg-red-50 text-red-700 text-sm flex items-center justify-between gap-4">
-                        <span>{loadError}</span>
-
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="font-semibold underline whitespace-nowrap"
-                        >
-                            Retry
-                        </button>
-                    </div>
-                )}
-
-                {/* ==================================================
-                    SYSTEM OVERVIEW
-                ================================================== */}
-
-                <section className="mb-8">
-
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <h2 className="font-display text-xl text-[#1F1F1F]">
-                                System Overview
-                            </h2>
-
-                            <p className="text-xs text-gray-500 mt-1">
-                                Current CDM OneServe account and verification status
-                            </p>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-5">
-
-                        {stats.map((stat) => (
-                            <div
-                                key={stat.label}
-                                className="
-                                    bg-white
-                                    rounded-2xl
-                                    p-5
-                                    border
-                                    border-[#1F1F1F]/[0.05]
-                                    hover:-translate-y-0.5
-                                    hover:shadow-md
-                                    transition-all
-                                "
-                            >
-
-                                <div className="flex items-start justify-between gap-3">
-
-                                    <div>
-                                        <p className="text-xs uppercase tracking-wide text-gray-500 font-medium mb-2">
-                                            {stat.label}
-                                        </p>
-
-                                        <p
-                                            className="font-display text-3xl"
-                                            style={{ color: stat.color }}
-                                        >
-                                            {stat.value}
-                                        </p>
-
-                                        <p className="text-xs text-gray-400 mt-2">
-                                            {stat.description}
-                                        </p>
-                                    </div>
-
-                                    <div
-                                        className="w-10 h-10 rounded-xl flex items-center justify-center"
-                                        style={{
-                                            background: stat.bg,
-                                            color: stat.color,
-                                        }}
-                                    >
-                                        <Icon type={stat.icon} size={19} />
-                                    </div>
-
-                                </div>
-
-                            </div>
-                        ))}
-
-                    </div>
-                </section>
-
-                {/* ==================================================
-                    LOWER CONTENT
-                ================================================== */}
-
-                <div className="grid lg:grid-cols-2 gap-6">
-
-                    {/* ==================================================
-                        RECENT ACTIVITY
-                    ================================================== */}
-
-                    <section
+                {stats.map((stat) => (
+                    <div
+                        key={stat.label}
                         className="
                             bg-white
                             rounded-2xl
+                            p-5
                             border
                             border-[#1F1F1F]/[0.05]
-                            overflow-hidden
+                            hover:-translate-y-0.5
+                            hover:shadow-md
+                            transition-all
                         "
                     >
 
-                        <div className="flex items-center justify-between px-5 sm:px-6 pt-6 pb-4">
+                        <div className="flex items-start justify-between gap-3">
 
                             <div>
-                                <h2 className="font-display text-xl text-[#1F1F1F]">
-                                    Recent Activity
-                                </h2>
+                                <p className="text-xs uppercase tracking-wide text-gray-500 font-medium mb-2">
+                                    {stat.label}
+                                </p>
 
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Latest system actions
+                                <p
+                                    className="font-display text-3xl"
+                                    style={{ color: stat.color }}
+                                >
+                                    {stat.value}
+                                </p>
+
+                                <p className="text-xs text-gray-400 mt-2">
+                                    {stat.description}
                                 </p>
                             </div>
 
                             <div
-                                className="
-                                    w-9
-                                    h-9
-                                    rounded-xl
-                                    flex
-                                    items-center
-                                    justify-center
-                                "
+                                className="w-10 h-10 rounded-xl flex items-center justify-center"
                                 style={{
-                                    background: "#E1F0E4",
-                                    color: "#106A2E",
+                                    background: stat.bg,
+                                    color: stat.color,
                                 }}
                             >
-                                <Icon type="activity" size={18} />
+                                <Icon type={stat.icon} size={19} />
                             </div>
 
                         </div>
 
-                        <div className="px-5 sm:px-6 pb-5 max-h-[420px] overflow-y-auto">
+                    </div>
+                ))}
 
-                            {dashboard.recentActivity.length > 0 ? (
-                                dashboard.recentActivity
-                                    .slice(0, 20)
-                                    .map((activity, index) => (
-                                        <div
-                                            key={activity.id || index}
-                                            className="
-                                                flex
-                                                items-start
-                                                gap-3
-                                                py-4
-                                                border-b
-                                                border-[#1F1F1F]/[0.05]
-                                                last:border-0
-                                            "
-                                        >
+            </div>
+        </div>
+    )
 
-                                            <div
-                                                className="
-                                                    w-9
-                                                    h-9
-                                                    rounded-full
-                                                    flex
-                                                    items-center
-                                                    justify-center
-                                                    text-xs
-                                                    flex-shrink-0
-                                                "
-                                                style={{
-                                                    background: "#E1F0E4",
-                                                    color: "#106A2E",
-                                                }}
-                                            >
-                                                ✓
-                                            </div>
+    // --------------------------------------------------
+    // MODULE MONITORING
+    // --------------------------------------------------
 
-                                            <div className="min-w-0 flex-1">
+    const modules = dashboard.modules;
 
-                                                <p className="text-sm font-medium text-[#1F1F1F]">
-                                                    {activity.title ||
-                                                        activity.action ||
-                                                        "System activity"}
-                                                </p>
+    // --------------------------------------------------
+    // RENDER
+    // --------------------------------------------------
 
-                                                <p className="text-xs text-gray-500 mt-1">
-                                                    {activity.description ||
-                                                        activity.message ||
-                                                        ""}
-                                                </p>
+    return (
+        <div className="relative z-10 min-h-screen px-3 py-3 pb-24 sm:px-5 sm:py-5 lg:px-8 lg:py-7">
 
-                                                {activity.createdAt && (
-                                                    <p className="text-[11px] text-gray-400 mt-1">
-                                                        {new Date(
-                                                            activity.createdAt
-                                                        ).toLocaleString(
-                                                            "en-US",
-                                                            {
-                                                                month: "short",
-                                                                day: "numeric",
-                                                                hour: "numeric",
-                                                                minute: "2-digit",
-                                                            }
-                                                        )}
-                                                    </p>
-                                                )}
+            <div className="mx-auto w-full max-w-[1500px]">
 
-                                            </div>
+                <div className="rounded-2xl border border-[#0E2C1E]/10 bg-gradient-to-br from-[#173F2C] via-[#0E2C1E] to-[#0A2818] px-5 py-6 shadow-xl shadow-amber-900/10 sm:px-7 sm:py-8">
 
-                                        </div>
-                                    ))
-                            ) : (
-                                <div className="py-12 text-center">
+                    <div className="pointer-events-none absolute -right-20 -top-20 h-60 w-60 rounded-full bg-amber-300/10 blur-3xl" />
 
-                                    <div className="text-3xl mb-3">
-                                        📋
-                                    </div>
+                    <div className="pointer-events-none absolute -bottom-24 right-1/3 h-72 w-72 rounded-full bg-cyan-300/5 blur-3xl" />
 
-                                    <p className="text-sm font-medium text-gray-500">
-                                        No recent activity
-                                    </p>
+                    <div className="relative grid gap-6 lg:grid-cols-[1fr_auto] lg:items-center">
 
-                                    <p className="text-xs text-gray-400 mt-1">
-                                        System activities will appear here.
-                                    </p>
+                        <div>
 
-                                </div>
-                            )}
+                            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1.5">
+
+                                <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-300 shadow-[0_0_12px_rgba(110,231,183,.8)]" />
+
+                                <span className="text-[10px] font-semibold uppercase tracking-[.18em] text-amber-200">
+                                    Welcome!
+                                </span>
+
+                            </div>
+
+
+                            <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">
+
+                                Good Morning,
+
+                                <span className="block text-amber-300">
+                                    {isLoading ? (
+                                        <BoneOnDark className="mt-1 h-9 w-40 sm:h-10 sm:w-52" />
+                                    ) : (
+                                        dashboard.adminName.split(" ")[0]
+                                    )}
+                                </span>
+
+                            </h1>
+
+
+                            <p className="mt-2 max-w-xl text-sm leading-6 text-white/60 sm:text-base">
+                                Everything you need for
+                                your campus, connected in
+                                one place.
+                            </p>
+
 
                         </div>
 
-                    </section>
+
+                        <div className="hidden lg:block lg:w-64">
+
+                            <div className="rounded-2xl border border-white/10 bg-white/[0.08] p-4 backdrop-blur-xl">
+
+                                <div className="mb-3 flex items-center justify-between">
+
+                                    <span className="text-[10px] font-semibold uppercase tracking-[.16em] text-white/50">
+                                        Account Status
+                                    </span>
+
+                                    <span className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-amber-300">
+
+                                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-300" />
+
+                                        LIVE
+
+                                    </span>
+
+                                </div>
+
+
+                                <div className="mb-4 flex items-center justify-between">
+
+                                    <div>
+
+                                        <p className="text-sm font-semibold text-white">
+                                            {dashboard.totalUsers > 0 ? (
+                                                "Online"
+                                            ) : (
+                                                "No accounts"
+                                            )}
+                                        </p>
+
+                                        <p className="mt-0.5 text-[11px] text-white/50">
+                                            Total active users
+                                        </p>
+
+                                    </div>
+
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-300/10 text-amber-300">
+
+                                        <svg
+                                            width="18"
+                                            height="18"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            strokeWidth="1.8"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                        >
+                                            <path d="M12 3l7 3v5c0 4.8-3 8.2-7 10-4-1.8-7-5.2-7-10V6l7-3z" />
+                                            <path d="m9 12 2 2 4-4" />
+                                        </svg>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div className="grid grid-cols-2 gap-2">
+
+                                    <div className="rounded-xl border border-white/10 bg-black/10 p-3">
+
+                                        <p className="text-[9px] uppercase tracking-wider text-white/40">
+                                            Total Users
+                                        </p>
+
+                                        <p className="mt-1 text-xs font-semibold text-white">
+                                            {dashboard.totalUsers}
+                                        </p>
+
+                                    </div>
+
+
+                                    <div className="rounded-xl border border-white/10 bg-black/10 p-3">
+
+                                        <p className="text-[9px] uppercase tracking-wider text-white/40">
+                                            Students
+                                        </p>
+
+                                        <p className="mt-1 text-xs font-semibold text-white">
+                                            {dashboard.totalStudents}
+                                        </p>
+
+                                    </div>
+
+
+                                    <div className="rounded-xl border border-white/10 bg-black/10 p-3">
+
+                                        <p className="text-[9px] uppercase tracking-wider text-white/40">
+                                            Faculty
+                                        </p>
+
+                                        <p className="mt-1 text-xs font-semibold text-white">
+                                            {dashboard.totalFaculty}
+                                        </p>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <div className="mx-auto w-full max-w-[1500px] pt-6">
 
                     {/* ==================================================
                         MODULE MONITORING
@@ -637,77 +549,37 @@ export default function AdminDashboard() {
                                 : defaultModules
                             ).map((module, index) => {
 
-                                const isOnline =
-                                    module.status?.toLowerCase() ===
-                                    "online";
-
                                 return (
+
                                     <div
-                                        key={module.name || index}
+                                        key={index}
                                         className="
                                             flex
                                             items-center
                                             justify-between
-                                            py-3.5
-                                            border-b
-                                            border-[#1F1F1F]/[0.05]
-                                            last:border-0
+                                            px-3
+                                            py-2
                                         "
                                     >
 
                                         <div className="flex items-center gap-3">
 
-                                            <div
-                                                className="
-                                                    w-9
-                                                    h-9
-                                                    rounded-xl
-                                                    bg-[#F7F5EF]
-                                                    flex
-                                                    items-center
-                                                    justify-center
-                                                    text-base
-                                                "
-                                            >
-                                                {module.icon || "•"}
-                                            </div>
+                                            <Icon type={module.icon} size={20} />
 
-                                            <div>
-                                                <p className="text-sm font-medium text-[#1F1F1F]">
-                                                    {module.name}
-                                                </p>
-
-                                                <p className="text-[11px] text-gray-400">
-                                                    Campus service module
-                                                </p>
-                                            </div>
-
-                                        </div>
-
-                                        <div className="flex items-center gap-2">
-
-                                            <span
-                                                className={`w-2 h-2 rounded-full ${
-                                                    isOnline
-                                                        ? "bg-[#106A2E]"
-                                                        : "bg-[#9F3434]"
-                                                }`}
-                                            />
-
-                                            <span
-                                                className={`text-xs font-medium ${
-                                                    isOnline
-                                                        ? "text-[#106A2E]"
-                                                        : "text-[#9F3434]"
-                                                }`}
-                                            >
-                                                {module.status || "Unknown"}
+                                            <span className="text-sm font-medium text-[#1F1F1F]">
+                                                {module.name}
                                             </span>
 
                                         </div>
 
+                                        <span className="text-xs text-gray-400">
+                                            {module.status}
+                                        </span>
+
                                     </div>
+
                                 );
+
                             })}
 
                         </div>
@@ -716,117 +588,8 @@ export default function AdminDashboard() {
 
                 </div>
 
-                {/* ==================================================
-                    QUICK ACTIONS
-                ================================================== */}
+            </div>
 
-                <section className="mt-6">
-
-                    <h2 className="font-display text-xl text-[#1F1F1F] mb-4">
-                        Quick Actions
-                    </h2>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                        <button
-                            onClick={() => navigate("/admin/users")}
-                            className="
-                                bg-white
-                                rounded-2xl
-                                border
-                                border-[#1F1F1F]/[0.05]
-                                p-5
-                                text-left
-                                hover:shadow-md
-                                hover:-translate-y-0.5
-                                transition-all
-                            "
-                        >
-                            <div
-                                className="
-                                    w-10
-                                    h-10
-                                    rounded-xl
-                                    flex
-                                    items-center
-                                    justify-center
-                                    mb-4
-                                "
-                                style={{
-                                    background: "#ECE9E2",
-                                    color: "#1F1F1F",
-                                }}
-                            >
-                                <Icon type="users" size={19} />
-                            </div>
-
-                            <p className="font-medium text-sm">
-                                User Management
-                            </p>
-
-                            <p className="text-xs text-gray-500 mt-1">
-                                Manage student and faculty accounts
-                            </p>
-                        </button>
-
-                        <button
-                            onClick={() => navigate("/admin/school-records")}
-                            className="
-                                bg-white
-                                rounded-2xl
-                                border
-                                border-[#1F1F1F]/[0.05]
-                                p-5
-                                text-left
-                                hover:shadow-md
-                                hover:-translate-y-0.5
-                                transition-all
-                            "
-                        >
-                            <div
-                                className="
-                                    w-10
-                                    h-10
-                                    rounded-xl
-                                    flex
-                                    items-center
-                                    justify-center
-                                    mb-4
-                                "
-                                style={{
-                                    background: "#E1F0E4",
-                                    color: "#106A2E",
-                                }}
-                            >
-                                🏫
-                            </div>
-
-                            <p className="font-medium text-sm">
-                                School Records
-                            </p>
-
-                            <p className="text-xs text-gray-500 mt-1">
-                                View and manage school information
-                            </p>
-                        </button>
-
-                    </div>
-
-                </section>
-
-                {/* ==================================================
-                    FOOTER
-                ================================================== */}
-
-                <div className="py-8 text-center">
-
-                    <p className="text-xs text-gray-400">
-                        CDM OneServe • Admin Panel
-                    </p>
-
-                </div>
-
-            </main>
         </div>
     );
 }
