@@ -196,8 +196,7 @@ export default function BrowseBooks() {
     const [selectedCategory, setSelectedCategory] =
         useState(searchParams.get("category") || "All");
 
-    const [selectedBook, setSelectedBook] =
-        useState(null);
+    const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
     const {
         books,
@@ -268,16 +267,22 @@ export default function BrowseBooks() {
                 selectedCategory === "All" ||
                 book.category === selectedCategory;
 
+            const matchesFavorites =
+                !showFavoritesOnly ||
+                isFavorite(book.id ?? book.bookId);
+
             return (
                 matchesQuery &&
-                matchesCategory
+                matchesCategory &&
+                matchesFavorites
             );
         });
     }, [
         books,
         searchQuery,
         selectedCategory,
-        selectedFilter,
+        showFavoritesOnly,
+        isFavorite,
     ]);
 
     const totalBooks = Array.isArray(books)
@@ -286,11 +291,13 @@ export default function BrowseBooks() {
 
     const hasActiveFilters =
         searchQuery.trim() !== "" ||
-        selectedCategory !== "All";
+        selectedCategory !== "All" ||
+        showFavoritesOnly;
 
     const clearFilters = () => {
         setSearchQuery("");
         setSelectedCategory("All");
+        setShowFavoritesOnly(false);
     };
 
     // =====================================================
@@ -412,6 +419,25 @@ export default function BrowseBooks() {
                             {category}
                         </button>
                     ))}
+                </div>
+
+                {/* =================================================
+                    FAVORITES FILTER
+                ================================================= */}
+
+                <div className="mb-5">
+                    <button
+                        type="button"
+                        onClick={() => setShowFavoritesOnly(!showFavoritesOnly)}
+                        className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition ${
+                            showFavoritesOnly
+                                ? "bg-red-50 text-red-600 border border-red-200"
+                                : "border border-slate-200 bg-white text-slate-500 hover:border-red-200 hover:text-red-600"
+                        }`}
+                    >
+                        <Heart size={12} className="inline mr-1.5" />
+                        Favorites only
+                    </button>
                 </div>
 
                 {/* =================================================
