@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
+import ChangePasswordModal from "./ChangePasswordModal";
 import { PushNotificationCard } from "../../push/PushNotificationCard";
 import { signOutEverywhere } from "../../session/deviceSession";
 import {
@@ -13,6 +14,7 @@ import {
     ChevronRight,
     Clock3,
     GraduationCap,
+    KeyRound,
     LogOut,
     Mail,
     MapPin,
@@ -308,6 +310,9 @@ export default function Profile() {
     const [logins, setLogins] = useState([]);
     const [loginsLoading, setLoginsLoading] = useState(false);
     const [loginsError, setLoginsError] = useState("");
+
+    // "Change password" (student number + email -> OTP) dialog.
+    const [showChangePassword, setShowChangePassword] = useState(false);
 
     const mountedRef = useRef(true);
 
@@ -786,6 +791,30 @@ export default function Profile() {
                 <div className="divide-y divide-slate-100">
 
                     <button
+                        onClick={() => setShowChangePassword(true)}
+                        className={`flex w-full items-center gap-3 px-6 py-4 text-left transition-colors hover:bg-slate-50 ${focusRing}`}
+                    >
+
+                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-[#106A2E]">
+                            <KeyRound size={16} />
+                        </span>
+
+                        <span className="min-w-0 flex-1">
+                            <span className="block text-sm font-semibold text-slate-800">
+                                Change password
+                            </span>
+                            <span className="mt-0.5 block text-xs leading-5 text-slate-500">
+                                {profile?.mustChangePassword
+                                    ? "You're still using the password we gave you — change it now."
+                                    : "Verify your student number and email, then set a new password."}
+                            </span>
+                        </span>
+
+                        <ChevronRight size={16} className="shrink-0 text-slate-400" />
+
+                    </button>
+
+                    <button
                         onClick={openLogins}
                         disabled={everywhereLoading || loginsLoading}
                         className={`flex w-full items-center gap-3 px-6 py-4 text-left transition-colors hover:bg-slate-50 disabled:opacity-70 ${focusRing}`}
@@ -1066,6 +1095,22 @@ export default function Profile() {
 
                 </Modal>
 
+            )}
+
+
+            {showChangePassword && (
+                <ChangePasswordModal
+                    idNumber={profile?.idNumber || ""}
+                    email={profile?.email || ""}
+                    onClose={() => setShowChangePassword(false)}
+                    onSuccess={() =>
+                        setProfile((previous) =>
+                            previous
+                                ? { ...previous, mustChangePassword: false }
+                                : previous
+                        )
+                    }
+                />
             )}
 
 

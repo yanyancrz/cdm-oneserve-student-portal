@@ -652,6 +652,56 @@ export default function Dashboard() {
 
 
                     {/* =================================================
+                        DEFAULT PASSWORD ALERT
+                        Registration mails a generated password. Until the
+                        user changes it, nudge them here.
+                    ================================================= */}
+
+                    {user?.mustChangePassword && (
+                        <section className="dashboard-reveal dashboard-delay-1 mb-5 overflow-hidden rounded-2xl border border-amber-300 bg-amber-50 p-4 sm:p-5">
+                            <div className="flex items-start gap-3">
+                                <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-300/40 text-amber-700">
+                                    <svg
+                                        width="18"
+                                        height="18"
+                                        viewBox="0 0 24 24"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        strokeWidth="1.8"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                    >
+                                        <path d="M12 9v4" />
+                                        <path d="M12 17h.01" />
+                                        <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
+                                    </svg>
+                                </span>
+
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-sm font-semibold text-amber-900">
+                                        You're using the default password
+                                    </p>
+
+                                    <p className="mt-1 text-xs leading-5 text-amber-800/80 sm:text-sm">
+                                        Your account still uses the password we
+                                        emailed you at registration. Please
+                                        change it now to keep your account
+                                        secure.
+                                    </p>
+
+                                    <button
+                                        onClick={() => navigate("/profile")}
+                                        className="mt-3 inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] px-3.5 py-2 text-xs font-semibold text-white shadow-md shadow-emerald-900/20 transition hover:opacity-90 active:scale-[0.98]"
+                                    >
+                                        Change password
+                                    </button>
+                                </div>
+                            </div>
+                        </section>
+                    )}
+
+
+                    {/* =================================================
                         SEARCH
                     ================================================= */}
 
@@ -752,7 +802,7 @@ export default function Dashboard() {
 
 
                             <span className="hidden rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-medium text-slate-400 sm:inline-flex">
-                                5 connected services
+                                Services
                             </span>
 
                         </div>
