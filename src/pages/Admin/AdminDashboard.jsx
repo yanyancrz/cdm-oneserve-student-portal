@@ -300,15 +300,7 @@ export default function AdminDashboard() {
 
                             <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl lg:text-5xl">
 
-                                Good Morning,
-
-                                <span className="block text-amber-300">
-                                    {isLoading ? (
-                                        <BoneOnDark className="mt-1 h-9 w-40 sm:h-10 sm:w-52" />
-                                    ) : (
-                                        adminName.split(" ")[0]
-                                    )}
-                                </span>
+                                Welcome, Admin
 
                             </h1>
 
