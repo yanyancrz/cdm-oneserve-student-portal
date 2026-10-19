@@ -37,12 +37,17 @@ export default function EventCalendar() {
 
     const eventsByDay = {};
     events.forEach((ev) => {
-        const d = new Date(ev.eventDate);
-        if (d.getMonth() === month && d.getFullYear() === year) {
-            const day = d.getDate();
-            if (!eventsByDay[day]) eventsByDay[day] = [];
-            eventsByDay[day].push(ev);
-        }
+        const dates = Array.isArray(ev.eventDates) && ev.eventDates.length > 0
+            ? ev.eventDates
+            : (ev.eventDate ? [ev.eventDate] : []);
+        dates.forEach((dateStr) => {
+            const d = new Date(dateStr);
+            if (d.getMonth() === month && d.getFullYear() === year) {
+                const day = d.getDate();
+                if (!eventsByDay[day]) eventsByDay[day] = [];
+                eventsByDay[day].push(ev);
+            }
+        });
     });
 
     const monthName = currentMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" });
@@ -60,8 +65,13 @@ export default function EventCalendar() {
 
     const monthEvents = events
         .filter((ev) => {
-            const d = new Date(ev.eventDate);
-            return d.getMonth() === month && d.getFullYear() === year;
+            const dates = Array.isArray(ev.eventDates) && ev.eventDates.length > 0
+                ? ev.eventDates
+                : (ev.eventDate ? [ev.eventDate] : []);
+            return dates.some((dateStr) => {
+                const d = new Date(dateStr);
+                return d.getMonth() === month && d.getFullYear() === year;
+            });
         })
         .sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
 
@@ -143,6 +153,8 @@ export default function EventCalendar() {
                                         month: "short",
                                         day: "numeric",
                                     })}
+                                    {ev.startTime ? ` · ${ev.startTime}` : ""}
+                                    {ev.endTime ? `–${ev.endTime}` : ""}
                                     {ev.location ? ` · ${ev.location}` : ""}
                                 </p>
                             </div>
