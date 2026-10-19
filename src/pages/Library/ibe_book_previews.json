@@ -1,0 +1,229 @@
+{
+  "institute": "Institute of Business & Entrepreneurship",
+  "records": [
+    {
+      "courseCode": "IBE-101",
+      "display": {
+        "title": "Financial Accounting and Reporting: Fundamentals",
+        "author": "Zeus Vernon B. Millan",
+        "yearLevel": "1st Year",
+        "semester": "1st Sem",
+        "paragraph": "A foundation in recording business transactions and preparing financial reports. This preview introduces the accounting cycle and the information presented in financial statements, helping beginning accounting and business students understand how financial records describe an organization's activities, resources, obligations, and operating results."
+      },
+      "verification": {
+        "catalogCheck": "Library record supports the core title and author; exact ISBN/edition still needs checking.",
+        "sources": ["S20"]
+      }
+    },
+    {
+      "courseCode": "IBE-102",
+      "display": {
+        "title": "Principles of Management and Organization",
+        "author": "Stephen P. Robbins & Mary Coulter",
+        "yearLevel": "1st Year",
+        "semester": "1st Sem",
+        "paragraph": "An introduction to the work of managers and the way organizations coordinate people and resources. Planning, organizing, leading, and controlling provide a practical framework for understanding decisions, teamwork, and organizational performance, making the subject useful for students preparing for supervisory or entrepreneurial roles."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "IBE-103",
+      "display": {
+        "title": "Principles of Marketing (Philippine Edition)",
+        "author": "Philip Kotler, Gary Armstrong & Josiah Go",
+        "yearLevel": "1st Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to understanding customers and creating value through marketing. Market research, segmentation, product decisions, pricing, distribution, and promotion provide a foundation for developing marketing plans and evaluating how organizations communicate their offerings to the people they want to serve."
+      },
+      "verification": {
+        "catalogCheck": "Kotler/Armstrong and Josiah Go have related marketing publications, but the combined Philippine-edition attribution was not confirmed.",
+        "sources": ["S21", "S22"]
+      }
+    },
+    {
+      "courseCode": "IBE-104",
+      "display": {
+        "title": "Microeconomics: Theory and Applications",
+        "author": "Dominick Salvatore",
+        "yearLevel": "1st Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to how consumers and businesses make decisions when resources are limited. Demand, supply, production costs, and market structures help students explain price changes and business behavior, providing a foundation for understanding competition and the economic choices behind everyday commercial activities."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "IBE-201",
+      "display": {
+        "title": "Human Resource Management in the Philippine Setting",
+        "author": "Raymond A. Noe & John R. Hollenbeck",
+        "yearLevel": "2nd Year",
+        "semester": "1st Sem",
+        "paragraph": "An overview of how organizations recruit, develop, reward, and retain employees. The subject connects staffing, training, performance management, and compensation with organizational goals, helping business students understand the people-management decisions that support effective workplaces."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "IBE-202",
+      "display": {
+        "title": "The Law on Obligations and Contracts",
+        "author": "Hector S. De Leon & Hector M. De Leon Jr.",
+        "yearLevel": "2nd Year",
+        "semester": "1st Sem",
+        "paragraph": "An introduction to obligations and contracts in Philippine civil law. It helps students understand how legal duties arise, how agreements are formed, and what can happen when an obligation is not fulfilled, providing a foundation for studying the legal relationships involved in business transactions."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "IBE-203",
+      "display": {
+        "title": "Cost Accounting and Control (Philippine Edition)",
+        "author": "Conrado T. Valix & Christian Aris M. Valix",
+        "yearLevel": "2nd Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to measuring and managing the costs of business operations. Materials, labor, overhead, budgeting, and cost analysis show how accounting information can support planning and control, helping students evaluate efficiency and understand the cost information behind managerial decisions."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "IBE-204",
+      "display": {
+        "title": "Opportunity Seeking, Screening and Seizing: Entrepreneurial Strategy",
+        "author": "Dr. Eduardo A. Morato Jr.",
+        "yearLevel": "2nd Year",
+        "semester": "2nd Sem",
+        "paragraph": "A guide to recognizing business opportunities and deciding which ideas are worth pursuing. Seeking, screening, and seizing opportunities provide a framework for examining customer needs, available resources, and business potential, helping aspiring entrepreneurs move from an initial idea toward a more focused venture proposal."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "IBE-301",
+      "display": {
+        "title": "Financial Management: Principles and Applications",
+        "author": "Sheridan Titman & Arthur J. Keown",
+        "yearLevel": "3rd Year",
+        "semester": "1st Sem",
+        "paragraph": "An introduction to the financial decisions businesses make about investments, funding, and day-to-day resources. Time value of money, risk and return, capital budgeting, and working capital help students understand how managers evaluate alternatives and use financial information to support business goals."
+      },
+      "verification": {
+        "catalogCheck": "ISBN is for a MyLab access-card product; listed author credits omit John D. Martin. Verify the physical-book ISBN.",
+        "sources": ["S23"]
+      }
+    },
+    {
+      "courseCode": "IBE-302",
+      "display": {
+        "title": "Business Plan Preparation and Feasibility Studies",
+        "author": "Dr. Nick L. Sanyal & Rebecca M. Cruz",
+        "yearLevel": "3rd Year",
+        "semester": "1st Sem",
+        "paragraph": "A guide to turning a business idea into a structured plan and assessing whether it is workable. The subject includes customers, operations, resources, and financial projections, helping entrepreneurship students organize a venture proposal and explain the assumptions behind its feasibility."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "IBE-303",
+      "display": {
+        "title": "Operations and Supply Chain Management (16th Edition)",
+        "author": "F. Robert Jacobs & Richard B. Chase",
+        "yearLevel": "3rd Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to managing the processes and supply networks that deliver products and services. Forecasting, capacity, inventory, quality, logistics, and process improvement help students see how operational decisions affect cost and customer service across an organization and its suppliers."
+      },
+      "verification": {
+        "catalogCheck": "Catalog says 16th edition; this ISBN is associated with the 15th. Verify edition on the copy.",
+        "sources": ["S24"]
+      }
+    },
+    {
+      "courseCode": "IBE-304",
+      "display": {
+        "title": "Social Entrepreneurship and Community Development",
+        "author": "Lisa D. Dacanay",
+        "yearLevel": "3rd Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to enterprises that pursue social goals alongside financial sustainability. It highlights the relationship between community needs, stakeholder participation, and business activity, helping students consider how entrepreneurial approaches can support livelihoods and address social problems."
+      },
+      "verification": {
+        "catalogCheck": "Related author is Marie Lisa Dacanay. Source describes Social Enterprises and the Poor: Transforming Wealth, not this exact catalog title.",
+        "sources": ["S25"]
+      }
+    },
+    {
+      "courseCode": "IBE-401",
+      "display": {
+        "title": "Strategic Management: Concepts and Cases",
+        "author": "Fred R. David & Forest R. David",
+        "yearLevel": "4th Year",
+        "semester": "1st Sem",
+        "paragraph": "A guide to choosing an organization's direction and turning strategic goals into action. Analysis of internal strengths, external conditions, competitive choices, and implementation helps business students evaluate organizational decisions and explain how a coherent strategy can support long-term performance."
+      },
+      "verification": {
+        "catalogCheck": "ISBN is listed for Strategic Management: A Competitive Advantage Approach, Concepts; do not assume it includes the cases volume.",
+        "sources": ["S26"]
+      }
+    },
+    {
+      "courseCode": "IBE-402",
+      "display": {
+        "title": "Pricing Strategies and Financial Modeling for Startups",
+        "author": "Thomas T. Nagle & Georg Müller",
+        "yearLevel": "4th Year",
+        "semester": "1st Sem",
+        "paragraph": "An introduction to setting prices and examining their effect on business performance. Customer value, costs, competition, and revenue assumptions provide a starting point for evaluating pricing choices, helping entrepreneurship students think through how a startup might earn enough income to sustain its operations."
+      },
+      "verification": {
+        "catalogCheck": "Nagle and Muller authored The Strategy and Tactics of Pricing; the listed startup/financial-modeling title was not confirmed.",
+        "sources": ["S27"]
+      }
+    },
+    {
+      "courseCode": "IBE-403",
+      "display": {
+        "title": "Business Analytics, Big Data and Decision Modeling",
+        "author": "James R. Evans",
+        "yearLevel": "4th Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to using data, analytical models, and quantitative reasoning to make business decisions. The related James R. Evans text connects descriptive, predictive, and prescriptive analytics, helping students move from organizing information to evaluating possible actions and explaining the reasoning behind a recommendation."
+      },
+      "verification": {
+        "catalogCheck": "ISBN identifies Business Analytics: Methods, Models, and Decisions, 3rd ed.; the catalog title differs.",
+        "sources": ["S28"]
+      }
+    },
+    {
+      "courseCode": "IBE-404",
+      "display": {
+        "title": "Franchising, E-Commerce and Enterprise Incubation",
+        "author": "Robert W. Price & Manuel V. Sison",
+        "yearLevel": "4th Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to developing ventures through franchising, online commerce, and business incubation. The subject focuses on comparing business formats, reaching customers through digital channels, and identifying support for new enterprises, helping students consider possible routes for launching or expanding a business."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    }
+  ]
+}

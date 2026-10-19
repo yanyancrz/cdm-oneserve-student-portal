@@ -1,0 +1,229 @@
+{
+  "institute": "Institute of Computer Studies",
+  "records": [
+    {
+      "courseCode": "ICS-101",
+      "display": {
+        "title": "Introduction to Computing and Information Technology",
+        "author": "P.K. Sinha & Preeti Sinha",
+        "yearLevel": "1st Year",
+        "semester": "1st Sem",
+        "paragraph": "A beginner-friendly introduction to computers and their role in everyday life, study, and work. This preview focuses on computer hardware, software, data, and basic information technology concepts, helping new computing students build the vocabulary and understanding needed before moving into programming and other technical subjects."
+      },
+      "verification": {
+        "catalogCheck": "ISBN identifies The C Programming Language, 2nd ed., by Brian W. Kernighan and Dennis M. Ritchie, not the listed Sinha title.",
+        "sources": ["S1"]
+      }
+    },
+    {
+      "courseCode": "ICS-102",
+      "display": {
+        "title": "Computer Programming Fundamentals in C++",
+        "author": "D.S. Malik",
+        "yearLevel": "1st Year",
+        "semester": "1st Sem",
+        "paragraph": "An introduction to solving problems through C++ programming, covering how to turn an idea into a working program. Students develop a foundation in variables, decisions, loops, functions, and structured program design, making this a useful starting point for programming courses and practical coding exercises."
+      },
+      "verification": {
+        "catalogCheck": "ISBN identifies C++ Programming: From Problem Analysis to Program Design, 8th ed.; the catalog uses a different title.",
+        "sources": ["S2"]
+      }
+    },
+    {
+      "courseCode": "ICS-103",
+      "display": {
+        "title": "Data Structures and Algorithm Analysis in Java",
+        "author": "Mark Allen Weiss",
+        "yearLevel": "1st Year",
+        "semester": "2nd Sem",
+        "paragraph": "A guide to organizing data and choosing efficient algorithms using Java. It introduces structures such as lists, stacks, queues, trees, and hash tables alongside searching, sorting, and performance analysis, helping students understand how design choices affect the speed and scalability of software."
+      },
+      "verification": {
+        "catalogCheck": "Author site supports this title, author, and ISBN (3rd edition).",
+        "sources": ["S3"]
+      }
+    },
+    {
+      "courseCode": "ICS-104",
+      "display": {
+        "title": "Discrete Mathematics and Its Applications",
+        "author": "Kenneth H. Rosen",
+        "yearLevel": "1st Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to the mathematical reasoning used in computer science. Logic, sets, relations, counting, graphs, and proof techniques help students describe problems precisely and evaluate solutions, providing a foundation for algorithms, data structures, and other subjects that depend on clear, step-by-step reasoning."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "ICS-201",
+      "display": {
+        "title": "Database System Concepts (8th Edition)",
+        "author": "Abraham Silberschatz & Henry F. Korth",
+        "yearLevel": "2nd Year",
+        "semester": "1st Sem",
+        "paragraph": "An introduction to how databases store, organize, and retrieve information. Topics such as relational data, SQL, database design, transactions, and data storage help students understand the systems behind information-driven applications, including library catalogs, enrollment platforms, inventory tools, and other software that manages shared records."
+      },
+      "verification": {
+        "catalogCheck": "ISBN identifies the 7th edition, not the listed 8th. The complete author list also includes S. Sudarshan.",
+        "sources": ["S4"]
+      }
+    },
+    {
+      "courseCode": "ICS-202",
+      "display": {
+        "title": "Digital Logic and Computer Design",
+        "author": "M. Morris Mano",
+        "yearLevel": "2nd Year",
+        "semester": "1st Sem",
+        "paragraph": "A foundation in the digital circuits that make computer hardware work. Boolean logic, logic gates, combinational circuits, and sequential circuits connect mathematical ideas to hardware design, making this subject useful for students preparing to study computer organization, processors, and digital systems."
+      },
+      "verification": {
+        "catalogCheck": "ISBN identifies Logic and Computer Design Fundamentals; the catalog title differs. Check the complete author list on the copy.",
+        "sources": ["S5"]
+      }
+    },
+    {
+      "courseCode": "ICS-203",
+      "display": {
+        "title": "Modern Operating Systems (5th Edition)",
+        "author": "Andrew S. Tanenbaum & Herbert Bos",
+        "yearLevel": "2nd Year",
+        "semester": "2nd Sem",
+        "paragraph": "An explanation of how operating systems coordinate a computer's hardware and software. Processes, memory, files, input/output, and security provide the central themes, helping students understand resource management, concurrent execution, and the services that applications rely on to run reliably."
+      },
+      "verification": {
+        "catalogCheck": "ISBN identifies the 4th edition, not the listed 5th.",
+        "sources": ["S6"]
+      }
+    },
+    {
+      "courseCode": "ICS-204",
+      "display": {
+        "title": "Computer Networks: A Top-Down Approach",
+        "author": "James F. Kurose & Keith W. Ross",
+        "yearLevel": "2nd Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to computer networking that begins with familiar Internet applications and works toward the underlying communication layers. Students explore how information travels between devices through application protocols, transport services, routing, and network links, building a foundation for network design and troubleshooting."
+      },
+      "verification": {
+        "catalogCheck": "The published title is Computer Networking: A Top-Down Approach; the catalog says Computer Networks.",
+        "sources": ["S7"]
+      }
+    },
+    {
+      "courseCode": "ICS-301",
+      "display": {
+        "title": "Software Engineering: A Practitioner's Approach",
+        "author": "Roger S. Pressman & Bruce R. Maxim",
+        "yearLevel": "3rd Year",
+        "semester": "1st Sem",
+        "paragraph": "A guide to developing software through an organized engineering process. Requirements, design, implementation, testing, and project management show how teams turn user needs into maintainable systems, making the book useful for students preparing for collaborative development projects and software capstone work."
+      },
+      "verification": {
+        "catalogCheck": "Title, authors, and ISBN are supported by a library record; confirm edition on the copy.",
+        "sources": ["S8"]
+      }
+    },
+    {
+      "courseCode": "ICS-302",
+      "display": {
+        "title": "Web Systems and Technologies: Full Stack Modern Web",
+        "author": "Robin Nixon",
+        "yearLevel": "3rd Year",
+        "semester": "1st Sem",
+        "paragraph": "An introduction to building interactive websites with client-side code, server-side programming, and databases. The related Robin Nixon text combines PHP, MySQL, JavaScript, CSS, and HTML5, helping students understand how web pages accept user input, process information, and display content stored in a database."
+      },
+      "verification": {
+        "catalogCheck": "Related Nixon title is Learning PHP, MySQL & JavaScript. Linked publisher page is a different edition; do not treat it as an exact ISBN match.",
+        "sources": ["S9"]
+      }
+    },
+    {
+      "courseCode": "ICS-303",
+      "display": {
+        "title": "Information Assurance and Cybersecurity Principles",
+        "author": "William Stallings",
+        "yearLevel": "3rd Year",
+        "semester": "2nd Sem",
+        "paragraph": "An overview of protecting organizational information through cybersecurity practices and standards. The related William Stallings text emphasizes planning, risk, governance, and security controls, helping students connect technical safeguards with the policies and responsibilities needed to protect systems and information."
+      },
+      "verification": {
+        "catalogCheck": "ISBN identifies Effective Cybersecurity: A Guide to Using Best Practices and Standards, not the listed title.",
+        "sources": ["S10"]
+      }
+    },
+    {
+      "courseCode": "ICS-304",
+      "display": {
+        "title": "Mobile Application Development with Flutter & React Native",
+        "author": "Greg Lim",
+        "yearLevel": "3rd Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to building mobile applications with Flutter and React Native. The subject focuses on user interfaces, navigation, application state, and connections to online services, making this preview useful for students exploring cross-platform development and planning a mobile application project."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "ICS-401",
+      "display": {
+        "title": "Systems Analysis and Design (10th Edition)",
+        "author": "Kenneth E. Kendall & Julie E. Kendall",
+        "yearLevel": "4th Year",
+        "semester": "1st Sem",
+        "paragraph": "A guide to understanding an organization's information needs and designing systems that address them. Requirements gathering, process and data modeling, interface design, and implementation planning help students connect business problems with practical software solutions before development begins."
+      },
+      "verification": {
+        "catalogCheck": "The ISBN is associated with an older edition/2013 record; the listed 10th-edition claim needs checking.",
+        "sources": ["S11"]
+      }
+    },
+    {
+      "courseCode": "ICS-402",
+      "display": {
+        "title": "Microprocessor and Microcontroller Interfacing (CpE)",
+        "author": "Douglas V. Hall",
+        "yearLevel": "4th Year",
+        "semester": "1st Sem",
+        "paragraph": "An introduction to how microprocessors communicate with memory and peripheral devices. The related Douglas V. Hall text connects programming with hardware interfacing, helping students understand processor-based systems and the interaction between software instructions, input/output operations, and electronic components."
+      },
+      "verification": {
+        "catalogCheck": "ISBN identifies Microprocessors and Interfacing: Programming and Hardware, Intel Version, 2nd ed.; do not infer modern microcontroller coverage.",
+        "sources": ["S12"]
+      }
+    },
+    {
+      "courseCode": "ICS-403",
+      "display": {
+        "title": "IT Capstone Project Guide and Technical Writing",
+        "author": "Randy L. Conn",
+        "yearLevel": "4th Year",
+        "semester": "2nd Sem",
+        "paragraph": "A guide to planning and explaining an information technology capstone project. The subject focuses on defining a problem, setting objectives, describing a proposed system, and presenting technical work clearly, helping students prepare project documentation and communicate their design decisions to advisers and reviewers."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry. Catalog ISBN fails the ISBN-13 check-digit test.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "ICS-404",
+      "display": {
+        "title": "Artificial Intelligence and Machine Learning for Engineers",
+        "author": "Stuart Russell & Peter Norvig",
+        "yearLevel": "4th Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to the principles behind intelligent computer systems. The related Russell and Norvig text brings together search, reasoning, planning, uncertainty, machine learning, and other AI topics, helping students understand how software can make decisions, learn from information, and solve complex problems."
+      },
+      "verification": {
+        "catalogCheck": "ISBN identifies Artificial Intelligence: A Modern Approach, 4th ed., not the listed title.",
+        "sources": ["S13"]
+      }
+    }
+  ]
+}

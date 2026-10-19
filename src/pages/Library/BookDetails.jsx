@@ -17,6 +17,10 @@
 
     import noCover from "../../assets/images/no-cover.png";
 
+import icsPreviews from "./ics_book_previews.json";
+import ibePreviews from "./ibe_book_previews.json";
+import itePreviews from "./ite_book_previews.json";
+
     import { Skeleton, DetailsSkeleton } from "../../components/States";
 
 
@@ -122,6 +126,8 @@
 
         const [book, setBook] = useState(null);
 
+        const [preview, setPreview] = useState(null);
+
         const [loading, setLoading] =
             useState(true);
 
@@ -191,6 +197,15 @@
                     setBook(
                         response.data ?? response
                     );
+
+                    // Look up catalog preview from the JSON files
+                    const bookData = response.data ?? response;
+                    const bookId = bookData?.id || bookId;
+                    const previewFiles = [icsPreviews, ibePreviews, itePreviews];
+                    const found = previewFiles
+                        .flatMap((f) => f.records || [])
+                        .find((r) => r.courseCode === bookId);
+                    setPreview(found || null);
 
                 } catch (err) {
 
@@ -640,6 +655,14 @@
                     updatedBook.data ??
                     updatedBook
                 );
+
+                const updatedBookData = updatedBook.data ?? updatedBook;
+                const updatedBookId = updatedBookData?.id || bookId;
+                const previewFiles = [icsPreviews, ibePreviews, itePreviews];
+                const foundPreview = previewFiles
+                    .flatMap((f) => f.records || [])
+                    .find((r) => r.courseCode === updatedBookId);
+                setPreview(foundPreview || null);
 
 
                 // ---------------------------------
@@ -1321,6 +1344,47 @@
 
                     </div>
 
+
+{/* =================================================
+                        CATALOG PREVIEW
+                    ================================================= */}
+
+                    <div className="mt-6 p-5 bg-[#F7F5EF] rounded-xl border border-[#E5E1D8]">
+
+                        <h2 className="
+                            text-xs
+                            font-medium
+                            uppercase
+                            tracking-wide
+                            text-gray-400
+                            mb-1.5
+                        ">
+                            Catalog Preview
+                        </h2>
+
+                        <p className="text-sm font-semibold text-[#1F1F1F] mb-0.5">
+                            {preview?.display?.title || book.title}
+                        </p>
+
+                        <p className="text-xs text-gray-500 mb-2">
+                            Catalog-listed author(s): {preview?.display?.author || book.author}
+                        </p>
+
+                        <p className="
+                            text-sm
+                            text-gray-600
+                            leading-relaxed
+                        ">
+                            {preview?.display?.paragraph || book.description || "No preview available."}
+                        </p>
+
+                        {preview?.verification?.catalogCheck && (
+                            <p className="text-xs text-gray-400 mt-2 italic">
+                                Catalog check: {preview.verification.catalogCheck}
+                            </p>
+                        )}
+
+                    </div>
 
                     {/* =================================================
                         PRIMARY ACTIONS

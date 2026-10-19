@@ -1,0 +1,173 @@
+{
+  "institute": "Institute of Teacher Education",
+  "records": [
+    {
+      "courseCode": "ITE-101",
+      "display": {
+        "title": "The Child and Adolescent Learners and Learning Principles",
+        "author": "Brenda B. Corpuz & Maria Rita D. Lucas",
+        "yearLevel": "1st Year",
+        "semester": "1st Sem",
+        "paragraph": "An introduction to how children and adolescents develop and learn. Physical, cognitive, social, and emotional development connect with learning principles, helping future teachers understand learner differences and choose classroom approaches that suit students' developmental needs and educational experiences."
+      },
+      "verification": {
+        "catalogCheck": "Publisher record lists Corpuz, Lucas, Heidi Grace L. Borabo, and Paz I. Lucido, with a different ISBN.",
+        "sources": ["S14"]
+      }
+    },
+    {
+      "courseCode": "ITE-102",
+      "display": {
+        "title": "Understanding the Self: Philippine Context",
+        "author": "D.J. Brawner & R.L. Arce",
+        "yearLevel": "1st Year",
+        "semester": "1st Sem",
+        "paragraph": "An introduction to personal identity, self-awareness, and the factors that shape a person's understanding of themselves. The related Brawner and Arcega text supports reflection on personal goals, habits, emotions, and well-being, making it useful for college students developing self-management and a clearer sense of direction."
+      },
+      "verification": {
+        "catalogCheck": "Related text is Understanding the Self by Dalisay G. Brawner and Analiza F. Arcega, ISBN 9789719808855. Catalog names and ISBN differ.",
+        "sources": ["S15"]
+      }
+    },
+    {
+      "courseCode": "ITE-103",
+      "display": {
+        "title": "Facilitating Learner-Centered Teaching",
+        "author": "Maria Rita D. Lucas & Brenda B. Corpuz",
+        "yearLevel": "1st Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to teaching that gives learners an active role in developing understanding. Learning theories, motivation, individual differences, and classroom strategies provide a framework for planning meaningful activities, helping future teachers create lessons that encourage participation, reflection, and greater responsibility for learning."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "ITE-104",
+      "display": {
+        "title": "Purposive Communication in the 21st Century",
+        "author": "Chase & Shamo",
+        "yearLevel": "1st Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to communicating clearly for different purposes, audiences, and situations. Speaking, writing, listening, and the responsible use of information provide a foundation for academic and professional communication, helping students prepare messages that are organized, appropriate, and easy for others to understand."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "ITE-201",
+      "display": {
+        "title": "Technology for Teaching and Learning 1 (TTL 1)",
+        "author": "Purita P. Bilbao & Dehlia M. Lucido",
+        "yearLevel": "2nd Year",
+        "semester": "1st Sem",
+        "paragraph": "An introduction to using technology purposefully in teaching and learning. Selecting digital resources, designing learning activities, and using tools responsibly help future teachers connect technology choices with lesson goals and learner needs, building a foundation for thoughtful classroom technology integration."
+      },
+      "verification": {
+        "catalogCheck": "Source supports the course scope only; it does not verify this book's author list or ISBN.",
+        "sources": ["S16"]
+      }
+    },
+    {
+      "courseCode": "ITE-202",
+      "display": {
+        "title": "Foundation of Special and Inclusive Education",
+        "author": "Yolanda S. Quijano & Mirla R. Olores",
+        "yearLevel": "2nd Year",
+        "semester": "1st Sem",
+        "paragraph": "An introduction to education that welcomes learners with diverse abilities and support needs. Inclusion, learner differences, accessibility, and classroom support provide the central focus, helping future teachers consider how learning environments and teaching approaches can enable more students to participate meaningfully."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "ITE-203",
+      "display": {
+        "title": "Building and Enhancing New Literacies Across Curriculum",
+        "author": "Brenda B. Corpuz & Purita P. Bilbao",
+        "yearLevel": "2nd Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to literacies needed for learning and participation in a changing society. Digital, media, information, and other emerging literacies provide a framework for connecting classroom subjects with everyday communication and decision-making, helping future teachers design activities that develop critical and responsible learners."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "ITE-204",
+      "display": {
+        "title": "Teaching Science in Elementary and Secondary Grades",
+        "author": "Joseph Abruscato & Donald DeRosa",
+        "yearLevel": "2nd Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to teaching science through inquiry, investigation, and active learning. The related Abruscato and DeRosa text emphasizes elementary science teaching, helping future teachers guide observation, questioning, and explanation rather than relying only on memorization."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "ITE-301",
+      "display": {
+        "title": "Assessment in Learning 1: Traditional Assessment & Rubrics",
+        "author": "Rosita L. Navarro & Rosita G. Santos",
+        "yearLevel": "3rd Year",
+        "semester": "1st Sem",
+        "paragraph": "An introduction to classroom assessment and the construction of conventional assessment tools. Learning outcomes, test design, scoring, and interpretation provide a framework for gathering evidence of student learning, helping future teachers make assessment choices that are fair, useful, and aligned with instruction."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "ITE-302",
+      "display": {
+        "title": "The Teacher and the School Curriculum",
+        "author": "Purita P. Bilbao & Filomena T. Dayagbil",
+        "yearLevel": "3rd Year",
+        "semester": "1st Sem",
+        "paragraph": "An introduction to the school curriculum and the teacher's role in putting it into practice. Curriculum planning, implementation, and evaluation help future teachers connect learning goals with classroom activities and assessment, providing a foundation for making lessons consistent with broader educational expectations."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    },
+    {
+      "courseCode": "ITE-303",
+      "display": {
+        "title": "Assessment in Learning 2: Authentic & Performance-Based",
+        "author": "Rosita G. Santos & Brenda B. Corpuz",
+        "yearLevel": "3rd Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to assessing what learners can demonstrate through meaningful tasks. Performance assessments, portfolios, rubrics, and feedback help future teachers gather evidence beyond written tests, supporting judgments about how well students can apply knowledge and skills in practical learning situations."
+      },
+      "verification": {
+        "catalogCheck": "Library record supports authentic-assessment subject coverage; verify the exact title, author list, and ISBN against the copy.",
+        "sources": ["S17"]
+      }
+    },
+    {
+      "courseCode": "ITE-304",
+      "display": {
+        "title": "Curriculum and Instruction in Technology & Livelihood Education",
+        "author": "T.G. Arcos & E.M. Reyes",
+        "yearLevel": "3rd Year",
+        "semester": "2nd Sem",
+        "paragraph": "An introduction to planning and delivering Technology and Livelihood Education. The subject focuses on aligning practical skills, lesson activities, demonstrations, and assessment, helping future teachers prepare learning experiences that connect classroom instruction with useful competencies and possible livelihood opportunities."
+      },
+      "verification": {
+        "catalogCheck": "Exact title, author attribution, and edition were not independently confirmed. Preview is a subject-based draft for the listed catalog entry.",
+        "sources": []
+      }
+    }
+  ]
+}
