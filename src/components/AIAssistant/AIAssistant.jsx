@@ -88,6 +88,22 @@ export default function AIAssistant() {
         // and the model is never trusted with routes.
         const local = answerAssistant(text);
 
+        // For location/campus office queries we always use the on-device brain,
+        // because it has the curated location data that the remote AI lacks.
+        const isLocationQuery =
+            /location|saan|where|office|opisina|room|building|clinic|library|lost and found|guidance|counseling/i.test(
+                text
+            );
+
+        if (isLocationQuery) {
+            setMessages((prev) => [
+                ...prev,
+                { id: nextId++, from: "bot", ...local, source: "local" },
+            ]);
+            setTyping(false);
+            return;
+        }
+
         try {
             abortRef.current?.abort();
             const controller = new AbortController();
