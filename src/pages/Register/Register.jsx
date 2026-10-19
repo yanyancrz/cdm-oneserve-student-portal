@@ -40,7 +40,7 @@ export default function Register() {
 
     const idPlaceholder =
         role === "Student"
-            ? "2024-00123"
+            ? "26-00000"
             : role === "Faculty"
               ? "FAC-00123"
               : "Enter your ID number";

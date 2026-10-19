@@ -236,7 +236,7 @@ export default function ChangePasswordModal({
                                 onChange={(event) =>
                                     update("idNumber", event.target.value)
                                 }
-                                placeholder="e.g. 23-00041"
+                                placeholder="e.g. 26-00000"
                                 className={inputClass}
                                 autoComplete="off"
                             />
