@@ -269,78 +269,6 @@ export default function AdminDashboard() {
     );
 
     // --------------------------------------------------
-    // LOWER CONTENT
-    // --------------------------------------------------
-
-    const lowerContent = (
-        <div className="px-5 sm:px-6 pb-5">
-
-            {/* ==================================================
-                STATS
-            ================================================== */}
-
-            <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 lg:gap-5">
-
-                {stats.map((stat) => (
-                    <div
-                        key={stat.label}
-                        className="
-                            bg-white
-                            rounded-2xl
-                            p-5
-                            border
-                            border-[#1F1F1F]/[0.05]
-                            hover:-translate-y-0.5
-                            hover:shadow-md
-                            transition-all
-                        "
-                    >
-
-                        <div className="flex items-start justify-between gap-3">
-
-                            <div>
-                                <p className="text-xs uppercase tracking-wide text-gray-500 font-medium mb-2">
-                                    {stat.label}
-                                </p>
-
-                                <p
-                                    className="font-display text-3xl"
-                                    style={{ color: stat.color }}
-                                >
-                                    {stat.value}
-                                </p>
-
-                                <p className="text-xs text-gray-400 mt-2">
-                                    {stat.description}
-                                </p>
-                            </div>
-
-                            <div
-                                className="w-10 h-10 rounded-xl flex items-center justify-center"
-                                style={{
-                                    background: stat.bg,
-                                    color: stat.color,
-                                }}
-                            >
-                                <Icon type={stat.icon} size={19} />
-                            </div>
-
-                        </div>
-
-                    </div>
-                ))}
-
-            </div>
-        </div>
-    )
-
-    // --------------------------------------------------
-    // MODULE MONITORING
-    // --------------------------------------------------
-
-    const modules = dashboard.modules;
-
-    // --------------------------------------------------
     // RENDER
     // --------------------------------------------------
 
@@ -378,7 +306,7 @@ export default function AdminDashboard() {
                                     {isLoading ? (
                                         <BoneOnDark className="mt-1 h-9 w-40 sm:h-10 sm:w-52" />
                                     ) : (
-                                        dashboard.adminName.split(" ")[0]
+                                        adminName.split(" ")[0]
                                     )}
                                 </span>
 
@@ -433,6 +361,7 @@ export default function AdminDashboard() {
                                         </p>
 
                                     </div>
+
 
                                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-300/10 text-amber-300">
 
