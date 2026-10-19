@@ -369,8 +369,8 @@ export function answerAssistant(rawText) {
 
 /** Quick chips shown when the chat opens. Real destinations, no dead ends. */
 export const ASSISTANT_SUGGESTIONS = [
-    { label: "Borrow a book", ask: "How do I borrow a book?" },
-    { label: "Book counseling", ask: "I want to talk to a counselor" },
-    { label: "Report lost item", ask: "I lost my wallet" },
-    { label: "Campus offices", ask: "Where are the campus service offices?" },
+    { label: "Clinic location", ask: "Where is the clinic?" },
+    { label: "Library location", ask: "Where is the library?" },
+    { label: "Lost & Found location", ask: "Where is the lost and found office?" },
+    { label: "Guidance location", ask: "Where is the guidance office?" },
 ];
