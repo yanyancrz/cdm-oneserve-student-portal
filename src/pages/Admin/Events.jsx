@@ -57,8 +57,8 @@ export default function Events() {
         setForm({
             title: ev.title || "",
             description: ev.description || "",
-            eventDate: ev.eventDate ? ev.eventDate.slice(0, 16) : "",
-            endDate: ev.endDate ? ev.endDate.slice(0, 16) : "",
+            eventDate: ev.eventDate ? ev.eventDate.slice(0, 10) : "",
+            endDate: ev.endDate ? ev.endDate.slice(0, 10) : "",
             location: ev.location || "",
             tag: ev.tag || "CAMPUS",
             accent: ev.accent || "#F4D35E",
@@ -120,7 +120,7 @@ export default function Events() {
 
     const formatDate = (d) => {
         if (!d) return "—";
-        return new Date(d).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+        return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
     };
 
     return (
@@ -159,12 +159,12 @@ export default function Events() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-3">
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-600 mb-1">Start Date/Time *</label>
-                                        <input type="datetime-local" value={form.eventDate} onChange={(e) => setForm({ ...form, eventDate: e.target.value })} className={inputClass} required />
+                                        <label className="block text-xs font-medium text-slate-600 mb-1">Event Date *</label>
+                                        <input type="date" value={form.eventDate} onChange={(e) => setForm({ ...form, eventDate: e.target.value })} className={inputClass} required />
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-medium text-slate-600 mb-1">End Date/Time</label>
-                                        <input type="datetime-local" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} className={inputClass} />
+                                        <label className="block text-xs font-medium text-slate-600 mb-1">End Date (optional)</label>
+                                        <input type="date" value={form.endDate} onChange={(e) => setForm({ ...form, endDate: e.target.value })} className={inputClass} />
                                     </div>
                                 </div>
                                 <div>

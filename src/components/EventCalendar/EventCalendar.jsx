@@ -142,8 +142,6 @@ export default function EventCalendar() {
                                     {new Date(ev.eventDate).toLocaleDateString("en-US", {
                                         month: "short",
                                         day: "numeric",
-                                        hour: "numeric",
-                                        minute: "2-digit",
                                     })}
                                     {ev.location ? ` · ${ev.location}` : ""}
                                 </p>
