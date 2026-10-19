@@ -1333,6 +1333,7 @@ import itePreviews from "./ite_book_previews.json";
                                     leading-relaxed
                                 ">
                                     {
+                                        preview?.display?.paragraph ||
                                         book.description ||
                                         "No description available."
                                     }
