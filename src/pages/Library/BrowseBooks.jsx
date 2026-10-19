@@ -12,16 +12,6 @@ import { BookGridSkeleton } from "../../components/States";
 import { API_URL } from "../../config/api";
 
 // =========================================================
-// CONSTANTS
-// =========================================================
-
-const STATUS_FILTERS = [
-    { value: "All", label: "All books" },
-    { value: "Available", label: "Available now" },
-    { value: "Unavailable", label: "Not available" },
-];
-
-// =========================================================
 // HELPERS
 // =========================================================
 
@@ -206,12 +196,6 @@ export default function BrowseBooks() {
     const [selectedCategory, setSelectedCategory] =
         useState(searchParams.get("category") || "All");
 
-    const [selectedFilter, setSelectedFilter] = useState(
-        searchParams.get("status") === "Available"
-            ? "Available"
-            : "All"
-    );
-
     const [selectedBook, setSelectedBook] =
         useState(null);
 
@@ -284,17 +268,9 @@ export default function BrowseBooks() {
                 selectedCategory === "All" ||
                 book.category === selectedCategory;
 
-            const matchesFilter =
-                selectedFilter === "All" ||
-                (selectedFilter === "Available" &&
-                    isBookAvailable(book)) ||
-                (selectedFilter === "Unavailable" &&
-                    !isBookAvailable(book));
-
             return (
                 matchesQuery &&
-                matchesCategory &&
-                matchesFilter
+                matchesCategory
             );
         });
     }, [
@@ -310,13 +286,11 @@ export default function BrowseBooks() {
 
     const hasActiveFilters =
         searchQuery.trim() !== "" ||
-        selectedCategory !== "All" ||
-        selectedFilter !== "All";
+        selectedCategory !== "All";
 
     const clearFilters = () => {
         setSearchQuery("");
         setSelectedCategory("All");
-        setSelectedFilter("All");
     };
 
     // =====================================================
@@ -436,36 +410,6 @@ export default function BrowseBooks() {
                             }`}
                         >
                             {category}
-                        </button>
-                    ))}
-                </div>
-
-                {/* =================================================
-                    AVAILABILITY FILTERS
-                ================================================= */}
-
-                <div className="mb-5 flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    {STATUS_FILTERS.map((filter) => (
-                        <button
-                            key={filter.value}
-                            type="button"
-                            onClick={() =>
-                                setSelectedFilter(
-                                    filter.value
-                                )
-                            }
-                            aria-pressed={
-                                selectedFilter ===
-                                filter.value
-                            }
-                            className={`shrink-0 rounded-full px-4 py-2 text-xs font-semibold transition ${
-                                selectedFilter ===
-                                filter.value
-                                    ? "border border-[#106A2E] bg-emerald-50 text-[#106A2E]"
-                                    : "border border-slate-200 bg-white text-slate-500 hover:border-emerald-200 hover:text-[#106A2E]"
-                            }`}
-                        >
-                            {filter.label}
                         </button>
                     ))}
                 </div>
