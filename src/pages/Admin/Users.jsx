@@ -15,7 +15,6 @@ import {
     ChevronLeft,
     ChevronRight,
     RotateCcw,
-    Mail,
 } from "lucide-react";
 import { API_URL } from "../../config/api";
 import {
@@ -35,7 +34,6 @@ import {
     StatusPill,
     TextField,
     UserForm,
-    VerificationPill,
 } from "./userAdminShared";
 import {
     AUTH_BASE,
@@ -70,7 +68,7 @@ import {
 // ─────────────────────────────────────────────────────────────
 const ROLE_FILTERS = ["All", "Student", "Faculty"];
 const MEMBER_ROLE_OPTIONS = ["Student", "Faculty"];
-const VERIFICATION_FILTERS = ["All verification", "PNM Email", "Not verified"];
+const VERIFICATION_FILTERS = ["All verification", "Not verified"];
 
 // Students + faculty only - heads and admins live on ServiceHeads.jsx.
 const isMemberRole = (role) => role === "Student" || role === "Faculty";
@@ -544,15 +542,12 @@ export default function Users() {
     const stats = useMemo(() => {
         const members = users.filter((u) => isMemberRole(u.role));
         const count = (status) => members.filter((u) => u.status === status).length;
-        const countMethod = (method) =>
-            members.filter((u) => getVerificationMethod(u) === method).length;
 
         return [
             { key: "All statuses", kind: "status", label: "Total users", value: members.length, icon: UsersIcon, tone: "bg-[#ECE9E2] text-[#1F1F1F]", number: "text-[#1F1F1F]" },
             { key: "Active", kind: "status", label: "Active", value: count("Active"), icon: UserCheck, tone: "bg-[#E1F0E4] text-[#106A2E]", number: "text-[#106A2E]" },
             { key: "Pending", kind: "status", label: "Pending", value: count("Pending"), icon: Clock3, tone: "bg-amber-50 text-amber-600", number: "text-amber-600" },
             { key: "Suspended", kind: "status", label: "Suspended", value: count("Suspended"), icon: Ban, tone: "bg-red-50 text-red-500", number: "text-red-600" },
-            { key: "PNM Email", kind: "verification", label: "Verified via PNM email", value: countMethod("PNM Email"), icon: Mail, tone: "bg-emerald-50 text-emerald-700", number: "text-emerald-700" },
         ];
     }, [users]);
 
@@ -1108,8 +1103,6 @@ export default function Users() {
 
                                         <th className={thClass}>Role</th>
 
-                                        <th className={thClass}>Verified via</th>
-
                                         <SortHeader
                                             label="Status"
                                             sortKey="status"
@@ -1160,7 +1153,6 @@ export default function Users() {
                                             </td>
 
                                             <td className="px-5 py-3.5">
-                                                <VerificationPill method={getVerificationMethod(u)} />
                                             </td>
 
                                             <td className="px-5 py-3.5">
@@ -1197,7 +1189,6 @@ export default function Users() {
 
                                             <div className="mt-2 flex flex-wrap items-center gap-2">
                                                 <RolePill role={u.role} />
-                                                <VerificationPill method={getVerificationMethod(u)} />
                                                 <StatusPill status={u.status} />
                                             </div>
 
