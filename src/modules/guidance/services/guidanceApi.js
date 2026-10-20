@@ -13,7 +13,7 @@ export class GuidanceApiError extends Error {
 
 // Every Guidance call goes through here: it sends the SAME OneServe JWT and
 // never sends a user id. The server reads the user from the token.
-export async function guidanceFetch(path, { method = "GET", body, signal } = {}) {
+export async function guidanceFetch(path, { method = "GET", body, formData, signal } = {}) {
     const token = getToken();
 
     if (!token) {
@@ -29,7 +29,7 @@ export async function guidanceFetch(path, { method = "GET", body, signal } = {})
                 Authorization: `Bearer ${token}`,
                 ...(body ? { "Content-Type": "application/json" } : {}),
             },
-            body: body ? JSON.stringify(body) : undefined,
+            body: formData ?? (body ? JSON.stringify(body) : undefined),
         });
     } catch (error) {
         if (error?.name === "AbortError") throw error;
@@ -107,6 +107,12 @@ export const guidanceApi = {
 
     updateCounselorProfile: (payload) =>
         guidanceFetch("/counselor/profile", { method: "PUT", body: payload }),
+
+    uploadCounselorPhoto: (file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return guidanceFetch("/counselor/photo", { method: "POST", formData });
+    },
 
     updateAppointmentStatus: (id, status) =>
         guidanceFetch(`/counselor/appointments/${id}/status`, { method: "PATCH", body: { status } }),

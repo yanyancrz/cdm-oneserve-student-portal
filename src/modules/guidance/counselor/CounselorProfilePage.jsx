@@ -190,6 +190,8 @@ export default function CounselorProfilePage() {
                 <ProfileSheet
                     profile={profile}
                     email={me.email}
+                    name={me.fullName}
+                    photo={me.profilePicture}
                     onClose={() => setEditing(false)}
                     onDone={() => {
                         setEditing(false);

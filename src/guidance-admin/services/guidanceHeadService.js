@@ -35,6 +35,13 @@ export const guidanceHeadService = {
         return api.put(`/api/admin/guidance/counselors/${id}`, body, options).then((r) => r.data);
     },
 
+    // POST /api/admin/guidance/counselors/{id}/photo
+    uploadCounselorPhoto(id, file, options) {
+        const body = new FormData();
+        body.append("file", file);
+        return api.post(`/api/admin/guidance/counselors/${id}/photo`, body, options).then((r) => r.data);
+    },
+
     // PATCH /api/admin/guidance/counselors/{id}/status
     setCounselorStatus(id, status, options) {
         return api

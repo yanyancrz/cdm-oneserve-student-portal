@@ -6,6 +6,7 @@ import PageHeader from "../components/PageHeader";
 import { CardListSkeleton, Empty, ErrorBox } from "../components/GuidanceStates";
 import { Avatar, SearchBar } from "../components/GuidanceUi";
 import { guidanceApi } from "../services/guidanceApi";
+import { API_URL } from "../../../config/api";
 import { DAY_NAMES } from "../utils/dateTime";
 
 const TODAY_DOW = new Date().getDay();
@@ -99,7 +100,15 @@ export default function CounselorsPage() {
                             className="rounded-2xl border border-black/[0.05] bg-white p-4 shadow-sm"
                         >
                             <div className="flex items-center gap-3">
-                                <Avatar name={c.fullName} size="lg" />
+                                {c.profilePicture ? (
+                                    <img
+                                        src={`${API_URL}${c.profilePicture}`}
+                                        alt={c.fullName}
+                                        className="h-12 w-12 shrink-0 rounded-full object-cover"
+                                    />
+                                ) : (
+                                    <Avatar name={c.fullName} size="lg" />
+                                )}
 
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate text-sm font-semibold text-slate-800">{c.fullName}</p>

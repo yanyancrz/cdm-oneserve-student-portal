@@ -13,7 +13,7 @@ import findLogoWhite from "../../assets/images/FIND LOGO white.png";
 
 export const FIND_LOGO_SRC = findLogoWhite;
 export const FIND_SPLASH_SRC = findLogoWhite;
-export const GUIDANCE_LOGO_SRC = "/brand/guidance-logo.png";
+export const GUIDANCE_LOGO_SRC = "/brand/guidance-logo.svg";
 
 function hideOnError(event) {
     event.currentTarget.style.display = "none";

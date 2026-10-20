@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <linearGradient id="g1" x1="96" y1="96" x2="416" y2="416" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8CC63F"/>
+      <stop offset="0.5" stop-color="#2E9E4F"/>
+      <stop offset="1" stop-color="#0E5A34"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="190" y1="170" x2="330" y2="340" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F2B33D"/>
+      <stop offset="1" stop-color="#E07A2F"/>
+    </linearGradient>
+  </defs>
+
+  <!-- circular emblem -->
+  <circle cx="256" cy="238" r="168" stroke="url(#g1)" stroke-width="14"/>
+  <path d="M146 168c18-30 48-52 83-60" stroke="#6DB33F" stroke-width="12" stroke-linecap="round"/>
+  <path d="M366 308c-18 30-48 52-83 60" stroke="#0E5A34" stroke-width="12" stroke-linecap="round"/>
+  <path d="M134 214l22-10 6 24-28-14z" fill="#8CC63F"/>
+  <path d="M378 262l-22 10-6-24 28 14z" fill="#0E5A34"/>
+
+  <!-- calendar -->
+  <rect x="196" y="126" width="120" height="96" rx="14" fill="#fff" stroke="#2E9E4F" stroke-width="10"/>
+  <path d="M196 158h120" stroke="#2E9E4F" stroke-width="10"/>
+  <path d="M222 112v28M290 112v28" stroke="#2E9E4F" stroke-width="10" stroke-linecap="round"/>
+  <path d="M224 194l18 18 34-36" stroke="#2E9E4F" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- two people -->
+  <circle cx="214" cy="272" r="22" fill="#2E9E4F"/>
+  <path d="M178 338c0-24 16-42 36-42s36 18 36 42v10h-72v-10z" fill="#2E9E4F"/>
+  <circle cx="300" cy="286" r="22" fill="url(#g2)"/>
+  <path d="M264 352c0-24 16-42 36-42s36 18 36 42v10h-72v-10z" fill="url(#g2)"/>
+
+  <!-- shared document / connection -->
+  <rect x="224" y="306" width="66" height="46" rx="8" fill="#fff" stroke="#0E5A34" stroke-width="6"/>
+  <path d="M240 322h34M240 334h26" stroke="#0E5A34" stroke-width="5" stroke-linecap="round"/>
+  <path d="M190 300c14-10 30-14 44-12M328 314c-12 8-26 12-38 12" stroke="#6DB33F" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 10"/>
+
+  <!-- GCAS wordmark -->
+  <text x="256" y="438" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="72" font-weight="700" fill="#0E3B22" letter-spacing="4">GCAS</text>
+  <text x="256" y="466" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700" fill="#123D2A" letter-spacing="1.5">GUIDANCE COUNSELING</text>
+  <text x="256" y="488" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700" fill="#123D2A" letter-spacing="1.5">APPOINTMENT SYSTEM</text>
+</svg>

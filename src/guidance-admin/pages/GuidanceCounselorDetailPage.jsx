@@ -226,7 +226,7 @@ export default function GuidanceCounselorDetailPage() {
                     </dl>
 
                     <div className="mt-5 space-y-2 border-t border-black/[0.06] pt-4 text-xs text-gray-500">
-                        <p>ID number: {counselor.idNumber || "—"}</p>
+                        <p>Licensed Number: {counselor.idNumber || "—"}</p>
                         <p>Last login: {formatDateTime(counselor.lastLoginAt)}</p>
                         <p>Account created: {formatDateTime(counselor.createdAt)}</p>
                     </div>

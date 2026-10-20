@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { CalendarClock, CalendarX2, Check, CheckCircle2, ChevronDown, Clock3, X, ArrowUpDown } from "lucide-react";
+import { CalendarClock, CalendarX2, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Clock3, X, ArrowUpDown } from "lucide-react";
 
 import StatusBadge from "../components/StatusBadge";
 import RoleBadge from "../components/RoleBadge";
@@ -14,6 +14,8 @@ import SessionRecordSheet from "./SessionRecordSheet";
 import FollowUpSheet from "./FollowUpSheet";
 
 const FILTERS = ["All", "Pending", "Confirmed", "Arrived", "NoShow", "Completed", "Cancelled", "Rejected", "Expired"];
+const PAGE_SIZE = 10;
+const APPT_PAGE_SIZE = 5;
 const byWhen = (a, b) => a.date.localeCompare(b.date) || slotToMinutes(a.timeSlot) - slotToMinutes(b.timeSlot);
 
 export default function CounselorAppointmentsPage() {
@@ -28,6 +30,8 @@ export default function CounselorAppointmentsPage() {
     const [followUpFor, setFollowUpFor] = useState(null);
     const [open, setOpen] = useState({}); // which person cards are expanded
     const [sortDesc, setSortDesc] = useState({}); // per-card sort direction
+    const [groupPage, setGroupPage] = useState({}); // per-student appointment page
+    const [page, setPage] = useState(1);
 
     const load = useCallback(async (signal) => {
         setError("");
@@ -88,6 +92,16 @@ export default function CounselorAppointmentsPage() {
             .sort((x, y) => String(x.person.studentName || "").localeCompare(String(y.person.studentName || "")));
     }, [rows]);
 
+    // Reset to the first page whenever the result set changes.
+    useEffect(() => {
+        setPage(1);
+    }, [filter, q]);
+
+    // Paginate the grouped (per-student) list, 10 groups per page.
+    const totalPages = Math.max(1, Math.ceil(groups.length / PAGE_SIZE));
+    const currentPage = Math.min(page, totalPages);
+    const pagedGroups = groups.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
     // How many appointments each filter would show.
     const counts = FILTERS.reduce((acc, f) => {
         acc[f] = f === "All" ? items.length : items.filter((a) => a.status === f).length;
@@ -106,7 +120,7 @@ export default function CounselorAppointmentsPage() {
             {error && <ErrorBox message={error} onRetry={() => load()} />}
             {!loading && !error && rows.length === 0 && <Empty icon={CalendarX2} title="No appointments found" />}
 
-            {groups.map((g) => {
+            {pagedGroups.map((g) => {
                 const isOpen = !!open[g.key];
 
                 return (
@@ -156,13 +170,19 @@ export default function CounselorAppointmentsPage() {
                                     </button>
                                 </div>
 
-                                {[...g.appointments]
-                                    .sort((a, b) =>
+                                {(() => {
+                                    const sortedAppts = [...g.appointments].sort((a, b) =>
                                         (sortDesc[g.key] ?? true)
                                             ? b.date.localeCompare(a.date) || slotToMinutes(b.timeSlot) - slotToMinutes(a.timeSlot)
                                             : a.date.localeCompare(b.date) || slotToMinutes(a.timeSlot) - slotToMinutes(b.timeSlot)
-                                    )
-                                    .map((a) => {
+                                    );
+                                    const apptTotalPages = Math.max(1, Math.ceil(sortedAppts.length / APPT_PAGE_SIZE));
+                                    const apptPage = Math.min(Math.max(1, groupPage[g.key] || 1), apptTotalPages);
+                                    const apptStart = (apptPage - 1) * APPT_PAGE_SIZE;
+                                    const apptItems = sortedAppts.slice(apptStart, apptStart + APPT_PAGE_SIZE);
+                                    return (
+                                        <>
+                                            {apptItems.map((a) => {
                                     const isBusy = busy === a.id;
                                     const active = a.status === "Pending" || a.status === "Confirmed";
 
@@ -249,11 +269,73 @@ export default function CounselorAppointmentsPage() {
                                     </article>
                                     );
                                 })}
+                                {sortedAppts.length > APPT_PAGE_SIZE && (
+                                    <div className="flex items-center justify-between gap-2 pt-1">
+                                        <p className="text-[10px] text-slate-400">
+                                            {apptStart + 1}–{Math.min(apptStart + APPT_PAGE_SIZE, sortedAppts.length)} of {sortedAppts.length}
+                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                disabled={apptPage <= 1}
+                                                onClick={() => setGroupPage((prev) => ({ ...prev, [g.key]: Math.max(1, apptPage - 1) }))}
+                                                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-600 disabled:opacity-40"
+                                            >
+                                                Prev
+                                            </button>
+                                            <span className="text-[10px] text-slate-400">
+                                                {apptPage}/{apptTotalPages}
+                                            </span>
+                                            <button
+                                                type="button"
+                                                disabled={apptPage >= apptTotalPages}
+                                                onClick={() => setGroupPage((prev) => ({ ...prev, [g.key]: Math.min(apptTotalPages, apptPage + 1) }))}
+                                                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-600 disabled:opacity-40"
+                                            >
+                                                Next
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                                        </>
+                                    );
+                                })()}
                             </div>
                         )}
                     </section>
                 );
             })}
+
+            {groups.length > PAGE_SIZE && (
+                <div className="flex items-center justify-between gap-3 rounded-2xl border border-black/[0.05] bg-white px-4 py-3 shadow-sm">
+                    <p className="text-xs text-slate-500">
+                        Showing {(currentPage - 1) * PAGE_SIZE + 1}–{Math.min(currentPage * PAGE_SIZE, groups.length)} of {groups.length} students
+                    </p>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            disabled={currentPage <= 1}
+                            onClick={() => setPage((p) => Math.max(1, p - 1))}
+                            aria-label="Previous page"
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition active:scale-95 disabled:opacity-40"
+                        >
+                            <ChevronLeft size={14} /> Prev
+                        </button>
+                        <span className="text-xs text-slate-500">
+                            Page {currentPage} of {totalPages}
+                        </span>
+                        <button
+                            type="button"
+                            disabled={currentPage >= totalPages}
+                            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                            aria-label="Next page"
+                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition active:scale-95 disabled:opacity-40"
+                        >
+                            Next <ChevronRight size={14} />
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {resched && (
                 <RescheduleSheet

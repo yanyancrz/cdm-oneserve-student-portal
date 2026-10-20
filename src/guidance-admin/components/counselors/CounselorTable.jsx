@@ -1,7 +1,8 @@
 import { Link } from "react-router-dom";
-import { KeyRound, Pencil, Power } from "lucide-react";
+import { KeyRound, Lock, Pencil, Unlock } from "lucide-react";
 
 import { StatusBadge } from "../common";
+import { API_URL } from "../../../config/api";
 import { formatDateTime, formatNumber, initials, statusTone } from "../../utils/format";
 
 const cell = "px-4 py-3 text-sm";
@@ -16,7 +17,7 @@ export default function CounselorTable({ counselors, onAction }) {
                 <thead>
                     <tr className="border-b border-black/[0.06] text-[11px] uppercase tracking-wide text-gray-400">
                         <th className="px-4 py-3 font-medium">Counselor</th>
-                        <th className="px-4 py-3 font-medium">ID</th>
+                        <th className="px-4 py-3 font-medium">Licensed Number</th>
                         <th className="px-4 py-3 font-medium">Assignment</th>
                         <th className="px-4 py-3 font-medium">Availability</th>
                         <th className="px-4 py-3 font-medium">Appts</th>
@@ -30,13 +31,22 @@ export default function CounselorTable({ counselors, onAction }) {
                 <tbody className="divide-y divide-black/[0.04]">
                     {counselors.map((c) => {
                         const active = c.accountStatus === "Active";
+                        const suspended = c.accountStatus === "Suspended";
 
                         return (
                             <tr key={c.userId} className="transition hover:bg-[#FAFAF7]">
                                 <td className={cell}>
                                     <div className="flex items-center gap-3">
-                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#E1F0E4] text-xs font-semibold text-[#106A2E]">
-                                            {initials(c.fullName)}
+                                        <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#E1F0E4] text-xs font-semibold text-[#106A2E]">
+                                            {c.profilePicture ? (
+                                                <img
+                                                    src={`${API_URL}${c.profilePicture}`}
+                                                    alt=""
+                                                    className="h-full w-full object-cover"
+                                                />
+                                            ) : (
+                                                initials(c.fullName)
+                                            )}
                                         </span>
 
                                         <div className="min-w-0">
@@ -111,16 +121,16 @@ export default function CounselorTable({ counselors, onAction }) {
 
                                         <button
                                             type="button"
-                                            title={active ? "Suspend account" : "Activate account"}
-                                            aria-label={`${active ? "Suspend" : "Activate"} ${c.fullName}`}
+                                            title={suspended ? "Activate account" : "Suspend account"}
+                                            aria-label={`${suspended ? "Activate" : "Suspend"} ${c.fullName}`}
                                             onClick={() =>
-                                                onAction(active ? "suspend" : "activate", c)
+                                                onAction(suspended ? "activate" : "suspend", c)
                                             }
                                             className={`rounded-lg p-2 transition hover:bg-gray-100 ${
-                                                active ? "text-gray-400 hover:text-red-600" : "text-gray-400 hover:text-[#106A2E]"
+                                                suspended ? "text-red-600 hover:bg-red-50" : "text-[#106A2E] hover:bg-emerald-50"
                                             }`}
                                         >
-                                            <Power size={15} />
+                                            {suspended ? <Lock size={15} /> : <Unlock size={15} />}
                                         </button>
                                     </div>
                                 </td>

@@ -86,7 +86,7 @@ export default function GuidanceStudentHome() {
                             onError={(event) => {
                                 event.currentTarget.style.display = "none";
                             }}
-                            className="h-20 w-20 shrink-0 rounded-full bg-white/10 object-cover shadow-lg ring-2 ring-white/25 sm:h-24 sm:w-24"
+                            className="h-20 w-20 shrink-0 rounded-full bg-white/90 object-contain p-1.5 shadow-lg ring-2 ring-white/40 sm:h-24 sm:w-24"
                         />
 
                         <div className="min-w-0 flex-1">

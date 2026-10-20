@@ -6,6 +6,7 @@ import PageHeader from "../components/PageHeader";
 import { ErrorBox, Note, Skeleton } from "../components/GuidanceStates";
 import { useGuidanceMe } from "../components/GuidanceGate";
 import { ACCENTS, Avatar, StepLabel, fieldClass } from "../components/GuidanceUi";
+import { API_URL } from "../../../config/api";
 import MonthCalendar from "../components/MonthCalendar";
 import { guidanceApi } from "../services/guidanceApi";
 import { CONCERN_TYPES } from "../utils/concernTypes";
@@ -366,7 +367,15 @@ export default function BookAppointmentPage() {
 
                         {selected && (
                             <div className="mt-2 flex items-center gap-2.5 rounded-xl bg-emerald-50/60 p-2.5">
-                                <Avatar name={selected.fullName} size="sm" />
+                                {selected.profilePicture ? (
+                                    <img
+                                        src={`${API_URL}${selected.profilePicture}`}
+                                        alt={selected.fullName}
+                                        className="h-9 w-9 shrink-0 rounded-full object-cover"
+                                    />
+                                ) : (
+                                    <Avatar name={selected.fullName} size="sm" />
+                                )}
 
                                 <div className="min-w-0">
                                     <p className="truncate text-xs font-semibold text-slate-700">{selected.fullName}</p>

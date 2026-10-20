@@ -308,7 +308,7 @@ export default function CounselorDashboard() {
                     ) : (
                         pending.map((a) => (
                             <article key={a.id} className="rounded-2xl border border-slate-200 bg-white p-3">
-                                <p className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+                                <div className="flex items-center gap-2 text-sm font-semibold text-slate-800">
                                     {pictureFor(a) ? (
                                         <img
                                             src={`${API_URL}${pictureFor(a)}`}
@@ -320,7 +320,7 @@ export default function CounselorDashboard() {
                                     )}
                                     <span className="truncate">{a.studentName}</span>
                                     <RoleBadge role={a.role} />
-                                </p>
+                                </div>
                                 <p className="text-xs text-slate-500">
                                     {formatYMD(a.date)} · {a.timeSlot} · {a.concernType}
                                 </p>

@@ -1,12 +1,11 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { HeartHandshake, Loader2, ShieldAlert } from "lucide-react";
+import { Loader2, ShieldAlert } from "lucide-react";
 
 import { guidanceApi, GUIDANCE_UNAUTHORIZED_EVENT } from "../services/guidanceApi";
 import { GUIDANCE_LOGO_SRC } from "../../../lost-found/components/lfBrand";
 import { getToken, getStoredRole, signOut } from "../utils/session";
 import { homeRouteForRole, isCounselorRole } from "../config/guidanceRoutes";
-import { ACCENTS } from "./GuidanceUi";
 
 const GuidanceContext = createContext(null);
 
@@ -65,29 +64,24 @@ export default function GuidanceGate({ audience }) {
     if (state.status === "unauthenticated") return <Navigate to="/" replace />;
 
     if (state.status === "loading") {
-        const accent = audience === "counselor" ? ACCENTS.green : ACCENTS.green;
-
         return (
             <div
                 role="status"
                 className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[#F7F5EF] px-6 text-center"
             >
-                <img
-                    src={GUIDANCE_LOGO_SRC}
-                    alt="Guidance Counseling - Appointment System"
-                    onError={(event) => {
-                        event.currentTarget.style.display = "none";
-                    }}
-                    className="h-24 w-24 rounded-full object-cover shadow-lg ring-2 ring-[#106A2E]/20"
-                />
-                <div
-                    className={`flex h-16 w-16 items-center justify-center rounded-3xl bg-gradient-to-br ${accent.gradient} text-white shadow-lg`}
-                >
-                    <HeartHandshake size={30} aria-hidden="true" />
+                <div className="flex h-32 w-32 items-center justify-center rounded-3xl bg-white p-3 shadow-lg ring-1 ring-black/[0.06]">
+                    <img
+                        src={GUIDANCE_LOGO_SRC}
+                        alt="Guidance Counseling - Appointment System"
+                        onError={(event) => {
+                            event.currentTarget.style.display = "none";
+                        }}
+                        className="h-full w-full object-contain opacity-90"
+                    />
                 </div>
 
                 <p className="flex items-center gap-2 text-sm text-slate-500">
-                    <Loader2 className="animate-spin" size={16} aria-hidden="true" /> Checking your access...
+                    <Loader2 className="animate-spin" size={16} aria-hidden="true" /> Opening Guidance...
                 </p>
             </div>
         );

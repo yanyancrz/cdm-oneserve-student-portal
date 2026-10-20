@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 
 import { Modal } from "../common";
 import guidanceHeadService from "../../services/guidanceHeadService";
+import { API_URL } from "../../../config/api";
 
 const input =
     "w-full rounded-lg border border-black/[0.08] bg-white px-3 py-2 text-sm text-gray-700 outline-none transition focus:border-[#106A2E]";
@@ -111,9 +112,13 @@ export default function CounselorFormModal({ counselor, onClose, onSaved }) {
     const [idNumber, setIdNumber] = useState(counselor?.idNumber || "");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
-    const [title, setTitle] = useState(counselor?.title || "");
-    const [room, setRoom] = useState(counselor?.room || "");
+    // Title and room are fixed by the backend ("Registered Guidance Counselor" /
+    // "Guidance and Counseling Center"), so they are shown read-only here.
     const [department, setDepartment] = useState(counselor?.department || "");
+    const [photo, setPhoto] = useState(null);
+    const [photoPreview, setPhotoPreview] = useState(
+        counselor?.profilePicture ? `${API_URL}${counselor.profilePicture}` : ""
+    );
     const [phone, setPhone] = useState(counselor?.phone || "");
     const [specializations, setSpecializations] = useState(counselor?.specializations || "");
     const [bio, setBio] = useState(counselor?.bio || "");
@@ -152,8 +157,6 @@ export default function CounselorFormModal({ counselor, onClose, onSaved }) {
         const payload = {
             fullName: fullName.trim(),
             email: email.trim(),
-            title: title.trim() || null,
-            room: room.trim() || null,
             department: department.trim() || null,
             phone: phone.trim() || null,
             bio: bio.trim() || null,
@@ -164,16 +167,28 @@ export default function CounselorFormModal({ counselor, onClose, onSaved }) {
         };
 
         try {
+            let saved;
+
             if (isEdit) {
-                await guidanceHeadService.updateCounselor(counselor.userId, payload);
+                saved = await guidanceHeadService.updateCounselor(counselor.userId, payload);
                 toast.success("Counselor updated.");
             } else {
-                await guidanceHeadService.createCounselor({
+                saved = await guidanceHeadService.createCounselor({
                     ...payload,
                     idNumber: idNumber.trim(),
                     password,
                 });
                 toast.success("Counselor account created.");
+            }
+
+            const savedId = saved?.userId || counselor?.userId;
+
+            if (photo && savedId) {
+                try {
+                    await guidanceHeadService.uploadCounselorPhoto(savedId, photo);
+                } catch (err) {
+                    toast.error(err?.message || "Counselor saved, but the photo upload failed.");
+                }
             }
 
             onSaved?.();
@@ -227,6 +242,36 @@ export default function CounselorFormModal({ counselor, onClose, onSaved }) {
             }
         >
             <form id="counselor-form" onSubmit={submit} className="space-y-4">
+                <div className="flex items-center gap-4">
+                    <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-black/[0.08] bg-gray-100 text-lg font-semibold text-gray-400">
+                        {photoPreview ? (
+                            <img src={photoPreview} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                            (fullName.trim()[0] || "?").toUpperCase()
+                        )}
+                    </div>
+
+                    <div className="min-w-0">
+                        <label className={`${label} mb-1`} htmlFor="c-photo">
+                            Profile picture
+                        </label>
+                        <input
+                            id="c-photo"
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0] || null;
+                                setPhoto(file);
+                                setPhotoPreview(file ? URL.createObjectURL(file) : "");
+                            }}
+                            className="block w-full text-xs text-gray-600 file:mr-3 file:rounded-lg file:border-0 file:bg-[#106A2E] file:px-3 file:py-2 file:text-xs file:font-semibold file:text-white hover:file:opacity-90"
+                        />
+                        <p className="mt-1 text-[11px] text-gray-400">
+                            JPG, PNG, or WEBP. Max 5 MB.
+                        </p>
+                    </div>
+                </div>
+
                 <div className="grid gap-4 sm:grid-cols-2">
                     <Field>
                         <label className={label} htmlFor="c-fullname">
@@ -261,7 +306,7 @@ export default function CounselorFormModal({ counselor, onClose, onSaved }) {
                         <>
                             <Field>
                                 <label className={label} htmlFor="c-idnumber">
-                                    ID number *
+                                    Licensed Number *
                                 </label>
                                 <input
                                     id="c-idnumber"
@@ -322,19 +367,6 @@ export default function CounselorFormModal({ counselor, onClose, onSaved }) {
                     )}
 
                     <Field>
-                        <label className={label} htmlFor="c-title">
-                            Title
-                        </label>
-                        <input
-                            id="c-title"
-                            className={input}
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Licensed Guidance Counselor"
-                        />
-                    </Field>
-
-                    <Field>
                         <label className={label} htmlFor="c-department">
                             Department
                         </label>
@@ -348,15 +380,28 @@ export default function CounselorFormModal({ counselor, onClose, onSaved }) {
                     </Field>
 
                     <Field>
+                        <label className={label} htmlFor="c-title">
+                            Title
+                        </label>
+                        <input
+                            id="c-title"
+                            className={`${input} cursor-not-allowed bg-gray-50 text-gray-500`}
+                            value="Registered Guidance Counselor"
+                            readOnly
+                            tabIndex={-1}
+                        />
+                    </Field>
+
+                    <Field>
                         <label className={label} htmlFor="c-room">
                             Room
                         </label>
                         <input
                             id="c-room"
-                            className={input}
-                            value={room}
-                            onChange={(e) => setRoom(e.target.value)}
-                            placeholder="rm 101"
+                            className={`${input} cursor-not-allowed bg-gray-50 text-gray-500`}
+                            value="Guidance and Counseling Center"
+                            readOnly
+                            tabIndex={-1}
                         />
                     </Field>
 

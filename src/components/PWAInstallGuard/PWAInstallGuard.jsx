@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 
 import androidInstall from "../../assets/images/install/android.png";
-import macosInstall from "../../assets/images/install/macos.jpg";
 import safariInstall from "../../assets/images/install/safari.jpg";
-import windowsInstall from "../../assets/images/install/windows.jpg";
 
 export default function PWAInstallGuard({
     children,
@@ -385,10 +383,8 @@ function InstallRequired() {
                 </button>
 
                 {/* STEP-BY-STEP GALLERY */}
-                {/* Phones first: the two portrait screenshots sit
-                    side by side on wider screens and stack on a
-                    phone. The two landscape desktop screenshots
-                    always take the full row. */}
+                {/* Mobile install steps only: the two portrait screenshots
+                    sit side by side on wider screens and stack on a phone. */}
 
                 {showSteps && (
                     <div className="mt-5 grid grid-cols-1 gap-4 text-left sm:grid-cols-2">
@@ -405,22 +401,6 @@ function InstallRequired() {
                             platform="iPhone / iPad"
                             hint="Safari: tap Share, then Add to Home Screen"
                             orientation="portrait"
-                            onZoom={setZoomed}
-                        />
-
-                        <InstallStep
-                            image={windowsInstall}
-                            platform="Windows"
-                            hint="Chrome or Edge: open the menu, then Install app"
-                            orientation="landscape"
-                            onZoom={setZoomed}
-                        />
-
-                        <InstallStep
-                            image={macosInstall}
-                            platform="macOS"
-                            hint="Chrome: open the menu, then Install app"
-                            orientation="landscape"
                             onZoom={setZoomed}
                         />
                     </div>

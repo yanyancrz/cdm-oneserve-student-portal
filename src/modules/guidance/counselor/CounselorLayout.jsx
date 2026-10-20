@@ -11,6 +11,7 @@ import {
 
 import { useGuidanceMe } from "../components/GuidanceGate";
 import { AlertsSheet, useGuidanceNotifications } from "../components/GuidanceAlerts";
+import { API_URL } from "../../../config/api";
 import { signOut } from "../utils/session";
 import { ACCENTS } from "../components/GuidanceUi";
 import { useGuidanceRealtime } from "../hooks/useGuidanceRealtime";
@@ -121,9 +122,17 @@ export default function CounselorLayout() {
                     >
                         <div
                             aria-hidden="true"
-                            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/20 text-sm font-bold"
+                            className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/20 text-sm font-bold"
                         >
-                            {me.fullName?.slice(0, 2).toUpperCase() || "C"}
+                            {me.profilePicture ? (
+                                <img
+                                    src={`${API_URL}${me.profilePicture}`}
+                                    alt=""
+                                    className="h-full w-full object-cover"
+                                />
+                            ) : (
+                                me.fullName?.slice(0, 2).toUpperCase() || "C"
+                            )}
                         </div>
 
                         <div className="min-w-0 flex-1">
@@ -144,7 +153,7 @@ export default function CounselorLayout() {
                 <ModuleBottomNav
                     items={items}
                     brandIcon={HeartHandshake}
-                    brandImage="/brand/guidance-logo.png"
+                    brandImage="/brand/guidance-logo.svg"
                     brandTitle="CDM OneServe"
                     brandSubtitle="Counselor"
                     homePath="/guidance/counselor"
