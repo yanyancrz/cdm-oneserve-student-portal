@@ -315,7 +315,7 @@ export default function ManageAvailabilityPage() {
 
                                 <button
                                     type="button"
-                                    disabled={busyId === s.id}
+                                    disabled={false}
                                     onClick={() => remove(s)}
                                     aria-label="Remove block"
                                     className="rounded-full p-1.5 text-red-500 transition hover:bg-red-50 disabled:opacity-60"
