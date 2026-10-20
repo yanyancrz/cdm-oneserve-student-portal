@@ -133,6 +133,9 @@ export const guidanceApi = {
 
     deleteAvailability: (id) => guidanceFetch(`/counselor/availability/${id}`, { method: "DELETE" }),
 
+    resetAvailabilityToDefault: () =>
+        guidanceFetch("/counselor/availability/reset-default", { method: "POST" }),
+
     // ---- counselor: day-offs (one-date unavailability; weekly blocks repeat on their own) ----
     getDayOffs: (signal) =>
         guidanceFetch("/counselor/day-offs", { signal }).then((d) => d.dayOffs || []),

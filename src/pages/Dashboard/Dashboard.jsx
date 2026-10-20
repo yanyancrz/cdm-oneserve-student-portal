@@ -744,11 +744,11 @@ export default function Dashboard() {
 
                         {/* DESKTOP / TABLET */}
 
-                        <div className="hidden gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-5">
+                        <div className="hidden gap-3 sm:grid sm:grid-cols-2 lg:grid-cols-4">
 
                             {isLoading ? (
                                 Array.from({
-                                    length: 5
+                                    length: services.length
                                 }).map(
                                     (_, index) => (
                                         <div
@@ -869,7 +869,7 @@ export default function Dashboard() {
 
                             {isLoading ? (
                                 Array.from({
-                                    length: 5
+                                    length: services.length
                                 }).map(
                                     (_, index) => (
                                         <div

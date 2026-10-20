@@ -45,8 +45,7 @@ export default function ManageAvailabilityPage() {
     const [end, setEnd] = useState("12:00:00");
     const [addError, setAddError] = useState("");
     const [saving, setSaving] = useState(false);
-    const [busyId, setBusyId] = useState(null);
-    const [applyingDefault, setApplyingDefault] = useState(false);
+    const [resettingDefault, setResettingDefault] = useState(false);
 
     // One-date day-offs (the weekly blocks repeat on their own, so next
     // week is automatically back to normal).
@@ -63,35 +62,24 @@ export default function ManageAvailabilityPage() {
     // 1:00 PM - 5:00 PM. Lunch (12-1) is left with NO block, so it is
     // automatically unavailable for booking. PH holidays are handled
     // separately (see the calendar - holiday dates are blocked there).
-    const applyDefaultSchedule = async () => {
+    const resetToDefaultSchedule = async () => {
         if (
             !window.confirm(
-                "Apply the default schedule?\n\nMon–Fri: 8:00 AM – 12:00 NN and 1:00 PM – 5:00 PM.\nLunch (12–1) stays unavailable.\n\nThis replaces your current blocks."
+                "Reset to the default schedule?\n\nMon–Fri: 8:00 AM – 12:00 NN and 1:00 PM – 5:00 PM.\nLunch (12–1) stays unavailable.\n\nThis replaces your current blocks."
             )
         )
             return;
 
-        setApplyingDefault(true);
+        setResettingDefault(true);
         try {
-            await Promise.all(slots.map((s) => guidanceApi.deleteAvailability(s.id).catch(() => {})));
-
-            const blocks = [];
-            for (let day = 1; day <= 5; day++) {
-                blocks.push({ dayOfWeek: day, startTime: "08:00:00", endTime: "12:00:00" });
-                blocks.push({ dayOfWeek: day, startTime: "13:00:00", endTime: "17:00:00" });
-            }
-
-            for (const b of blocks) {
-                await guidanceApi.addAvailability(b);
-            }
-
-            toast.success("Default schedule applied: Mon–Fri, 8AM–12NN and 1PM–5PM.");
+            await guidanceApi.resetAvailabilityToDefault();
+            toast.success("Default schedule restored: Mon–Fri, 8AM–12NN and 1PM–5PM.");
             await load();
         } catch (e) {
-            toast.error(e.message || "Could not apply the default schedule.");
+            toast.error(e.message || "Could not reset to default schedule.");
             await load();
         } finally {
-            setApplyingDefault(false);
+            setResettingDefault(false);
         }
     };
 
@@ -149,30 +137,14 @@ export default function ManageAvailabilityPage() {
         }
     };
 
-    const toggle = async (s) => {
-        setBusyId(s.id);
-        try {
-            await guidanceApi.updateAvailability(s.id, { isActive: !s.isActive });
-            setSlots((prev) => prev.map((x) => (x.id === s.id ? { ...x, isActive: !x.isActive } : x)));
-            toast.success(s.isActive ? "Block deactivated." : "Block activated.");
-        } catch (e) {
-            toast.error(e.message || "Could not update.");
-        } finally {
-            setBusyId(null);
-        }
-    };
-
     const remove = async (s) => {
         if (!window.confirm("Remove this block? Students will no longer see it as available.")) return;
-        setBusyId(s.id);
         try {
             await guidanceApi.deleteAvailability(s.id);
             setSlots((prev) => prev.filter((x) => x.id !== s.id));
             toast.success("Schedule block removed.");
         } catch (e) {
             toast.error(e.message || "Could not remove.");
-        } finally {
-            setBusyId(null);
         }
     };
 
@@ -229,9 +201,9 @@ export default function ManageAvailabilityPage() {
         }
     };
 
-    const activeDays = new Set(slots.filter((s) => s.isActive).map((s) => s.dayOfWeek)).size;
+    const activeDays = new Set(slots.map((s) => s.dayOfWeek)).size;
 
-    const dayIsOn = (idx) => slots.some((s) => s.dayOfWeek === idx && s.isActive);
+    const dayIsOn = (idx) => slots.some((s) => s.dayOfWeek === idx);
 
     const dayOffByDate = {};
     for (const d of dayOffs) dayOffByDate[d.date] = d;
@@ -263,22 +235,23 @@ export default function ManageAvailabilityPage() {
 
                     <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold">
-                            {activeDays} active day{activeDays === 1 ? "" : "s"}
+                            {activeDays} day{activeDays === 1 ? "" : "s"} available
                         </p>
                         <p className="mt-0.5 text-xs leading-5 text-white/80">
                             Students book 30-minute slots inside these blocks, Monday to Friday.
                             Lunch (12–1 PM), PH holidays and any day off you set are unavailable.
+                            Default hours are Mon-Fri 8-12 and 1-5. For one-time leave, use Day off below.
                         </p>
                     </div>
                 </div>
 
                 <button
                     type="button"
-                    onClick={applyDefaultSchedule}
-                    disabled={applyingDefault}
+                    onClick={resetToDefaultSchedule}
+                    disabled={resettingDefault}
                     className="relative mt-3 w-full rounded-xl bg-white/15 py-2.5 text-xs font-bold text-white transition hover:bg-white/25 active:scale-[0.99] disabled:opacity-60"
                 >
-                    {applyingDefault ? "Applying…" : "Apply default: Mon–Fri · 8AM–12NN · 1PM–5PM"}
+                    {resettingDefault ? "Resetting…" : "Reset to default schedule"}
                 </button>
 
                 <div className="relative mt-3 flex gap-1.5" aria-hidden="true">
@@ -300,8 +273,8 @@ export default function ManageAvailabilityPage() {
             {!loading && !error && slots.length === 0 && (
                 <Empty
                     icon={CalendarClock}
-                    title="No schedule yet"
-                    note="Add a block under a day so students can book you."
+                    title="No schedule"
+                    note="Add a block under a day, or reset to the default."
                 />
             )}
 
@@ -313,7 +286,7 @@ export default function ManageAvailabilityPage() {
                     <section
                         key={idx}
                         className={`rounded-2xl border bg-white p-4 shadow-sm ${
-                            dayIsOn(idx) ? "border-green-200" : "border-black/[0.05]"
+                            blocks.length > 0 ? "border-green-200" : "border-black/[0.05]"
                         }`}
                     >
                         <div className="flex items-center gap-2">
@@ -336,21 +309,9 @@ export default function ManageAvailabilityPage() {
 
                         {blocks.map((s) => (
                             <div key={s.id} className="mt-2.5 flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2.5">
-                                <p className={`flex-1 text-sm font-semibold ${s.isActive ? "text-slate-800" : "text-slate-400 line-through"}`}>
+                                <p className="flex-1 text-sm font-semibold text-slate-800">
                                     {fmt(s.startTime)} – {fmt(s.endTime)}
                                 </p>
-
-                                <button
-                                    type="button"
-                                    role="switch"
-                                    aria-checked={s.isActive}
-                                    aria-label={s.isActive ? "Deactivate block" : "Activate block"}
-                                    disabled={busyId === s.id}
-                                    onClick={() => toggle(s)}
-                                    className={`relative h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-60 ${s.isActive ? "bg-[#106A2E]" : "bg-slate-300"}`}
-                                >
-                                    <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${s.isActive ? "left-[22px]" : "left-0.5"}`} />
-                                </button>
 
                                 <button
                                     type="button"
