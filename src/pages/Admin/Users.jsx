@@ -337,9 +337,17 @@ export default function Users() {
 
         let cancelled = false;
 
+        const token =
+            localStorage.getItem("token") ||
+            localStorage.getItem("authToken");
+
         Promise.all(
             users.map((u) =>
-                fetch(`${API_URL}/api/profile/${encodeURIComponent(u.email)}`)
+                fetch(`${API_URL}/api/profile/${encodeURIComponent(u.email)}`, {
+                    headers: token
+                        ? { Authorization: `Bearer ${token}` }
+                        : {},
+                })
                     .then((r) => (r.ok ? r.json() : null))
                     .then((d) => ({
                         email: String(u.email || "").toLowerCase(),

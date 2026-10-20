@@ -8,6 +8,14 @@ import { API_URL } from "../../../config/api";
 
 const MIN_LENGTH = 8;
 
+const authHeaders = () => {
+    const token =
+        localStorage.getItem("token") ||
+        localStorage.getItem("authToken");
+
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 // Same checks as the admin Change Password tab.
 const getPasswordChecks = (password) => [
     { label: `At least ${MIN_LENGTH} characters`, passed: password.length >= MIN_LENGTH },
@@ -58,7 +66,10 @@ export default function ChangePasswordModal({ userId, onClose }) {
         try {
             const response = await fetch(`${API_URL}/api/profile/change-password`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...authHeaders(),
+                },
                 body: JSON.stringify({
                     userId,
                     currentPassword: current,

@@ -410,8 +410,7 @@ function InstallRequired() {
 
                 <p className="mt-4 text-xs leading-5 text-slate-400">
                     Once installed, open CDM OneServe
-                    from the Home Screen or desktop -
-                    it then runs in its own window.
+                    from the Home Screen.
                 </p>
 
             </div>

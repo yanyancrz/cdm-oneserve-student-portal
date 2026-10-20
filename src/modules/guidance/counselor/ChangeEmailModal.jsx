@@ -8,6 +8,14 @@ import { API_URL } from "../../../config/api";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+const authHeaders = () => {
+    const token =
+        localStorage.getItem("token") ||
+        localStorage.getItem("authToken");
+
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 // Centered modal: counselor changes their login email.
 // Step 1 -> POST /api/profile/request-email-change  (SMTP OTP to the new email)
 // Step 2 -> POST /api/profile/verify-email-change
@@ -16,6 +24,7 @@ export default function ChangeEmailModal({ userId, currentEmail, onClose, onEmai
     const [step, setStep] = useState(1);
 
     const [newEmail, setNewEmail] = useState("");
+    const [currentPassword, setCurrentPassword] = useState("");
     const [sending, setSending] = useState(false);
 
     const [digits, setDigits] = useState(["", "", "", "", "", ""]);
@@ -39,13 +48,23 @@ export default function ChangeEmailModal({ userId, currentEmail, onClose, onEmai
         if (email.toLowerCase() === (currentEmail || "").toLowerCase()) {
             return setError("That is already your current email.");
         }
+        if (!currentPassword.trim()) {
+            return setError("Enter your current password to change your email.");
+        }
 
         setSending(true);
         try {
             const response = await fetch(`${API_URL}/api/profile/request-email-change`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId, newEmail: email }),
+                headers: {
+                    "Content-Type": "application/json",
+                    ...authHeaders(),
+                },
+                body: JSON.stringify({
+                    userId,
+                    currentPassword,
+                    newEmail: email,
+                }),
             });
 
             const message = await response.text();
@@ -83,7 +102,10 @@ export default function ChangeEmailModal({ userId, currentEmail, onClose, onEmai
         try {
             const response = await fetch(`${API_URL}/api/profile/verify-email-change`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...authHeaders(),
+                },
                 body: JSON.stringify({ userId, otpCode: otp }),
             });
 
@@ -164,6 +186,24 @@ export default function ChangeEmailModal({ userId, currentEmail, onClose, onEmai
                             <p className="mt-1.5 text-[11px] leading-4 text-slate-400">
                                 A 6-digit code will be sent to this address to confirm the change.
                             </p>
+                        </div>
+
+                        <div>
+                            <label
+                                htmlFor="email-change-password"
+                                className="text-xs font-semibold text-slate-700"
+                            >
+                                Current password
+                            </label>
+                            <input
+                                id="email-change-password"
+                                type="password"
+                                autoComplete="current-password"
+                                placeholder="Required to change your email"
+                                value={currentPassword}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                className={fieldClass("green")}
+                            />
                         </div>
 
                         {error && <Note tone="error">{error}</Note>}

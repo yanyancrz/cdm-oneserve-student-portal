@@ -51,10 +51,19 @@ export default function Dashboard() {
 
         const loadProfile = async () => {
             try {
+                const token =
+                    localStorage.getItem("token") ||
+                    localStorage.getItem("authToken");
+
                 const response = await fetch(
                     `${API_URL}/api/profile/${encodeURIComponent(
                         email
-                    )}`
+                    )}`,
+                    {
+                        headers: token
+                            ? { Authorization: `Bearer ${token}` }
+                            : {}
+                    }
                 );
 
                 if (!response.ok) {

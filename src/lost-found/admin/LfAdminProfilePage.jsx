@@ -280,6 +280,7 @@ function AvatarSection({ userId, currentPicture, onSaved }) {
 function EmailSection({ userId, currentEmail, onSaved }) {
     const [step, setStep] = useState(1);
     const [email, setEmail] = useState("");
+    const [currentPassword, setCurrentPassword] = useState("");
     const [code, setCode] = useState("");
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState("");
@@ -290,12 +291,15 @@ function EmailSection({ userId, currentEmail, onSaved }) {
         if (!EMAIL_RE.test(next)) return setError("Enter a valid email address.");
         if (next.toLowerCase() === (currentEmail || "").toLowerCase())
             return setError("That is already your current email.");
+        if (!currentPassword.trim())
+            return setError("Enter your current password to change your email.");
 
         setBusy(true);
         setError("");
         try {
             const response = await lfAdminApi.requestEmailChange({
                 userId,
+                currentPassword,
                 newEmail: next,
             });
             toast.success(response?.message || "Verification code sent.");
@@ -320,6 +324,7 @@ function EmailSection({ userId, currentEmail, onSaved }) {
             onSaved(email.trim());
             setStep(1);
             setEmail("");
+            setCurrentPassword("");
             setCode("");
         } catch (err) {
             setError(err.message);
@@ -349,6 +354,13 @@ function EmailSection({ userId, currentEmail, onSaved }) {
                             autoComplete="email"
                         />
                     </div>
+                    <PasswordField
+                        id="lf-admin-email-password"
+                        label="Current password"
+                        value={currentPassword}
+                        onChange={setCurrentPassword}
+                        autoComplete="current-password"
+                    />
                     {error && <LfNotice tone="bad">{error}</LfNotice>}
                     <LfButton onClick={requestCode} loading={busy} type="button">
                         <AtSign size={14} aria-hidden="true" />

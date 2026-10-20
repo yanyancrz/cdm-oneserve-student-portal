@@ -5,6 +5,14 @@ import { API_URL } from "../../config/api";
 import BackgroundLayout from "../../layouts/BackgroundLayout";
 import BottomNavSpacer from "../../components/Layout/BottomNavSpacer";
 
+const authHeaders = () => {
+    const token =
+        localStorage.getItem("token") ||
+        localStorage.getItem("authToken");
+
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export default function SetupProfile() {
     const navigate = useNavigate();
 
@@ -182,6 +190,7 @@ export default function SetupProfile() {
                     `${API_URL}/api/profile/upload-photo`,
                     {
                         method: "POST",
+                        headers: authHeaders(),
                         body: formData
                     }
                 );
@@ -220,7 +229,8 @@ export default function SetupProfile() {
                     method: "PUT",
 
                     headers: {
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+                        ...authHeaders()
                     },
 
                     body: JSON.stringify({

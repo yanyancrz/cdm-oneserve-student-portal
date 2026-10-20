@@ -31,7 +31,7 @@ function integer(name, fallback) {
 export const config = {
     http: {
         port: integer("PORT", 4100),
-        host: optional("HOST", "127.0.0.1"),
+        host: optional("HOST", "0.0.0.0"),
     },
 
     db: {

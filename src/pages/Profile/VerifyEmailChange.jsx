@@ -5,6 +5,14 @@ import BackgroundLayout from "../../layouts/BackgroundLayout";
 import BottomNavSpacer from "../../components/Layout/BottomNavSpacer";
 import toast from "react-hot-toast";
 
+const authHeaders = () => {
+    const token =
+        localStorage.getItem("token") ||
+        localStorage.getItem("authToken");
+
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export default function VerifyEmailChange() {
 
 
@@ -87,7 +95,8 @@ const handleVerify =
                         method: "POST",
                         headers: {
                             "Content-Type":
-                                "application/json"
+                                "application/json",
+                            ...authHeaders()
                         },
                         body: JSON.stringify({
                             userId,

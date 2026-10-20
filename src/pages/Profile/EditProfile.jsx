@@ -6,6 +6,14 @@ import { API_URL } from "../../config/api";
 import BackgroundLayout from "../../layouts/BackgroundLayout";
 import BottomNavSpacer from "../../components/Layout/BottomNavSpacer";
 
+const authHeaders = () => {
+    const token =
+        localStorage.getItem("token") ||
+        localStorage.getItem("authToken");
+
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 export default function EditProfile() {
 
     const navigate = useNavigate();
@@ -13,6 +21,7 @@ export default function EditProfile() {
     const [student, setStudent] = useState(null);
 
     const [email, setEmail] = useState("");
+    const [currentPasswordForEmail, setCurrentPasswordForEmail] = useState("");
     const [contactNumber, setContactNumber] = useState("");
     const [institute, setInstitute] = useState("");
 
@@ -43,7 +52,8 @@ export default function EditProfile() {
                 }
 
                 const response = await fetch(
-                    `${API_URL}/api/profile/${encodeURIComponent(userEmail)}`
+                    `${API_URL}/api/profile/${encodeURIComponent(userEmail)}`,
+                    { headers: authHeaders() }
                 );
 
                 if (!response.ok) {
@@ -135,6 +145,7 @@ export default function EditProfile() {
                     `${API_URL}/api/profile/upload-photo`,
                     {
                         method: "POST",
+                        headers: authHeaders(),
                         body: formData
                     }
                 );
@@ -158,7 +169,8 @@ export default function EditProfile() {
                     method: "PUT",
 
                     headers: {
-                        "Content-Type": "application/json"
+                        "Content-Type": "application/json",
+                        ...authHeaders()
                     },
 
                     body: JSON.stringify({
@@ -198,6 +210,16 @@ export default function EditProfile() {
 
             if (email !== student.email) {
 
+                if (!currentPasswordForEmail.trim()) {
+
+                    toast.error(
+                        "Enter your current password to change your email."
+                    );
+
+                    return;
+
+                }
+
                 const response = await fetch(
                     `${API_URL}/api/profile/request-email-change`,
                     {
@@ -205,11 +227,13 @@ export default function EditProfile() {
 
                         headers: {
                             "Content-Type":
-                                "application/json"
+                                "application/json",
+                            ...authHeaders()
                         },
 
                         body: JSON.stringify({
                             userId: student.id,
+                            currentPassword: currentPasswordForEmail,
                             newEmail: email
                         })
                     }
@@ -521,6 +545,40 @@ export default function EditProfile() {
                                     border
                                 "
                             />
+
+                            {student && email !== student.email && (
+
+                                <div className="mt-3">
+
+                                    <label className="text-sm text-gray-500">
+                                        Current password (required to change email)
+                                    </label>
+
+                                    <input
+                                        type="password"
+                                        value={currentPasswordForEmail}
+                                        onChange={(e) =>
+                                            setCurrentPasswordForEmail(
+                                                e.target.value
+                                            )
+                                        }
+                                        autoComplete="current-password"
+                                        className="
+                                            w-full
+                                            mt-1
+                                            p-3
+                                            rounded-xl
+                                            border
+                                        "
+                                    />
+
+                                    <p className="mt-1 text-xs text-gray-400">
+                                        We will email a 6-digit code to the new address.
+                                    </p>
+
+                                </div>
+
+                            )}
 
                         </div>
 

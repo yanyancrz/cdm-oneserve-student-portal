@@ -126,8 +126,15 @@ export default function AccessPass() {
         }
 
         try {
+            const token = getToken();
+
             const response = await fetch(
-                `${API_URL}/api/library/access-pass/${userId}`
+                `${API_URL}/api/library/access-pass/${userId}`,
+                {
+                    headers: token
+                        ? { Authorization: `Bearer ${token}` }
+                        : {},
+                }
             );
 
             if (!response.ok) {

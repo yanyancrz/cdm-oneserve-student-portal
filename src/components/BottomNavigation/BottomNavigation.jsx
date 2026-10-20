@@ -21,6 +21,14 @@ import {
 import { API_URL } from "../../config/api";
 import { Skeleton } from "../States";
 
+const authHeaders = () => {
+    const token =
+        localStorage.getItem("token") ||
+        localStorage.getItem("authToken");
+
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
+
 // How often the alerts refresh in the background (only while the tab is visible).
 const NOTIFICATION_POLL_MS = 30 * 1000;
 
@@ -179,7 +187,8 @@ export default function BottomNavigation() {
                 const response = await fetch(
                     `${API_URL}/api/notifications/${encodeURIComponent(
                         email
-                    )}`
+                    )}`,
+                    { headers: authHeaders() }
                 );
 
                 if (!response.ok) {
@@ -538,6 +547,7 @@ export default function BottomNavigation() {
                         )}`,
                         {
                             method: "PUT",
+                            headers: authHeaders(),
                         }
                     );
 
@@ -596,6 +606,7 @@ export default function BottomNavigation() {
                         )}`,
                         {
                             method: "PUT",
+                            headers: authHeaders(),
                         }
                     );
 

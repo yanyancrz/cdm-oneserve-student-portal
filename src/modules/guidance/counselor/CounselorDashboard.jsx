@@ -94,9 +94,17 @@ export default function CounselorDashboard() {
 
         let cancelled = false;
 
+        const token =
+            localStorage.getItem("token") ||
+            localStorage.getItem("authToken");
+
         Promise.all(
             emails.map((email) =>
-                fetch(`${API_URL}/api/profile/${encodeURIComponent(email)}`)
+                fetch(`${API_URL}/api/profile/${encodeURIComponent(email)}`, {
+                    headers: token
+                        ? { Authorization: `Bearer ${token}` }
+                        : {},
+                })
                     .then((r) => (r.ok ? r.json() : null))
                     .then((d) => ({
                         email: String(email).toLowerCase(),

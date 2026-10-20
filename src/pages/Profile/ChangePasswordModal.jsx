@@ -2,6 +2,14 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
+
+const authHeaders = () => {
+    const token =
+        localStorage.getItem("token") ||
+        localStorage.getItem("authToken");
+
+    return token ? { Authorization: `Bearer ${token}` } : {};
+};
 import { KeyRound, Mail, ShieldCheck } from "lucide-react";
 
 // ==========================================
@@ -98,7 +106,10 @@ export default function ChangePasswordModal({
                 `${API_URL}/api/profile/password-otp/request`,
                 {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...authHeaders(),
+                    },
                     body: JSON.stringify({
                         idNumber: form.idNumber.trim(),
                         email: form.email.trim(),
@@ -161,7 +172,10 @@ export default function ChangePasswordModal({
                 `${API_URL}/api/profile/password-otp/confirm`,
                 {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...authHeaders(),
+                    },
                     body: JSON.stringify({
                         idNumber: form.idNumber.trim(),
                         email: form.email.trim(),

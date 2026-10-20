@@ -28,6 +28,10 @@ export const pool = mysql.createPool({
     // simple and compare everything in SQL.
     dateStrings: true,
     charset: "utf8mb4_unicode_ci",
+
+    ssl: {
+        rejectUnauthorized: true,
+    },
 });
 
 export async function initDatabase() {

@@ -352,9 +352,18 @@ export default function Profile() {
 
         try {
 
+            const token =
+                localStorage.getItem("token") ||
+                localStorage.getItem("authToken");
+
             const response = await fetch(
                 `${API_URL}/api/profile/${encodeURIComponent(email)}`,
-                { signal }
+                {
+                    signal,
+                    headers: token
+                        ? { Authorization: `Bearer ${token}` }
+                        : {}
+                }
             );
 
             if (!response.ok) {
