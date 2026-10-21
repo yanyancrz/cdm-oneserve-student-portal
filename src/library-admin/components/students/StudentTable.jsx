@@ -24,7 +24,6 @@ export default function StudentTable({ students, onOpen }) {
                         <th className="px-3 py-3 font-medium">Year</th>
                         <th className="px-3 py-3 font-medium">Status</th>
                         <th className="px-3 py-3 text-right font-medium">Active loans</th>
-                        <th className="px-5 py-3 text-right font-medium">Actions</th>
                     </tr>
                 </thead>
 
@@ -51,19 +50,7 @@ export default function StudentTable({ students, onOpen }) {
                                     </span>
                                 )}
                             </td>
-                            <td className="px-5 py-3">
-                                <div className="flex justify-end gap-1">
-                                    <button type="button" className={iconBtn} onClick={() => onOpen(s, "profile")} aria-label={`View ${s.fullName}`}>
-                                        <Eye size={16} />
-                                    </button>
-                                    <button type="button" className={iconBtn} onClick={() => onOpen(s, "loans")} aria-label={`Active loans of ${s.fullName}`}>
-                                        <BookMarked size={16} />
-                                    </button>
-                                    <button type="button" className={iconBtn} onClick={() => onOpen(s, "history")} aria-label={`History of ${s.fullName}`}>
-                                        <History size={16} />
-                                    </button>
-                                </div>
-                            </td>
+                            
                         </tr>
                     ))}
                 </tbody>
