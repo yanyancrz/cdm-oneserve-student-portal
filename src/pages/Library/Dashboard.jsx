@@ -1079,7 +1079,7 @@ export default function Dashboard() {
                                           nearestDamaged.replacementDueDate
                                       )}. `
                                     : "Wait for the library to set a deadline. "}
-                                Bring an exact copy (same ISBN and edition).
+                                Bring an exact copy (same ISBN and edition). Borrowing is blocked until the damaged book is replaced or settled.
                             </p>
                         </div>
                     </button>
