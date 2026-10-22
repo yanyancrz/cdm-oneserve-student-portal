@@ -529,8 +529,12 @@ export default function BorrowHistory() {
                                                     </p>
                                                 )}
 
-                                                {entry.returnCondition.toLowerCase() ===
-                                                    "damaged" && (
+                                                {entry.kind === "borrow" &&
+                                                    String(
+                                                        entry.returnCondition ||
+                                                            ""
+                                                    ).toLowerCase() ===
+                                                        "damaged" && (
                                                     <div
                                                         className={`mt-2 rounded-xl px-3 py-2 text-[11px] ${
                                                             entry.damagedResolved
