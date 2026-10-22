@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BookOpen, CheckCircle2, LibraryBig, ShieldCheck } from "lucide-react";
 
 // The mandatory gate shown the first time a patron opens the Library module
@@ -6,6 +6,28 @@ import { BookOpen, CheckCircle2, LibraryBig, ShieldCheck } from "lucide-react";
 export default function LibraryTermsGate({ terms = [], userName = "", onConfirm }) {
     const [checked, setChecked] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [scrolledToBottom, setScrolledToBottom] = useState(
+        terms.length === 0
+    );
+    const scrollRef = useRef(null);
+
+    const handleScroll = () => {
+        const el = scrollRef.current;
+        if (!el) return;
+        const atBottom =
+            el.scrollTop + el.clientHeight >= el.scrollHeight - 8;
+        if (atBottom) setScrolledToBottom(true);
+    };
+
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        // If the content already fits, allow confirmation immediately.
+        if (el.scrollHeight <= el.clientHeight + 8) {
+            setScrolledToBottom(true);
+        }
+        handleScroll();
+    }, [terms]);
 
     useEffect(() => {
         const previous = document.body.style.overflow;
@@ -17,7 +39,7 @@ export default function LibraryTermsGate({ terms = [], userName = "", onConfirm 
     }, []);
 
     const confirm = async () => {
-        if (!checked || saving) return;
+        if (!checked || !scrolledToBottom || saving) return;
 
         setSaving(true);
 
@@ -59,7 +81,11 @@ export default function LibraryTermsGate({ terms = [], userName = "", onConfirm 
                     </div>
                 </div>
 
-                <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7">
+                <div
+                    ref={scrollRef}
+                    onScroll={handleScroll}
+                    className="min-h-0 flex-1 overflow-y-auto px-5 py-5 sm:px-7"
+                >
                     <div className="rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4">
                         <div className="flex items-start gap-2.5">
                             <ShieldCheck size={18} className="mt-0.5 shrink-0 text-[#106A2E]" />
@@ -114,8 +140,9 @@ export default function LibraryTermsGate({ terms = [], userName = "", onConfirm 
                         <input
                             type="checkbox"
                             checked={checked}
+                            disabled={!scrolledToBottom}
                             onChange={(event) => setChecked(event.target.checked)}
-                            className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 accent-[#106A2E]"
+                            className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 accent-[#106A2E] disabled:cursor-not-allowed disabled:opacity-50"
                         />
 
                         <span className="text-xs leading-5 text-slate-600">
@@ -123,12 +150,17 @@ export default function LibraryTermsGate({ terms = [], userName = "", onConfirm 
                             agree to follow them, including the inside-library-use rule for the last
                             available copy.
                         </span>
+                        {!scrolledToBottom && (
+                            <p className="mt-2 text-xs font-medium text-amber-700">
+                                Scroll to the bottom of the terms to enable the confirmation.
+                            </p>
+                        )}
                     </label>
 
                     <button
                         type="button"
                         onClick={confirm}
-                        disabled={!checked || saving}
+                        disabled={!checked || !scrolledToBottom || saving}
                         className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#106A2E] px-4 py-3 text-sm font-semibold text-white transition hover:bg-[#0d5726] disabled:cursor-not-allowed disabled:opacity-50"
                     >
                         <CheckCircle2 size={17} />
