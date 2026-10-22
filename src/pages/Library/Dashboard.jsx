@@ -51,7 +51,13 @@ const ENDPOINTS = {
 const TERMS_PREVIEW = 3;
 
 // Mga status na binibilang ng backend bilang "active reservation"
-const ACTIVE_RESERVATION_STATUSES = ["reserved", "pending", "approved"];
+// (ReservationStatuses.Active: Reserved, Pending, Approved, ReadyForPickup)
+const ACTIVE_RESERVATION_STATUSES = [
+    "reserved",
+    "pending",
+    "approved",
+    "readyforpickup",
+];
 
 // =========================================================
 // HELPERS
@@ -742,16 +748,29 @@ export default function Dashboard() {
         })[0];
     }, [damagedReturns]);
 
-    // Active reservations: kapareho ng tinitingnan ng backend
-    const activeReservations = useMemo(
-        () =>
-            reservations.filter((r) =>
-                ACTIVE_RESERVATION_STATUSES.includes(
+    // Active reservations: kapareho ng tinitingnan ng backend.
+    // Expired holds must not count toward the borrow limit, otherwise a
+    // student can get stuck at "limit reached" / "Already reserved" forever.
+    const activeReservations = useMemo(() => {
+        const now = Date.now();
+
+        return reservations.filter((r) => {
+            if (
+                !ACTIVE_RESERVATION_STATUSES.includes(
                     normalizeStatus(r.status)
                 )
-            ),
-        [reservations]
-    );
+            ) {
+                return false;
+            }
+
+            const expiration = new Date(r.expirationDate).getTime();
+
+            return (
+                Number.isFinite(expiration) &&
+                expiration >= now
+            );
+        });
+    }, [reservations]);
 
     const reservedBookIds = useMemo(
         () => new Set(activeReservations.map((r) => r.bookId)),
