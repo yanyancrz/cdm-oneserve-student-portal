@@ -212,6 +212,9 @@ export default function BorrowHistory() {
             coverImage: b.coverImage,
             sortDate: b.borrowDate,
             liveStatus: getBorrowStatus(b),
+            insideUse: String(b.remarks || "")
+                .toLowerCase()
+                .includes("[inside library use only]"),
             hiddenInAll: false,
         }));
 
@@ -505,6 +508,12 @@ export default function BorrowHistory() {
                                                         </>
                                                     )}
                                                 </div>
+
+                                                {entry.insideUse && (
+                                                    <p className="mt-1 text-[10px] font-semibold text-amber-700">
+                                                        Inside library use only · due before 5:00 PM
+                                                    </p>
+                                                )}
 
                                                 {/* RESERVATION ACTIONS */}
 

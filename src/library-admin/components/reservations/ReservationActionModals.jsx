@@ -180,8 +180,16 @@ function Receipt({ receipt }) {
         ["Patron", `${receipt.patronName}${receipt.patronId ? ` · ${receipt.patronId}` : ""}`],
         ["Book", receipt.bookTitle],
         ["Borrowed on", formatDateTime(receipt.borrowDate)],
-        ["Due date", formatDate(receipt.dueDate)],
-        ["Loan period", `${receipt.loanDays} days`],
+        [
+            "Due date",
+            receipt.isInsideLibraryOnly
+                ? `${formatDateTime(receipt.dueDate)} (before closing)`
+                : formatDate(receipt.dueDate),
+        ],
+        [
+            "Loan period",
+            receipt.isInsideLibraryOnly ? "Inside library use only" : `${receipt.loanDays} days`,
+        ],
         ["Slots left", String(receipt.remainingSlots)],
         ["Processed by", receipt.processedBy],
     ];
@@ -205,17 +213,30 @@ function Receipt({ receipt }) {
 }
 
 export function ClaimReservationModal({ item, onConfirm, onClose }) {
+    const forcedInside = Boolean(item?.willBeInsideUse);
     const [loanDays, setLoanDays] = useState(DEFAULT_LOAN_DAYS);
+    const [insideOnly, setInsideOnly] = useState(forcedInside);
     const [accepted, setAccepted] = useState(false);
     const [saving, setSaving] = useState(false);
     const [receipt, setReceipt] = useState(null);
 
+    const inside = forcedInside || insideOnly;
+
     const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + loanDays);
+
+    if (inside) {
+        dueDate.setHours(17, 0, 0, 0);
+    } else {
+        dueDate.setDate(dueDate.getDate() + loanDays);
+    }
 
     const submit = async () => {
         setSaving(true);
-        const result = await onConfirm({ loanDays, acceptedTerms: accepted });
+        const result = await onConfirm({
+            loanDays,
+            insideLibraryOnly: inside,
+            acceptedTerms: accepted,
+        });
         setSaving(false);
 
         if (result?.ok) setReceipt(result.data);
@@ -250,28 +271,64 @@ export function ClaimReservationModal({ item, onConfirm, onClose }) {
                 <div className="space-y-4">
                     <Summary item={item} />
 
+                    <div
+                        className={`rounded-xl border p-3 ${
+                            inside
+                                ? "border-amber-200 bg-amber-50"
+                                : "border-black/[0.08] bg-gray-50"
+                        }`}
+                    >
+                        <label className="flex items-start gap-2 text-xs text-gray-700">
+                            <input
+                                type="checkbox"
+                                checked={inside}
+                                disabled={forcedInside || saving}
+                                onChange={(e) => setInsideOnly(e.target.checked)}
+                                className="mt-0.5"
+                            />
+                            <span>
+                                <span className="font-semibold">Borrowed inside library only</span>
+                                <span className="mt-0.5 block text-[11px] leading-4 text-gray-500">
+                                    {forcedInside
+                                        ? "No other copy is left on the shelf. This copy cannot be brought home and is due back before 5:00 PM today."
+                                        : "Use this when the patron will read the book inside the library. It is due back before 5:00 PM today."}
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+
                     <div>
-                        <span className="mb-1 block text-xs font-medium text-gray-600">Loan period</span>
+                        {inside ? (
+                            <p className="rounded-lg bg-[#FFF7E6] px-3 py-2 text-xs leading-5 text-amber-900">
+                                No 3/7/14-day loan period. Due back today at{" "}
+                                <span className="font-semibold">5:00 PM</span> (
+                                {formatDateTime(dueDate)}). The server confirms the final deadline.
+                            </p>
+                        ) : (
+                            <>
+                                <span className="mb-1 block text-xs font-medium text-gray-600">Loan period</span>
 
-                        <div className="flex gap-2" role="group" aria-label="Loan period">
-                            {LOAN_DAY_OPTIONS.map((days) => (
-                                <button
-                                    key={days}
-                                    type="button"
-                                    aria-pressed={loanDays === days}
-                                    onClick={() => setLoanDays(days)}
-                                    className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
-                                        loanDays === days
-                                            ? "border-[#106A2E] bg-[#E1F0E4] text-[#106A2E]"
-                                            : "border-black/[0.12] text-gray-600 hover:bg-gray-50"
-                                    }`}
-                                >
-                                    {days} days
-                                </button>
-                            ))}
-                        </div>
+                                <div className="flex gap-2" role="group" aria-label="Loan period">
+                                    {LOAN_DAY_OPTIONS.map((days) => (
+                                        <button
+                                            key={days}
+                                            type="button"
+                                            aria-pressed={loanDays === days}
+                                            onClick={() => setLoanDays(days)}
+                                            className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                                                loanDays === days
+                                                    ? "border-[#106A2E] bg-[#E1F0E4] text-[#106A2E]"
+                                                    : "border-black/[0.12] text-gray-600 hover:bg-gray-50"
+                                            }`}
+                                        >
+                                            {days} days
+                                        </button>
+                                    ))}
+                                </div>
 
-                        <p className="mt-2 text-xs text-gray-500">Due on {formatDate(dueDate)}.</p>
+                                <p className="mt-2 text-xs text-gray-500">Due on {formatDate(dueDate)}.</p>
+                            </>
+                        )}
                     </div>
 
                     <label className="flex items-start gap-2 text-sm text-gray-600">

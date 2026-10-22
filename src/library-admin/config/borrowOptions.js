@@ -8,3 +8,10 @@ export function previewDueDate(days) {
     due.setDate(due.getDate() + days);
     return due;
 }
+
+// Inside-library-use loans end at the circulation desk's closing time.
+export function previewInsideUseDueDate() {
+    const due = new Date();
+    due.setHours(17, 0, 0, 0);
+    return due;
+}

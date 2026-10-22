@@ -493,6 +493,12 @@ import itePreviews from "./ite_book_previews.json";
             );
 
 
+        // The last available copy stays inside the library and is due back
+        // before the circulation desk closes.
+        const lastCopy =
+            Number(book.availableCopies ?? 0) <= 1;
+
+
         // =========================================================
         // LEFT BUTTON LABEL
         // =========================================================
@@ -1306,6 +1312,12 @@ import itePreviews from "./ite_book_previews.json";
                                         {book.availableCopies} / {book.totalCopies}
                                     </dd>
 
+                                    {lastCopy && book.availableCopies > 0 && (
+                                        <p className="mt-1 text-[11px] leading-4 text-amber-700">
+                                            Last copy — inside library use only, 8:00 AM to 5:00 PM.
+                                        </p>
+                                    )}
+
                                 </div>
 
                             </dl>
@@ -1772,7 +1784,9 @@ import itePreviews from "./ite_book_previews.json";
                     message={
                         `Borrow "${book.title}"?\n\n` +
                         `Current borrowing: ${activeBorrowCount} of ${borrowLimit}\n` +
-                        `Expected due date: ${formatDate(expectedDueDate)}`
+                        (lastCopy
+                            ? "Only one copy is left. This book is for inside-library use only and must be returned before 5:00 PM today."
+                            : `Expected due date: ${formatDate(expectedDueDate)}`)
                     }
 
                     confirmText="Borrow"

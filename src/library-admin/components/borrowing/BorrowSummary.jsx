@@ -1,16 +1,24 @@
-import { LOAN_DAY_OPTIONS, previewDueDate } from "../../config/borrowOptions";
-import { formatDate } from "../../utils/dateUtils";
+import {
+    LOAN_DAY_OPTIONS,
+    previewDueDate,
+    previewInsideUseDueDate,
+} from "../../config/borrowOptions";
+import { formatDate, formatDateTime } from "../../utils/dateUtils";
 
 export default function BorrowSummary({
     patron,
     book,
     loanDays,
     onLoanDaysChange,
+    insideOnly,
+    onInsideOnlyChange,
     accepted,
     onAcceptedChange,
     onConfirm,
     submitting,
 }) {
+    const lastCopy = Boolean(book) && Number(book.availableCopies ?? 0) <= 1;
+    const inside = Boolean(book) && (lastCopy || insideOnly);
     const ready = Boolean(patron?.canBorrow && book && accepted);
 
     return (
@@ -32,31 +40,74 @@ export default function BorrowSummary({
                         </div>
                     </dl>
 
+                    <div
+                        className={`mt-4 rounded-xl border p-3 ${
+                            inside
+                                ? "border-amber-200 bg-amber-50"
+                                : "border-black/[0.08] bg-gray-50"
+                        }`}
+                    >
+                        <label className="flex items-start gap-2 text-xs text-gray-700">
+                            <input
+                                type="checkbox"
+                                checked={inside}
+                                disabled={submitting || lastCopy}
+                                onChange={(e) => onInsideOnlyChange(e.target.checked)}
+                                className="mt-0.5"
+                            />
+                            <span>
+                                <span className="font-semibold">Borrowed inside library only</span>
+                                <span className="mt-0.5 block text-[11px] leading-4 text-gray-500">
+                                    {lastCopy
+                                        ? "This is the last available copy, so it cannot be brought home. It is due back at the counter before 5:00 PM today."
+                                        : "Use this when the patron will read the book inside the library. It is due back at the counter before 5:00 PM today."}
+                                </span>
+                            </span>
+                        </label>
+                    </div>
+
                     <div className="mt-4">
-                        <p className="mb-1.5 text-xs font-medium text-gray-600">Loan period</p>
+                        {inside ? (
+                            <>
+                                <p className="mb-1.5 text-xs font-medium text-gray-600">Inside-library use</p>
+                                <p className="rounded-lg bg-[#FFF7E6] px-3 py-2 text-xs leading-5 text-amber-900">
+                                    No 3/7/14-day loan period. Due back today at{" "}
+                                    <span className="font-semibold">5:00 PM</span> (
+                                    {formatDateTime(previewInsideUseDueDate())}). The server confirms the final
+                                    deadline.
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <p className="mb-1.5 text-xs font-medium text-gray-600">Loan period</p>
 
-                        <div className="flex gap-2">
-                            {LOAN_DAY_OPTIONS.map((days) => (
-                                <button
-                                    key={days}
-                                    type="button"
-                                    disabled={submitting}
-                                    onClick={() => onLoanDaysChange(days)}
-                                    className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
-                                        loanDays === days
-                                            ? "border-[#106A2E] bg-[#E1F0E4] text-[#106A2E]"
-                                            : "border-black/[0.1] text-gray-600 hover:bg-gray-50"
-                                    }`}
-                                >
-                                    {days} days
-                                </button>
-                            ))}
-                        </div>
+                                <div className="flex gap-2">
+                                    {LOAN_DAY_OPTIONS.map((days) => (
+                                        <button
+                                            key={days}
+                                            type="button"
+                                            disabled={submitting}
+                                            onClick={() => onLoanDaysChange(days)}
+                                            className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${
+                                                loanDays === days
+                                                    ? "border-[#106A2E] bg-[#E1F0E4] text-[#106A2E]"
+                                                    : "border-black/[0.1] text-gray-600 hover:bg-gray-50"
+                                            }`}
+                                        >
+                                            {days} days
+                                        </button>
+                                    ))}
+                                </div>
 
-                        <p className="mt-2 text-xs text-gray-500">
-                            Due on <span className="font-semibold text-gray-700">{formatDate(previewDueDate(loanDays))}</span>
-                            . The server confirms the final date.
-                        </p>
+                                <p className="mt-2 text-xs text-gray-500">
+                                    Due on{" "}
+                                    <span className="font-semibold text-gray-700">
+                                        {formatDate(previewDueDate(loanDays))}
+                                    </span>
+                                    . The server confirms the final date.
+                                </p>
+                            </>
+                        )}
                     </div>
 
                     <label className="mt-4 flex items-start gap-2 text-xs text-gray-600">

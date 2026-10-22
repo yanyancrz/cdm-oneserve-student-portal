@@ -74,7 +74,14 @@ function RecentBorrows({ reloadKey }) {
                                     </td>
                                     <td className="max-w-[240px] truncate px-3 py-3 text-gray-700">{r.bookTitle}</td>
                                     <td className="px-3 py-3 text-gray-600">{formatDate(r.borrowDate)}</td>
-                                    <td className="px-3 py-3 text-gray-600">{formatDate(r.dueDate)}</td>
+                                    <td className="px-3 py-3 text-gray-600">
+                                        {formatDate(r.dueDate)}
+                                        {r.isInsideLibraryOnly && (
+                                            <span className="ml-2 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800">
+                                                Inside use
+                                            </span>
+                                        )}
+                                    </td>
                                     <td className="px-5 py-3">
                                         <StatusBadge tone={STATUS_TONE[r.status] || "gray"}>{r.status}</StatusBadge>
                                     </td>
@@ -92,6 +99,7 @@ export default function BorrowPage() {
     const [patron, setPatron] = useState(null);
     const [book, setBook] = useState(null);
     const [loanDays, setLoanDays] = useState(DEFAULT_LOAN_DAYS);
+    const [insideOnly, setInsideOnly] = useState(false);
     const [accepted, setAccepted] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [receipt, setReceipt] = useState(null);
@@ -102,6 +110,12 @@ export default function BorrowPage() {
         setBook(null);
         setAccepted(false);
         setLoanDays(DEFAULT_LOAN_DAYS);
+        setInsideOnly(false);
+    };
+
+    const chooseBook = (selected) => {
+        setBook(selected);
+        setInsideOnly(Number(selected?.availableCopies ?? 0) <= 1);
     };
 
     const resetAll = () => {
@@ -124,6 +138,8 @@ export default function BorrowPage() {
                 userId: patron.userId,
                 bookId: book.bookId,
                 loanDays,
+                insideLibraryOnly:
+                    insideOnly || Number(book.availableCopies ?? 0) <= 1,
                 acceptedTerms: accepted,
             });
 
@@ -169,7 +185,7 @@ export default function BorrowPage() {
                         <div className="space-y-6">
                             <PatronCard patron={patron} onChange={resetAll} disabled={submitting} />
                             {patron.canBorrow && (
-                                <BookSelection selected={book} onSelect={setBook} disabled={submitting} />
+                                <BookSelection selected={book} onSelect={chooseBook} disabled={submitting} />
                             )}
                         </div>
 
@@ -179,6 +195,8 @@ export default function BorrowPage() {
                                 book={book}
                                 loanDays={loanDays}
                                 onLoanDaysChange={setLoanDays}
+                                insideOnly={insideOnly}
+                                onInsideOnlyChange={setInsideOnly}
                                 accepted={accepted}
                                 onAcceptedChange={setAccepted}
                                 onConfirm={confirm}

@@ -18,6 +18,7 @@ import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
 import LibraryBottomNav from "../../components/BottomNavigation/LibraryBottomNav";
 import BookDetailsModal from "../../components/Library/BookDetailsModal";
+import LibraryTermsGate from "../../components/Library/LibraryTermsGate";
 import useLibrary from "../../hooks/useLibrary";
 import {
     cancelReservation,
@@ -40,7 +41,7 @@ const ENDPOINTS = {
     expireReservations: `${API_URL}/api/library/reservations/expire`,
 
     // Library Settings numbers + the Terms & Guidelines written by the Library Head.
-    // Response: { success, data: { settings: {...}, terms: [{ id, title, content }] } }
+    // Response: { success, data: { settings: {...}, terms: [{ id, title, content, updatedAt }] } }
     policy: `${API_URL}/api/library/policy`,
 };
 
@@ -81,6 +82,18 @@ const toInstituteCode = (value) => {
 
 const normalizeStatus = (value) =>
     String(value || "").trim().toLowerCase();
+
+// Short, stable key for "the patron accepted this exact set of terms".
+const hashString = (value) => {
+    let hash = 2166136261;
+
+    for (let index = 0; index < value.length; index += 1) {
+        hash ^= value.charCodeAt(index);
+        hash = Math.imul(hash, 16777619);
+    }
+
+    return (hash >>> 0).toString(36);
+};
 
 const getBookId = (book) => book.id ?? book.bookId ?? book.bookID;
 
@@ -409,6 +422,7 @@ export default function Dashboard() {
     const [policy, setPolicy] = useState(null);
     const [policyLoading, setPolicyLoading] = useState(true);
     const [showAllTerms, setShowAllTerms] = useState(false);
+    const [acceptedTermsVersion, setAcceptedTermsVersion] = useState(null);
 
     // =====================================================
     // LOAD RESERVATIONS (API)
@@ -609,6 +623,68 @@ export default function Dashboard() {
     );
 
     const terms = policy?.terms ?? [];
+
+    // If the Library Head has not written the terms yet, the gate still shows
+    // the same fallback rules as the dashboard card.
+    const fallbackTerms = useMemo(
+        () => [
+            {
+                id: "fallback-borrowing",
+                title: "Borrowing",
+                content: `You can borrow and reserve up to ${borrowLimit} books in total. The loan period is ${loanDays} days.`,
+            },
+            {
+                id: "fallback-reservations",
+                title: "Reservations",
+                content: `Reserved books are held for ${holdDays} days at the circulation desk.`,
+            },
+            {
+                id: "fallback-inside-use",
+                title: "Inside Library Use",
+                content:
+                    "When only one copy of a title remains available, that copy is for inside-library use only. It may be used from 8:00 AM to 5:00 PM and must be returned to the counter before closing on the same day. The 3, 7, or 14-day home loan period does not apply.",
+            },
+            {
+                id: "fallback-penalties",
+                title: "Late, Lost, or Damaged Books",
+                content:
+                    "A late return suspends borrowing until the end of the current semester. A lost or damaged book must be replaced with an identical copy (same ISBN and edition).",
+            },
+        ],
+        [borrowLimit, loanDays, holdDays]
+    );
+
+    const effectiveTerms = terms.length > 0 ? terms : fallbackTerms;
+
+    const termsVersion = useMemo(
+        () =>
+            effectiveTerms
+                .map(
+                    (term) =>
+                        `${term.id ?? ""}:${term.updatedAt ?? ""}:${term.title ?? ""}:${term.content ?? ""}`
+                )
+                .join("|"),
+        [effectiveTerms]
+    );
+
+    const termsAckKey = user?.id
+        ? `libraryTermsAck:${user.id}:${hashString(termsVersion)}`
+        : null;
+
+    const termsStoredAccepted =
+        Boolean(termsAckKey) && localStorage.getItem(termsAckKey) === "1";
+
+    const confirmTerms = () => {
+        if (termsAckKey) localStorage.setItem(termsAckKey, "1");
+        setAcceptedTermsVersion(termsAckKey);
+    };
+
+    const showTermsGate =
+        !policyLoading &&
+        Boolean(user?.id) &&
+        !termsStoredAccepted &&
+        acceptedTermsVersion !== termsAckKey;
+
     const visibleTerms = showAllTerms ? terms : terms.slice(0, TERMS_PREVIEW);
 
     // Quick facts (only when the real settings were loaded).
@@ -1442,6 +1518,14 @@ export default function Dashboard() {
                     alreadyReserved={modalAlreadyReserved}
                     onClose={() => setSelectedBook(null)}
                     onReserved={handleReserved}
+                />
+            )}
+
+            {showTermsGate && (
+                <LibraryTermsGate
+                    terms={effectiveTerms}
+                    userName={firstName}
+                    onConfirm={confirmTerms}
                 />
             )}
         </div>
