@@ -166,7 +166,12 @@ const timeAgo = (value) => {
     const days = Math.floor(hours / 24);
     if (days < 7) return `${days}d ago`;
 
-    return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+    // API timestamps are UTC instants; show PH time everywhere.
+    return date.toLocaleDateString("en-US", {
+        timeZone: "Asia/Manila",
+        month: "short",
+        day: "numeric",
+    });
 };
 
 // =========================================================

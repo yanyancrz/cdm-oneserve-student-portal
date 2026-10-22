@@ -41,7 +41,10 @@ const formatLoginDate = (value) => {
 
     if (Number.isNaN(date.getTime())) return "—";
 
-    return date.toLocaleString(undefined, {
+    // The API now sends UTC instants ("...Z"). Render them in Philippine
+    // time explicitly, so the result does not depend on the device's zone.
+    return date.toLocaleString("en-PH", {
+        timeZone: "Asia/Manila",
         month: "short",
         day: "numeric",
         year: "numeric",

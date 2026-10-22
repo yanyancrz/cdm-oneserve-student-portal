@@ -145,7 +145,8 @@ export function formatWhen(iso) {
     const date = new Date(iso);
     if (Number.isNaN(date.getTime())) return "";
 
-    return date.toLocaleString(undefined, {
+    return date.toLocaleString("en-PH", {
+        timeZone: "Asia/Manila",
         month: "short",
         day: "numeric",
         hour: "numeric",

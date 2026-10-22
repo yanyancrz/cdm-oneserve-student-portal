@@ -262,6 +262,8 @@ function formatNotificationTime(createdAt) {
     }
 
     return created.toLocaleDateString("en-US", {
+        // API timestamps are UTC instants; show PH time everywhere.
+        timeZone: "Asia/Manila",
         month: "short",
         day: "numeric",
     });

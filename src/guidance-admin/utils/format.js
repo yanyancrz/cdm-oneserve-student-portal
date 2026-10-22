@@ -1,8 +1,11 @@
 // Date / text helpers for the Guidance Administration pages.
 //
-// The API returns naive (offset-less) timestamps that already carry Philippine
-// wall-clock time, so they are parsed as-is - never with a "Z" suffix, which
-// would shift them back by 8 hours in the browser.
+// Two API conventions meet here:
+//  - account "last login" values are UTC instants, now serialised with "Z";
+//  - appointment/schedule values are Philippine wall clocks (GuidanceClock),
+//    serialised without a zone.
+// parse() treats a zone-less value as +08:00 and leaves a zoned value alone,
+// then every formatter renders Asia/Manila. That converts once, never twice.
 
 export function initials(name) {
     if (!name || !name.trim()) return "—";
@@ -16,10 +19,20 @@ export function initials(name) {
         .toUpperCase();
 }
 
+const PH_TIME_ZONE = "Asia/Manila";
+const PH_OFFSET = "+08:00";
+
 function parse(value) {
     if (!value) return null;
 
-    const date = new Date(value);
+    if (value instanceof Date) {
+        return Number.isNaN(value.getTime()) ? null : value;
+    }
+
+    const text = String(value).trim();
+    const hasZone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(text);
+    const date = new Date(hasZone ? text : `${text}${PH_OFFSET}`);
+
     return Number.isNaN(date.getTime()) ? null : date;
 }
 
@@ -28,6 +41,7 @@ export function formatDate(value) {
     if (!date) return "—";
 
     return date.toLocaleDateString("en-US", {
+        timeZone: PH_TIME_ZONE,
         year: "numeric",
         month: "short",
         day: "numeric",
@@ -39,10 +53,12 @@ export function formatDateTime(value) {
     if (!date) return "Never";
 
     return `${date.toLocaleDateString("en-US", {
+        timeZone: PH_TIME_ZONE,
         year: "numeric",
         month: "short",
         day: "numeric",
     })}, ${date.toLocaleTimeString("en-US", {
+        timeZone: PH_TIME_ZONE,
         hour: "numeric",
         minute: "2-digit",
     })}`;
