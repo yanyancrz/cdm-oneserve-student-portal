@@ -67,6 +67,13 @@ export default function ReturnConfirmationModal({ loan, onClose, onDone }) {
                         <dt className="text-gray-500">Copy</dt>
                         <dd className="font-medium">{result.copyReturnedToShelf ? "Back on shelf" : "Kept off shelf"}</dd>
                     </div>
+
+                    {result.replacementDueDate && (
+                        <div className="flex justify-between">
+                            <dt className="text-gray-500">Replacement due</dt>
+                            <dd className="font-medium">{formatDate(result.replacementDueDate)}</dd>
+                        </div>
+                    )}
                     <div className="flex justify-between"><dt className="text-gray-500">Processed by</dt><dd className="font-medium">{result.processedBy}</dd></div>
                 </dl>
 

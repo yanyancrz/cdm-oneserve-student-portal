@@ -81,6 +81,15 @@ const toArray = (payload) => {
 
 const norm = (value) => String(value ?? "").trim().toLowerCase();
 
+// Reads a yyyy-MM-dd marker from the loan remarks (damaged-copy tracking).
+const markerDate = (remarks, tag) => {
+    const match = String(remarks || "").match(
+        new RegExp(`\\[${tag}:(\\d{4}-\\d{2}-\\d{2})\\]`, "i")
+    );
+
+    return match ? match[1] : null;
+};
+
 const getCoverSrc = (value) => {
     if (!value) return noCover;
 
@@ -215,6 +224,11 @@ export default function BorrowHistory() {
             insideUse: String(b.remarks || "")
                 .toLowerCase()
                 .includes("[inside library use only]"),
+            returnCondition: String(b.returnCondition || ""),
+            damagedDueDate: markerDate(b.remarks, "damaged-due"),
+            damagedResolved: Boolean(
+                markerDate(b.remarks, "damaged-resolved")
+            ),
             hiddenInAll: false,
         }));
 
@@ -513,6 +527,29 @@ export default function BorrowHistory() {
                                                     <p className="mt-1 text-[10px] font-semibold text-amber-700">
                                                         Inside library use only · due before 5:00 PM
                                                     </p>
+                                                )}
+
+                                                {entry.returnCondition.toLowerCase() ===
+                                                    "damaged" && (
+                                                    <div
+                                                        className={`mt-2 rounded-xl px-3 py-2 text-[11px] ${
+                                                            entry.damagedResolved
+                                                                ? "bg-emerald-50 text-emerald-700"
+                                                                : "bg-amber-50 text-amber-800"
+                                                        }`}
+                                                    >
+                                                        <span className="font-semibold">
+                                                            Damaged copy
+                                                        </span>
+                                                        {" · "}
+                                                        {entry.damagedResolved
+                                                            ? "settled"
+                                                            : entry.damagedDueDate
+                                                                ? `return or replace by ${formatDate(
+                                                                      entry.damagedDueDate
+                                                                  )}`
+                                                                : "wait for the library to set a deadline"}
+                                                    </div>
                                                 )}
 
                                                 {/* RESERVATION ACTIONS */}

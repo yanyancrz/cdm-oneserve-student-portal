@@ -112,6 +112,11 @@ export function getBorrowHistory(userId) {
     return request(`/borrow/student/${userId}`);
 }
 
+// Open damaged-return obligations (copy still to be returned/replaced).
+export function getDamagedReturns(userId) {
+    return request(`/borrow/damaged/${userId}`);
+}
+
 export function getFavorites(userId) {
     return request(`/favorites/${userId}`);
 }

@@ -38,6 +38,8 @@ const ENDPOINTS = {
         `${API_URL}/api/library/access-pass/${userId}`,
     loans: (userId) =>
         `${API_URL}/api/library/borrow/current/${userId}`,
+    damagedReturns: (userId) =>
+        `${API_URL}/api/library/borrow/damaged/${userId}`,
     expireReservations: `${API_URL}/api/library/reservations/expire`,
 
     // Library Settings numbers + the Terms & Guidelines written by the Library Head.
@@ -407,6 +409,9 @@ export default function Dashboard() {
     const [accessPass, setAccessPass] = useState(null);
     const [loans, setLoans] = useState(null);
 
+    // Returned damaged copies that still need a replacement.
+    const [damagedReturns, setDamagedReturns] = useState([]);
+
     // Reservations galing sa database
     const [reservations, setReservations] = useState([]);
     const [reservationsLoading, setReservationsLoading] = useState(true);
@@ -509,16 +514,19 @@ export default function Dashboard() {
                 setUser(profile);
 
                 if (profile?.id) {
-                    const [passData, loansData] = await Promise.all([
-                        safeJson(ENDPOINTS.accessPass(profile.id)),
-                        safeJson(ENDPOINTS.loans(profile.id)),
-                        loadReservations(profile.id),
-                    ]);
+                    const [passData, loansData, damagedData] =
+                        await Promise.all([
+                            safeJson(ENDPOINTS.accessPass(profile.id)),
+                            safeJson(ENDPOINTS.loans(profile.id)),
+                            safeJson(ENDPOINTS.damagedReturns(profile.id)),
+                            loadReservations(profile.id),
+                        ]);
 
                     if (cancelled) return;
 
                     if (passData?.success) setAccessPass(passData.data);
                     if (loansData) setLoans(toArray(loansData));
+                    setDamagedReturns(toArray(damagedData));
                 } else {
                     setReservationsLoading(false);
                 }
@@ -713,6 +721,26 @@ export default function Dashboard() {
         () => borrowedLoans.filter(isLoanOverdue),
         [borrowedLoans]
     );
+
+    // Returned damaged copies that still need a replacement.
+    const damagedOverdueCount = useMemo(
+        () => damagedReturns.filter((item) => item.isOverdue).length,
+        [damagedReturns]
+    );
+
+    const nearestDamaged = useMemo(() => {
+        if (damagedReturns.length === 0) return null;
+
+        return [...damagedReturns].sort((a, b) => {
+            if (!a.replacementDueDate) return 1;
+            if (!b.replacementDueDate) return -1;
+
+            return (
+                new Date(a.replacementDueDate) -
+                new Date(b.replacementDueDate)
+            );
+        })[0];
+    }, [damagedReturns]);
 
     // Active reservations: kapareho ng tinitingnan ng backend
     const activeReservations = useMemo(
@@ -976,6 +1004,63 @@ export default function Dashboard() {
                                 Return{" "}
                                 {overdueLoans.length === 1 ? "it" : "them"} to
                                 the library to clear your account.
+                            </p>
+                        </div>
+                    </button>
+                )}
+
+                {/* DAMAGED BOOK OBLIGATION */}
+
+                {damagedReturns.length > 0 && (
+                    <button
+                        type="button"
+                        onClick={goToLoans}
+                        className={`mb-5 flex w-full items-start gap-3 rounded-2xl border p-4 text-left ${
+                            damagedOverdueCount > 0
+                                ? "border-red-200 bg-red-50"
+                                : "border-amber-200 bg-amber-50"
+                        }`}
+                    >
+                        <AlertTriangle
+                            size={20}
+                            className={`mt-0.5 shrink-0 ${
+                                damagedOverdueCount > 0
+                                    ? "text-red-600"
+                                    : "text-amber-600"
+                            }`}
+                        />
+
+                        <div>
+                            <p
+                                className={`text-sm font-semibold ${
+                                    damagedOverdueCount > 0
+                                        ? "text-red-700"
+                                        : "text-amber-800"
+                                }`}
+                            >
+                                {damagedReturns.length} damaged{" "}
+                                {damagedReturns.length === 1
+                                    ? "book"
+                                    : "books"}{" "}
+                                to return or replace
+                                {damagedOverdueCount > 0
+                                    ? ` · ${damagedOverdueCount} overdue`
+                                    : ""}
+                            </p>
+
+                            <p
+                                className={`mt-0.5 text-xs ${
+                                    damagedOverdueCount > 0
+                                        ? "text-red-600/80"
+                                        : "text-amber-700/80"
+                                }`}
+                            >
+                                {nearestDamaged?.replacementDueDate
+                                    ? `Nearest deadline: ${formatBanDate(
+                                          nearestDamaged.replacementDueDate
+                                      )}. `
+                                    : "Wait for the library to set a deadline. "}
+                                Bring an exact copy (same ISBN and edition).
                             </p>
                         </div>
                     </button>

@@ -3,6 +3,7 @@ import {
     BookOpen,
     BookOpenCheck,
     Undo2,
+    AlertTriangle,
     CalendarClock,
     GraduationCap,
     Users,
@@ -32,6 +33,11 @@ export const LIBRARY_NAV = [
         items: [
             { label: "Borrow Books", to: `${LIBRARY_BASE}/borrow`, icon: BookOpenCheck },
             { label: "Returns", to: `${LIBRARY_BASE}/returns`, icon: Undo2 },
+            {
+                label: "Damaged Returns",
+                to: `${LIBRARY_BASE}/damaged-returns`,
+                icon: AlertTriangle,
+            },
             { label: "Reservations", to: `${LIBRARY_BASE}/reservations`, icon: CalendarClock },
         ],
     },

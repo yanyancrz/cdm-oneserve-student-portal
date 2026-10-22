@@ -69,6 +69,8 @@ export default function Scanner({ embedded = false, onDetected = null }) {
     // Return state
     const [returningId, setReturningId] = useState(null);
     const [returnMessage, setReturnMessage] = useState(null);
+    const [returnTarget, setReturnTarget] = useState(null);
+    const [returnCondition, setReturnCondition] = useState("Good");
 
     // =========================================================
     // STOP SCANNER
@@ -313,7 +315,7 @@ export default function Scanner({ embedded = false, onDetected = null }) {
     // RETURN BORROWED BOOK
     // =========================================================
 
-    const handleReturn = async (borrowId) => {
+    const handleReturn = async (borrowId, condition = "Good") => {
         setReturningId(borrowId);
         setReturnMessage(null);
 
@@ -327,7 +329,9 @@ export default function Scanner({ embedded = false, onDetected = null }) {
             }
 
             const response = await fetch(
-                `${API_URL}/api/library/borrow/return/${borrowId}`,
+                `${API_URL}/api/library/borrow/return/${borrowId}?condition=${encodeURIComponent(
+                    condition
+                )}`,
                 {
                     method: "PUT",
                     headers: { Authorization: `Bearer ${token}` },
@@ -358,11 +362,14 @@ export default function Scanner({ embedded = false, onDetected = null }) {
                 ),
             }));
 
+            setReturnTarget(null);
+
             setReturnMessage({
                 type: "success",
-                text: data?.message || "Book returned successfully.",
+                text: data?.message || `Book returned (${condition}).`,
             });
         } catch (err) {
+            setReturnTarget(null);
             setReturnMessage({ type: "error", text: err.message });
         } finally {
             setReturningId(null);
@@ -964,17 +971,20 @@ export default function Scanner({ embedded = false, onDetected = null }) {
                                                         disabled={
                                                             returningId !== null
                                                         }
-                                                        onClick={() =>
-                                                            handleReturn(
-                                                                loan.borrowId
-                                                            )
-                                                        }
+                                                        onClick={() => {
+                                                            setReturnCondition(
+                                                                "Good"
+                                                            );
+                                                            setReturnTarget(
+                                                                loan
+                                                            );
+                                                        }}
                                                         className="shrink-0 rounded-xl bg-slate-800 px-3.5 py-2 text-xs font-semibold text-white transition hover:bg-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
                                                     >
                                                         {returningId ===
                                                         loan.borrowId
                                                             ? "Returning..."
-                                                            : "Returned"}
+                                                            : "Return"}
                                                     </button>
                                                 </div>
                                             )
@@ -1115,6 +1125,122 @@ export default function Scanner({ embedded = false, onDetected = null }) {
                     </div>
                 )}
             </div>
+
+            {/* RETURN CONDITION MODAL */}
+
+            {returnTarget && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6">
+                    <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-xl">
+                        <div className="border-b border-slate-100 px-5 py-4">
+                            <div className="flex items-center gap-2">
+                                <ShieldCheck
+                                    size={19}
+                                    className="text-[#106A2E]"
+                                />
+
+                                <h3 className="font-semibold text-slate-800">
+                                    Return condition
+                                </h3>
+                            </div>
+
+                            <p className="mt-1 truncate text-xs text-slate-500">
+                                {returnTarget.bookTitle}
+                            </p>
+                        </div>
+
+                        <div className="space-y-3 px-5 py-5">
+                            <p className="text-sm text-slate-600">
+                                How is the copy being returned?
+                            </p>
+
+                            {[
+                                {
+                                    value: "Good",
+                                    label: "Good condition",
+                                    hint: "The copy goes back on the shelf.",
+                                },
+                                {
+                                    value: "Damaged",
+                                    label: "Damaged",
+                                    hint: "The copy stays off the shelf. The patron gets a replacement deadline (7 days by default).",
+                                },
+                                {
+                                    value: "Lost",
+                                    label: "Lost book",
+                                    hint: "The copy is removed from the catalog total. The patron must replace it.",
+                                },
+                            ].map((option) => (
+                                <label
+                                    key={option.value}
+                                    className={`flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 transition ${
+                                        returnCondition === option.value
+                                            ? "border-[#106A2E] bg-emerald-50/60"
+                                            : "border-slate-200 hover:bg-slate-50"
+                                    }`}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="return-condition"
+                                        value={option.value}
+                                        checked={
+                                            returnCondition === option.value
+                                        }
+                                        onChange={(event) =>
+                                            setReturnCondition(event.target.value)
+                                        }
+                                        className="mt-1 h-4 w-4 accent-[#106A2E]"
+                                    />
+
+                                    <span>
+                                        <span className="block text-sm font-semibold text-slate-800">
+                                            {option.label}
+                                        </span>
+
+                                        <span className="mt-0.5 block text-xs text-slate-500">
+                                            {option.hint}
+                                        </span>
+                                    </span>
+                                </label>
+                            ))}
+
+                            {returnCondition === "Damaged" && (
+                                <p className="rounded-xl bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800">
+                                    The library can change this deadline on the
+                                    Damaged Returns page. A notification is sent
+                                    to the patron.
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="flex justify-end gap-3 border-t border-slate-100 px-5 py-4">
+                            <button
+                                type="button"
+                                disabled={returningId !== null}
+                                onClick={() => setReturnTarget(null)}
+                                className="rounded-xl px-4 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100 disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+
+                            <button
+                                type="button"
+                                disabled={returningId !== null}
+                                onClick={() =>
+                                    handleReturn(
+                                        returnTarget.borrowId,
+                                        returnCondition
+                                    )
+                                }
+                                className="rounded-xl bg-[#106A2E] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0d5927] disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                {returningId === returnTarget.borrowId
+                                    ? "Returning..."
+                                    : "Confirm return"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

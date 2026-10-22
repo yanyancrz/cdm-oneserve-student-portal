@@ -15,6 +15,7 @@ import FacultyPage from "../pages/FacultyPage";
 import BorrowPage from "../pages/BorrowPage";
 import ReservationsPage from "../pages/ReservationsPage";
 import ReturnsPage from "../pages/ReturnsPage";
+import DamagedReturnsPage from "../pages/DamagedReturnsPage";
 import ReportsPage from "../pages/ReportsPage";
 import LibrariansPage from "../pages/LibrariansPage";
 import TermsPage from "../pages/TermsPage";
@@ -85,6 +86,10 @@ export const libraryRoutes = (
             <Route
                 path={`${LIBRARY_BASE}/returns`}
                 element={<ReturnsPage />}
+            />
+            <Route
+                path={`${LIBRARY_BASE}/damaged-returns`}
+                element={<DamagedReturnsPage />}
             />
             <Route
                 path={`${LIBRARY_BASE}/reports`}
