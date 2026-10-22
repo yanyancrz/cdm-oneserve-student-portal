@@ -1,4 +1,4 @@
-import { BookOpen, Ban, Eye, X } from "lucide-react";
+import { BookOpen, Ban, Eye } from "lucide-react";
 
 import { fileUrl } from "../../services/bookService";
 import ReservationStatusBadge from "./ReservationStatusBadge";
@@ -125,18 +125,6 @@ export default function ReservationTable({ reservations, canHead, onView, onActi
                                         >
                                             <Eye size={17} />
                                         </button>
-
-                                        {actions.includes("reject") && (
-                                            <button
-                                                type="button"
-                                                className={`${iconBtn} hover:bg-red-50 hover:text-red-600`}
-                                                onClick={() => onAction("reject", item)}
-                                                aria-label={`Reject reservation #${item.reservationId}`}
-                                                title="Reject"
-                                            >
-                                                <X size={17} />
-                                            </button>
-                                        )}
 
                                         {actions.includes("cancel") && (
                                             <button

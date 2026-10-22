@@ -41,7 +41,7 @@ const STAT_CARDS = [
 const QUICK_ACTIONS = [
     { label: "Borrow Book", description: "Issue a book to a patron", to: `${LIBRARY_BASE}/borrow`, icon: HandHelping },
     { label: "Process Return", description: "Return a borrowed book", to: `${LIBRARY_BASE}/returns`, icon: RotateCcw },
-    { label: "View Reservations", description: "Approve or reject requests", to: `${LIBRARY_BASE}/reservations`, icon: CalendarClock },
+    { label: "View Reservations", description: "Approve requests and manage pickups", to: `${LIBRARY_BASE}/reservations`, icon: CalendarClock },
     { label: "Add Book", description: "Add a title to the catalog", to: `${LIBRARY_BASE}/books`, icon: BookPlus },
     { label: "Student Directory", description: "Browse student patrons", to: `${LIBRARY_BASE}/students`, icon: GraduationCap },
     { label: "Faculty Directory", description: "Browse faculty patrons", to: `${LIBRARY_BASE}/faculty`, icon: Users },

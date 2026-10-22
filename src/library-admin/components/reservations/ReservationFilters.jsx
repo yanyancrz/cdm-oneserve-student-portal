@@ -13,7 +13,6 @@ const CHIPS = [
     { value: "Approved", label: "Approved", count: "approved", hideWhenEmpty: true },
     { value: "ReadyForPickup", label: "Ready for pickup", count: "readyForPickup" },
     { value: "Claimed", label: "Claimed", count: "claimed" },
-    { value: "Rejected", label: "Rejected", count: "rejected" },
     { value: "Cancelled", label: "Cancelled", count: "cancelled" },
     { value: "Expired", label: "Expired", count: "expired" },
 ];

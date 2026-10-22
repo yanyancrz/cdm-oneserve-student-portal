@@ -88,7 +88,7 @@ export default function ReservationDetailsModal({ reservationId, canHead, onActi
 
             {actions.map((type) => {
                 const isPrimary = type === primary;
-                const danger = type === "reject" || type === "cancel";
+                const danger = type === "cancel";
 
                 return (
                     <button

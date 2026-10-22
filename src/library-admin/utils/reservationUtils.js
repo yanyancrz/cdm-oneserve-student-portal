@@ -54,7 +54,6 @@ export const ACTION_LABELS = {
     claim: "Claim",
     approve: "Approve",
     ready: "Mark ready",
-    reject: "Reject",
     cancel: "Cancel reservation",
 };
 
@@ -66,7 +65,6 @@ export function availableActions(item, canHead) {
     if (item.canClaim) list.push("claim");
     if (canHead && item.canApprove) list.push("approve");
     if (canHead && item.canMarkReady) list.push("ready");
-    if (canHead && item.canReject) list.push("reject");
     if (canHead && item.canCancel) list.push("cancel");
 
     return list;

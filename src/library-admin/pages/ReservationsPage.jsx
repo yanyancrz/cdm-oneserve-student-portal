@@ -30,7 +30,7 @@ const DEFAULT_FILTERS = {
 export default function ReservationsPage() {
     const { permissions } = useLibrary();
 
-    // Approve, mark ready, reject and cancel are Library Head only. The backend enforces this too.
+    // Approve, mark ready and cancel are Library Head only. The backend enforces this too.
     const canHead = Boolean(permissions?.canManageStaff);
 
     const [search, setSearch] = useState("");
@@ -44,7 +44,7 @@ export default function ReservationsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    // modal = { type: "view" | "approve" | "ready" | "reject" | "cancel" | "claim", item }
+    // modal = { type: "view" | "approve" | "ready" | "cancel" | "claim", item }
     const [modal, setModal] = useState(null);
 
     // Wait for the user to stop typing before searching.
@@ -235,15 +235,6 @@ export default function ReservationsPage() {
                     item={modal.item}
                     onClose={closeModal}
                     onConfirm={() => act(() => reservationService.markReady(id), "Marked ready for pickup.")}
-                />
-            )}
-
-            {modal?.type === "reject" && (
-                <ReasonReservationModal
-                    action="reject"
-                    item={modal.item}
-                    onClose={closeModal}
-                    onConfirm={(reason) => act(() => reservationService.reject(id, reason), "Reservation rejected.")}
                 />
             )}
 
