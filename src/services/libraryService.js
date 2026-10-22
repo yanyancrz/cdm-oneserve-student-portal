@@ -30,6 +30,10 @@ async function request(path, options = {}) {
     }
 
     if (!res.ok) {
+        // Keep the raw payload in the console so a 500's `error` field is
+        // available while debugging, without exposing it in the toast.
+        console.error("Library API error", res.status, data);
+
         throw new Error(
             data?.message || `Library API error (${res.status})`
         );
