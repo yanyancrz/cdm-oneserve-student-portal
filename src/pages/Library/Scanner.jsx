@@ -13,6 +13,7 @@ import {
     ShieldCheck,
     Loader2,
     LogOut,
+    AlertTriangle,
 } from "lucide-react";
 
 import { API_URL } from "../../config/api";
@@ -56,6 +57,7 @@ export default function Scanner({ embedded = false, onDetected = null }) {
 
     const scannerRef = useRef(null);
     const processingRef = useRef(false);
+    const lastQrRef = useRef("");
 
     const [scanning, setScanning] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -129,6 +131,7 @@ export default function Scanner({ embedded = false, onDetected = null }) {
         }
 
         processingRef.current = true;
+        lastQrRef.current = qrText || lastQrRef.current;
 
         // Embedded mode (Library Borrow page): hand the raw QR text to the
         // parent. The parent's API validates the patron.
@@ -352,21 +355,20 @@ export default function Scanner({ embedded = false, onDetected = null }) {
                 );
             }
 
-            // Update the scan result without rescanning
-            setResult((prev) => ({
-                ...prev,
-                borrowedBooks: Math.max(0, (prev.borrowedBooks ?? 0) - 1),
-                remainingBooks: (prev.remainingBooks ?? 0) + 1,
-                activeLoans: (prev.activeLoans ?? []).filter(
-                    (l) => l.borrowId !== borrowId
-                ),
-            }));
-
             setReturnTarget(null);
+
+            const successText =
+                data?.message || `Book returned (${condition}).`;
+
+            // Refresh the scan result from the server so any new damaged
+            // obligation and the borrowing block appear immediately.
+            if (lastQrRef.current) {
+                await verifyQr(lastQrRef.current);
+            }
 
             setReturnMessage({
                 type: "success",
-                text: data?.message || `Book returned (${condition}).`,
+                text: successText,
             });
         } catch (err) {
             setReturnTarget(null);
@@ -748,6 +750,66 @@ export default function Scanner({ embedded = false, onDetected = null }) {
                                 </div>
                             </div>
 
+                            {/* DAMAGED BOOK OBLIGATIONS */}
+
+                            {(result.damagedReturns?.length ?? 0) > 0 && (
+                                <div className="rounded-2xl border border-red-200 bg-red-50 p-5">
+                                    <div className="mb-3 flex items-center gap-2 text-red-700">
+                                        <AlertTriangle size={19} />
+
+                                        <h3 className="font-semibold">
+                                            Damaged Book — Borrowing
+                                            Blocked
+                                        </h3>
+                                    </div>
+
+                                    <p className="text-sm text-red-700">
+                                        This patron cannot borrow or claim a
+                                        reserved book until the damaged copy
+                                        is replaced or settled.
+                                    </p>
+
+                                    <div className="mt-3 space-y-2">
+                                        {(result.damagedReturns ?? []).map(
+                                            (d) => (
+                                                <div
+                                                    key={
+                                                        d.transactionId
+                                                    }
+                                                    className="rounded-xl bg-white/70 p-3"
+                                                >
+                                                    <p className="truncate text-sm font-semibold text-slate-800">
+                                                        {
+                                                            d.bookTitle
+                                                        }
+                                                    </p>
+
+                                                    {d.author && (
+                                                        <p className="truncate text-xs text-slate-500">
+                                                            {
+                                                                d.author
+                                                            }
+                                                        </p>
+                                                    )}
+
+                                                    <p
+                                                        className={`mt-1 text-[11px] ${
+                                                            d.isOverdue
+                                                                ? "font-semibold text-red-600"
+                                                                : "text-amber-700"
+                                                        }`}
+                                                    >
+                                                        {d.replacementDueDate
+                                                            ? `${d.isOverdue ? "Overdue since" : "Replace by"} ${new Date(d.replacementDueDate).toLocaleDateString()}${typeof d.daysLeft === "number" && !d.isOverdue ? ` (${d.daysLeft} day(s) left)` : ""}`
+                                                            : "No replacement deadline set"}
+                                                    </p>
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* RESERVED BOOKS */}
 
                             {(result.reservedBooks?.length > 0 ||
@@ -774,6 +836,15 @@ export default function Scanner({ embedded = false, onDetected = null }) {
                                         >
                                             {claimMessage.text}
                                         </div>
+                                    )}
+
+                                    {(result.damagedReturns?.length ?? 0) >
+                                        0 && (
+                                        <p className="mb-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">
+                                            Claims are disabled until the
+                                            damaged book is replaced or
+                                            settled.
+                                        </p>
                                     )}
 
                                     <div className="space-y-3">

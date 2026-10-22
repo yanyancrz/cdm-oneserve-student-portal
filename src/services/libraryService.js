@@ -34,8 +34,14 @@ async function request(path, options = {}) {
         // available while debugging, without exposing it in the toast.
         console.error("Library API error", res.status, data);
 
+        // Surface the backend's detail too, so a generic 500 message does
+        // not hide the actual cause. Truncated to keep the toast readable.
+        const detail = data?.error
+            ? ` (${String(data.error).slice(0, 300)})`
+            : "";
+
         throw new Error(
-            data?.message || `Library API error (${res.status})`
+            `${data?.message || `Library API error (${res.status})`}${detail}`
         );
     }
 
