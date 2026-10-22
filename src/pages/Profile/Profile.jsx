@@ -316,6 +316,7 @@ export default function Profile() {
 
     // "Change password" (student number + email -> OTP) dialog.
     const [showChangePassword, setShowChangePassword] = useState(false);
+    const [showPhoto, setShowPhoto] = useState(false);
 
     const mountedRef = useRef(true);
 
@@ -667,14 +668,23 @@ export default function Profile() {
 
                 <div className="-mt-12 flex flex-col items-center px-6 pb-6">
 
-                    <Avatar
-                        src={
-                            profile.profilePicture
-                                ? `${API_URL}${profile.profilePicture}`
-                                : ""
-                        }
-                        name={profile.fullName}
-                    />
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (profile.profilePicture) setShowPhoto(true);
+                        }}
+                        className="rounded-full focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        aria-label="View profile photo"
+                    >
+                        <Avatar
+                            src={
+                                profile.profilePicture
+                                    ? `${API_URL}${profile.profilePicture}`
+                                    : ""
+                            }
+                            name={profile.fullName}
+                        />
+                    </button>
 
                     <h2 className="mt-3 break-words text-center text-xl font-semibold text-slate-800">
                         {profile.fullName}
@@ -1125,6 +1135,28 @@ export default function Profile() {
                 />
             )}
 
+
+            {showPhoto && profile?.profilePicture && (
+                <Modal labelledBy="photo-title" onClose={() => setShowPhoto(false)}>
+                    <h2 id="photo-title" className="sr-only">
+                        Profile photo
+                    </h2>
+                    <div className="flex items-center justify-center">
+                        <img
+                            src={`${API_URL}${profile.profilePicture}`}
+                            alt={profile.fullName || "Profile photo"}
+                            className="max-h-[70vh] w-auto rounded-2xl object-contain"
+                        />
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setShowPhoto(false)}
+                        className="mt-4 w-full rounded-xl bg-slate-100 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200"
+                    >
+                        Close
+                    </button>
+                </Modal>
+            )}
 
         </PageShell>
 
