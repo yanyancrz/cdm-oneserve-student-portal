@@ -181,7 +181,7 @@ export default function LfHomePage() {
                         <span className="block text-sm font-semibold text-slate-800">
                             Report an item
                         </span>
-                        <span className="block truncate text-xs text-slate-500">
+                        <span className="block text-xs text-slate-500">
                             Lost something? Found something? Tell the campus.
                         </span>
                     </span>
@@ -206,7 +206,7 @@ export default function LfHomePage() {
                         <span className="block text-sm font-semibold text-slate-800">
                             Browse the board
                         </span>
-                        <span className="block truncate text-xs text-slate-500">
+                        <span className="block text-xs text-slate-500">
                             See what was lost and found around campus.
                         </span>
                     </span>

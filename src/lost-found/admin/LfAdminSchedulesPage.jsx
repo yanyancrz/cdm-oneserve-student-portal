@@ -52,6 +52,9 @@ export default function LfAdminSchedulesPage() {
     // "completed" = recorded handovers, read-only history.
     const [tab, setTab] = useState("queue");
     const [inspecting, setInspecting] = useState(null);
+    // Queue search: exact Item ID, same algorithm as completed pickups.
+    const [queueDraft, setQueueDraft] = useState("");
+    const [queueApplied, setQueueApplied] = useState("");
 
     const load = async () => {
         try {
@@ -102,6 +105,18 @@ export default function LfAdminSchedulesPage() {
             schedule.status !== "Scheduled" &&
             schedule.status !== "Awaiting Pickup"
     );
+
+    const queueSearching = queueApplied.trim().length > 0;
+    const visibleQueue = queueSearching
+        ? queue.filter((schedule) =>
+              isExactItemIdMatch(schedule.reportId, queueApplied)
+          )
+        : queue;
+
+    const clearQueueSearch = () => {
+        setQueueDraft("");
+        setQueueApplied("");
+    };
 
     return (
         <div className="space-y-5">
@@ -155,30 +170,67 @@ export default function LfAdminSchedulesPage() {
                             message="When a claim is approved for pickup, its schedule appears here."
                         />
                     ) : (
-                        <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                            <table className="w-full min-w-[960px] text-left text-xs">
-                                <thead>
-                                    <tr className="border-b border-slate-100 text-[10px] uppercase tracking-wide text-slate-400">
-                                        <th className="px-4 py-3 font-semibold">Item</th>
-                                        <th className="px-4 py-3 font-semibold">Claimant</th>
-                                        <th className="px-4 py-3 font-semibold">Slot</th>
-                                        <th className="px-4 py-3 font-semibold">Status</th>
-                                        <th className="px-4 py-3 text-right font-semibold">
-                                            Handover
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-slate-100">
-                                    {queue.map((schedule) => (
-                                        <ScheduleRow
-                                            key={schedule.scheduleId}
-                                            schedule={schedule}
-                                            onHandover={load}
-                                        />
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                        <>
+                            {/* ---------- toolbar: exact Item ID search ---------- */}
+                            <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+                                <p className="text-xs text-slate-500">
+                                    {queue.length} total
+                                    {queueSearching
+                                        ? ` · ${visibleQueue.length} matching`
+                                        : ""}
+                                </p>
+                                <div className="w-full sm:w-96">
+                                    <LfItemIdSearch
+                                        value={queueDraft}
+                                        onChange={setQueueDraft}
+                                        onSubmit={setQueueApplied}
+                                        onClear={clearQueueSearch}
+                                        loading={false}
+                                    />
+                                </div>
+                            </div>
+
+                            {visibleQueue.length === 0 ? (
+                                <LfItemIdEmpty
+                                    icon={CalendarClock}
+                                    recordNoun="pickup"
+                                    onClear={clearQueueSearch}
+                                />
+                            ) : (
+                                <div className="overflow-x-auto rounded-2xl border border-slate-200">
+                                    <table className="w-full min-w-[960px] text-left text-xs">
+                                        <thead>
+                                            <tr className="border-b border-slate-100 text-[10px] uppercase tracking-wide text-slate-400">
+                                                <th className="px-4 py-3 font-semibold">
+                                                    Item
+                                                </th>
+                                                <th className="px-4 py-3 font-semibold">
+                                                    Claimant
+                                                </th>
+                                                <th className="px-4 py-3 font-semibold">
+                                                    Slot
+                                                </th>
+                                                <th className="px-4 py-3 font-semibold">
+                                                    Status
+                                                </th>
+                                                <th className="px-4 py-3 text-right font-semibold">
+                                                    Handover
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100">
+                                            {visibleQueue.map((schedule) => (
+                                                <ScheduleRow
+                                                    key={schedule.scheduleId}
+                                                    schedule={schedule}
+                                                    onHandover={load}
+                                                />
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </>
                     )}
                 </LfPanel>
             ) : (

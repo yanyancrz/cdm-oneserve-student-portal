@@ -147,7 +147,7 @@ function LfHeader() {
                 <p className="text-[10px] uppercase tracking-[.22em] text-[#106A2E]/70">
                     FIND · Found Item &amp; Notification Desk
                 </p>
-                <h1 className="truncate text-2xl font-semibold tracking-tight text-slate-800">
+                <h1 className="text-2xl font-semibold tracking-tight text-slate-800">
                     Report, find, and recover campus items
                 </h1>
             </div>
