@@ -653,6 +653,18 @@ export default function GuidanceReportsPage() {
         }
     };
 
+    const renameRepoFile = async (id, currentName) => {
+        const newName = window.prompt("New file name:", currentName);
+        if (!newName || newName === currentName) return;
+        try {
+            await guidanceHeadService.renameNarrativeReport(id, newName);
+            setRepoReloadKey((n) => n + 1);
+            setToast({ type: "success", text: "Report renamed." });
+        } catch (err) {
+            setToast({ type: "error", text: err?.message || "Rename failed." });
+        }
+    };
+
     return (
         <>
             <PageHeader
