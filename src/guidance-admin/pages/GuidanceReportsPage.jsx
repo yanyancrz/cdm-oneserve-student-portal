@@ -173,6 +173,18 @@ export default function GuidanceReportsPage() {
         setNarrative(lines.join("\n"));
     };
 
+    const generateCounselorNarrative = (c) => {
+        const lines = [];
+        lines.push("COUNSELOR NARRATIVE REPORT");
+        lines.push(`Counselor: ${c.fullName}`);
+        lines.push(`Period: ${formatDate(report.from)} to ${formatDate(report.to)}`);
+        lines.push("");
+        lines.push(`Appointments handled: ${c.appointments}`);
+        lines.push(`Completed sessions: ${c.completed}`);
+        lines.push(`Counseling records written: ${c.sessions}`);
+        setNarrative(lines.join("\n"));
+    };
+
     const downloadNarrative = () => {
         if (!narrative.trim()) return;
         const blob = new Blob([narrative], { type: "text/plain;charset=utf-8;" });
