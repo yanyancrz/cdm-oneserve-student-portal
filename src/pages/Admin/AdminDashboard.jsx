@@ -30,32 +30,9 @@ export default function AdminDashboard() {
         localStorage.getItem("userName") ||
         "Admin";
 
-    // --------------------------------------------------
-    // DEFAULT MODULE STATUS
-    // --------------------------------------------------
-
-    const defaultModules = [
-        {
-            name: "Lost & Found",
-            icon: "🔍",
-            status: "Online",
-        },
-        {
-            name: "Library",
-            icon: "📚",
-            status: "Online",
-        },
-        {
-            name: "Clinic",
-            icon: "🏥",
-            status: "Online",
-        },
-        {
-            name: "Guidance",
-            icon: "💬",
-            status: "Online",
-        },
-    ];
+    // No hardcoded module statuses: rely on the backend's
+    // /api/admin/dashboard response. If it has no `modules`,
+    // we show an empty state instead of fake "Online" values.
 
     // --------------------------------------------------
     // LOAD DASHBOARD DATA
@@ -101,10 +78,7 @@ export default function AdminDashboard() {
                     totalUsers: data.totalUsers ?? 0,
                     totalStudents: data.totalStudents ?? 0,
                     totalFaculty: data.totalFaculty ?? 0,
-                    modules:
-                        data.modules?.length > 0
-                            ? data.modules
-                            : defaultModules,
+                    modules: Array.isArray(data.modules) ? data.modules : [],
                 });
 
                 setLoadError("");
@@ -121,7 +95,7 @@ export default function AdminDashboard() {
                     totalUsers: 0,
                     totalStudents: 0,
                     totalFaculty: 0,
-                    modules: defaultModules,
+                    modules: [],
                 });
             } finally {
                 setIsLoading(false);
@@ -474,47 +448,31 @@ export default function AdminDashboard() {
                         </div>
 
                         <div className="px-5 sm:px-6 pb-5">
-
-                            {(dashboard.modules?.length
-                                ? dashboard.modules
-                                : defaultModules
-                            ).map((module, index) => {
-
-                                return (
-
-                                    <div
-                                        key={index}
-                                        className="
-                                            flex
-                                            items-center
-                                            justify-between
-                                            px-3
-                                            py-2
-                                        "
-                                    >
-
-                                        <div className="flex items-center gap-3">
-
-                                            <Icon type={module.icon} size={20} />
-
-                                            <span className="text-sm font-medium text-[#1F1F1F]">
-                                                {module.name}
+                            {dashboard.modules && dashboard.modules.length > 0 ? (
+                                dashboard.modules.map((module, index) => {
+                                    return (
+                                        <div
+                                            key={index}
+                                            className="flex items-center justify-between px-3 py-2"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <Icon type={module.icon} size={20} />
+                                                <span className="text-sm font-medium text-[#1F1F1F]">
+                                                    {module.name}
+                                                </span>
+                                            </div>
+                                            <span className="text-xs text-gray-400">
+                                                {module.status}
                                             </span>
-
                                         </div>
-
-                                        <span className="text-xs text-gray-400">
-                                            {module.status}
-                                        </span>
-
-                                    </div>
-
-                                );
-
-                            })}
-
+                                    );
+                                })
+                            ) : (
+                                <p className="px-3 py-2 text-sm text-gray-400">
+                                    No module status data available.
+                                </p>
+                            )}
                         </div>
-
                     </section>
 
                 </div>
