@@ -282,6 +282,7 @@ export default function GuidanceReportsPage() {
     });
     const [narrativeOpen, setNarrativeOpen] = useState(false);
     const [uploadedFile, setUploadedFile] = useState(null);
+    const [repoFiles, setRepoFiles] = useState([]);
 
     const [counselorQuery, setCounselorQuery] = useState("");
 
