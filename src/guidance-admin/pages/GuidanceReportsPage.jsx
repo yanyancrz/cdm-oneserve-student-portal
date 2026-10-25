@@ -12,6 +12,7 @@ import {
     FolderOpen,
     Loader2,
     NotebookPen,
+    Pencil,
     Search,
     Trash2,
     UploadCloud,
@@ -685,12 +686,12 @@ export default function GuidanceReportsPage() {
 
                         <button
                             type="button"
-                            onClick={generateNarrative}
-                            disabled={!report}
-                            className="inline-flex items-center gap-1.5 rounded-lg bg-[#106A2E] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#0a2c19] disabled:opacity-50"
+                            onClick={() => setNarrativeOpen(true)}
+                            disabled={!narrative.trim()}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-black/[0.08] bg-white px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
                         >
                             <FileText size={15} />
-                            Generate narrative
+                            Open draft
                         </button>
                     </div>
                 }
@@ -740,55 +741,6 @@ export default function GuidanceReportsPage() {
                     sub="Students and counselors"
                     tone={neverSignedIn > 0 ? "red" : "green"}
                 />
-            </div>
-
-            <div className="mt-6 grid gap-4 lg:grid-cols-2">
-                <section className="rounded-2xl border border-black/[0.05] bg-white shadow-sm">
-                    <div className="border-b border-black/[0.06] px-5 py-4">
-                        <h2 className="text-sm font-semibold text-[#1F1F1F]">
-                            Appointments by status
-                        </h2>
-                    </div>
-                    <BarList
-                        items={(report?.appointmentsByStatus || []).map((i) => ({
-                            ...i,
-                            color: STATUS_COLORS[i.label],
-                        }))}
-                        empty="No appointments in this period."
-                    />
-                </section>
-
-                <section className="rounded-2xl border border-black/[0.05] bg-white shadow-sm">
-                    <div className="border-b border-black/[0.06] px-5 py-4">
-                        <h2 className="text-sm font-semibold text-[#1F1F1F]">Top concerns</h2>
-                        <p className="mt-0.5 text-xs text-gray-400">
-                            Why students book, most common first
-                        </p>
-                    </div>
-                    <BarList
-                        items={report?.appointmentsByConcern || []}
-                        color="#2F80ED"
-                        empty="No concerns recorded in this period."
-                    />
-                </section>
-
-                <section className="rounded-2xl border border-black/[0.05] bg-white shadow-sm">
-                    <div className="border-b border-black/[0.06] px-5 py-4">
-                        <h2 className="text-sm font-semibold text-[#1F1F1F]">
-                            Appointments by month
-                        </h2>
-                    </div>
-                    <ColumnChart items={report?.appointmentsByMonth || []} />
-                </section>
-
-                <section className="rounded-2xl border border-black/[0.05] bg-white shadow-sm">
-                    <div className="border-b border-black/[0.06] px-5 py-4">
-                        <h2 className="text-sm font-semibold text-[#1F1F1F]">
-                            Counseling records by month
-                        </h2>
-                    </div>
-                    <ColumnChart items={report?.sessionsByMonth || []} color="#2F80ED" />
-                </section>
             </div>
 
             <section className="mt-6 rounded-2xl border border-black/[0.05] bg-white shadow-sm">
@@ -894,59 +846,6 @@ export default function GuidanceReportsPage() {
                         )}
                     </div>
                 )}
-            </section>
-
-            {report?.accounts && (
-                <section className="mt-6 rounded-2xl border border-black/[0.05] bg-white p-5 shadow-sm">
-                    <h2 className="text-sm font-semibold text-[#1F1F1F]">Account activity</h2>
-
-                    <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                        {[
-                            ["Signed in, last 7 days", report.accounts.signedInLast7Days],
-                            ["Signed in, last 30 days", report.accounts.signedInLast30Days],
-                            ["Students never signed in", report.accounts.neverSignedInStudents],
-                            ["Counselors never signed in", report.accounts.neverSignedInCounselors],
-                        ].map(([label, value]) => (
-                            <div key={label} className="rounded-xl bg-[#FAFAF7] px-4 py-3">
-                                <dt className="text-xs text-gray-500">{label}</dt>
-                                <dd className="mt-1 text-lg font-semibold text-gray-800">
-                                    {formatNumber(value)}
-                                </dd>
-                            </div>
-                        ))}
-                    </dl>
-                </section>
-            )}
-
-            {/* Narrative report - compact card; the editor itself lives in the modal */}
-            <section className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-black/[0.05] bg-white p-5 shadow-sm">
-                <div>
-                    <h2 className="text-sm font-semibold text-[#1F1F1F]">Narrative report</h2>
-                    <p className="mt-0.5 text-xs text-gray-400">
-                        Generate a summary from the monitoring data, edit it, then download it or
-                        save it to the repository below.
-                    </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                    {narrative.trim() && (
-                        <button
-                            type="button"
-                            onClick={() => setNarrativeOpen(true)}
-                            className="rounded-lg border border-black/[0.08] bg-white px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
-                        >
-                            Reopen last draft
-                        </button>
-                    )}
-                    <button
-                        type="button"
-                        onClick={generateNarrative}
-                        disabled={!report}
-                        className="rounded-lg bg-[#106A2E] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#0a2c19] disabled:opacity-50"
-                    >
-                        Generate overall narrative
-                    </button>
-                </div>
             </section>
 
             {/* Report repository - the only place to upload files */}
@@ -1145,6 +1044,15 @@ export default function GuidanceReportsPage() {
                                             </a>
                                             <button
                                                 type="button"
+                                                onClick={() => renameRepoFile(f.id, f.name)}
+                                                title="Rename"
+                                                aria-label={`Rename ${f.name}`}
+                                                className="rounded-md p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
+                                            >
+                                                <Pencil size={16} />
+                                            </button>
+                                            <button
+                                                type="button"
                                                 onClick={() => setConfirmDeleteId(f.id)}
                                                 title="Delete"
                                                 aria-label={`Delete ${f.name}`}
@@ -1159,6 +1067,108 @@ export default function GuidanceReportsPage() {
                         })}
                     </ul>
                 )}
+            </section>
+
+            <div className="mt-6 grid gap-4 lg:grid-cols-2">
+                <section className="rounded-2xl border border-black/[0.05] bg-white shadow-sm">
+                    <div className="border-b border-black/[0.06] px-5 py-4">
+                        <h2 className="text-sm font-semibold text-[#1F1F1F]">
+                            Appointments by status
+                        </h2>
+                    </div>
+                    <BarList
+                        items={(report?.appointmentsByStatus || []).map((i) => ({
+                            ...i,
+                            color: STATUS_COLORS[i.label],
+                        }))}
+                        empty="No appointments in this period."
+                    />
+                </section>
+
+                <section className="rounded-2xl border border-black/[0.05] bg-white shadow-sm">
+                    <div className="border-b border-black/[0.06] px-5 py-4">
+                        <h2 className="text-sm font-semibold text-[#1F1F1F]">Top concerns</h2>
+                        <p className="mt-0.5 text-xs text-gray-400">
+                            Why students book, most common first
+                        </p>
+                    </div>
+                    <BarList
+                        items={report?.appointmentsByConcern || []}
+                        color="#2F80ED"
+                        empty="No concerns recorded in this period."
+                    />
+                </section>
+
+                <section className="rounded-2xl border border-black/[0.05] bg-white shadow-sm">
+                    <div className="border-b border-black/[0.06] px-5 py-4">
+                        <h2 className="text-sm font-semibold text-[#1F1F1F]">
+                            Appointments by month
+                        </h2>
+                    </div>
+                    <ColumnChart items={report?.appointmentsByMonth || []} />
+                </section>
+
+                <section className="rounded-2xl border border-black/[0.05] bg-white shadow-sm">
+                    <div className="border-b border-black/[0.06] px-5 py-4">
+                        <h2 className="text-sm font-semibold text-[#1F1F1F]">
+                            Counseling records by month
+                        </h2>
+                    </div>
+                    <ColumnChart items={report?.sessionsByMonth || []} color="#2F80ED" />
+                </section>
+            </div>
+
+            {report?.accounts && (
+                <section className="mt-6 rounded-2xl border border-black/[0.05] bg-white p-5 shadow-sm">
+                    <h2 className="text-sm font-semibold text-[#1F1F1F]">Account activity</h2>
+
+                    <dl className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        {[
+                            ["Signed in, last 7 days", report.accounts.signedInLast7Days],
+                            ["Signed in, last 30 days", report.accounts.signedInLast30Days],
+                            ["Students never signed in", report.accounts.neverSignedInStudents],
+                            ["Counselors never signed in", report.accounts.neverSignedInCounselors],
+                        ].map(([label, value]) => (
+                            <div key={label} className="rounded-xl bg-[#FAFAF7] px-4 py-3">
+                                <dt className="text-xs text-gray-500">{label}</dt>
+                                <dd className="mt-1 text-lg font-semibold text-gray-800">
+                                    {formatNumber(value)}
+                                </dd>
+                            </div>
+                        ))}
+                    </dl>
+                </section>
+            )}
+
+            {/* Narrative report - compact card; the editor itself lives in the modal */}
+            <section className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-black/[0.05] bg-white p-5 shadow-sm">
+                <div>
+                    <h2 className="text-sm font-semibold text-[#1F1F1F]">Narrative report</h2>
+                    <p className="mt-0.5 text-xs text-gray-400">
+                        Generate a summary from the monitoring data, edit it, then download it or
+                        save it to the repository below.
+                    </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                    {narrative.trim() && (
+                        <button
+                            type="button"
+                            onClick={() => setNarrativeOpen(true)}
+                            className="rounded-lg border border-black/[0.08] bg-white px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+                        >
+                            Reopen last draft
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={generateNarrative}
+                        disabled={!report}
+                        className="rounded-lg bg-[#106A2E] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#0a2c19] disabled:opacity-50"
+                    >
+                        Generate overall narrative
+                    </button>
+                </div>
             </section>
 
             <NarrativeModal
