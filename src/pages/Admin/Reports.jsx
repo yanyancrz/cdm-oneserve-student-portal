@@ -33,7 +33,7 @@ import {
 // Report categories (filteration)
 // ─────────────────────────────────────────────────────────────
 const CATEGORY_OPTIONS = [
-    { value: "all", label: "All accounts" },
+    { value: "all", label: "All accounts (no counselors)" },
     { value: "users", label: "User accounts (students + faculty)" },
     { value: "students", label: "Students only" },
     { value: "faculty", label: "Faculty only" },
@@ -54,6 +54,8 @@ function matchesCategory(user, category) {
             return isMemberRole(role);
         case "heads":
             return isHeadRole(role);
+        case "all":
+            return role !== "Counselor";
         default:
             return true;
     }
