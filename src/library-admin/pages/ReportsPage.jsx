@@ -90,8 +90,6 @@ export default function ReportsPage() {
             </div>
 
             <div className="space-y-6">
-                <ReportExport params={params} />
-
                 <div className="space-y-3">
                     <ReportFilters
                         from={range.from}
@@ -110,6 +108,8 @@ export default function ReportsPage() {
                             <Printer size={16} /> Print report
                         </button>
                     </div>
+
+                    <ReportExport params={params} />
                 </div>
 
                 {firstLoad ? (
