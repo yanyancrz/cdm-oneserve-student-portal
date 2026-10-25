@@ -94,9 +94,9 @@ export const guidanceHeadService = {
         return api.delete(`/api/admin/guidance/reports/narrative/${encodeURIComponent(id)}`, options).then((r) => r.data);
     },
     renameNarrativeReport(id, newName, options) {
-        return api.put(`/api/admin/guidance/reports/narrative/${encodeURIComponent(id)}/rename`, JSON.stringify(newName), {
+        return api.post(`/api/admin/guidance/reports/narrative/${encodeURIComponent(id)}/rename`, undefined, {
             ...options,
-            headers: { "Content-Type": "application/json", ...(options?.headers || {}) },
+            params: { newName },
         }).then((r) => r.data);
     },
 
