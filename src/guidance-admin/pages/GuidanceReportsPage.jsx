@@ -413,41 +413,38 @@ export default function GuidanceReportsPage() {
         e.target.value = "";
     };
 
-    useEffect(() => {
+    const loadRepo = async () => {
         try {
-            const saved = localStorage.getItem("guidanceReportRepo");
-            if (saved) setRepoFiles(JSON.parse(saved));
-        } catch {}
-    }, []);
-
-    const persistRepo = (files) => {
-        setRepoFiles(files);
-        try {
-            localStorage.setItem("guidanceReportRepo", JSON.stringify(files));
-        } catch {}
+            const data = await guidanceHeadService.listNarrativeReports();
+            setRepoFiles(Array.isArray(data) ? data : []);
+        } catch {
+            setRepoFiles([]);
+        }
     };
 
-    const handleRepoUpload = (e) => {
+    useEffect(() => {
+        loadRepo();
+    }, []);
+
+    const handleRepoUpload = async (e) => {
         const file = e.target.files?.[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.onload = () => {
-            const entry = {
-                id: Date.now(),
-                name: file.name,
-                size: file.size,
-                type: file.type,
-                dataUrl: reader.result,
-                uploadedAt: new Date().toISOString(),
-            };
-            persistRepo([entry, ...repoFiles]);
-        };
-        reader.readAsDataURL(file);
+        try {
+            await guidanceHeadService.uploadNarrativeReport(file);
+            await loadRepo();
+        } catch (err) {
+            alert(err?.message || "Upload failed.");
+        }
         e.target.value = "";
     };
 
-    const deleteRepoFile = (id) => {
-        persistRepo(repoFiles.filter((f) => f.id !== id));
+    const deleteRepoFile = async (id) => {
+        try {
+            await guidanceHeadService.deleteNarrativeReport(id);
+            await loadRepo();
+        } catch (err) {
+            alert(err?.message || "Delete failed.");
+        }
     };
 
     return (

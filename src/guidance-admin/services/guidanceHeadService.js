@@ -81,6 +81,19 @@ export const guidanceHeadService = {
             .then((r) => r.data);
     },
 
+    // Narrative report repository
+    listNarrativeReports(options) {
+        return api.get("/api/admin/guidance/reports/narrative", options).then((r) => r.data);
+    },
+    uploadNarrativeReport(file, options) {
+        const body = new FormData();
+        body.append("file", file);
+        return api.post("/api/admin/guidance/reports/narrative", body, options).then((r) => r.data);
+    },
+    deleteNarrativeReport(id, options) {
+        return api.delete(`/api/admin/guidance/reports/narrative/${encodeURIComponent(id)}`, options).then((r) => r.data);
+    },
+
     // GET /api/admin/guidance/settings
     getSettings(options) {
         return api.get("/api/admin/guidance/settings", options).then((r) => r.data);
