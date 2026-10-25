@@ -713,6 +713,62 @@ export default function GuidanceReportsPage() {
                 </section>
             )}
 
+            {/* Report repository */}
+            <section className="mt-6 rounded-2xl border border-black/[0.05] bg-white p-5 shadow-sm">
+                <h2 className="text-sm font-semibold text-[#1F1F1F]">Report repository</h2>
+                <p className="mt-0.5 text-xs text-gray-400">
+                    Uploaded narrative reports stored on the server for later reference.
+                </p>
+
+                <div className="mt-4">
+                    <label className="cursor-pointer rounded-lg bg-[#106A2E] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#0a2c19]">
+                        Upload report
+                        <input type="file" className="hidden" onChange={handleRepoUpload} />
+                    </label>
+                </div>
+
+                {repoFiles.length === 0 ? (
+                    <p className="mt-4 text-sm text-gray-400">No uploaded reports yet.</p>
+                ) : (
+                    <ul className="mt-4 divide-y divide-black/[0.06]">
+                        {repoFiles.map((f) => (
+                            <li key={f.id} className="flex items-center justify-between py-3">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-800">{f.name}</p>
+                                    <p className="text-xs text-gray-400">
+                                        {(f.size / 1024).toFixed(1)} KB - {new Date(f.uploadedAt).toLocaleString()}
+                                    </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <a
+                                        href={f.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="rounded-md border border-black/[0.08] bg-white px-2.5 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+                                    >
+                                        Open
+                                    </a>
+                                    <a
+                                        href={f.url}
+                                        download={f.name}
+                                        className="rounded-md border border-black/[0.08] bg-white px-2.5 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+                                    >
+                                        Download
+                                    </a>
+                                    <button
+                                        type="button"
+                                        onClick={() => deleteRepoFile(f.id)}
+                                        className="rounded-md border border-red-200 bg-white px-2.5 py-1 text-xs font-medium text-red-600 transition hover:bg-red-50"
+                                    >
+                                        Delete
+                                    </button>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </section>
+
             {/* Narrative report - compact card; the editor itself lives in the modal */}
             <section className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-black/[0.05] bg-white p-5 shadow-sm">
                 <div>
