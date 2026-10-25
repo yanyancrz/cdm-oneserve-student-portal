@@ -413,6 +413,43 @@ export default function GuidanceReportsPage() {
         e.target.value = "";
     };
 
+    useEffect(() => {
+        try {
+            const saved = localStorage.getItem("guidanceReportRepo");
+            if (saved) setRepoFiles(JSON.parse(saved));
+        } catch {}
+    }, []);
+
+    const persistRepo = (files) => {
+        setRepoFiles(files);
+        try {
+            localStorage.setItem("guidanceReportRepo", JSON.stringify(files));
+        } catch {}
+    };
+
+    const handleRepoUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const entry = {
+                id: Date.now(),
+                name: file.name,
+                size: file.size,
+                type: file.type,
+                dataUrl: reader.result,
+                uploadedAt: new Date().toISOString(),
+            };
+            persistRepo([entry, ...repoFiles]);
+        };
+        reader.readAsDataURL(file);
+        e.target.value = "";
+    };
+
+    const deleteRepoFile = (id) => {
+        persistRepo(repoFiles.filter((f) => f.id !== id));
+    };
+
     return (
         <>
             <PageHeader
