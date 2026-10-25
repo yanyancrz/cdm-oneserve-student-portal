@@ -93,6 +93,12 @@ export const guidanceHeadService = {
     deleteNarrativeReport(id, options) {
         return api.delete(`/api/admin/guidance/reports/narrative/${encodeURIComponent(id)}`, options).then((r) => r.data);
     },
+    renameNarrativeReport(id, newName, options) {
+        return api.put(`/api/admin/guidance/reports/narrative/${encodeURIComponent(id)}/rename`, JSON.stringify(newName), {
+            ...options,
+            headers: { "Content-Type": "application/json", ...(options?.headers || {}) },
+        }).then((r) => r.data);
+    },
 
     // GET /api/admin/guidance/settings
     getSettings(options) {
