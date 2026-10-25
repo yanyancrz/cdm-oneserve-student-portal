@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { API_URL } from "../../config/api";
 import {
     BarChart3,
     CalendarCheck2,
@@ -1124,7 +1125,7 @@ export default function GuidanceReportsPage() {
                                     ) : (
                                         <div className="flex items-center gap-1">
                                             <a
-                                                href={f.url}
+                                                href={`${API_URL}${f.url}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 title="Open"
@@ -1134,7 +1135,7 @@ export default function GuidanceReportsPage() {
                                                 <ExternalLink size={16} />
                                             </a>
                                             <a
-                                                href={f.url}
+                                                href={`${API_URL}${f.url}`}
                                                 download={f.name}
                                                 title="Download"
                                                 aria-label={`Download ${f.name}`}
