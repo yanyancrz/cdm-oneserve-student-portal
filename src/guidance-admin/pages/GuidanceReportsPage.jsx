@@ -1069,6 +1069,38 @@ export default function GuidanceReportsPage() {
                 )}
             </section>
 
+            {/* Narrative report - compact card; the editor itself lives in the modal */}
+            <section className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-black/[0.05] bg-white p-5 shadow-sm">
+                <div>
+                    <h2 className="text-sm font-semibold text-[#1F1F1F]">Narrative report</h2>
+                    <p className="mt-0.5 text-xs text-gray-400">
+                        Generate a summary from the monitoring data, edit it, then download it or
+                        save it to the repository below.
+                    </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                    {narrative.trim() && (
+                        <button
+                            type="button"
+                            onClick={() => setNarrativeOpen(true)}
+                            className="rounded-lg border border-black/[0.08] bg-white px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+                        >
+                            Reopen last draft
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={generateNarrative}
+                        disabled={!report}
+                        className="rounded-lg bg-[#106A2E] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#0a2c19] disabled:opacity-50"
+                    >
+                        Generate overall narrative
+                    </button>
+                </div>
+            </section>
+
+
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
                 <section className="rounded-2xl border border-black/[0.05] bg-white shadow-sm">
                     <div className="border-b border-black/[0.06] px-5 py-4">
@@ -1139,37 +1171,6 @@ export default function GuidanceReportsPage() {
                     </dl>
                 </section>
             )}
-
-            {/* Narrative report - compact card; the editor itself lives in the modal */}
-            <section className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-black/[0.05] bg-white p-5 shadow-sm">
-                <div>
-                    <h2 className="text-sm font-semibold text-[#1F1F1F]">Narrative report</h2>
-                    <p className="mt-0.5 text-xs text-gray-400">
-                        Generate a summary from the monitoring data, edit it, then download it or
-                        save it to the repository below.
-                    </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                    {narrative.trim() && (
-                        <button
-                            type="button"
-                            onClick={() => setNarrativeOpen(true)}
-                            className="rounded-lg border border-black/[0.08] bg-white px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
-                        >
-                            Reopen last draft
-                        </button>
-                    )}
-                    <button
-                        type="button"
-                        onClick={generateNarrative}
-                        disabled={!report}
-                        className="rounded-lg bg-[#106A2E] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#0a2c19] disabled:opacity-50"
-                    >
-                        Generate overall narrative
-                    </button>
-                </div>
-            </section>
 
             <NarrativeModal
                 open={narrativeOpen}
