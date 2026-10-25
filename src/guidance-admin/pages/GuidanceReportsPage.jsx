@@ -1,5 +1,16 @@
-import { useEffect, useState } from "react";
-import { BarChart3, CalendarCheck2, NotebookPen, UserRoundX } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+    BarChart3,
+    CalendarCheck2,
+    Check,
+    Copy,
+    FileText,
+    NotebookPen,
+    Search,
+    Upload,
+    UserRoundX,
+    X,
+} from "lucide-react";
 
 import KpiCard from "../components/dashboard/KpiCard";
 import { EmptyState, PageHeader } from "../components/common";
@@ -99,14 +110,180 @@ function ColumnChart({ items, color = ACCENT }) {
     );
 }
 
+function NarrativeModal({
+    open,
+    title,
+    subtitle,
+    value,
+    onChange,
+    onClose,
+    onDownload,
+    uploadedFile,
+    onUpload,
+    onRemoveUpload,
+}) {
+    const [copied, setCopied] = useState(false);
+
+    // Close on Escape + lock background scroll while the modal is open.
+    useEffect(() => {
+        if (!open) return undefined;
+
+        const onKey = (e) => {
+            if (e.key === "Escape") onClose();
+        };
+        const previousOverflow = document.body.style.overflow;
+
+        document.addEventListener("keydown", onKey);
+        document.body.style.overflow = "hidden";
+
+        return () => {
+            document.removeEventListener("keydown", onKey);
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [open, onClose]);
+
+    if (!open) return null;
+
+    const handleCopy = async () => {
+        try {
+            await navigator.clipboard.writeText(value);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1800);
+        } catch {
+            // Clipboard can be blocked; the textarea is still selectable.
+        }
+    };
+
+    const hasText = value.trim().length > 0;
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-6"
+            onMouseDown={(e) => {
+                if (e.target === e.currentTarget) onClose();
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
+        >
+            <div className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:max-w-2xl sm:rounded-2xl">
+                {/* Header */}
+                <div className="flex items-start justify-between gap-4 border-b border-black/[0.06] px-5 py-4">
+                    <div className="flex items-start gap-3">
+                        <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-[#106A2E]/10 text-[#106A2E]">
+                            <FileText className="h-4.5 w-4.5" size={18} />
+                        </span>
+                        <div>
+                            <h2 className="text-base font-semibold text-[#1F1F1F]">{title}</h2>
+                            {subtitle && (
+                                <p className="mt-0.5 text-xs text-gray-400">{subtitle}</p>
+                            )}
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Close"
+                        className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
+
+                {/* Body */}
+                <div className="flex-1 overflow-y-auto px-5 py-4">
+                    <p className="mb-2 text-xs text-gray-400">
+                        You can edit the text below before downloading.
+                    </p>
+
+                    <textarea
+                        value={value}
+                        onChange={(e) => onChange(e.target.value)}
+                        rows={14}
+                        placeholder="Generated narrative will appear here..."
+                        className="w-full resize-y rounded-xl border border-black/[0.08] bg-[#FAFAF7] p-4 font-mono text-[13px] leading-relaxed text-gray-700 outline-none focus:border-[#106A2E]"
+                    />
+
+                    {/* Upload */}
+                    <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-dashed border-black/[0.12] px-4 py-3">
+                        <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-black/[0.08] bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50">
+                            <Upload size={14} />
+                            Upload report
+                            <input type="file" className="hidden" onChange={onUpload} />
+                        </label>
+
+                        {uploadedFile ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-600">
+                                {uploadedFile.name}
+                                <button
+                                    type="button"
+                                    onClick={onRemoveUpload}
+                                    aria-label="Remove uploaded file"
+                                    className="text-gray-400 hover:text-gray-700"
+                                >
+                                    <X size={12} />
+                                </button>
+                            </span>
+                        ) : (
+                            <span className="text-xs text-gray-400">
+                                Attach a signed or finalized copy (optional).
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div className="flex flex-wrap items-center justify-end gap-2 border-t border-black/[0.06] bg-white px-5 py-3">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-lg px-3.5 py-2 text-sm font-medium text-gray-500 transition hover:bg-gray-50"
+                    >
+                        Close
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={handleCopy}
+                        disabled={!hasText}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-black/[0.08] bg-white px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        {copied ? <Check size={15} /> : <Copy size={15} />}
+                        {copied ? "Copied" : "Copy"}
+                    </button>
+
+                    <button
+                        type="button"
+                        onClick={onDownload}
+                        disabled={!hasText}
+                        className="rounded-lg bg-[#106A2E] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#0a2c19] disabled:opacity-50"
+                    >
+                        Download .txt
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function GuidanceReportsPage() {
     const [days, setDays] = useState(30);
     const [report, setReport] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [reloadKey, setReloadKey] = useState(0);
+
     const [narrative, setNarrative] = useState("");
+    const [narrativeMeta, setNarrativeMeta] = useState({
+        title: "Narrative report",
+        subtitle: "",
+        filename: "guidance-narrative-report.txt",
+    });
+    const [narrativeOpen, setNarrativeOpen] = useState(false);
     const [uploadedFile, setUploadedFile] = useState(null);
+
+    const [counselorQuery, setCounselorQuery] = useState("");
 
     useEffect(() => {
         const controller = new AbortController();
@@ -141,11 +318,28 @@ export default function GuidanceReportsPage() {
         ? report.accounts.neverSignedInStudents + report.accounts.neverSignedInCounselors
         : 0;
 
+    const counselors = report?.counselors || [];
+    const filteredCounselors = useMemo(() => {
+        const q = counselorQuery.trim().toLowerCase();
+        if (!q) return counselors;
+        return counselors.filter((c) => (c.fullName || "").toLowerCase().includes(q));
+    }, [counselors, counselorQuery]);
+
+    const periodLabel = report
+        ? `${formatDate(report.from)} to ${formatDate(report.to)}`
+        : "";
+
+    const openNarrative = (text, meta) => {
+        setNarrative(text);
+        setNarrativeMeta(meta);
+        setNarrativeOpen(true);
+    };
+
     const generateNarrative = () => {
         if (!report) return;
         const lines = [];
         lines.push("NARRATIVE REPORT - GUIDANCE COUNSELING MONITORING");
-        lines.push(`Period: ${formatDate(report.from)} to ${formatDate(report.to)}`);
+        lines.push(`Period: ${periodLabel}`);
         lines.push("");
         lines.push(`Total appointments: ${appointmentsTotal}`);
         lines.push(`Completed sessions: ${completed}`);
@@ -160,7 +354,9 @@ export default function GuidanceReportsPage() {
         lines.push("");
         lines.push("Counselor performance:");
         (report.counselors || []).forEach((c) =>
-            lines.push(`- ${c.fullName}: ${c.appointments} appointments, ${c.completed} completed, ${c.sessions} records`)
+            lines.push(
+                `- ${c.fullName}: ${c.appointments} appointments, ${c.completed} completed, ${c.sessions} records`
+            )
         );
         lines.push("");
         lines.push("Account activity:");
@@ -170,19 +366,34 @@ export default function GuidanceReportsPage() {
             lines.push(`- Students never signed in: ${report.accounts.neverSignedInStudents}`);
             lines.push(`- Counselors never signed in: ${report.accounts.neverSignedInCounselors}`);
         }
-        setNarrative(lines.join("\n"));
+
+        openNarrative(lines.join("\n"), {
+            title: "Overall narrative report",
+            subtitle: periodLabel,
+            filename: "guidance-narrative-report.txt",
+        });
     };
 
     const generateCounselorNarrative = (c) => {
         const lines = [];
         lines.push("COUNSELOR NARRATIVE REPORT");
         lines.push(`Counselor: ${c.fullName}`);
-        lines.push(`Period: ${formatDate(report.from)} to ${formatDate(report.to)}`);
+        lines.push(`Period: ${periodLabel}`);
         lines.push("");
         lines.push(`Appointments handled: ${c.appointments}`);
         lines.push(`Completed sessions: ${c.completed}`);
         lines.push(`Counseling records written: ${c.sessions}`);
-        setNarrative(lines.join("\n"));
+
+        const slug = (c.fullName || "counselor")
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-|-$/g, "");
+
+        openNarrative(lines.join("\n"), {
+            title: `Narrative report - ${c.fullName}`,
+            subtitle: periodLabel,
+            filename: `counselor-narrative-${slug || "report"}.txt`,
+        });
     };
 
     const downloadNarrative = () => {
@@ -191,7 +402,7 @@ export default function GuidanceReportsPage() {
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "guidance-narrative-report.txt";
+        a.download = narrativeMeta.filename;
         a.click();
         URL.revokeObjectURL(url);
     };
@@ -199,6 +410,7 @@ export default function GuidanceReportsPage() {
     const handleUpload = (e) => {
         const file = e.target.files?.[0];
         if (file) setUploadedFile(file);
+        e.target.value = "";
     };
 
     return (
@@ -230,6 +442,16 @@ export default function GuidanceReportsPage() {
                             className="rounded-lg border border-black/[0.08] bg-white px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
                         >
                             Refresh
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={generateNarrative}
+                            disabled={!report}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-[#106A2E] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#0a2c19] disabled:opacity-50"
+                        >
+                            <FileText size={15} />
+                            Generate narrative
                         </button>
                     </div>
                 }
@@ -326,21 +548,45 @@ export default function GuidanceReportsPage() {
                             Counseling records by month
                         </h2>
                     </div>
-                    <ColumnChart
-                        items={report?.sessionsByMonth || []}
-                        color="#2F80ED"
-                    />
+                    <ColumnChart items={report?.sessionsByMonth || []} color="#2F80ED" />
                 </section>
             </div>
 
             <section className="mt-6 rounded-2xl border border-black/[0.05] bg-white shadow-sm">
-                <div className="border-b border-black/[0.06] px-5 py-4">
-                    <h2 className="text-sm font-semibold text-[#1F1F1F]">
-                        Counselor performance
-                    </h2>
-                    <p className="mt-0.5 text-xs text-gray-400">
-                        Appointments handled and records written in this period
-                    </p>
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/[0.06] px-5 py-4">
+                    <div>
+                        <h2 className="text-sm font-semibold text-[#1F1F1F]">
+                            Counselor performance
+                        </h2>
+                        <p className="mt-0.5 text-xs text-gray-400">
+                            Appointments handled and records written in this period
+                        </p>
+                    </div>
+
+                    <div className="relative w-full sm:w-64">
+                        <Search
+                            size={15}
+                            className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                        />
+                        <input
+                            type="text"
+                            value={counselorQuery}
+                            onChange={(e) => setCounselorQuery(e.target.value)}
+                            placeholder="Search counselor..."
+                            aria-label="Search counselor"
+                            className="w-full rounded-lg border border-black/[0.08] bg-white py-2 pl-9 pr-8 text-sm text-gray-700 outline-none focus:border-[#106A2E]"
+                        />
+                        {counselorQuery && (
+                            <button
+                                type="button"
+                                onClick={() => setCounselorQuery("")}
+                                aria-label="Clear search"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-gray-400 hover:text-gray-600"
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {loading && !report ? (
@@ -349,27 +595,32 @@ export default function GuidanceReportsPage() {
                             <div key={n} className="h-12 animate-pulse rounded-lg bg-gray-100" />
                         ))}
                     </div>
-                ) : !report?.counselors?.length ? (
+                ) : !counselors.length ? (
                     <EmptyState
                         icon={BarChart3}
                         title="No counselors yet."
                         description="Add a counselor account to start tracking activity."
                     />
+                ) : !filteredCounselors.length ? (
+                    <p className="px-5 py-10 text-center text-sm text-gray-400">
+                        No counselor matches &ldquo;{counselorQuery.trim()}&rdquo;.
+                    </p>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="w-full min-w-[560px] border-collapse text-left">
+                        <table className="w-full min-w-[620px] border-collapse text-left">
                             <thead>
                                 <tr className="border-b border-black/[0.06] text-[11px] uppercase tracking-wide text-gray-400">
                                     <th className="px-4 py-3 font-medium">Counselor</th>
                                     <th className="px-4 py-3 font-medium">Appointments</th>
                                     <th className="px-4 py-3 font-medium">Completed</th>
                                     <th className="px-4 py-3 font-medium">Records</th>
+                                    <th className="px-4 py-3 text-right font-medium">Narrative</th>
                                 </tr>
                             </thead>
 
                             <tbody className="divide-y divide-black/[0.04]">
-                                {report.counselors.map((c) => (
-                                    <tr key={c.fullName}>
+                                {filteredCounselors.map((c) => (
+                                    <tr key={c.id ?? c.fullName} className="transition hover:bg-gray-50/60">
                                         <td className="px-4 py-3 text-sm font-medium text-gray-800">
                                             {c.fullName}
                                         </td>
@@ -382,12 +633,13 @@ export default function GuidanceReportsPage() {
                                         <td className="px-4 py-3 text-sm text-gray-600">
                                             {formatNumber(c.sessions)}
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                        <td className="px-4 py-3 text-right">
                                             <button
                                                 type="button"
                                                 onClick={() => generateCounselorNarrative(c)}
-                                                className="rounded-md border border-black/[0.08] bg-white px-2.5 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+                                                className="inline-flex items-center gap-1.5 rounded-md border border-black/[0.08] bg-white px-2.5 py-1 text-xs font-medium text-gray-600 transition hover:border-[#106A2E]/40 hover:bg-[#106A2E]/5 hover:text-[#106A2E]"
                                             >
+                                                <FileText size={13} />
                                                 Generate
                                             </button>
                                         </td>
@@ -395,6 +647,12 @@ export default function GuidanceReportsPage() {
                                 ))}
                             </tbody>
                         </table>
+
+                        {counselorQuery.trim() && (
+                            <p className="border-t border-black/[0.04] px-4 py-2 text-xs text-gray-400">
+                                Showing {filteredCounselors.length} of {counselors.length} counselors
+                            </p>
+                        )}
                     </div>
                 )}
             </section>
@@ -410,10 +668,7 @@ export default function GuidanceReportsPage() {
                             ["Students never signed in", report.accounts.neverSignedInStudents],
                             ["Counselors never signed in", report.accounts.neverSignedInCounselors],
                         ].map(([label, value]) => (
-                            <div
-                                key={label}
-                                className="rounded-xl bg-[#FAFAF7] px-4 py-3"
-                            >
+                            <div key={label} className="rounded-xl bg-[#FAFAF7] px-4 py-3">
                                 <dt className="text-xs text-gray-500">{label}</dt>
                                 <dd className="mt-1 text-lg font-semibold text-gray-800">
                                     {formatNumber(value)}
@@ -423,49 +678,50 @@ export default function GuidanceReportsPage() {
                     </dl>
                 </section>
             )}
-        <section className="mt-6 rounded-2xl border border-black/[0.05] bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-semibold text-[#1F1F1F]">Narrative report</h2>
-            <p className="mt-0.5 text-xs text-gray-400">
-                Generate a narrative summary from the monitoring data, edit it, then download or upload.
-            </p>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-                <button
-                    type="button"
-                    onClick={generateNarrative}
-                    disabled={!report}
-                    className="rounded-lg bg-[#106A2E] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#0a2c19] disabled:opacity-50"
-                >
-                    Generate narrative
-                </button>
-                <button
-                    type="button"
-                    onClick={downloadNarrative}
-                    disabled={!narrative.trim()}
-                    className="rounded-lg border border-black/[0.08] bg-white px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
-                >
-                    Download .txt
-                </button>
-                <label className="cursor-pointer rounded-lg border border-black/[0.08] bg-white px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50">
-                    Upload report
-                    <input type="file" className="hidden" onChange={handleUpload} />
-                </label>
-                {uploadedFile && (
-                    <span className="text-xs text-gray-500">
-                        Uploaded: {uploadedFile.name}
-                    </span>
-                )}
-            </div>
+            {/* Narrative report - compact card; the editor itself lives in the modal */}
+            <section className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-black/[0.05] bg-white p-5 shadow-sm">
+                <div>
+                    <h2 className="text-sm font-semibold text-[#1F1F1F]">Narrative report</h2>
+                    <p className="mt-0.5 text-xs text-gray-400">
+                        Generate a summary from the monitoring data, edit it, then download or
+                        upload a copy.
+                    </p>
+                </div>
 
-            <textarea
+                <div className="flex flex-wrap items-center gap-2">
+                    {narrative.trim() && (
+                        <button
+                            type="button"
+                            onClick={() => setNarrativeOpen(true)}
+                            className="rounded-lg border border-black/[0.08] bg-white px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+                        >
+                            Reopen last draft
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={generateNarrative}
+                        disabled={!report}
+                        className="rounded-lg bg-[#106A2E] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#0a2c19] disabled:opacity-50"
+                    >
+                        Generate overall narrative
+                    </button>
+                </div>
+            </section>
+
+            <NarrativeModal
+                open={narrativeOpen}
+                title={narrativeMeta.title}
+                subtitle={narrativeMeta.subtitle}
                 value={narrative}
-                onChange={(e) => setNarrative(e.target.value)}
-                rows={10}
-                placeholder="Generated narrative will appear here..."
-                className="mt-4 w-full rounded-xl border border-black/[0.08] bg-[#FAFAF7] p-4 text-sm text-gray-700 outline-none focus:border-[#106A2E]"
+                onChange={setNarrative}
+                onClose={() => setNarrativeOpen(false)}
+                onDownload={downloadNarrative}
+                uploadedFile={uploadedFile}
+                onUpload={handleUpload}
+                onRemoveUpload={() => setUploadedFile(null)}
             />
-        </section>
-
         </>
     );
 }
