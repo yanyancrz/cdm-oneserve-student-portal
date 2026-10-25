@@ -90,6 +90,8 @@ export default function ReportsPage() {
             </div>
 
             <div className="space-y-6">
+                <ReportExport params={params} />
+
                 <div className="space-y-3">
                     <ReportFilters
                         from={range.from}
@@ -148,7 +150,6 @@ export default function ReportsPage() {
                             <TopBooksTable books={data.topBooks} />
                         </div>
 
-                        <ReportExport params={params} />
                     </div>
                 )}
             </div>
