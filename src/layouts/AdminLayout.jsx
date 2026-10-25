@@ -1,5 +1,5 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Megaphone, CalendarDays } from "lucide-react";
+import { Megaphone, CalendarDays, BarChart3 } from "lucide-react";
 import Logo from "../assets/images/cdm-white.png";
 import BackgroundImage from "../assets/images/admin-bg.png";
 
@@ -129,6 +129,12 @@ export default function AdminLayout() {
                     <path d="m9 12 2 2 4-4" />
                 </svg>
             ),
+        },
+
+        {
+            label: "Reports",
+            path: "/admin/reports",
+            icon: <BarChart3 size={18} />,
         },
 
         {

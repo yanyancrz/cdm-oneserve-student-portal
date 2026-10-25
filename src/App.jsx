@@ -57,6 +57,7 @@ import AdminProfile from "./pages/Admin/AdminProfile";
 import Announcements from "./pages/Admin/Announcements";
 import Events from "./pages/Admin/Events";
 import SchoolRecords from "./pages/Admin/SchoolRecords";
+import Reports from "./pages/Admin/Reports";
 
 
 // ==========================================
@@ -235,6 +236,7 @@ function App() {
                     <Route path="/admin/users" element={<Users />} />
                     <Route path="/admin/service-heads" element={<ServiceHeads />} />
                     <Route path="/admin/school-records" element={<SchoolRecords />} />
+<Route path="/admin/reports" element={<Reports />} />
                     <Route path="/admin/profile" element={<AdminProfile />} />
                     <Route path="/admin/announcements" element={<Announcements />} />
 <Route path="/admin/events" element={<Events />} />
