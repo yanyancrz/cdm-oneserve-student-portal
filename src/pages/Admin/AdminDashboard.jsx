@@ -47,32 +47,57 @@ export default function AdminDashboard() {
                     localStorage.getItem("token") ||
                     localStorage.getItem("authToken");
 
-                const response = await fetch(
-                    `${API_URL}/api/admin/dashboard`,
-                    {
+                const [dashboardResponse, usersResponse] = await Promise.all([
+                    fetch(`${API_URL}/api/admin/dashboard`, {
                         headers: token
                             ? { Authorization: `Bearer ${token}` }
                             : {},
-                    }
-                );
+                    }),
+                    fetch(`${API_URL}/api/auth/users`, {
+                        headers: token
+                            ? { Authorization: `Bearer ${token}` }
+                            : {},
+                    }),
+                ]);
 
-                if (response.status === 401) {
+                if (dashboardResponse.status === 401) {
                     throw new Error(
                         "Session expired. Please log in again."
                     );
                 }
 
-                if (response.status === 403) {
+                if (dashboardResponse.status === 403) {
                     throw new Error(
                         "Your account doesn't have permission to view the dashboard."
                     );
                 }
 
-                if (!response.ok) {
+                if (!dashboardResponse.ok) {
                     throw new Error("Failed to load admin dashboard.");
                 }
 
-                const data = await response.json();
+                const data = await dashboardResponse.json();
+
+                // Only show modules that have an active service head
+                // (or admin/super admin) in the database.
+                let activeHeadModules = new Set();
+                if (usersResponse.ok) {
+                    const users = await usersResponse.json();
+                    (Array.isArray(users) ? users : []).forEach((u) => {
+                        if (u?.accountStatus === "Active" || u?.status === "Active") {
+                            if (u?.adminModule) activeHeadModules.add(u.adminModule);
+                            if (u?.role === "SuperAdmin" || u?.role === "Admin") {
+                                // System-level accounts keep the portal considered active.
+                            }
+                        }
+                    });
+                }
+
+                if (Array.isArray(data.modules)) {
+                    data.modules = data.modules.filter((m) =>
+                        activeHeadModules.has(m?.name)
+                    );
+                }
 
                 setDashboard({
                     totalUsers: data.totalUsers ?? 0,
