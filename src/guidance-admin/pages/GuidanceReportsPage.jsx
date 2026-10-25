@@ -105,6 +105,8 @@ export default function GuidanceReportsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [reloadKey, setReloadKey] = useState(0);
+    const [narrative, setNarrative] = useState("");
+    const [uploadedFile, setUploadedFile] = useState(null);
 
     useEffect(() => {
         const controller = new AbortController();
@@ -138,6 +140,54 @@ export default function GuidanceReportsPage() {
     const neverSignedIn = report?.accounts
         ? report.accounts.neverSignedInStudents + report.accounts.neverSignedInCounselors
         : 0;
+
+    const generateNarrative = () => {
+        if (!report) return;
+        const lines = [];
+        lines.push("NARRATIVE REPORT - GUIDANCE COUNSELING MONITORING");
+        lines.push(`Period: ${formatDate(report.from)} to ${formatDate(report.to)}`);
+        lines.push("");
+        lines.push(`Total appointments: ${appointmentsTotal}`);
+        lines.push(`Completed sessions: ${completed}`);
+        lines.push(`Counseling records written: ${sessionsTotal}`);
+        lines.push(`Never signed in: ${neverSignedIn}`);
+        lines.push("");
+        lines.push("Appointments by status:");
+        (report.appointmentsByStatus || []).forEach((i) => lines.push(`- ${i.label}: ${i.count}`));
+        lines.push("");
+        lines.push("Top concerns:");
+        (report.appointmentsByConcern || []).forEach((i) => lines.push(`- ${i.label}: ${i.count}`));
+        lines.push("");
+        lines.push("Counselor performance:");
+        (report.counselors || []).forEach((c) =>
+            lines.push(`- ${c.fullName}: ${c.appointments} appointments, ${c.completed} completed, ${c.sessions} records`)
+        );
+        lines.push("");
+        lines.push("Account activity:");
+        if (report.accounts) {
+            lines.push(`- Signed in (last 7 days): ${report.accounts.signedInLast7Days}`);
+            lines.push(`- Signed in (last 30 days): ${report.accounts.signedInLast30Days}`);
+            lines.push(`- Students never signed in: ${report.accounts.neverSignedInStudents}`);
+            lines.push(`- Counselors never signed in: ${report.accounts.neverSignedInCounselors}`);
+        }
+        setNarrative(lines.join("\n"));
+    };
+
+    const downloadNarrative = () => {
+        if (!narrative.trim()) return;
+        const blob = new Blob([narrative], { type: "text/plain;charset=utf-8;" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "guidance-narrative-report.txt";
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const handleUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (file) setUploadedFile(file);
+    };
 
     return (
         <>
@@ -352,6 +402,49 @@ export default function GuidanceReportsPage() {
                     </dl>
                 </section>
             )}
+        <section className="mt-6 rounded-2xl border border-black/[0.05] bg-white p-5 shadow-sm">
+            <h2 className="text-sm font-semibold text-[#1F1F1F]">Narrative report</h2>
+            <p className="mt-0.5 text-xs text-gray-400">
+                Generate a narrative summary from the monitoring data, edit it, then download or upload.
+            </p>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+                <button
+                    type="button"
+                    onClick={generateNarrative}
+                    disabled={!report}
+                    className="rounded-lg bg-[#106A2E] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#0a2c19] disabled:opacity-50"
+                >
+                    Generate narrative
+                </button>
+                <button
+                    type="button"
+                    onClick={downloadNarrative}
+                    disabled={!narrative.trim()}
+                    className="rounded-lg border border-black/[0.08] bg-white px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+                >
+                    Download .txt
+                </button>
+                <label className="cursor-pointer rounded-lg border border-black/[0.08] bg-white px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50">
+                    Upload report
+                    <input type="file" className="hidden" onChange={handleUpload} />
+                </label>
+                {uploadedFile && (
+                    <span className="text-xs text-gray-500">
+                        Uploaded: {uploadedFile.name}
+                    </span>
+                )}
+            </div>
+
+            <textarea
+                value={narrative}
+                onChange={(e) => setNarrative(e.target.value)}
+                rows={10}
+                placeholder="Generated narrative will appear here..."
+                className="mt-4 w-full rounded-xl border border-black/[0.08] bg-[#FAFAF7] p-4 text-sm text-gray-700 outline-none focus:border-[#106A2E]"
+            />
+        </section>
+
         </>
     );
 }
