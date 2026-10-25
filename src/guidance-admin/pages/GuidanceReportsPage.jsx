@@ -55,6 +55,9 @@ const EXT_BADGE = {
     ".txt": "bg-gray-100 text-gray-600",
 };
 
+const INVALID_NAME_CHARS = /[\\/:*?"<>|]/;
+const MAX_NAME_LENGTH = 100;
+
 const getExt = (name = "") => {
     const i = name.lastIndexOf(".");
     return i >= 0 ? name.slice(i).toLowerCase() : "";
@@ -358,6 +361,182 @@ function NarrativeModal({
     );
 }
 
+// Rename dialog for repository files. Mount it with key={file.id} so its
+// state resets for every file. The file extension is locked.
+function RenameModal({ target, existingNames, saving, onClose, onSubmit }) {
+    const ext = getExt(target.name);
+    const originalBase = target.name.slice(0, target.name.length - ext.length);
+
+    const [value, setValue] = useState(originalBase);
+    const [error, setError] = useState("");
+    const inputRef = useRef(null);
+
+    useEffect(() => {
+        inputRef.current?.focus();
+        inputRef.current?.select();
+    }, []);
+
+    // Close on Escape + lock background scroll.
+    useEffect(() => {
+        const onKey = (e) => {
+            if (e.key === "Escape" && !saving) onClose();
+        };
+        const previousOverflow = document.body.style.overflow;
+
+        document.addEventListener("keydown", onKey);
+        document.body.style.overflow = "hidden";
+
+        return () => {
+            document.removeEventListener("keydown", onKey);
+            document.body.style.overflow = previousOverflow;
+        };
+    }, [onClose, saving]);
+
+    const trimmed = value.trim();
+    const unchanged = trimmed === originalBase;
+
+    const validate = (name) => {
+        if (!name) return "File name can't be empty.";
+        if (name.length > MAX_NAME_LENGTH)
+            return `Name is too long (max ${MAX_NAME_LENGTH} characters).`;
+        if (INVALID_NAME_CHARS.test(name))
+            return 'Name can\'t contain any of these: \\ / : * ? " < > |';
+        if (existingNames.has(`${name}${ext}`.toLowerCase()))
+            return "A file with this name already exists.";
+        return "";
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (saving) return;
+
+        if (unchanged) {
+            onClose();
+            return;
+        }
+
+        const message = validate(trimmed);
+        if (message) {
+            setError(message);
+            inputRef.current?.focus();
+            return;
+        }
+
+        onSubmit(`${trimmed}${ext}`);
+    };
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-6"
+            onMouseDown={(e) => {
+                if (e.target === e.currentTarget && !saving) onClose();
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Rename report"
+        >
+            <form
+                onSubmit={handleSubmit}
+                className="w-full overflow-hidden rounded-t-2xl bg-white shadow-xl sm:max-w-md sm:rounded-2xl"
+            >
+                <div className="flex items-start justify-between gap-4 border-b border-black/[0.06] px-5 py-4">
+                    <div className="flex items-start gap-3">
+                        <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-[#106A2E]/10 text-[#106A2E]">
+                            <Pencil size={17} />
+                        </span>
+                        <div>
+                            <h2 className="text-base font-semibold text-[#1F1F1F]">
+                                Rename report
+                            </h2>
+                            <p
+                                className="mt-0.5 max-w-[230px] truncate text-xs text-gray-400"
+                                title={target.name}
+                            >
+                                {target.name}
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={saving}
+                        aria-label="Close"
+                        className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
+
+                <div className="px-5 py-4">
+                    <label
+                        htmlFor="rename-report-input"
+                        className="text-xs font-medium text-gray-600"
+                    >
+                        File name
+                    </label>
+
+                    <div
+                        className={`mt-1.5 flex items-center overflow-hidden rounded-lg border bg-white transition focus-within:border-[#106A2E] ${
+                            error ? "border-red-300" : "border-black/[0.1]"
+                        }`}
+                    >
+                        <input
+                            id="rename-report-input"
+                            ref={inputRef}
+                            type="text"
+                            value={value}
+                            onChange={(e) => {
+                                setValue(e.target.value);
+                                if (error) setError("");
+                            }}
+                            disabled={saving}
+                            maxLength={MAX_NAME_LENGTH + 20}
+                            autoComplete="off"
+                            className="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm text-gray-800 outline-none"
+                        />
+                        {ext && (
+                            <span className="border-l border-black/[0.08] bg-gray-50 px-3 py-2.5 text-sm text-gray-500">
+                                {ext}
+                            </span>
+                        )}
+                    </div>
+
+                    {error ? (
+                        <p className="mt-2 text-xs text-red-600">{error}</p>
+                    ) : (
+                        <p className="mt-2 text-xs text-gray-400">
+                            {ext
+                                ? `The file type (${ext}) stays the same.`
+                                : "Enter a new name for this file."}
+                        </p>
+                    )}
+                </div>
+
+                <div className="flex items-center justify-end gap-2 border-t border-black/[0.06] bg-white px-5 py-3">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        disabled={saving}
+                        className="rounded-lg px-3.5 py-2 text-sm font-medium text-gray-500 transition hover:bg-gray-50"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="submit"
+                        disabled={saving || !trimmed || unchanged}
+                        className="inline-flex items-center gap-1.5 rounded-lg bg-[#106A2E] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#0a2c19] disabled:opacity-50"
+                    >
+                        {saving && <Loader2 size={15} className="animate-spin" />}
+                        {saving ? "Renaming..." : "Rename"}
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
+}
+
 export default function GuidanceReportsPage() {
     const [days, setDays] = useState(30);
     const [report, setReport] = useState(null);
@@ -386,6 +565,8 @@ export default function GuidanceReportsPage() {
     const [dragging, setDragging] = useState(false);
     const [confirmDeleteId, setConfirmDeleteId] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
+    const [renameTarget, setRenameTarget] = useState(null); // { id, name }
+    const [renaming, setRenaming] = useState(false);
     const [toast, setToast] = useState(null); // { type: "success" | "error", text }
     const fileInputRef = useRef(null);
 
@@ -463,6 +644,17 @@ export default function GuidanceReportsPage() {
             .filter((f) => !q || (f.name || "").toLowerCase().includes(q))
             .sort((a, b) => new Date(b.uploadedAt || 0) - new Date(a.uploadedAt || 0));
     }, [repoFiles, repoQuery]);
+
+    // Names of the *other* files, used to block duplicate names when renaming.
+    const otherFileNames = useMemo(
+        () =>
+            new Set(
+                repoFiles
+                    .filter((f) => f.id !== renameTarget?.id)
+                    .map((f) => (f.name || "").toLowerCase())
+            ),
+        [repoFiles, renameTarget]
+    );
 
     const periodLabel = report
         ? `${formatDate(report.from)} to ${formatDate(report.to)}`
@@ -653,15 +845,20 @@ export default function GuidanceReportsPage() {
         }
     };
 
-    const renameRepoFile = async (id, currentName) => {
-        const newName = window.prompt("New file name:", currentName);
-        if (!newName || newName === currentName) return;
+    const submitRename = async (newName) => {
+        if (!renameTarget || renaming) return;
+        setRenaming(true);
+
         try {
-            await guidanceHeadService.renameNarrativeReport(id, newName);
+            await guidanceHeadService.renameNarrativeReport(renameTarget.id, newName);
+            setRenameTarget(null);
             setRepoReloadKey((n) => n + 1);
             setToast({ type: "success", text: "Report renamed." });
         } catch (err) {
+            // Keep the dialog open so the name can be corrected.
             setToast({ type: "error", text: err?.message || "Rename failed." });
+        } finally {
+            setRenaming(false);
         }
     };
 
@@ -695,16 +892,6 @@ export default function GuidanceReportsPage() {
                         >
                             Refresh
                         </button>
-
-                        <button
-                            type="button"
-                            onClick={() => setNarrativeOpen(true)}
-                            disabled={!narrative.trim()}
-                            className="inline-flex items-center gap-1.5 rounded-lg border border-black/[0.08] bg-white px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
-                        >
-                            <FileText size={15} />
-                            Open draft
-                        </button>
                     </div>
                 }
             />
@@ -720,6 +907,42 @@ export default function GuidanceReportsPage() {
                     {formatDate(report.from)} – {formatDate(report.to)}
                 </p>
             )}
+
+            {/* Generate all narrative report - sits above the stat cards */}
+            <section className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-black/[0.05] bg-white p-5 shadow-sm">
+                <div className="flex items-start gap-3">
+                    <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#106A2E]/10 text-[#106A2E]">
+                        <FileText size={18} />
+                    </span>
+                    <div>
+                        <h2 className="text-sm font-semibold text-[#1F1F1F]">Narrative report</h2>
+                        <p className="mt-0.5 text-xs text-gray-400">
+                            Generate a summary of everything below, edit it, then download it or
+                            save it to the repository.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                    {narrative.trim() && (
+                        <button
+                            type="button"
+                            onClick={() => setNarrativeOpen(true)}
+                            className="rounded-lg border border-black/[0.08] bg-white px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
+                        >
+                            Reopen last draft
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        onClick={generateNarrative}
+                        disabled={!report}
+                        className="rounded-lg bg-[#106A2E] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#0a2c19] disabled:opacity-50"
+                    >
+                        Generate all narrative report
+                    </button>
+                </div>
+            </section>
 
             <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <KpiCard
@@ -1056,7 +1279,9 @@ export default function GuidanceReportsPage() {
                                             </a>
                                             <button
                                                 type="button"
-                                                onClick={() => renameRepoFile(f.id, f.name)}
+                                                onClick={() =>
+                                                    setRenameTarget({ id: f.id, name: f.name })
+                                                }
                                                 title="Rename"
                                                 aria-label={`Rename ${f.name}`}
                                                 className="rounded-md p-2 text-gray-400 transition hover:bg-gray-100 hover:text-gray-700"
@@ -1080,38 +1305,6 @@ export default function GuidanceReportsPage() {
                     </ul>
                 )}
             </section>
-
-            {/* Narrative report - compact card; the editor itself lives in the modal */}
-            <section className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-black/[0.05] bg-white p-5 shadow-sm">
-                <div>
-                    <h2 className="text-sm font-semibold text-[#1F1F1F]">Narrative report</h2>
-                    <p className="mt-0.5 text-xs text-gray-400">
-                        Generate a summary from the monitoring data, edit it, then download it or
-                        save it to the repository below.
-                    </p>
-                </div>
-
-                <div className="flex flex-wrap items-center gap-2">
-                    {narrative.trim() && (
-                        <button
-                            type="button"
-                            onClick={() => setNarrativeOpen(true)}
-                            className="rounded-lg border border-black/[0.08] bg-white px-3.5 py-2 text-sm font-medium text-gray-600 transition hover:bg-gray-50"
-                        >
-                            Reopen last draft
-                        </button>
-                    )}
-                    <button
-                        type="button"
-                        onClick={generateNarrative}
-                        disabled={!report}
-                        className="rounded-lg bg-[#106A2E] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#0a2c19] disabled:opacity-50"
-                    >
-                        Generate overall narrative
-                    </button>
-                </div>
-            </section>
-
 
             <div className="mt-6 grid gap-4 lg:grid-cols-2">
                 <section className="rounded-2xl border border-black/[0.05] bg-white shadow-sm">
@@ -1196,6 +1389,17 @@ export default function GuidanceReportsPage() {
                 saving={savingNarrative}
                 downloading={downloadingNarrative}
             />
+
+            {renameTarget && (
+                <RenameModal
+                    key={renameTarget.id}
+                    target={renameTarget}
+                    existingNames={otherFileNames}
+                    saving={renaming}
+                    onClose={() => setRenameTarget(null)}
+                    onSubmit={submitRename}
+                />
+            )}
 
             {/* Toast */}
             {toast && (
