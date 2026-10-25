@@ -5,10 +5,12 @@ const FORMULA_START = /^[=+\-@\t\r]/;
 function escapeCell(value) {
     let text = value == null ? "" : String(value);
 
-    // Excel auto-formats ISO dates and shows "#####" when the column is too
-    // narrow. A leading apostrophe forces Excel to treat the value as text so
-    // the full date stays visible.
-    if (/^\d{4}-\d{2}-\d{2}(T|\s|$)/.test(text)) text = `'${text}`;
+    // Excel auto-formats date-like values and shows "#####" when the column is
+    // too narrow. A leading apostrophe forces Excel to treat the value as text
+    // so the full value stays visible.
+    if (/^\d{4}-\d{2}-\d{2}/.test(text) || /^\d{1,2}[\/-]\d{1,2}[\/-]\d{2,4}/.test(text)) {
+        text = `'${text}`;
+    }
 
     if (FORMULA_START.test(text)) text = `'${text}`;
 
