@@ -382,6 +382,15 @@ export default function GuidanceReportsPage() {
                                         <td className="px-4 py-3 text-sm text-gray-600">
                                             {formatNumber(c.sessions)}
                                         </td>
+                                        <td className="px-4 py-3 text-sm text-gray-600">
+                                            <button
+                                                type="button"
+                                                onClick={() => generateCounselorNarrative(c)}
+                                                className="rounded-md border border-black/[0.08] bg-white px-2.5 py-1 text-xs font-medium text-gray-600 transition hover:bg-gray-50"
+                                            >
+                                                Generate
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
