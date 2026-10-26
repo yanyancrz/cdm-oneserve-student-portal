@@ -2082,15 +2082,20 @@ export default function Events() {
                             </div>
 
                             {/* Imported calendar files — delete a whole import */}
-                            {importedFiles.length > 0 && (
-                                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                                    <div className="flex items-center justify-between">
-                                        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
-                                            Imported calendar files
-                                        </p>
-                                        <FileSpreadsheet size={14} className="text-slate-400" />
-                                    </div>
+                            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                <div className="flex items-center justify-between">
+                                    <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                                        Imported calendar files
+                                    </p>
+                                    <FileSpreadsheet size={14} className="text-slate-400" />
+                                </div>
 
+                                {importedFiles.length === 0 ? (
+                                    <p className="mt-3 text-xs leading-relaxed text-slate-400">
+                                        No imported files tracked yet. Files you import from now on will
+                                        appear here, and you can delete all of their events at once.
+                                    </p>
+                                ) : (
                                     <ul className="mt-3 space-y-2">
                                         {importedFiles.map((batch) => {
                                             const remaining = (batch.eventIds || []).filter((id) =>
@@ -2131,8 +2136,8 @@ export default function Events() {
                                             );
                                         })}
                                     </ul>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
                 )}
