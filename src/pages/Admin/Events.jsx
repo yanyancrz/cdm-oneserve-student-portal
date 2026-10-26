@@ -188,23 +188,48 @@ function RegistrarEmailModal({ onClose }) {
     const [subject, setSubject] = useState(initial.subject);
     const [body, setBody] = useState(initial.body);
     const [copied, setCopied] = useState(false);
+    const [sendFailed, setSendFailed] = useState(false);
 
     const draft = { to: initial.to, subject, body };
+    const gmailHref = buildGmailCompose(draft);
 
-    const copyDraft = async () => {
+    const copyDraft = async ({ silent = false } = {}) => {
         const text = `To: ${draft.to}\nSubject: ${subject}\n\n${body}`;
         try {
             await navigator.clipboard.writeText(text);
             setCopied(true);
-            toast.success("Email copied to clipboard.");
+            if (!silent) toast.success("Email copied to clipboard.");
             setTimeout(() => setCopied(false), 2000);
+            return true;
         } catch {
-            toast.error("Could not copy automatically — select the text and copy it.");
+            if (!silent) toast.error("Could not copy automatically — select the text and copy it.");
+            return false;
         }
     };
 
-    const sendEmail = () => {
-        window.open(buildGmailCompose(draft), "_blank", "noopener,noreferrer");
+    // Fallback: if the browser blocks the Gmail tab, the draft is copied to the
+    // clipboard so the admin can paste it into any mail client instead.
+    const sendEmail = async () => {
+        // No "noopener" feature here: Chrome returns null for it even on success,
+        // which would trigger the fallback on every click. Clearing `opener` after
+        // opening gives the same isolation while keeping the popup detection.
+        const win = window.open(gmailHref, "_blank");
+        if (win) {
+            try {
+                win.opener = null;
+            } catch {
+                /* cross-origin: nothing to clear */
+            }
+            setSendFailed(false);
+            return;
+        }
+        setSendFailed(true);
+        const done = await copyDraft({ silent: true });
+        toast.error(
+            done
+                ? "Gmail was blocked — the draft is copied, paste it into your email."
+                : "Gmail was blocked — copy the draft and paste it into your email."
+        );
     };
 
     return (
@@ -252,7 +277,7 @@ function RegistrarEmailModal({ onClose }) {
                             />
                             <button
                                 type="button"
-                                onClick={copyDraft}
+                                onClick={() => copyDraft()}
                                 title="Copy the whole draft"
                                 className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
                             >
@@ -282,11 +307,29 @@ function RegistrarEmailModal({ onClose }) {
                         />
                     </div>
 
-                    <p className="rounded-xl bg-slate-50 px-3 py-2 text-[11px] leading-relaxed text-slate-500">
-                        <span className="font-semibold">Send an Email</span> opens Gmail compose in a new
-                        tab. If it doesn't open, use <span className="font-semibold">Copy</span> and paste
-                        the draft into your email.
-                    </p>
+                    {sendFailed ? (
+                        <div className="rounded-xl bg-amber-50 px-3 py-2.5 text-[11px] leading-relaxed text-amber-700">
+                            <p className="font-semibold">Gmail was blocked by the browser.</p>
+                            <p className="mt-0.5">
+                                The draft is already copied. You can also open{" "}
+                                <a
+                                    href={gmailHref}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-semibold underline"
+                                >
+                                    Gmail compose
+                                </a>{" "}
+                                directly, or paste the draft into any email app.
+                            </p>
+                        </div>
+                    ) : (
+                        <p className="rounded-xl bg-slate-50 px-3 py-2 text-[11px] leading-relaxed text-slate-500">
+                            <span className="font-semibold">Send an Email</span> opens Gmail compose in a
+                            new tab. If it can't open, the draft is copied automatically — just paste it
+                            into your email.
+                        </p>
+                    )}
                 </div>
 
                 <div className="flex flex-col gap-2 border-t border-slate-100 px-5 py-4 sm:flex-row">
@@ -296,6 +339,14 @@ function RegistrarEmailModal({ onClose }) {
                         className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] px-3 py-2.5 text-xs font-semibold text-white shadow-md shadow-emerald-900/20 hover:opacity-90"
                     >
                         <Mail size={14} /> Send an Email
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => copyDraft()}
+                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                        {copied ? <Check size={14} /> : <Copy size={14} />}
+                        {copied ? "Copied" : "Copy draft"}
                     </button>
                 </div>
             </div>
