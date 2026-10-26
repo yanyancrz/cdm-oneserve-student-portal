@@ -138,6 +138,10 @@ const REGISTRAR_EMAIL = "info@pnm.edu.ph";
 // school year starts in June.
 const AY_START_MONTH = 7;
 
+// Only campus-wide entries make up the public School Calendar; the other tags
+// belong to module-specific calendars (library, guidance, clinic, lost & found).
+const SCHOOL_CALENDAR_TAG = "CAMPUS";
+
 // Academic year containing `ref` (default: the whole current school year).
 const getAcademicYearRange = (ref = new Date()) => {
     const startYear = ref.getMonth() >= AY_START_MONTH ? ref.getFullYear() : ref.getFullYear() - 1;
@@ -148,7 +152,9 @@ const getAcademicYearRange = (ref = new Date()) => {
     };
 };
 
-// Builds the subject/body of the registrar inquiry.
+// Builds the subject/body of the registrar inquiry about the public School
+// Calendar. Only active campus-wide events are included — the same entries the
+// public calendar shows — never module-only ones.
 // scope: "year"     -> every event in the academic year (default)
 //        "upcoming" -> only events from today to the end of the academic year
 const buildRegistrarMessage = (allEvents, scope = "year", ref = new Date()) => {
@@ -160,6 +166,7 @@ const buildRegistrarMessage = (allEvents, scope = "year", ref = new Date()) => {
     const entries = [];
     (allEvents || [])
         .filter((ev) => ev.isActive !== false)
+        .filter((ev) => String(ev.tag || SCHOOL_CALENDAR_TAG).toUpperCase() === SCHOOL_CALENDAR_TAG)
         .forEach((ev) => {
             const dates = getEventDates(ev).filter((k) => k >= ay.startKey && k <= ay.endKey);
             if (!dates.length) return;
@@ -193,13 +200,13 @@ const buildRegistrarMessage = (allEvents, scope = "year", ref = new Date()) => {
     const intro =
         scope === "upcoming"
             ? [
-                  "I would like to inquire about the upcoming events in the School Calendar of Events ",
-                  `for ${ay.label}, which is now available to the public:`,
+                  "I would like to inquire about the upcoming events in the publicly available ",
+                  `School Calendar of Events for ${ay.label}:`,
               ].join("")
             : [
-                  `I would like to inquire about the School Calendar of Events for ${ay.label}, `,
-                  "which is now available to the public. For reference, here is the complete list ",
-                  "of events on record for the whole academic year:",
+                  `I would like to inquire about the publicly available School Calendar of Events `,
+                  `for ${ay.label}. For reference, here is the complete list of events on record `,
+                  "for the whole academic year:",
               ].join("");
 
     const body = [
@@ -207,7 +214,9 @@ const buildRegistrarMessage = (allEvents, scope = "year", ref = new Date()) => {
         "",
         intro,
         "",
-        ...(eventLines.length ? eventLines : ["- (No events on record for this academic year yet)"]),
+        ...(eventLines.length
+            ? eventLines
+            : ["- (No publicly available events on record for this academic year yet)"]),
         "",
         "May I request additional details or confirmation regarding the above?",
         "",
@@ -326,7 +335,7 @@ function RegistrarEmailModal({ events, onClose }) {
                             ))}
                         </div>
                         <p className="mt-1.5 text-[11px] text-slate-400">
-                            Default: lahat ng event sa buong academic year.
+                            Default: buong public School Calendar (campus events) para sa academic year.
                         </p>
                     </div>
 
