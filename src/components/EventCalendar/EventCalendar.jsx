@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { API_URL } from "../../config/api";
-import { CalendarDays, ChevronLeft, ChevronRight, Clock, MapPin, X, RotateCw } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock, MapPin, X, RotateCw, Ban } from "lucide-react";
 
 /* ---------- date helpers (local time, no timezone shifting) ---------- */
 const pad = (n) => String(n).padStart(2, "0");
@@ -11,6 +11,7 @@ const keyToDate = (k) => {
     return new Date(y, m - 1, d);
 };
 const dateToKey = (dt) => toKey(dt.getFullYear(), dt.getMonth(), dt.getDate());
+const dayDiff = (a, b) => Math.round((keyToDate(b) - keyToDate(a)) / 86400000);
 
 const expandRange = (start, end) => {
     const out = [];
@@ -33,6 +34,31 @@ const getEventDates = (ev) => {
     return [...new Set(dates)].sort();
 };
 
+// ["08-17","08-18","08-19","08-25"] -> [["08-17","08-19"],["08-25","08-25"]]
+const toRuns = (dates) => {
+    const runs = [];
+    dates.forEach((k) => {
+        const last = runs[runs.length - 1];
+        if (last && dayDiff(last[1], k) === 1) last[1] = k;
+        else runs.push([k, k]);
+    });
+    return runs;
+};
+
+const formatRun = ([a, b], todayYear) => {
+    const da = keyToDate(a);
+    const db = keyToDate(b);
+    const mon = (d) => d.toLocaleDateString("en-US", { month: "short" });
+    const yearSuffix = db.getFullYear() !== todayYear ? `, ${db.getFullYear()}` : "";
+    if (a === b) return `${mon(da)} ${da.getDate()}${yearSuffix}`;
+    if (da.getMonth() === db.getMonth() && da.getFullYear() === db.getFullYear()) {
+        return `${mon(da)} ${da.getDate()} – ${db.getDate()}${yearSuffix}`;
+    }
+    return `${mon(da)} ${da.getDate()} – ${mon(db)} ${db.getDate()}${yearSuffix}`;
+};
+
+const formatDates = (dates, todayYear) => toRuns(dates).map((r) => formatRun(r, todayYear)).join(", ");
+
 const formatTime = (t) => {
     if (!t) return "";
     const [h, m] = String(t).slice(0, 5).split(":").map(Number);
@@ -46,6 +72,19 @@ const timeRange = (ev) => {
     return ev.endTime ? `${s} – ${formatTime(ev.endTime)}` : s;
 };
 
+// Events that mean "walang pasok" (holidays, breaks, suspensions). Based on the title/description text.
+const NO_CLASS_RE = /\b(no classes|holiday|break|suspen|walang pasok)/i;
+const isNoClass = (ev) => NO_CLASS_RE.test(`${ev.title || ""} ${ev.description || ""}`);
+
+const TAG_LABELS = {
+    CAMPUS: "Campus",
+    LIBRARY: "Library",
+    GUIDANCE: "Guidance",
+    LOSTFOUND: "Lost & Found",
+    CLINIC: "Clinic",
+};
+const tagLabel = (t) => TAG_LABELS[String(t || "").toUpperCase()] || (t ? String(t) : "Campus");
+
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 export default function EventCalendar() {
@@ -58,6 +97,7 @@ export default function EventCalendar() {
     });
     const [selectedKey, setSelectedKey] = useState(null); // clicked day
     const [activeEventId, setActiveEventId] = useState(null); // clicked event -> highlights its dates
+    const [tagFilter, setTagFilter] = useState("ALL");
 
     const loadEvents = useCallback(async () => {
         try {
@@ -84,11 +124,27 @@ export default function EventCalendar() {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const startDayOfWeek = new Date(year, month, 1).getDay();
     const monthPrefix = `${year}-${pad(month + 1)}-`;
-    const todayKey = dateToKey(new Date());
+    const today = new Date();
+    const todayKey = dateToKey(today);
+    const todayYear = today.getFullYear();
+
+    // categories that actually exist in the data -> filter chips
+    const tags = useMemo(() => {
+        const set = new Set();
+        events.forEach((ev) => set.add(String(ev.tag || "CAMPUS").toUpperCase()));
+        return [...set].sort();
+    }, [events]);
+
+    // if the chosen category disappears after a reload, fall back to All
+    const activeFilter = tagFilter === "ALL" || tags.includes(tagFilter) ? tagFilter : "ALL";
 
     const withDates = useMemo(
-        () => events.map((ev) => ({ ev, dates: getEventDates(ev) })).filter((x) => x.dates.length > 0),
-        [events]
+        () =>
+            events
+                .filter((ev) => activeFilter === "ALL" || String(ev.tag || "CAMPUS").toUpperCase() === activeFilter)
+                .map((ev) => ({ ev, dates: getEventDates(ev) }))
+                .filter((x) => x.dates.length > 0),
+        [events, activeFilter]
     );
 
     // "YYYY-MM-DD" -> events happening that day (only for the visible month)
@@ -102,15 +158,24 @@ export default function EventCalendar() {
         return map;
     }, [withDates, monthPrefix]);
 
-    // events in the visible month, each with only its dates in this month
+    // events in the visible month: `monthDates` = days inside this month, `dates` = the full schedule
     const monthEvents = useMemo(
         () =>
             withDates
-                .map(({ ev, dates }) => ({ ev, dates: dates.filter((k) => k.startsWith(monthPrefix)) }))
-                .filter((x) => x.dates.length > 0)
-                .sort((a, b) => a.dates[0].localeCompare(b.dates[0])),
+                .map(({ ev, dates }) => ({ ev, dates, monthDates: dates.filter((k) => k.startsWith(monthPrefix)) }))
+                .filter((x) => x.monthDates.length > 0)
+                .sort((a, b) => a.monthDates[0].localeCompare(b.monthDates[0]) || a.ev.title.localeCompare(b.ev.title)),
         [withDates, monthPrefix]
     );
+
+    // next event that starts on/after today (used when the viewed month is empty)
+    const nextEvent = useMemo(() => {
+        const upcoming = withDates
+            .map(({ ev, dates }) => ({ ev, dates, next: dates.find((k) => k >= todayKey) }))
+            .filter((x) => x.next)
+            .sort((a, b) => a.next.localeCompare(b.next));
+        return upcoming[0] || null;
+    }, [withDates, todayKey]);
 
     const activeDates = useMemo(() => {
         if (!activeEventId) return new Set();
@@ -125,9 +190,15 @@ export default function EventCalendar() {
     };
 
     const goToday = () => {
-        const n = new Date();
-        setCurrentMonth(new Date(n.getFullYear(), n.getMonth(), 1));
+        setCurrentMonth(new Date(todayYear, today.getMonth(), 1));
         setSelectedKey(todayKey);
+        setActiveEventId(null);
+    };
+
+    const goToKey = (key) => {
+        const d = keyToDate(key);
+        setCurrentMonth(new Date(d.getFullYear(), d.getMonth(), 1));
+        setSelectedKey(null);
         setActiveEventId(null);
     };
 
@@ -156,11 +227,6 @@ export default function EventCalendar() {
     const listTitle = selectedKey
         ? keyToDate(selectedKey).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })
         : `Events in ${currentMonth.toLocaleDateString("en-US", { month: "long" })}`;
-
-    const compactDays = (dates) => {
-        const mon = currentMonth.toLocaleDateString("en-US", { month: "short" });
-        return `${mon} ${dates.map((k) => Number(k.slice(8, 10))).join(", ")}`;
-    };
 
     if (loading) {
         return (
@@ -213,6 +279,33 @@ export default function EventCalendar() {
                 </div>
             </div>
 
+            {/* Category filter (only when there is more than one category) */}
+            {tags.length > 1 && (
+                <div className="-mx-1 mb-3 flex gap-1.5 overflow-x-auto px-1 pb-1" role="group" aria-label="Filter by category">
+                    {["ALL", ...tags].map((t) => {
+                        const on = activeFilter === t;
+                        return (
+                            <button
+                                key={t}
+                                onClick={() => {
+                                    setTagFilter(t);
+                                    setActiveEventId(null);
+                                }}
+                                aria-pressed={on}
+                                className={[
+                                    "shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#106A2E]",
+                                    on
+                                        ? "border-[#106A2E] bg-[#106A2E] text-white"
+                                        : "border-slate-200 text-slate-600 hover:bg-slate-50",
+                                ].join(" ")}
+                            >
+                                {t === "ALL" ? "All" : tagLabel(t)}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+
             {/* Weekdays */}
             <div className="mb-1 grid grid-cols-7">
                 {WEEKDAYS.map((d) => (
@@ -223,18 +316,19 @@ export default function EventCalendar() {
             </div>
 
             {/* Days */}
-            <div className="mb-4 grid grid-cols-7 gap-1">
+            <div className="mb-2 grid grid-cols-7 gap-1">
                 {cells.map((d, i) => {
                     if (d === null) return <div key={`e${i}`} />;
                     const key = toKey(year, month, d);
                     const dayEvents = eventsByKey[key] || [];
                     const hasEvents = dayEvents.length > 0;
+                    const noClass = dayEvents.some(isNoClass);
                     const isToday = key === todayKey;
                     const isSelected = key === selectedKey;
                     const isActive = activeDates.has(key);
 
                     const label = hasEvents
-                        ? `${key}, ${dayEvents.length} event${dayEvents.length > 1 ? "s" : ""}: ${dayEvents.map((e) => e.title).join(", ")}`
+                        ? `${key}, ${dayEvents.length} event${dayEvents.length > 1 ? "s" : ""}: ${dayEvents.map((e) => e.title).join(", ")}${noClass ? " (no classes)" : ""}`
                         : key;
 
                     return (
@@ -250,6 +344,8 @@ export default function EventCalendar() {
                                     ? "bg-[#106A2E] font-semibold text-white"
                                     : isActive
                                     ? "bg-emerald-100 font-semibold text-[#0E3B22] ring-2 ring-[#106A2E]"
+                                    : noClass
+                                    ? "bg-rose-50 font-semibold text-rose-700 hover:bg-rose-100"
                                     : hasEvents
                                     ? "bg-slate-50 font-semibold text-slate-800 hover:bg-emerald-50"
                                     : "text-slate-500 hover:bg-slate-50",
@@ -273,6 +369,19 @@ export default function EventCalendar() {
                 })}
             </div>
 
+            {/* Legend */}
+            <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] text-slate-400">
+                <span className="inline-flex items-center gap-1">
+                    <span className="h-2.5 w-2.5 rounded bg-rose-100 ring-1 ring-rose-200" /> No classes
+                </span>
+                <span className="inline-flex items-center gap-1">
+                    <span className="h-2.5 w-2.5 rounded bg-slate-100 ring-1 ring-slate-200" /> Has event
+                </span>
+                <span className="inline-flex items-center gap-1">
+                    <span className="h-2.5 w-2.5 rounded ring-1 ring-[#106A2E]" /> Today
+                </span>
+            </div>
+
             {/* List */}
             <div className="border-t border-slate-100 pt-3">
                 <div className="mb-2 flex items-center justify-between">
@@ -288,14 +397,27 @@ export default function EventCalendar() {
                 </div>
 
                 {listItems.length === 0 ? (
-                    <p className="py-3 text-center text-xs text-slate-400">
-                        {selectedKey ? "No events on this day." : "No events this month."}
-                    </p>
+                    <div className="py-3 text-center">
+                        <p className="text-xs text-slate-400">
+                            {selectedKey ? "No events on this day." : "No events this month."}
+                        </p>
+                        {!selectedKey && nextEvent && (
+                            <button
+                                onClick={() => goToKey(nextEvent.next)}
+                                className="mt-2 inline-flex max-w-full items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
+                            >
+                                <span className="truncate">Next: {nextEvent.ev.title} · {formatDates([nextEvent.next], todayYear)}</span>
+                                <ChevronRight size={12} className="shrink-0" />
+                            </button>
+                        )}
+                    </div>
                 ) : (
                     <ul className="space-y-1.5">
                         {listItems.map(({ ev, dates }) => {
                             const isActive = activeEventId === ev.id;
                             const isPast = dates[dates.length - 1] < todayKey;
+                            const isOngoing = !isPast && dates[0] <= todayKey && dates.includes(todayKey);
+                            const noClass = isNoClass(ev);
                             const time = timeRange(ev);
                             return (
                                 <li key={ev.id}>
@@ -310,9 +432,25 @@ export default function EventCalendar() {
                                     >
                                         <span className="w-1 shrink-0 rounded-full" style={{ background: ev.accent || "#F4D35E" }} />
                                         <span className="min-w-0 flex-1">
-                                            <span className="block truncate text-xs font-semibold text-slate-800">{ev.title}</span>
+                                            <span className="flex items-start justify-between gap-2">
+                                                <span className="block text-xs font-semibold text-slate-800">{ev.title}</span>
+                                                <span className="flex shrink-0 items-center gap-1">
+                                                    {isOngoing && (
+                                                        <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-[#106A2E]">
+                                                            Ongoing
+                                                        </span>
+                                                    )}
+                                                    {noClass && (
+                                                        <span className="inline-flex items-center gap-0.5 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700">
+                                                            <Ban size={9} /> No classes
+                                                        </span>
+                                                    )}
+                                                </span>
+                                            </span>
                                             <span className="mt-0.5 block text-[11px] text-slate-500">
-                                                {selectedKey ? "" : `${compactDays(dates)}`}
+                                                {selectedKey && dates.length === 1
+                                                    ? tagLabel(ev.tag)
+                                                    : `${formatDates(dates, todayYear)} · ${tagLabel(ev.tag)}`}
                                             </span>
                                             {(time || ev.location) && (
                                                 <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-slate-500">
