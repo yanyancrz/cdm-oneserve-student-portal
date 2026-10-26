@@ -239,6 +239,7 @@ const getAcademicYearRange = (ref = new Date()) => {
 
 // Builds the registrar email: a plain request for the publicly available
 // School Calendar of the whole academic year (no event list, no dates).
+// Asks for a CSV or Excel file only, since those are what the Import tool reads.
 const buildRegistrarMessage = (ref = new Date()) => {
     const ay = getAcademicYearRange(ref);
 
@@ -248,7 +249,9 @@ const buildRegistrarMessage = (ref = new Date()) => {
         `I would like to request the publicly available School Calendar of Events for ${ay.label},`,
         "covering the approved academic dates and campus activities for the whole academic year.",
         "",
-        "Kindly send us a copy, or let us know where it can be accessed.",
+        "Kindly send the calendar as a CSV (.csv) or Excel (.xlsx) file only, so we can upload it",
+        "directly to our system. If possible, please include these columns: Title and Date",
+        "(or Start Date and End Date).",
         "",
         "Thank you very much.",
         "",
@@ -258,7 +261,7 @@ const buildRegistrarMessage = (ref = new Date()) => {
 
     return {
         to: REGISTRAR_EMAIL,
-        subject: `Request: School Calendar of Events — ${ay.label}`,
+        subject: `Request: School Calendar of Events — ${ay.label} (CSV or Excel)`,
         body,
     };
 };
@@ -338,7 +341,7 @@ function RegistrarEmailModal({ onClose }) {
                         <div>
                             <h2 className="text-base font-semibold text-slate-900">Email the Registrar</h2>
                             <p className="mt-0.5 text-xs text-slate-400">
-                                Request for the public School Calendar of the whole academic year.
+                                Request the public School Calendar (CSV or Excel) for the whole academic year.
                             </p>
                         </div>
                     </div>
