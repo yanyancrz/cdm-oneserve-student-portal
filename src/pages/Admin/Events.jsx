@@ -129,6 +129,52 @@ const downloadBlob = (blob, filename) => {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 };
 
+/* ---------- imported calendar files (one record per import) ---------- */
+// The backend has no "import batch" field, so the mapping file -> created
+// events is kept in this browser. Deleting a batch removes every event it
+// created, which is the "undo import" the admin needs.
+const IMPORTED_FILES_KEY = "cdm.importedCalendarFiles";
+
+const readImportedFiles = () => {
+    try {
+        const raw = localStorage.getItem(IMPORTED_FILES_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        return Array.isArray(list) ? list.filter((b) => b && Array.isArray(b.eventIds)) : [];
+    } catch {
+        return [];
+    }
+};
+
+const writeImportedFiles = (list) => {
+    try {
+        localStorage.setItem(IMPORTED_FILES_KEY, JSON.stringify(list));
+    } catch {
+        /* storage full or private mode — the events still import normally */
+    }
+};
+
+const newBatchId = () => `imp_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+
+// Same shape for a parsed import row and a saved event, so a freshly imported
+// event can be found again even when the API does not return its id.
+const importSignature = ({ title, dates, startTime, endTime, location }) =>
+    [
+        title || "",
+        [...dates].sort().join(","),
+        (startTime || "").slice(0, 5),
+        (endTime || "").slice(0, 5),
+        location || "",
+    ].join("|");
+
+const eventSignature = (ev) =>
+    [
+        ev.title || "",
+        getEventDates(ev).join(","),
+        (ev.startTime || "").slice(0, 5),
+        (ev.endTime || "").slice(0, 5),
+        ev.location || "",
+    ].join("|");
+
 /* ---------- Registrar email template ---------- */
 // Registrar's Office address used by the "Email Registrar" action.
 const REGISTRAR_EMAIL = "info@pnm.edu.ph";
@@ -877,7 +923,7 @@ const downloadTemplate = () => {
 };
 
 /* ---------- Import dialog ---------- */
-function ImportModal({ events, onClose, onImported }) {
+function ImportModal({ events, onClose, onImported, onFilesChanged }) {
     const [step, setStep] = useState("pick"); // pick | preview | importing | done
     const [parsing, setParsing] = useState(false);
     const [parseError, setParseError] = useState("");
@@ -996,6 +1042,7 @@ function ImportModal({ events, onClose, onImported }) {
         setProgress({ done: 0, total: list.length });
 
         const failed = [];
+        const createdItems = [];
         let ok = 0;
         let earliest = null;
 
@@ -1012,6 +1059,7 @@ function ImportModal({ events, onClose, onImported }) {
                     throw new Error(d.message || `Error ${res.status}`);
                 }
                 ok += 1;
+                createdItems.push(it);
                 if (!earliest || it.dates[0] < earliest) earliest = it.dates[0];
             } catch (err) {
                 failed.push({ title: it.title, message: err?.message || "Failed" });
@@ -1020,6 +1068,43 @@ function ImportModal({ events, onClose, onImported }) {
         }
 
         setResult({ ok, failed });
+        if (ok) {
+            // Remember which events this file produced, so the whole import can
+            // be deleted later from the "Imported calendar files" section.
+            try {
+                const freshRes = await fetch(API_BASE, { headers: authHeaders() });
+                const fresh = freshRes.ok ? await freshRes.json() : [];
+                const pool = Array.isArray(fresh) ? [...fresh].reverse() : [];
+                const usedIds = new Set();
+                const eventIds = [];
+                createdItems.forEach((it) => {
+                    const sig = importSignature(it);
+                    // newest match wins, so a fresh import is not confused with an
+                    // older identical event
+                    const match = pool.find(
+                        (ev) => ev.id != null && !usedIds.has(ev.id) && eventSignature(ev) === sig
+                    );
+                    if (match) {
+                        usedIds.add(match.id);
+                        eventIds.push(match.id);
+                    }
+                });
+                if (eventIds.length) {
+                    writeImportedFiles([
+                        ...readImportedFiles(),
+                        {
+                            id: newBatchId(),
+                            fileName: fileName || "Imported calendar",
+                            importedAt: new Date().toISOString(),
+                            eventIds,
+                        },
+                    ]);
+                    onFilesChanged?.();
+                }
+            } catch {
+                /* listing the import is best-effort; the events are already saved */
+            }
+        }
         if (ok) onImported(earliest);
 
         if (failed.length === 0) {
@@ -1660,6 +1745,7 @@ export default function Events() {
     const [form, setForm] = useState(EMPTY_FORM);
     const [saving, setSaving] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
+    const [importedFiles, setImportedFiles] = useState(() => readImportedFiles());
     // Opens the registrar email draft (whole academic year by default).
     const [registrarOpen, setRegistrarOpen] = useState(false);
 
@@ -1802,6 +1888,47 @@ export default function Events() {
             const d = keyToDate(earliestKey);
             setView({ y: d.getFullYear(), m: d.getMonth() });
             setSelectedKey(earliestKey);
+        }
+    };
+
+    // Delete every event that came from one imported file ("undo import").
+    const handleDeleteImportedFile = async (batch) => {
+        const alive = (batch.eventIds || []).filter((id) => events.some((ev) => ev.id === id));
+
+        if (!alive.length) {
+            writeImportedFiles(readImportedFiles().filter((b) => b.id !== batch.id));
+            setImportedFiles(readImportedFiles());
+            toast.success("Import record removed.");
+            return;
+        }
+
+        if (!confirm(`Delete the ${alive.length} event(s) imported from "${batch.fileName}"?`)) return;
+
+        const failedIds = [];
+        for (const id of alive) {
+            try {
+                const res = await fetch(`${API_BASE}/${id}`, { method: "DELETE", headers: authHeaders() });
+                // already gone -> treat as deleted
+                if (!res.ok && res.status !== 404) failedIds.push(id);
+            } catch {
+                failedIds.push(id);
+            }
+        }
+
+        const next = readImportedFiles().filter((b) => b.id !== batch.id);
+        // keep the record around if some events could not be deleted, so it can
+        // be retried instead of losing track of them
+        if (failedIds.length) next.push({ ...batch, eventIds: failedIds });
+        writeImportedFiles(next);
+        setImportedFiles(readImportedFiles());
+        await loadEvents();
+
+        if (failedIds.length) {
+            toast.error(`${failedIds.length} event(s) could not be deleted. Try again.`);
+        } else {
+            toast.success(
+                `Deleted ${alive.length} event${alive.length === 1 ? "" : "s"} from "${batch.fileName}".`
+            );
         }
     };
 
@@ -1953,6 +2080,59 @@ export default function Events() {
                                     </ul>
                                 )}
                             </div>
+
+                            {/* Imported calendar files — delete a whole import */}
+                            {importedFiles.length > 0 && (
+                                <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-medium uppercase tracking-wide text-slate-400">
+                                            Imported calendar files
+                                        </p>
+                                        <FileSpreadsheet size={14} className="text-slate-400" />
+                                    </div>
+
+                                    <ul className="mt-3 space-y-2">
+                                        {importedFiles.map((batch) => {
+                                            const remaining = (batch.eventIds || []).filter((id) =>
+                                                events.some((ev) => ev.id === id)
+                                            ).length;
+                                            return (
+                                                <li
+                                                    key={batch.id}
+                                                    className="flex items-start gap-2.5 rounded-xl border border-slate-100 p-2.5"
+                                                >
+                                                    <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-[#106A2E]">
+                                                        <FileSpreadsheet size={14} />
+                                                    </span>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="truncate text-sm font-medium text-slate-700">
+                                                            {batch.fileName}
+                                                        </p>
+                                                        <p className="text-[11px] text-slate-400">
+                                                            {remaining} event{remaining === 1 ? "" : "s"}
+                                                            {" · "}
+                                                            {new Date(batch.importedAt).toLocaleDateString("en-US", {
+                                                                month: "short",
+                                                                day: "numeric",
+                                                                year: "numeric",
+                                                            })}
+                                                        </p>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteImportedFile(batch)}
+                                                        title={`Delete all events from ${batch.fileName}`}
+                                                        aria-label={`Delete imported file ${batch.fileName}`}
+                                                        className="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -2033,6 +2213,7 @@ export default function Events() {
                         events={events}
                         onClose={() => setImportOpen(false)}
                         onImported={handleImported}
+                        onFilesChanged={() => setImportedFiles(readImportedFiles())}
                     />
                 )}
 
