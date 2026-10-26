@@ -11,7 +11,6 @@ import {
     Clock,
     Copy,
     Download,
-    ExternalLink,
     FileSpreadsheet,
     Loader2,
     Mail,
@@ -177,18 +176,13 @@ const buildRegistrarMessage = (ref = new Date()) => {
     };
 };
 
-const buildMailto = ({ to, subject, body }) =>
-    `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-
 const buildGmailCompose = ({ to, subject, body }) =>
     `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(
         subject
     )}&body=${encodeURIComponent(body)}`;
 
-/* Review the registrar email before sending it. A bare `mailto:` link fails
-   silently on devices with no mail app configured (Android PWA, Windows
-   without a mail client), so the admin gets a copyable draft and a webmail
-   fallback here instead. */
+/* Review the registrar email before sending it. "Send an Email" opens Gmail
+   compose in a new tab, so nothing depends on a locally configured mail app. */
 function RegistrarEmailModal({ onClose }) {
     const initial = useMemo(() => buildRegistrarMessage(), []);
     const [subject, setSubject] = useState(initial.subject);
@@ -209,9 +203,8 @@ function RegistrarEmailModal({ onClose }) {
         }
     };
 
-    const openIn = (href) => {
-        // The mailto draft is opened by the OS; a web compose link in a new tab.
-        window.open(href, href.startsWith("mailto:") ? "_self" : "_blank", "noopener,noreferrer");
+    const sendEmail = () => {
+        window.open(buildGmailCompose(draft), "_blank", "noopener,noreferrer");
     };
 
     return (
@@ -290,25 +283,19 @@ function RegistrarEmailModal({ onClose }) {
                     </div>
 
                     <p className="rounded-xl bg-slate-50 px-3 py-2 text-[11px] leading-relaxed text-slate-500">
-                        If no mail app opens, use <span className="font-semibold">Copy</span> and paste the
-                        draft into your email, or continue in Gmail.
+                        <span className="font-semibold">Send an Email</span> opens Gmail compose in a new
+                        tab. If it doesn't open, use <span className="font-semibold">Copy</span> and paste
+                        the draft into your email.
                     </p>
                 </div>
 
                 <div className="flex flex-col gap-2 border-t border-slate-100 px-5 py-4 sm:flex-row">
                     <button
                         type="button"
-                        onClick={() => openIn(buildGmailCompose(draft))}
-                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-                    >
-                        <ExternalLink size={14} /> Open in Gmail
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => openIn(buildMailto(draft))}
+                        onClick={sendEmail}
                         className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] px-3 py-2.5 text-xs font-semibold text-white shadow-md shadow-emerald-900/20 hover:opacity-90"
                     >
-                        <Mail size={14} /> Open in mail app
+                        <Mail size={14} /> Send an Email
                     </button>
                 </div>
             </div>
