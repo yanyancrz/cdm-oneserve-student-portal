@@ -138,10 +138,6 @@ const REGISTRAR_EMAIL = "info@pnm.edu.ph";
 // school year starts in June.
 const AY_START_MONTH = 7;
 
-// Only campus-wide entries make up the public School Calendar; the other tags
-// belong to module-specific calendars (library, guidance, clinic, lost & found).
-const SCHOOL_CALENDAR_TAG = "CAMPUS";
-
 // Academic year containing `ref` (default: the whole current school year).
 const getAcademicYearRange = (ref = new Date()) => {
     const startYear = ref.getMonth() >= AY_START_MONTH ? ref.getFullYear() : ref.getFullYear() - 1;
@@ -152,73 +148,21 @@ const getAcademicYearRange = (ref = new Date()) => {
     };
 };
 
-// Builds the subject/body of the registrar inquiry about the public School
-// Calendar. Only active campus-wide events are included — the same entries the
-// public calendar shows — never module-only ones.
-// scope: "year"     -> every event in the academic year (default)
-//        "upcoming" -> only events from today to the end of the academic year
-const buildRegistrarMessage = (allEvents, scope = "year", ref = new Date()) => {
+// Builds the registrar email: a plain request for the publicly available
+// School Calendar of the whole academic year (no event list, no dates).
+const buildRegistrarMessage = (ref = new Date()) => {
     const ay = getAcademicYearRange(ref);
-    const todayKey = dateToKey(ref);
-
-    // One entry per event (multi-day events stay a single line), keeping only
-    // the dates that fall inside the academic year.
-    const entries = [];
-    (allEvents || [])
-        .filter((ev) => ev.isActive !== false)
-        .filter((ev) => String(ev.tag || SCHOOL_CALENDAR_TAG).toUpperCase() === SCHOOL_CALENDAR_TAG)
-        .forEach((ev) => {
-            const dates = getEventDates(ev).filter((k) => k >= ay.startKey && k <= ay.endKey);
-            if (!dates.length) return;
-            if (scope === "upcoming" && !dates.some((k) => k >= todayKey)) return;
-            entries.push({ ev, dates });
-        });
-    entries.sort((a, b) => a.dates[0].localeCompare(b.dates[0]));
-
-    // Grouped by month so the registrar can read it like a calendar.
-    const eventLines = [];
-    let currentMonth = "";
-    entries.forEach(({ ev, dates }) => {
-        const monthLabel = keyToDate(dates[0])
-            .toLocaleDateString("en-US", { month: "long", year: "numeric" })
-            .toUpperCase();
-        if (monthLabel !== currentMonth) {
-            if (eventLines.length) eventLines.push("");
-            currentMonth = monthLabel;
-            eventLines.push(monthLabel);
-        }
-        const when =
-            dates.length > 1
-                ? `${formatShort(dates[0])} – ${formatShort(dates[dates.length - 1])}`
-                : formatShort(dates[0]);
-        const parts = [ev.title, when];
-        if (timeRange(ev)) parts.push(timeRange(ev));
-        if (ev.location) parts.push(ev.location);
-        eventLines.push(`- ${parts.join(" | ")}`);
-    });
-
-    const intro =
-        scope === "upcoming"
-            ? [
-                  "I would like to inquire about the upcoming events in the publicly available ",
-                  `School Calendar of Events for ${ay.label}:`,
-              ].join("")
-            : [
-                  `I would like to inquire about the publicly available School Calendar of Events `,
-                  `for ${ay.label}. For reference, here is the complete list of events on record `,
-                  "for the whole academic year:",
-              ].join("");
+    const dayLabel = (k) =>
+        keyToDate(k).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
     const body = [
         "Good day, Registrar's Office,",
         "",
-        intro,
+        `I would like to request the publicly available School Calendar of Events for ${ay.label}`,
+        `(${dayLabel(ay.startKey)} to ${dayLabel(ay.endKey)}), covering the approved academic`,
+        "dates and campus activities for the whole academic year.",
         "",
-        ...(eventLines.length
-            ? eventLines
-            : ["- (No publicly available events on record for this academic year yet)"]),
-        "",
-        "May I request additional details or confirmation regarding the above?",
+        "Kindly send us a copy, or let us know where it can be accessed.",
         "",
         "Thank you very much.",
         "",
@@ -228,7 +172,7 @@ const buildRegistrarMessage = (allEvents, scope = "year", ref = new Date()) => {
 
     return {
         to: REGISTRAR_EMAIL,
-        subject: `Inquiry: School Calendar of Events — ${ay.label}`,
+        subject: `Request: School Calendar of Events — ${ay.label}`,
         body,
     };
 };
@@ -245,22 +189,13 @@ const buildGmailCompose = ({ to, subject, body }) =>
    silently on devices with no mail app configured (Android PWA, Windows
    without a mail client), so the admin gets a copyable draft and a webmail
    fallback here instead. */
-function RegistrarEmailModal({ events, onClose }) {
-    const [scope, setScope] = useState("year");
-    const initial = useMemo(() => buildRegistrarMessage(events, "year"), [events]);
+function RegistrarEmailModal({ onClose }) {
+    const initial = useMemo(() => buildRegistrarMessage(), []);
     const [subject, setSubject] = useState(initial.subject);
     const [body, setBody] = useState(initial.body);
     const [copied, setCopied] = useState(false);
 
     const draft = { to: initial.to, subject, body };
-
-    const changeScope = (next) => {
-        if (next === scope) return;
-        const nextMessage = buildRegistrarMessage(events, next);
-        setScope(next);
-        setSubject(nextMessage.subject);
-        setBody(nextMessage.body);
-    };
 
     const copyDraft = async () => {
         const text = `To: ${draft.to}\nSubject: ${subject}\n\n${body}`;
@@ -298,7 +233,7 @@ function RegistrarEmailModal({ events, onClose }) {
                         <div>
                             <h2 className="text-base font-semibold text-slate-900">Email the Registrar</h2>
                             <p className="mt-0.5 text-xs text-slate-400">
-                                Review the draft, then send it with your mail app or webmail.
+                                Request for the public School Calendar of the whole academic year.
                             </p>
                         </div>
                     </div>
@@ -313,32 +248,6 @@ function RegistrarEmailModal({ events, onClose }) {
                 </div>
 
                 <div className="space-y-4 overflow-y-auto px-5 py-5">
-                    <div>
-                        <label className="block text-xs font-medium text-slate-600 mb-1">Include</label>
-                        <div className="flex gap-1 rounded-xl bg-slate-100 p-1">
-                            {[
-                                { key: "year", label: "Whole academic year" },
-                                { key: "upcoming", label: "Upcoming only" },
-                            ].map((opt) => (
-                                <button
-                                    key={opt.key}
-                                    type="button"
-                                    onClick={() => changeScope(opt.key)}
-                                    className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                                        scope === opt.key
-                                            ? "bg-white text-[#106A2E] shadow-sm"
-                                            : "text-slate-500 hover:text-slate-700"
-                                    }`}
-                                >
-                                    {opt.label}
-                                </button>
-                            ))}
-                        </div>
-                        <p className="mt-1.5 text-[11px] text-slate-400">
-                            Default: buong public School Calendar (campus events) para sa academic year.
-                        </p>
-                    </div>
-
                     <div>
                         <label className="block text-xs font-medium text-slate-600 mb-1">To</label>
                         <div className="flex items-center gap-2">
@@ -2093,10 +2002,7 @@ export default function Events() {
                 )}
 
                 {registrarOpen && (
-                    <RegistrarEmailModal
-                        events={events}
-                        onClose={() => setRegistrarOpen(false)}
-                    />
+                    <RegistrarEmailModal onClose={() => setRegistrarOpen(false)} />
                 )}
             </div>
         </div>
