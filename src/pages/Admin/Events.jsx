@@ -11,6 +11,7 @@ import {
     Download,
     FileSpreadsheet,
     Loader2,
+    Mail,
     MapPin,
     Pencil,
     Trash2,
@@ -124,6 +125,51 @@ const downloadBlob = (blob, filename) => {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+};
+
+/* ---------- Registrar email template ---------- */
+const REGISTRAR_EMAIL = "info@pnm.edu.ph";
+
+// Builds a mailto link with a template about the upcoming events.
+const buildRegistrarMailto = (upcomingList) => {
+    // remove duplicates (multi-day events)
+    const seen = new Set();
+    const unique = upcomingList.filter(({ ev }) => {
+        if (seen.has(ev.id)) return false;
+        seen.add(ev.id);
+        return true;
+    });
+    const picked = unique.slice(0, 3);
+
+    const subject = picked.length
+        ? `Inquiry: ${picked[0].ev.title} (${formatShort(picked[0].k)})`
+        : "Inquiry: School Calendar of Events";
+
+    const eventLines = picked.length
+        ? picked.map(({ k, ev }) => {
+              const parts = [ev.title, formatShort(k)];
+              if (timeRange(ev)) parts.push(timeRange(ev));
+              if (ev.location) parts.push(ev.location);
+              return `- ${parts.join(" | ")}`;
+          })
+        : ["- (No upcoming events listed yet)"];
+
+    const body = [
+        "Good day, Registrar's Office,",
+        "",
+        "I would like to inquire about the latest School Calendar of Events that is now available to the public:",
+        "",
+        ...eventLines,
+        "",
+        "May I request additional details or confirmation regarding the above?",
+        "",
+        "Thank you very much.",
+        "",
+        "Name:",
+        "Contact Number:",
+    ].join("\r\n");
+
+    return `mailto:${REGISTRAR_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 };
 
 const getExt = (name = "") => {
@@ -1590,12 +1636,21 @@ export default function Events() {
                         </div>
                     </div>
 
-                    <button
-                        onClick={() => setImportOpen(true)}
-                        className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] px-3.5 py-2 text-xs font-semibold text-white shadow-md shadow-emerald-900/20 transition hover:opacity-90"
-                    >
-                        <UploadCloud size={14} /> Import
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <a
+                            href={buildRegistrarMailto(upcoming)}
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+                        >
+                            <Mail size={14} /> Email Registrar
+                        </a>
+
+                        <button
+                            onClick={() => setImportOpen(true)}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] px-3.5 py-2 text-xs font-semibold text-white shadow-md shadow-emerald-900/20 transition hover:opacity-90"
+                        >
+                            <UploadCloud size={14} /> Import
+                        </button>
+                    </div>
                 </div>
 
                 {loading ? (
