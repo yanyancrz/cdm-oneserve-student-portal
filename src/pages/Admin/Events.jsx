@@ -134,36 +134,80 @@ const downloadBlob = (blob, filename) => {
 // Registrar's Office address used by the "Email Registrar" action.
 const REGISTRAR_EMAIL = "info@pnm.edu.ph";
 
-// Builds the subject/body of the registrar inquiry about the upcoming events.
-const buildRegistrarMessage = (upcomingList) => {
-    // remove duplicates (multi-day events)
-    const seen = new Set();
-    const unique = upcomingList.filter(({ ev }) => {
-        if (seen.has(ev.id)) return false;
-        seen.add(ev.id);
-        return true;
+// First month of the academic year, 0-indexed (7 = August). Change to 5 if the
+// school year starts in June.
+const AY_START_MONTH = 7;
+
+// Academic year containing `ref` (default: the whole current school year).
+const getAcademicYearRange = (ref = new Date()) => {
+    const startYear = ref.getMonth() >= AY_START_MONTH ? ref.getFullYear() : ref.getFullYear() - 1;
+    return {
+        startKey: toKey(startYear, AY_START_MONTH, 1),
+        endKey: dateToKey(new Date(startYear + 1, AY_START_MONTH, 0)),
+        label: `A.Y. ${startYear}–${startYear + 1}`,
+    };
+};
+
+// Builds the subject/body of the registrar inquiry.
+// scope: "year"     -> every event in the academic year (default)
+//        "upcoming" -> only events from today to the end of the academic year
+const buildRegistrarMessage = (allEvents, scope = "year", ref = new Date()) => {
+    const ay = getAcademicYearRange(ref);
+    const todayKey = dateToKey(ref);
+
+    // One entry per event (multi-day events stay a single line), keeping only
+    // the dates that fall inside the academic year.
+    const entries = [];
+    (allEvents || [])
+        .filter((ev) => ev.isActive !== false)
+        .forEach((ev) => {
+            const dates = getEventDates(ev).filter((k) => k >= ay.startKey && k <= ay.endKey);
+            if (!dates.length) return;
+            if (scope === "upcoming" && !dates.some((k) => k >= todayKey)) return;
+            entries.push({ ev, dates });
+        });
+    entries.sort((a, b) => a.dates[0].localeCompare(b.dates[0]));
+
+    // Grouped by month so the registrar can read it like a calendar.
+    const eventLines = [];
+    let currentMonth = "";
+    entries.forEach(({ ev, dates }) => {
+        const monthLabel = keyToDate(dates[0])
+            .toLocaleDateString("en-US", { month: "long", year: "numeric" })
+            .toUpperCase();
+        if (monthLabel !== currentMonth) {
+            if (eventLines.length) eventLines.push("");
+            currentMonth = monthLabel;
+            eventLines.push(monthLabel);
+        }
+        const when =
+            dates.length > 1
+                ? `${formatShort(dates[0])} – ${formatShort(dates[dates.length - 1])}`
+                : formatShort(dates[0]);
+        const parts = [ev.title, when];
+        if (timeRange(ev)) parts.push(timeRange(ev));
+        if (ev.location) parts.push(ev.location);
+        eventLines.push(`- ${parts.join(" | ")}`);
     });
-    const picked = unique.slice(0, 3);
 
-    const subject = picked.length
-        ? `Inquiry: ${picked[0].ev.title} (${formatShort(picked[0].k)})`
-        : "Inquiry: School Calendar of Events";
-
-    const eventLines = picked.length
-        ? picked.map(({ k, ev }) => {
-              const parts = [ev.title, formatShort(k)];
-              if (timeRange(ev)) parts.push(timeRange(ev));
-              if (ev.location) parts.push(ev.location);
-              return `- ${parts.join(" | ")}`;
-          })
-        : ["- (No upcoming events listed yet)"];
+    const intro =
+        scope === "upcoming"
+            ? [
+                  "I would like to inquire about the upcoming events in the School Calendar of Events ",
+                  `for ${ay.label}, which is now available to the public:`,
+              ].join("")
+            : [
+                  `I would like to inquire about the School Calendar of Events for ${ay.label}, `,
+                  "which is now available to the public. For reference, here is the complete list ",
+                  "of events on record for the whole academic year:",
+              ].join("");
 
     const body = [
         "Good day, Registrar's Office,",
         "",
-        "I would like to inquire about the latest School Calendar of Events that is now available to the public:",
+        intro,
         "",
-        ...eventLines,
+        ...(eventLines.length ? eventLines : ["- (No events on record for this academic year yet)"]),
         "",
         "May I request additional details or confirmation regarding the above?",
         "",
@@ -173,7 +217,11 @@ const buildRegistrarMessage = (upcomingList) => {
         "Contact Number:",
     ].join("\r\n");
 
-    return { to: REGISTRAR_EMAIL, subject, body };
+    return {
+        to: REGISTRAR_EMAIL,
+        subject: `Inquiry: School Calendar of Events — ${ay.label}`,
+        body,
+    };
 };
 
 const buildMailto = ({ to, subject, body }) =>
@@ -188,12 +236,22 @@ const buildGmailCompose = ({ to, subject, body }) =>
    silently on devices with no mail app configured (Android PWA, Windows
    without a mail client), so the admin gets a copyable draft and a webmail
    fallback here instead. */
-function RegistrarEmailModal({ message, onClose }) {
-    const [subject, setSubject] = useState(message.subject);
-    const [body, setBody] = useState(message.body);
+function RegistrarEmailModal({ events, onClose }) {
+    const [scope, setScope] = useState("year");
+    const initial = useMemo(() => buildRegistrarMessage(events, "year"), [events]);
+    const [subject, setSubject] = useState(initial.subject);
+    const [body, setBody] = useState(initial.body);
     const [copied, setCopied] = useState(false);
 
-    const draft = { to: message.to, subject, body };
+    const draft = { to: initial.to, subject, body };
+
+    const changeScope = (next) => {
+        if (next === scope) return;
+        const nextMessage = buildRegistrarMessage(events, next);
+        setScope(next);
+        setSubject(nextMessage.subject);
+        setBody(nextMessage.body);
+    };
 
     const copyDraft = async () => {
         const text = `To: ${draft.to}\nSubject: ${subject}\n\n${body}`;
@@ -246,6 +304,32 @@ function RegistrarEmailModal({ message, onClose }) {
                 </div>
 
                 <div className="space-y-4 overflow-y-auto px-5 py-5">
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Include</label>
+                        <div className="flex gap-1 rounded-xl bg-slate-100 p-1">
+                            {[
+                                { key: "year", label: "Whole academic year" },
+                                { key: "upcoming", label: "Upcoming only" },
+                            ].map((opt) => (
+                                <button
+                                    key={opt.key}
+                                    type="button"
+                                    onClick={() => changeScope(opt.key)}
+                                    className={`flex-1 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                                        scope === opt.key
+                                            ? "bg-white text-[#106A2E] shadow-sm"
+                                            : "text-slate-500 hover:text-slate-700"
+                                    }`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
+                        <p className="mt-1.5 text-[11px] text-slate-400">
+                            Default: lahat ng event sa buong academic year.
+                        </p>
+                    </div>
+
                     <div>
                         <label className="block text-xs font-medium text-slate-600 mb-1">To</label>
                         <div className="flex items-center gap-2">
@@ -1623,8 +1707,8 @@ export default function Events() {
     const [form, setForm] = useState(EMPTY_FORM);
     const [saving, setSaving] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
-    // Draft of the registrar email, frozen when the button is pressed.
-    const [registrarDraft, setRegistrarDraft] = useState(null);
+    // Opens the registrar email draft (whole academic year by default).
+    const [registrarOpen, setRegistrarOpen] = useState(false);
 
     const now = new Date();
     const [view, setView] = useState({ y: now.getFullYear(), m: now.getMonth() });
@@ -1783,7 +1867,7 @@ export default function Events() {
                     <div className="flex items-center gap-2">
                         <button
                             type="button"
-                            onClick={() => setRegistrarDraft(buildRegistrarMessage(upcoming))}
+                            onClick={() => setRegistrarOpen(true)}
                             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                         >
                             <Mail size={14} /> Email Registrar
@@ -1999,10 +2083,10 @@ export default function Events() {
                     />
                 )}
 
-                {registrarDraft && (
+                {registrarOpen && (
                     <RegistrarEmailModal
-                        message={registrarDraft}
-                        onClose={() => setRegistrarDraft(null)}
+                        events={events}
+                        onClose={() => setRegistrarOpen(false)}
                     />
                 )}
             </div>
