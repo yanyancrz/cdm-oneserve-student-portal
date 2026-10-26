@@ -4,11 +4,14 @@ import { API_URL } from "../../config/api";
 import {
     AlertCircle,
     CalendarDays,
+    Check,
     CheckCircle2,
     ChevronLeft,
     ChevronRight,
     Clock,
+    Copy,
     Download,
+    ExternalLink,
     FileSpreadsheet,
     Loader2,
     Mail,
@@ -128,10 +131,11 @@ const downloadBlob = (blob, filename) => {
 };
 
 /* ---------- Registrar email template ---------- */
+// Registrar's Office address used by the "Email Registrar" action.
 const REGISTRAR_EMAIL = "info@pnm.edu.ph";
 
-// Builds a mailto link with a template about the upcoming events.
-const buildRegistrarMailto = (upcomingList) => {
+// Builds the subject/body of the registrar inquiry about the upcoming events.
+const buildRegistrarMessage = (upcomingList) => {
     // remove duplicates (multi-day events)
     const seen = new Set();
     const unique = upcomingList.filter(({ ev }) => {
@@ -169,8 +173,146 @@ const buildRegistrarMailto = (upcomingList) => {
         "Contact Number:",
     ].join("\r\n");
 
-    return `mailto:${REGISTRAR_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    return { to: REGISTRAR_EMAIL, subject, body };
 };
+
+const buildMailto = ({ to, subject, body }) =>
+    `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+const buildGmailCompose = ({ to, subject, body }) =>
+    `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(
+        subject
+    )}&body=${encodeURIComponent(body)}`;
+
+/* Review the registrar email before sending it. A bare `mailto:` link fails
+   silently on devices with no mail app configured (Android PWA, Windows
+   without a mail client), so the admin gets a copyable draft and a webmail
+   fallback here instead. */
+function RegistrarEmailModal({ message, onClose }) {
+    const [subject, setSubject] = useState(message.subject);
+    const [body, setBody] = useState(message.body);
+    const [copied, setCopied] = useState(false);
+
+    const draft = { to: message.to, subject, body };
+
+    const copyDraft = async () => {
+        const text = `To: ${draft.to}\nSubject: ${subject}\n\n${body}`;
+        try {
+            await navigator.clipboard.writeText(text);
+            setCopied(true);
+            toast.success("Email copied to clipboard.");
+            setTimeout(() => setCopied(false), 2000);
+        } catch {
+            toast.error("Could not copy automatically — select the text and copy it.");
+        }
+    };
+
+    const openIn = (href) => {
+        // The mailto draft is opened by the OS; a web compose link in a new tab.
+        window.open(href, href.startsWith("mailto:") ? "_self" : "_blank", "noopener,noreferrer");
+    };
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
+            onMouseDown={(e) => {
+                if (e.target === e.currentTarget) onClose();
+            }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Email the registrar"
+        >
+            <div className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-xl sm:max-w-lg sm:rounded-2xl">
+                <div className="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-4">
+                    <div className="flex items-start gap-3">
+                        <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-[#106A2E]">
+                            <Mail size={18} />
+                        </span>
+                        <div>
+                            <h2 className="text-base font-semibold text-slate-900">Email the Registrar</h2>
+                            <p className="mt-0.5 text-xs text-slate-400">
+                                Review the draft, then send it with your mail app or webmail.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Close"
+                        className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                    >
+                        <X size={18} />
+                    </button>
+                </div>
+
+                <div className="space-y-4 overflow-y-auto px-5 py-5">
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">To</label>
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="email"
+                                value={draft.to}
+                                readOnly
+                                className={`${inputClass} bg-slate-50 text-slate-500`}
+                            />
+                            <button
+                                type="button"
+                                onClick={copyDraft}
+                                title="Copy the whole draft"
+                                className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                            >
+                                {copied ? <Check size={14} /> : <Copy size={14} />}
+                                {copied ? "Copied" : "Copy"}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Subject</label>
+                        <input
+                            type="text"
+                            value={subject}
+                            onChange={(e) => setSubject(e.target.value)}
+                            className={inputClass}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-medium text-slate-600 mb-1">Message</label>
+                        <textarea
+                            value={body}
+                            onChange={(e) => setBody(e.target.value)}
+                            rows={10}
+                            className={`${inputClass} font-mono text-xs leading-relaxed`}
+                        />
+                    </div>
+
+                    <p className="rounded-xl bg-slate-50 px-3 py-2 text-[11px] leading-relaxed text-slate-500">
+                        If no mail app opens, use <span className="font-semibold">Copy</span> and paste the
+                        draft into your email, or continue in Gmail.
+                    </p>
+                </div>
+
+                <div className="flex flex-col gap-2 border-t border-slate-100 px-5 py-4 sm:flex-row">
+                    <button
+                        type="button"
+                        onClick={() => openIn(buildGmailCompose(draft))}
+                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                        <ExternalLink size={14} /> Open in Gmail
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => openIn(buildMailto(draft))}
+                        className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] px-3 py-2.5 text-xs font-semibold text-white shadow-md shadow-emerald-900/20 hover:opacity-90"
+                    >
+                        <Mail size={14} /> Open in mail app
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
 
 const getExt = (name = "") => {
     const i = name.lastIndexOf(".");
@@ -1481,6 +1623,8 @@ export default function Events() {
     const [form, setForm] = useState(EMPTY_FORM);
     const [saving, setSaving] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
+    // Draft of the registrar email, frozen when the button is pressed.
+    const [registrarDraft, setRegistrarDraft] = useState(null);
 
     const now = new Date();
     const [view, setView] = useState({ y: now.getFullYear(), m: now.getMonth() });
@@ -1637,12 +1781,13 @@ export default function Events() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <a
-                            href={buildRegistrarMailto(upcoming)}
+                        <button
+                            type="button"
+                            onClick={() => setRegistrarDraft(buildRegistrarMessage(upcoming))}
                             className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                         >
                             <Mail size={14} /> Email Registrar
-                        </a>
+                        </button>
 
                         <button
                             onClick={() => setImportOpen(true)}
@@ -1851,6 +1996,13 @@ export default function Events() {
                         events={events}
                         onClose={() => setImportOpen(false)}
                         onImported={handleImported}
+                    />
+                )}
+
+                {registrarDraft && (
+                    <RegistrarEmailModal
+                        message={registrarDraft}
+                        onClose={() => setRegistrarDraft(null)}
                     />
                 )}
             </div>
