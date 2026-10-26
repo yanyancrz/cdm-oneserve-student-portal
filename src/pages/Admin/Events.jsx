@@ -151,15 +151,12 @@ const getAcademicYearRange = (ref = new Date()) => {
 // School Calendar of the whole academic year (no event list, no dates).
 const buildRegistrarMessage = (ref = new Date()) => {
     const ay = getAcademicYearRange(ref);
-    const dayLabel = (k) =>
-        keyToDate(k).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
 
     const body = [
         "Good day, Registrar's Office,",
         "",
-        `I would like to request the publicly available School Calendar of Events for ${ay.label}`,
-        `(${dayLabel(ay.startKey)} to ${dayLabel(ay.endKey)}), covering the approved academic`,
-        "dates and campus activities for the whole academic year.",
+        `I would like to request the publicly available School Calendar of Events for ${ay.label},`,
+        "covering the approved academic dates and campus activities for the whole academic year.",
         "",
         "Kindly send us a copy, or let us know where it can be accessed.",
         "",
