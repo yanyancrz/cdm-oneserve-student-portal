@@ -175,6 +175,50 @@ const eventSignature = (ev) =>
         ev.location || "",
     ].join("|");
 
+// Events that no tracked file owns — i.e. imports made before file tracking
+// existed. They are grouped again (by creation minute, when the API provides
+// `createdAt`) so they still show up in the list and can be deleted.
+const recoverUntrackedGroups = (allEvents, batches) => {
+    const owned = new Set();
+    batches.forEach((b) => (b.eventIds || []).forEach((id) => owned.add(String(id))));
+
+    const untracked = (allEvents || []).filter((ev) => !owned.has(String(ev.id)));
+    if (!untracked.length) return [];
+
+    const groups = new Map();
+    untracked.forEach((ev) => {
+        const raw = ev.createdAt || ev.created_at;
+        const stamp = raw ? new Date(raw) : null;
+        const valid = stamp && !Number.isNaN(stamp.getTime());
+        const bucket = valid ? Math.floor(stamp.getTime() / 60000) : 0;
+        const key = `auto_${bucket}`;
+        if (!groups.has(key)) {
+            groups.set(key, {
+                id: key,
+                fileName: valid
+                    ? `Earlier import · ${stamp.toLocaleString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                      })}`
+                    : "Earlier events (no file record)",
+                importedAt: valid ? stamp.toISOString() : null,
+                eventIds: [],
+                derived: true,
+            });
+        }
+        groups.get(key).eventIds.push(ev.id);
+    });
+
+    return [...groups.values()].sort((a, b) => {
+        const at = a.importedAt ? new Date(a.importedAt).getTime() : 0;
+        const bt = b.importedAt ? new Date(b.importedAt).getTime() : 0;
+        return bt - at;
+    });
+};
+
 /* ---------- Registrar email template ---------- */
 // Registrar's Office address used by the "Email Registrar" action.
 const REGISTRAR_EMAIL = "info@pnm.edu.ph";
@@ -1746,6 +1790,13 @@ export default function Events() {
     const [saving, setSaving] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
     const [importedFiles, setImportedFiles] = useState(() => readImportedFiles());
+
+    // Imported files recorded since tracking existed, plus groups recovered
+    // from imports made before that (so they can still be deleted).
+    const importGroups = useMemo(
+        () => [...importedFiles, ...recoverUntrackedGroups(events, importedFiles)],
+        [events, importedFiles]
+    );
     // Opens the registrar email draft (whole academic year by default).
     const [registrarOpen, setRegistrarOpen] = useState(false);
 
@@ -1893,7 +1944,9 @@ export default function Events() {
 
     // Delete every event that came from one imported file ("undo import").
     const handleDeleteImportedFile = async (batch) => {
-        const alive = (batch.eventIds || []).filter((id) => events.some((ev) => ev.id === id));
+        const alive = (batch.eventIds || []).filter((id) =>
+            events.some((ev) => String(ev.id) === String(id))
+        );
 
         if (!alive.length) {
             writeImportedFiles(readImportedFiles().filter((b) => b.id !== batch.id));
@@ -2090,16 +2143,16 @@ export default function Events() {
                                     <FileSpreadsheet size={14} className="text-slate-400" />
                                 </div>
 
-                                {importedFiles.length === 0 ? (
+                                {importGroups.length === 0 ? (
                                     <p className="mt-3 text-xs leading-relaxed text-slate-400">
-                                        No imported files tracked yet. Files you import from now on will
-                                        appear here, and you can delete all of their events at once.
+                                        No imports to list yet. Files you import will appear here, and
+                                        you can delete all of their events at once.
                                     </p>
                                 ) : (
                                     <ul className="mt-3 space-y-2">
-                                        {importedFiles.map((batch) => {
+                                        {importGroups.map((batch) => {
                                             const remaining = (batch.eventIds || []).filter((id) =>
-                                                events.some((ev) => ev.id === id)
+                                                events.some((ev) => String(ev.id) === String(id))
                                             ).length;
                                             return (
                                                 <li
@@ -2115,12 +2168,20 @@ export default function Events() {
                                                         </p>
                                                         <p className="text-[11px] text-slate-400">
                                                             {remaining} event{remaining === 1 ? "" : "s"}
-                                                            {" · "}
-                                                            {new Date(batch.importedAt).toLocaleDateString("en-US", {
-                                                                month: "short",
-                                                                day: "numeric",
-                                                                year: "numeric",
-                                                            })}
+                                                            {batch.derived && " · recovered"}
+                                                            {batch.importedAt && (
+                                                                <>
+                                                                    {" · "}
+                                                                    {new Date(batch.importedAt).toLocaleDateString(
+                                                                        "en-US",
+                                                                        {
+                                                                            month: "short",
+                                                                            day: "numeric",
+                                                                            year: "numeric",
+                                                                        }
+                                                                    )}
+                                                                </>
+                                                            )}
                                                         </p>
                                                     </div>
                                                     <button
