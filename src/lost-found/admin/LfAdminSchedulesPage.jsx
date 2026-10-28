@@ -17,6 +17,7 @@ import {
     formatDateTime,
     formatItemId,
     isExactItemIdMatch,
+    lfAttribution,
 } from "../config/lfTheme";
 import {
     LfButton,
@@ -926,6 +927,15 @@ function CompletedPickups({ completed, onInspect }) {
                                 </td>
                                 <td className="px-4 py-3">
                                     <LfStatusChip status="Returned" />
+                                    {schedule.verifiedByName && (
+                                        <span className="mt-1 block text-[10px] leading-4 text-slate-500">
+                                            {lfAttribution(
+                                                schedule.verifiedByName,
+                                                schedule.verifiedByRole,
+                                                "Completed"
+                                            )}
+                                        </span>
+                                    )}
                                 </td>
                                 <td className="px-4 py-3 text-right">
                                     <button
@@ -1037,11 +1047,17 @@ function PickupDetailsModal({ schedule, onClose }) {
                             value={formatDateTime(schedule.verifiedAt)}
                         />
                         <DetailRow
-                            label="Recorded by admin #"
+                            label="Recorded by"
                             value={
-                                schedule.verifiedByAdminId
-                                    ? String(schedule.verifiedByAdminId)
-                                    : "—"
+                                schedule.verifiedByName
+                                    ? lfAttribution(
+                                          schedule.verifiedByName,
+                                          schedule.verifiedByRole,
+                                          "Completed"
+                                      )
+                                    : schedule.verifiedByAdminId
+                                      ? `Administrator #${schedule.verifiedByAdminId}`
+                                      : "—"
                             }
                         />
                         <DetailRow

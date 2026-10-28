@@ -4,16 +4,20 @@ import {
     CalendarClock,
     ChevronLeft,
     HandHelping,
+    History,
     LayoutDashboard,
     LogOut,
     Menu,
     SearchCheck,
     Settings,
+    ShieldCheck,
+    UserCog,
     X,
 } from "lucide-react";
 
 import { API_URL } from "../../config/api";
-import { logout } from "../session";
+import { lfAdminApi } from "../services/lfApi";
+import { getConsoleAdmin, logout } from "../session";
 import { FIND_LOGO_SRC } from "../components/lfBrand";
 
 // =====================================================
@@ -44,6 +48,24 @@ const NAV = [
         icon: CalendarClock,
     },
     {
+        to: "/lost-found/admin/admins",
+        label: "Admin Management",
+        icon: UserCog,
+        superOnly: true,
+    },
+    {
+        to: "/lost-found/admin/login-activity",
+        label: "Login Activity",
+        icon: ShieldCheck,
+        superOnly: true,
+    },
+    {
+        to: "/lost-found/admin/activity-log",
+        label: "Activity Log",
+        icon: History,
+        superOnly: true,
+    },
+    {
         to: "/lost-found/admin/profile",
         label: "Profile Settings",
         icon: Settings,
@@ -52,14 +74,21 @@ const NAV = [
 
 /** The signed-in console user: name + picture from the shared session. */
 function useConsoleAdmin() {
-    const read = () => ({
-        name:
-            localStorage.getItem("userName") ||
-            localStorage.getItem("userEmail") ||
-            "Admin",
-        picture: localStorage.getItem("profilePicture") || "",
-        email: localStorage.getItem("userEmail") || "",
-    });
+    const read = () => {
+        const consoleAdmin = getConsoleAdmin();
+
+        return {
+            name:
+                consoleAdmin.fullName ||
+                localStorage.getItem("userName") ||
+                localStorage.getItem("userEmail") ||
+                "Admin",
+            picture: localStorage.getItem("profilePicture") || "",
+            email: localStorage.getItem("userEmail") || "",
+            role: consoleAdmin.role,
+            canManageAdmins: consoleAdmin.canManageAdmins,
+        };
+    };
 
     const [admin, setAdmin] = useState(read);
 
@@ -92,13 +121,23 @@ export default function LfAdminLayout() {
     const [collapsed, setCollapsed] = useState(false);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const admin = useConsoleAdmin();
+    const navItems = NAV.filter(
+        (item) => !item.superOnly || admin.canManageAdmins
+    );
 
     // This shell is separate from the OneServe AdminLayout,
-    // so it needs its own way out. Signs them out of
-    // OneServe entirely, which is where they signed in from.
-    const handleLogout = () => {
-        logout();
-        window.location.replace("/");
+    // so it needs its own way out. The session row is closed
+    // first (so Login Activity shows "Logged Out"), then the
+    // local token is dropped and the user returns to login.
+    const handleLogout = async () => {
+        try {
+            await lfAdminApi.logout();
+        } catch {
+            // A failed/logged-out session must never trap the user here.
+        } finally {
+            logout();
+            window.location.replace("/");
+        }
     };
 
     return (
@@ -192,7 +231,7 @@ export default function LfAdminLayout() {
                     }`}
                 >
                     <nav aria-label="Lost & Found console navigation" className="space-y-1">
-                        {NAV.map((item) => {
+                        {navItems.map((item) => {
                             const Icon = item.icon;
 
                             return (
@@ -279,7 +318,7 @@ export default function LfAdminLayout() {
                         </div>
 
                         <nav aria-label="Lost & Found console navigation" className="space-y-1 p-3">
-                            {NAV.map((item) => {
+                            {navItems.map((item) => {
                                 const Icon = item.icon;
 
                                 return (

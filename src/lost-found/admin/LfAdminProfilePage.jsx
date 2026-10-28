@@ -70,7 +70,7 @@ export default function LfAdminProfilePage() {
         try {
             // The API reads the profile by the session's own email; a
             // stale email just falls back to the session data.
-            const response = await lfAdminApi.me(session.email);
+            const response = await lfAdminApi.profileMe(session.email);
             setProfile(response.data);
         } catch (err) {
             setError(err.message);

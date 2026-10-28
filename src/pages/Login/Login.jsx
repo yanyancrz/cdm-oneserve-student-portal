@@ -250,7 +250,13 @@ export default function Login() {
             if (
                 role === "lostfoundadmin" ||
                 role === "lostfound_admin" ||
-                role === "lostfound-admin"
+                role === "lostfound-admin" ||
+                role === "lostfoundsuperadmin" ||
+                role === "lostfound_super_admin" ||
+                role === "lostfound-super-admin" ||
+                role === "lostfoundsubadmin" ||
+                role === "lostfound_sub_admin" ||
+                role === "lostfound-subadmin"
             ) {
                 if (!isDesktop) {
                     rejectLogin("Lost & Found Admin accounts can only be used on a desktop device.");

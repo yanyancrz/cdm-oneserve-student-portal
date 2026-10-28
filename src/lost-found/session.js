@@ -7,6 +7,12 @@
 
 const TOKEN_KEYS = ["token", "authToken"];
 
+// Console identity, written by LfAdminGate after it verifies the account
+// with the API. Read by the layout to show only the pages the role may use.
+export const LF_ADMIN_ROLE_KEY = "lfAdminRole";
+export const LF_ADMIN_NAME_KEY = "lfAdminName";
+export const LF_ADMIN_PERMISSION_KEY = "lfAdminPermissions";
+
 // Every key the shared login flow writes (Login.jsx). Listing them
 // explicitly rather than calling localStorage.clear(), which would
 // also wipe unrelated PWA / device settings.
@@ -23,6 +29,9 @@ const SESSION_KEYS = [
     "contactNumber",
     "profilePicture",
     "isProfileComplete",
+    // Which browser this is. Written by the shared login; without clearing it
+    // here a signed-out device would keep a stale session key.
+    "oneserve:sessionKey",
 ];
 
 export const LOST_FOUND_HOME_ROUTE = "/lost-found";
@@ -38,6 +47,9 @@ export function getToken() {
 
 export function clearSession() {
     SESSION_KEYS.forEach((key) => localStorage.removeItem(key));
+    [LF_ADMIN_ROLE_KEY, LF_ADMIN_NAME_KEY, LF_ADMIN_PERMISSION_KEY].forEach(
+        (key) => localStorage.removeItem(key)
+    );
 }
 
 /**
@@ -78,8 +90,48 @@ export function isLostFoundAdminRole() {
     return (
         role === "lostfoundadmin" ||
         role === "lostfound_admin" ||
+        role === "lostfound-admin" ||
+        role === "lostfoundsuperadmin" ||
+        role === "lostfound_super_admin" ||
+        role === "lostfound-super-admin" ||
+        role === "lostfoundsubadmin" ||
+        role === "lostfound_sub_admin" ||
+        role === "lostfound-subadmin"
+    );
+}
+
+/** True only for the module owner (legacy LostFoundAdmin counts as owner). */
+export function isLostFoundSuperAdminRole() {
+    const role = getStoredRole();
+    return (
+        role === "lostfoundsuperadmin" ||
+        role === "lostfound_super_admin" ||
+        role === "lostfound-super-admin" ||
+        role === "lostfoundadmin" ||
+        role === "lostfound_admin" ||
         role === "lostfound-admin"
     );
+}
+
+// ---------- console identity (written by LfAdminGate) ----------
+
+export function rememberConsoleAdmin(me = {}) {
+    const role = me.role || "";
+    localStorage.setItem(LF_ADMIN_ROLE_KEY, role);
+    localStorage.setItem(LF_ADMIN_NAME_KEY, me.fullName || "");
+    localStorage.setItem(
+        LF_ADMIN_PERMISSION_KEY,
+        me.canManageAdmins ? "manage" : "operate"
+    );
+}
+
+export function getConsoleAdmin() {
+    return {
+        role: localStorage.getItem(LF_ADMIN_ROLE_KEY) || "",
+        fullName: localStorage.getItem(LF_ADMIN_NAME_KEY) || "",
+        canManageAdmins:
+            localStorage.getItem(LF_ADMIN_PERMISSION_KEY) === "manage",
+    };
 }
 
 function getStoredRole() {

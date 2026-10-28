@@ -31,6 +31,8 @@ const PORTAL_ROLES = new Set([
     "librarystaff",
     "guidanceadmin",
     "lostfoundadmin",
+    "lostfoundsuperadmin",
+    "lostfoundsubadmin",
     "clinicadmin",
 ]);
 

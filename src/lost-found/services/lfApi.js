@@ -1,4 +1,5 @@
 import { API_URL } from "../../config/api";
+import { getSessionKey } from "../../session/deviceSession";
 import { clearSession, getToken } from "../session";
 
 // Fired on any 401 so the Lost & Found gates can send the
@@ -50,12 +51,14 @@ function extractMessage(status, payload) {
 
 async function request(path, { method = "GET", body, params, signal } = {}) {
     const token = getToken();
+    const sessionKey = getSessionKey();
 
     const isForm = typeof FormData !== "undefined" && body instanceof FormData;
 
     const headers = {
         Accept: "application/json",
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        ...(sessionKey ? { "X-Session-Key": sessionKey } : {}),
         // A FormData body must NOT get an explicit Content-Type: the
         // boundary is appended by the browser.
         ...(body !== undefined && !isForm
@@ -184,10 +187,14 @@ export const lfApi = {
      */
     claimProofBlobUrl: async (claimId) => {
         const token = getToken();
+        const sessionKey = getSessionKey();
         const response = await fetch(
             `${API_URL}/api/lostfound/claims/${claimId}/proof`,
             {
-                headers: token ? { Authorization: `Bearer ${token}` } : {},
+                headers: {
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                    ...(sessionKey ? { "X-Session-Key": sessionKey } : {}),
+                },
             }
         );
 
@@ -241,6 +248,9 @@ export const lfApi = {
 // =====================================================
 
 export const lfAdminApi = {
+    // Who am I + what may I do (works even while a password change is due).
+    me: () => http.get("/api/lostfound/admin/me"),
+
     stats: () => http.get("/api/lostfound/admin/stats"),
     reports: () => http.get("/api/lostfound/admin/reports"),
     reportDetail: (id) => http.get(`/api/lostfound/admin/reports/${id}`),
@@ -262,13 +272,31 @@ export const lfAdminApi = {
         http.put(`/api/lostfound/schedules/${id}/complete`, body),
 
     // ---------------------------------------------------------------
+    // ADMIN MANAGEMENT, LOGIN MONITORING AND AUDIT
+    // Super-Admin-only on the server; a Sub-Admin gets 403.
+    // ---------------------------------------------------------------
+    admins: () => http.get("/api/lostfound/admin/admins"),
+    createAdmin: (body) => http.post("/api/lostfound/admin/admins", body),
+    setAdminStatus: (id, isActive) =>
+        http.put(`/api/lostfound/admin/admins/${id}/status`, { isActive }),
+    loginActivity: () => http.get("/api/lostfound/admin/login-activity"),
+    activityLog: (params) =>
+        http.get("/api/lostfound/admin/activity-log", { params }),
+
+    /** Ends this device's session record before dropping the local token. */
+    logout: () => http.post("/api/auth/session/logout", {}),
+
+    // ---------------------------------------------------------------
     // Profile settings - the console administrator's OWN account.
     // These are the same shared /api/profile endpoints the student
     // and counselor portals use, so there is no new API surface.
     // The user id always comes from the signed-in session (the
     // shared OneServe login), never from an editable field.
+    //
+    // NOTE: `profileMe` reads the shared profile; `me` above is the
+    // console identity/authorisation endpoint.
     // ---------------------------------------------------------------
-    me: (email) => http.get(`/api/profile/${encodeURIComponent(email)}`),
+    profileMe: (email) => http.get(`/api/profile/${encodeURIComponent(email)}`),
     updateProfile: (body) => http.put("/api/profile/update", body),
     uploadProfilePhoto: (file, userId) => {
         const body = new FormData();

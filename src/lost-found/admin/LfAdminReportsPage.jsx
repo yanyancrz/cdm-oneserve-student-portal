@@ -8,6 +8,7 @@ import {
     formatDateTime,
     formatItemId,
     isExactItemIdMatch,
+    lfAttribution,
 } from "../config/lfTheme";
 import { lfImageUrl } from "../config/lfImage";
 import {
@@ -182,6 +183,17 @@ export default function LfAdminReportsPage() {
                                     </td>
                                     <td className={lfTdClass}>
                                         <LfStatusChip status={report.status} />
+                                        {report.reviewedByName && (
+                                            <span className="mt-1 block max-w-[220px] text-[10px] leading-4 text-slate-500">
+                                                {lfAttribution(
+                                                    report.reviewedByName,
+                                                    report.reviewedByRole,
+                                                    report.status === "Rejected"
+                                                        ? "Rejected"
+                                                        : "Approved"
+                                                )}
+                                            </span>
+                                        )}
                                     </td>
                                     <td className={`${lfTdClass} text-right`}>
                                         <Link

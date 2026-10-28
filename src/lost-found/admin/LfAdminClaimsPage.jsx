@@ -7,6 +7,7 @@ import {
     formatDateTime,
     formatItemId,
     isExactItemIdMatch,
+    lfAttribution,
 } from "../config/lfTheme";
 import {
     LfEmpty,
@@ -186,6 +187,20 @@ export default function LfAdminClaimsPage() {
                                 </td>
                                 <td className={lfTdClass}>
                                     <LfStatusChip status={claim.status} />
+                                    {claim.decisionByName && (
+                                        <span className="mt-1 block max-w-[200px] text-[10px] leading-4 text-slate-500">
+                                            {lfAttribution(
+                                                claim.decisionByName,
+                                                claim.decisionByRole,
+                                                claim.status === "Rejected"
+                                                    ? "Rejected"
+                                                    : claim.status === "Awaiting Pickup" ||
+                                                        claim.status === "Returned"
+                                                      ? "Approved"
+                                                      : "Handled"
+                                            )}
+                                        </span>
+                                    )}
                                 </td>
                                 <td className={`${lfTdClass} text-right`}>
                                     <Link

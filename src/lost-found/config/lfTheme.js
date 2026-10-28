@@ -163,3 +163,40 @@ export function initials(name) {
         .map((part) => part.charAt(0).toUpperCase())
         .join("");
 }
+
+/**
+ * Human role label used in attribution lines:
+ * "Super Admin", "Sub-Admin". Built-in OneServe admins also count as
+ * Super Admin for the Lost & Found console.
+ */
+export function lfRoleLabel(role) {
+    const value = String(role || "").trim();
+
+    if (value === "LostFoundSubAdmin") return "Sub-Admin";
+
+    if (
+        value === "LostFoundSuperAdmin" ||
+        value === "LostFoundAdmin" ||
+        value === "Admin" ||
+        value === "SuperAdmin"
+    )
+        return "Super Admin";
+
+    return value || "Administrator";
+}
+
+/**
+ * Attribution line used on reports, claims and completed pickups.
+ *
+ *   Approved by: Maria Santos (Sub-Admin)
+ *   Approved by: Super Admin — Maria Santos
+ */
+export function lfAttribution(name, role, verb = "Approved") {
+    if (!name) return "";
+
+    const label = lfRoleLabel(role);
+
+    return label === "Super Admin"
+        ? `${verb} by: Super Admin — ${name}`
+        : `${verb} by: ${name} (${label})`;
+}

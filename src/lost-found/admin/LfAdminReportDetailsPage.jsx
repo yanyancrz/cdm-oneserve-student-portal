@@ -21,6 +21,7 @@ import {
     formatDateTime,
     formatItemId,
     formatStatus,
+    lfAttribution,
 } from "../config/lfTheme";
 import { lfImageUrl } from "../config/lfImage";
 import {
@@ -189,6 +190,22 @@ export default function LfAdminReportDetailsPage() {
                             <DetailRow label="Reported" value={formatDateTime(report.createdAt)} />
                             <DetailRow label="Custody" value={formatStatus(report.itemCustody)} />
                             <DetailRow label="Status" value={formatStatus(report.status)} />
+                            {report.reviewedByName && (
+                                <DetailRow
+                                    label="Reviewed by"
+                                    value={lfAttribution(
+                                        report.reviewedByName,
+                                        report.reviewedByRole,
+                                        report.status === "Rejected" ? "Rejected" : "Approved"
+                                    )}
+                                />
+                            )}
+                            {report.reviewedAt && (
+                                <DetailRow
+                                    label="Reviewed at"
+                                    value={formatDateTime(report.reviewedAt)}
+                                />
+                            )}
                         </dl>
 
                         <div className="rounded-2xl bg-slate-50 p-4">
@@ -439,6 +456,23 @@ function ClaimReviewCard({ claim, report, acting, onDecide }) {
                         tone={
                             claim.status === "Rejected" ? "bad" : "info"
                         }
+                    />
+                )}
+
+                {claim.decisionByName && (
+                    <ReviewRow
+                        label="Decided by"
+                        value={lfAttribution(
+                            claim.decisionByName,
+                            claim.decisionByRole,
+                            claim.status === "Rejected"
+                                ? "Rejected"
+                                : claim.status === "Awaiting Pickup" ||
+                                    claim.status === "Returned"
+                                  ? "Approved"
+                                  : "Handled"
+                        )}
+                        tone="info"
                     />
                 )}
             </dl>
