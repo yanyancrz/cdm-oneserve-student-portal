@@ -13,7 +13,7 @@ import { API_URL } from "../../config/api";
 import { reserveBook } from "../../services/libraryService";
 import { Skeleton } from "../States";
 
-const HOLD_DAYS = 3;
+const HOLD_MINUTES = 15;
 
 /**
  * Props:
@@ -36,9 +36,9 @@ export default function BookDetailsModal({
 }) {
     const [isReserving, setIsReserving] = useState(false);
 
-    // How many days a reserved book is held. Follows the Library Settings;
-    // HOLD_DAYS is only used until they arrive (or if they cannot be loaded).
-    const [holdDays, setHoldDays] = useState(HOLD_DAYS);
+    // How long a reserved book is held. Follows the Library Settings;
+    // HOLD_MINUTES is only used until they arrive (or if they cannot be loaded).
+    const [holdMinutes, setHoldMinutes] = useState(HOLD_MINUTES);
     const [policyLoading, setPolicyLoading] = useState(true);
 
     useEffect(() => {
@@ -57,12 +57,12 @@ export default function BookDetailsModal({
                 if (!response.ok) return;
 
                 const payload = await response.json();
-                const days = Number(
-                    (payload?.data ?? payload)?.settings?.reservationPickupDays
+                const minutes = Number(
+                    (payload?.data ?? payload)?.settings?.reservationPickupMinutes
                 );
 
-                if (!cancelled && Number.isFinite(days) && days > 0) {
-                    setHoldDays(days);
+                if (!cancelled && Number.isFinite(minutes) && minutes > 0) {
+                    setHoldMinutes(minutes);
                 }
             } catch {
                 // Keep the default.
@@ -560,7 +560,7 @@ export default function BookDetailsModal({
                             {policyLoading ? (
                                 <Skeleton className="inline-block h-3 w-6 align-middle" />
                             ) : (
-                                `${holdDays} days`
+                                `${holdMinutes} minutes`
                             )}
                             . Pick them up at the circulation desk
                             and show your Access Pass. The librarian

@@ -29,7 +29,7 @@ const toForm = (s) => ({
     studentBorrowLimit: String(s.studentBorrowLimit),
     facultyBorrowLimit: String(s.facultyBorrowLimit),
     defaultLoanDays: String(s.defaultLoanDays),
-    reservationPickupDays: String(s.reservationPickupDays),
+    reservationPickupMinutes: String(s.reservationPickupMinutes),
 });
 
 export default function LibrarySettingsPage() {
@@ -77,10 +77,10 @@ export default function LibrarySettingsPage() {
             }
         }
 
-        const pickup = Number(values.reservationPickupDays);
+        const holdMinutes = Number(values.reservationPickupMinutes);
 
-        if (!Number.isInteger(pickup) || pickup < 1 || pickup > 14) {
-            toast.error("The pickup period must be from 1 to 14 days.");
+        if (!Number.isInteger(holdMinutes) || holdMinutes < 1 || holdMinutes > 1440) {
+            toast.error("The reservation hold must be from 1 to 1440 minutes.");
             return;
         }
 
@@ -169,8 +169,8 @@ export default function LibrarySettingsPage() {
                                     ))}
                                 </select>
                             </Field>
-                            <Field label="Reservation pickup period (days)" hint="How long an approved reservation is held.">
-                                <input type="number" min={1} max={14} className={input} {...bind("reservationPickupDays")} />
+                            <Field label="Reservation hold (minutes)" hint="How long a reservation is held before it expires.">
+                                <input type="number" min={1} max={1440} className={input} {...bind("reservationPickupMinutes")} />
                             </Field>
                         </div>
                     </div>

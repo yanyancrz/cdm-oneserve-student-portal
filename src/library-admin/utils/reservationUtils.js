@@ -43,7 +43,11 @@ export function describeExpiry(item, now = new Date()) {
 
     const hours = diff / 36e5;
 
-    if (hours < 1) return { text: "In under an hour", sub, tone: "danger" };
+    if (hours < 1) {
+        const minutes = Math.max(1, Math.ceil(diff / 6e4));
+        return { text: `In ${minutes} min`, sub, tone: "danger" };
+    }
+
     if (hours < 24) return { text: `In ${Math.floor(hours)} h`, sub, tone: "warn" };
 
     const days = Math.floor(hours / 24);

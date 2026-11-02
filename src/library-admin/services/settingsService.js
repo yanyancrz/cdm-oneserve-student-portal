@@ -17,7 +17,7 @@ export const settingsService = {
             studentBorrowLimit: Number(values.studentBorrowLimit),
             facultyBorrowLimit: Number(values.facultyBorrowLimit),
             defaultLoanDays: Number(values.defaultLoanDays),
-            reservationPickupDays: Number(values.reservationPickupDays),
+            reservationPickupMinutes: Number(values.reservationPickupMinutes),
         });
         return response.data;
     },

@@ -625,7 +625,7 @@ export default function Dashboard() {
         : settings?.studentBorrowLimit ?? 3;
 
     const loanDays = settings?.defaultLoanDays ?? 7;
-    const holdDays = settings?.reservationPickupDays ?? 3;
+    const holdMinutes = settings?.reservationPickupMinutes ?? 15;
 
     const bannedUntil = policy?.bannedUntil
         ? new Date(policy.bannedUntil)
@@ -650,7 +650,7 @@ export default function Dashboard() {
             {
                 id: "fallback-reservations",
                 title: "Reservations",
-                content: `Reserved books are held for ${holdDays} days at the circulation desk.`,
+                content: `Reserved books are held for ${holdMinutes} minutes at the circulation desk.`,
             },
             {
                 id: "fallback-inside-use",
@@ -665,7 +665,7 @@ export default function Dashboard() {
                     "A late return suspends borrowing until the end of the current semester. A lost or damaged book must be replaced with an identical copy (same ISBN and edition).",
             },
         ],
-        [borrowLimit, loanDays, holdDays]
+        [borrowLimit, loanDays, holdMinutes]
     );
 
     const effectiveTerms = terms.length > 0 ? terms : fallbackTerms;
@@ -706,7 +706,7 @@ export default function Dashboard() {
         ? [
               { label: "Borrow limit", value: `${borrowLimit} books` },
               { label: "Loan period", value: `${loanDays} days` },
-              { label: "Reservation hold", value: `${holdDays} days` },
+              { label: "Reservation hold", value: `${holdMinutes} minutes` },
               { label: "Late return", value: "1-semester ban" },
               { label: "Lost book", value: "Replace exact copy" },
           ]
@@ -1592,8 +1592,8 @@ export default function Dashboard() {
                                         period is {loanDays} days.
                                     </li>
                                     <li>
-                                        Reserved books are held for {holdDays}{" "}
-                                        days at the circulation desk.
+                                        Reserved books are held for {holdMinutes}{" "}
+                                        minutes at the circulation desk.
                                     </li>
                                     <li>
                                         Returning a book late bans you from

@@ -44,7 +44,7 @@ const ENDPOINTS = {
     policy: `${API_URL}/api/library/policy`,
 };
 
-const HOLD_HOURS = 48;
+const HOLD_MINUTES = 15;
 
 // =========================================================
 // HELPERS
@@ -377,7 +377,7 @@ function BookSheet({
                     <p className="mt-5 flex items-start gap-2 rounded-xl bg-amber-50 px-3 py-2.5 text-xs leading-5 text-amber-800">
                         <Clock3 size={15} className="mt-0.5 shrink-0" />
                         <span>
-                            Reserved books are held for {HOLD_HOURS} hours.
+                            Reserved books are held for {HOLD_MINUTES} minutes.
                             Pick them up at the circulation desk and show your
                             Access Pass. The librarian will confirm the
                             claim.
@@ -930,7 +930,7 @@ export default function Dashboard() {
                     quantity,
                     reservedAt: new Date(now).toISOString(),
                     pickupBy: new Date(
-                        now + HOLD_HOURS * 60 * 60 * 1000
+                        now + HOLD_MINUTES * 60 * 1000
                     ).toISOString(),
                     status: "Pending",
                 },
@@ -1374,8 +1374,8 @@ export default function Dashboard() {
                                     period is 7 days.
                                 </li>
                                 <li>
-                                    Reserved books are held for {HOLD_HOURS}{" "}
-                                    hours at the circulation desk.
+                                    Reserved books are held for {HOLD_MINUTES}{" "}
+                                    minutes at the circulation desk.
                                 </li>
                                 <li>
                                     Returning a book late bans you from
