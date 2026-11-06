@@ -546,7 +546,7 @@ export default function GuidanceReportsPage() {
 
     const [narrative, setNarrative] = useState("");
     const [narrativeMeta, setNarrativeMeta] = useState({
-        title: "Narrative report",
+        title: "Report",
         subtitle: "",
         filename: "guidance-narrative-report.docx",
     });
@@ -908,14 +908,14 @@ export default function GuidanceReportsPage() {
                 </p>
             )}
 
-            {/* Generate all narrative report - sits above the stat cards */}
+            {/* Generate all reports - sits above the stat cards */}
             <section className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-black/[0.05] bg-white p-5 shadow-sm">
                 <div className="flex items-start gap-3">
                     <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#106A2E]/10 text-[#106A2E]">
                         <FileText size={18} />
                     </span>
                     <div>
-                        <h2 className="text-sm font-semibold text-[#1F1F1F]">Narrative report</h2>
+                        <h2 className="text-sm font-semibold text-[#1F1F1F]">Reports</h2>
                         <p className="mt-0.5 text-xs text-gray-400">
                             Generate a summary of everything below, edit it, then download it or
                             save it to the repository.
@@ -939,7 +939,7 @@ export default function GuidanceReportsPage() {
                         disabled={!report}
                         className="rounded-lg bg-[#106A2E] px-3.5 py-2 text-sm font-medium text-white transition hover:bg-[#0a2c19] disabled:opacity-50"
                     >
-                        Generate all narrative report
+                        Generate all reports
                     </button>
                 </div>
             </section>
