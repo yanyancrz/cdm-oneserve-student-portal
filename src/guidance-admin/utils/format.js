@@ -31,7 +31,16 @@ function parse(value) {
 
     const text = String(value).trim();
     const hasZone = /(?:Z|[+-]\d{2}:?\d{2})$/i.test(text);
-    const date = new Date(hasZone ? text : `${text}${PH_OFFSET}`);
+    const hasTime = /T/.test(text);
+
+    let normalized = text;
+    if (!hasZone) {
+        normalized = hasTime
+            ? `${text}${PH_OFFSET}`
+            : `${text}T00:00:00${PH_OFFSET}`;
+    }
+
+    const date = new Date(normalized);
 
     return Number.isNaN(date.getTime()) ? null : date;
 }
