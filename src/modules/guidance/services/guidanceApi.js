@@ -58,6 +58,49 @@ export async function guidanceFetch(path, { method = "GET", body, formData, sign
     return data;
 }
 
+// Authenticated file download (exports and attachments). The API never exposes
+// a public file URL, so the JWT is sent with the request and the blob is saved
+// locally by the browser.
+export async function guidanceDownload(path, fallbackName = "download") {
+    const token = getToken();
+    if (!token) throw new GuidanceApiError("You are not signed in.", 401);
+
+    const response = await fetch(`${API_URL}/api/guidance${path}`, {
+        headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (response.status === 401) {
+        signOut();
+        window.dispatchEvent(new Event(GUIDANCE_UNAUTHORIZED_EVENT));
+    }
+
+    if (!response.ok) {
+        let message = "The file could not be downloaded.";
+        try {
+            const data = await response.json();
+            message = data?.message || message;
+        } catch { /* not JSON */ }
+        throw new GuidanceApiError(message, response.status);
+    }
+
+    const disposition = response.headers.get("Content-Disposition") || "";
+    const match = disposition.match(/filename\*?=(?:UTF-8'')?["']?([^"';]+)/i);
+    const fileName = match ? decodeURIComponent(match[1]) : fallbackName;
+
+    return { blob: await response.blob(), fileName };
+}
+
+export function saveBlob(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+}
+
 export const guidanceApi = {
     getStudentMe: (signal) => guidanceFetch("/student/me", { signal }),
     getCounselorMe: (signal) => guidanceFetch("/counselor/me", { signal }),
@@ -177,6 +220,69 @@ export const guidanceApi = {
 
     getStudentCase: (studentId, signal) =>
         guidanceFetch(`/counselor/students/${studentId}`, { signal }),
+
+    // ---- counselor: narrative reports (DB-backed) ----
+    getNarrativeReports: (params = {}, signal) => {
+        const q = new URLSearchParams();
+        Object.entries(params).forEach(([key, value]) => {
+            if (value !== undefined && value !== null && value !== "") q.set(key, value);
+        });
+        return guidanceFetch(`/counselor/narrative-reports?${q}`, { signal });
+    },
+
+    getNarrativeReportStats: (signal) =>
+        guidanceFetch("/counselor/narrative-reports/stats", { signal }).then((d) => d.stats),
+
+    getNarrativeSubjects: (search, signal) => {
+        const q = search ? `?search=${encodeURIComponent(search)}` : "";
+        return guidanceFetch(`/counselor/narrative-reports/subjects${q}`, { signal }).then(
+            (d) => d.subjects || []
+        );
+    },
+
+    getNarrativeReport: (id, signal) =>
+        guidanceFetch(`/counselor/narrative-reports/${id}`, { signal }).then((d) => d.data),
+
+    createNarrativeReport: (payload) =>
+        guidanceFetch("/counselor/narrative-reports", { method: "POST", body: payload }),
+
+    updateNarrativeReport: (id, payload) =>
+        guidanceFetch(`/counselor/narrative-reports/${id}`, { method: "PUT", body: payload }),
+
+    finalizeNarrativeReport: (id) =>
+        guidanceFetch(`/counselor/narrative-reports/${id}/finalize`, { method: "POST" }),
+
+    archiveNarrativeReport: (id) =>
+        guidanceFetch(`/counselor/narrative-reports/${id}/archive`, { method: "POST" }),
+
+    deleteNarrativeReport: (id) =>
+        guidanceFetch(`/counselor/narrative-reports/${id}`, { method: "DELETE" }),
+
+    uploadNarrativeAttachment: (id, file) => {
+        const formData = new FormData();
+        formData.append("file", file);
+        return guidanceFetch(`/counselor/narrative-reports/${id}/attachments`, {
+            method: "POST",
+            formData,
+        });
+    },
+
+    deleteNarrativeAttachment: (id, attachmentId) =>
+        guidanceFetch(`/counselor/narrative-reports/${id}/attachments/${attachmentId}`, {
+            method: "DELETE",
+        }),
+
+    downloadNarrativeAttachment: (id, attachmentId, fileName) =>
+        guidanceDownload(
+            `/counselor/narrative-reports/${id}/attachments/${attachmentId}/download`,
+            fileName
+        ),
+
+    exportNarrativeReport: (id, format = "docx") =>
+        guidanceDownload(
+            `/counselor/narrative-reports/${id}/export?format=${format}`,
+            `narrative-report-${id}.${format}`
+        ),
 
     // ---- student: follow-ups ----
     getMyFollowUps: (signal) =>

@@ -13,6 +13,7 @@ import GuidanceCounselorDetailPage from "../pages/GuidanceCounselorDetailPage";
 import GuidanceStudentsPage from "../pages/GuidanceStudentsPage";
 import GuidanceStudentDetailPage from "../pages/GuidanceStudentDetailPage";
 import GuidanceReportsPage from "../pages/GuidanceReportsPage";
+import GuidanceNarrativeReportsPage from "../pages/GuidanceNarrativeReportsPage";
 import GuidanceSettingsPage from "../pages/GuidanceSettingsPage";
 import GuidanceAccountPage from "../pages/GuidanceAccountPage";
 
@@ -73,6 +74,13 @@ export const guidanceHeadRoutes = (
                 path={`${GUIDANCE_HEAD_BASE}/reports`}
                 element={<GuidanceReportsPage />}
             />
+
+            <Route element={<RequireGuidancePermission permission="canViewNarrativeReports" />}>
+                <Route
+                    path={`${GUIDANCE_HEAD_BASE}/narrative-reports`}
+                    element={<GuidanceNarrativeReportsPage />}
+                />
+            </Route>
 
             <Route element={<RequireGuidancePermission permission="canManageSettings" />}>
                 <Route

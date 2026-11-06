@@ -81,20 +81,58 @@ export const guidanceHeadService = {
             .then((r) => r.data);
     },
 
-    // Narrative report repository
-    listNarrativeReports(options) {
-        return api.get("/api/admin/guidance/reports/narrative", options).then((r) => r.data);
+    // Canonical narrative reports (all counselors)
+    listNarrativeReports(params, options) {
+        return api
+            .get("/api/admin/guidance/narrative-reports", { ...options, params })
+            .then((r) => r.data);
+    },
+    getNarrativeReportStats(options) {
+        return api.get("/api/admin/guidance/narrative-reports/stats", options).then((r) => r.data);
+    },
+    getNarrativeReport(id, options) {
+        return api.get(`/api/admin/guidance/narrative-reports/${id}`, options).then((r) => r.data);
+    },
+    getNarrativeReportEvents(id, options) {
+        return api.get(`/api/admin/guidance/narrative-reports/${id}/events`, options).then((r) => r.data);
+    },
+    listStudentNarrativeReports(studentId, params, options) {
+        return api
+            .get(`/api/admin/guidance/students/${studentId}/narrative-reports`, { ...options, params })
+            .then((r) => r.data);
+    },
+    listCounselorNarrativeReports(counselorId, params, options) {
+        return api
+            .get(`/api/admin/guidance/counselors/${counselorId}/narrative-reports`, { ...options, params })
+            .then((r) => r.data);
+    },
+    exportNarrativeReport(id, format = "docx", options) {
+        return api.download(`/api/admin/guidance/narrative-reports/${id}/export`, {
+            ...options,
+            params: { format },
+        });
+    },
+    downloadNarrativeAttachment(recordId, attachmentId, options) {
+        return api.download(
+            `/api/admin/guidance/narrative-reports/${recordId}/attachments/${attachmentId}/download`,
+            options
+        );
+    },
+
+    // Legacy filesystem repository (kept for earlier uploads)
+    listNarrativeReportsLegacy(options) {
+        return api.get("/api/admin/guidance/reports/narrative/files", options).then((r) => r.data);
     },
     uploadNarrativeReport(file, options) {
         const body = new FormData();
         body.append("file", file);
-        return api.post("/api/admin/guidance/reports/narrative", body, options).then((r) => r.data);
+        return api.post("/api/admin/guidance/reports/narrative/files", body, options).then((r) => r.data);
     },
     deleteNarrativeReport(id, options) {
-        return api.delete(`/api/admin/guidance/reports/narrative/${encodeURIComponent(id)}`, options).then((r) => r.data);
+        return api.delete(`/api/admin/guidance/reports/narrative/files/${encodeURIComponent(id)}`, options).then((r) => r.data);
     },
     renameNarrativeReport(id, newName, options) {
-        return api.post(`/api/admin/guidance/reports/narrative/${encodeURIComponent(id)}/rename`, undefined, {
+        return api.post(`/api/admin/guidance/reports/narrative/files/${encodeURIComponent(id)}/rename`, undefined, {
             ...options,
             params: { newName },
         }).then((r) => r.data);

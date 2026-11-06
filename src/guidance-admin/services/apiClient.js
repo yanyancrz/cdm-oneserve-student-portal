@@ -112,10 +112,58 @@ async function request(path, { method = "GET", body, params, signal, headers: ex
     return { success: true, data: payload, message: null };
 }
 
+// Authenticated binary download. The API keeps report files private, so the
+// JWT is sent with the request and the caller receives a Blob + file name.
+async function download(path, { params, signal } = {}) {
+    const token = getToken();
+
+    const response = await fetch(buildUrl(path, params), {
+        signal,
+        headers: {
+            Accept: "application/octet-stream",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+    });
+
+    if (!response.ok) {
+        let payload = null;
+        try {
+            payload = await response.json();
+        } catch { /* not JSON */ }
+
+        if (response.status === 401) {
+            clearSession();
+            window.dispatchEvent(new Event(UNAUTHORIZED_EVENT));
+        }
+
+        throw new ApiError(extractMessage(response.status, payload), { status: response.status });
+    }
+
+    const disposition = response.headers.get("Content-Disposition") || "";
+    const match = disposition.match(/filename\*?=(?:UTF-8'')?["']?([^"';]+)/i);
+
+    return {
+        blob: await response.blob(),
+        fileName: match ? decodeURIComponent(match[1]) : "download",
+    };
+}
+
+export function saveBlob(blob, fileName) {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+}
+
 export const api = {
     get: (path, options) => request(path, { ...options, method: "GET" }),
     post: (path, body, options) => request(path, { ...options, method: "POST", body }),
     put: (path, body, options) => request(path, { ...options, method: "PUT", body }),
     patch: (path, body, options) => request(path, { ...options, method: "PATCH", body }),
     delete: (path, options) => request(path, { ...options, method: "DELETE" }),
+    download,
 };

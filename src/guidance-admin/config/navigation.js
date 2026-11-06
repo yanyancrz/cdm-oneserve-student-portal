@@ -1,6 +1,7 @@
 import {
     LayoutDashboard,
     BarChart3,
+    FileText,
     GraduationCap,
     Settings,
     UserCog,
@@ -28,6 +29,12 @@ export const GUIDANCE_HEAD_NAV = [
         heading: "Insights",
         items: [
             { label: "Reports", to: `${GUIDANCE_HEAD_BASE}/reports`, icon: BarChart3, permission: "canViewReports" },
+            {
+                label: "Narrative Reports",
+                to: `${GUIDANCE_HEAD_BASE}/narrative-reports`,
+                icon: FileText,
+                permission: "canViewNarrativeReports",
+            },
         ],
     },
     {

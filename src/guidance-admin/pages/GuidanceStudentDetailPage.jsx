@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, CalendarCheck2, GraduationCap, Mail, MessageSquareMore, Phone } from "lucide-react";
+import { ArrowLeft, CalendarCheck2, FileText, GraduationCap, Mail, MessageSquareMore, Phone } from "lucide-react";
 
 import KpiCard from "../components/dashboard/KpiCard";
 import { ErrorMessage, PageHeader, StatusBadge } from "../components/common";
@@ -199,6 +199,78 @@ export default function GuidanceStudentDetailPage() {
                                                 </td>
                                                 <td className="px-4 py-3 text-sm text-gray-500">
                                                     {formatDateTime(a.createdAt)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
+                    </section>
+
+                    <section className="rounded-2xl border border-black/[0.05] bg-white shadow-sm">
+                        <div className="flex flex-wrap items-start justify-between gap-2 border-b border-black/[0.06] px-5 py-4">
+                            <div>
+                                <h2 className="text-sm font-semibold text-[#1F1F1F]">
+                                    Counseling narratives
+                                </h2>
+                                <p className="mt-0.5 text-xs text-gray-400">
+                                    Every report about this person, across all counselors
+                                </p>
+                            </div>
+
+                            <Link
+                                to={`/admin/guidance/narrative-reports?studentId=${encodeURIComponent(
+                                    student.userId
+                                )}&subjectName=${encodeURIComponent(student.fullName)}`}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-black/[0.08] bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition hover:border-[#106A2E]/40 hover:bg-[#106A2E]/5 hover:text-[#106A2E]"
+                            >
+                                <FileText size={13} /> Open in Narrative Reports
+                            </Link>
+                        </div>
+
+                        {(student.counselingHistory || []).length === 0 ? (
+                            <p className="px-5 py-8 text-center text-sm text-gray-400">
+                                No counseling narrative has been written about this account yet.
+                            </p>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full min-w-[640px] border-collapse text-left">
+                                    <thead>
+                                        <tr className="border-b border-black/[0.06] text-[11px] uppercase tracking-wide text-gray-400">
+                                            <th className="px-4 py-3 font-medium">Report</th>
+                                            <th className="px-4 py-3 font-medium">Counselor</th>
+                                            <th className="px-4 py-3 font-medium">Session date</th>
+                                            <th className="px-4 py-3 font-medium">Status</th>
+                                            <th className="px-4 py-3 font-medium">Concern</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody className="divide-y divide-black/[0.04]">
+                                        {(student.counselingHistory || []).map((report) => (
+                                            <tr key={report.id}>
+                                                <td className="px-4 py-3">
+                                                    <p className="max-w-[240px] truncate text-sm font-medium text-gray-700">
+                                                        {report.reportTitle || "Narrative report"}
+                                                    </p>
+                                                    <p className="text-[11px] text-gray-400">
+                                                        {report.reportNumber || `Draft #${report.id}`}
+                                                        {report.hasPrivateNotes ? " · private notes" : ""}
+                                                    </p>
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-gray-600">
+                                                    {report.counselorName}
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-gray-600">
+                                                    {formatDate(report.sessionDate)}
+                                                </td>
+                                                <td className="px-4 py-3">
+                                                    <StatusBadge tone={statusTone(report.status)}>
+                                                        {report.status}
+                                                    </StatusBadge>
+                                                </td>
+                                                <td className="px-4 py-3 text-sm text-gray-600">
+                                                    {report.concernType || "—"}
                                                 </td>
                                             </tr>
                                         ))}

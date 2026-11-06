@@ -4,6 +4,8 @@ import {
     Bell,
     CalendarCheck2,
     ChevronRight,
+    ClipboardList,
+    FileText,
     HeartHandshake,
     LayoutDashboard,
     MessageCircle,
@@ -25,6 +27,8 @@ import ModuleBottomNav from "../../../components/BottomNavigation/ModuleBottomNa
 const TABS = [
     { to: "/guidance/counselor", label: "Dashboard", icon: LayoutDashboard, end: true },
     { to: "/guidance/counselor/appointments", label: "Appointments", icon: CalendarCheck2 },
+    { to: "/guidance/counselor/records", label: "Records", icon: ClipboardList },
+    { to: "/guidance/counselor/narrative-reports", label: "Reports", icon: FileText },
     { to: "/guidance/counselor/chat", label: "Messages", icon: MessageCircle },
 ];
 

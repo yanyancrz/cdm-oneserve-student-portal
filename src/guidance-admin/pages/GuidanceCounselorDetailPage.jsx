@@ -5,6 +5,7 @@ import {
     ArrowLeft,
     CalendarCheck2,
     CalendarClock,
+    FileText,
     KeyRound,
     Mail,
     NotebookPen,
@@ -23,7 +24,7 @@ import {
     StatusBadge,
 } from "../components/common";
 import guidanceHeadService from "../services/guidanceHeadService";
-import { formatDateTime, formatNumber, initials, statusTone } from "../utils/format";
+import { formatDate, formatDateTime, formatNumber, initials, statusTone } from "../utils/format";
 
 const CONFIRM = {
     reset: {
@@ -56,6 +57,8 @@ export default function GuidanceCounselorDetailPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const [narratives, setNarratives] = useState(null);
+
     const [modal, setModal] = useState(null);
     const [busy, setBusy] = useState(false);
 
@@ -85,6 +88,25 @@ export default function GuidanceCounselorDetailPage() {
 
         return () => controller.abort();
     }, [load]);
+
+    useEffect(() => {
+        const controller = new AbortController();
+
+        queueMicrotask(() => {
+            guidanceHeadService
+                .listCounselorNarrativeReports(
+                    counselorId,
+                    { page: 1, pageSize: 8, sort: "newest" },
+                    { signal: controller.signal }
+                )
+                .then(setNarratives)
+                .catch((err) => {
+                    if (err?.name !== "AbortError") setNarratives({ items: [], totalItems: 0 });
+                });
+        });
+
+        return () => controller.abort();
+    }, [counselorId]);
 
     const runConfirmed = async () => {
         const { type } = modal;
@@ -348,6 +370,65 @@ export default function GuidanceCounselorDetailPage() {
 
                                         <StatusBadge tone={slot.isActive ? "green" : "gray"}>
                                             {slot.isActive ? "Active" : "Inactive"}
+                                        </StatusBadge>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </section>
+
+                    <section className="rounded-2xl border border-black/[0.05] bg-white shadow-sm">
+                        <div className="flex flex-wrap items-start justify-between gap-2 border-b border-black/[0.06] px-5 py-4">
+                            <div>
+                                <h2 className="text-sm font-semibold text-[#1F1F1F]">
+                                    Narrative reports
+                                </h2>
+                                <p className="mt-0.5 text-xs text-gray-400">
+                                    {narratives
+                                        ? `${formatNumber(narratives.totalItems)} report${
+                                              narratives.totalItems === 1 ? "" : "s"
+                                          } authored`
+                                        : "Loading reports..."}
+                                </p>
+                            </div>
+
+                            <Link
+                                to={`/admin/guidance/narrative-reports?counselorId=${encodeURIComponent(
+                                    counselor.userId
+                                )}&counselorName=${encodeURIComponent(counselor.fullName)}`}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-black/[0.08] bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 transition hover:border-[#106A2E]/40 hover:bg-[#106A2E]/5 hover:text-[#106A2E]"
+                            >
+                                <FileText size={13} /> Open in Narrative Reports
+                            </Link>
+                        </div>
+
+                        {!narratives || narratives.items.length === 0 ? (
+                            <p className="px-5 py-8 text-center text-sm text-gray-400">
+                                {narratives
+                                    ? "This counselor has not written any narrative reports yet."
+                                    : "Loading…"}
+                            </p>
+                        ) : (
+                            <ul className="divide-y divide-black/[0.04]">
+                                {narratives.items.map((report) => (
+                                    <li
+                                        key={report.id}
+                                        className="flex flex-wrap items-center gap-2 px-5 py-3 text-sm"
+                                    >
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate font-medium text-gray-700">
+                                                {report.reportTitle || "Narrative report"}
+                                            </p>
+                                            <p className="text-[11px] text-gray-400">
+                                                {report.subjectName} · {report.subjectRole} ·{" "}
+                                                {report.reportNumber || `Draft #${report.id}`}
+                                            </p>
+                                        </div>
+                                        <span className="text-xs text-gray-500">
+                                            {formatDate(report.sessionDate)}
+                                        </span>
+                                        <StatusBadge tone={statusTone(report.status)}>
+                                            {report.status}
                                         </StatusBadge>
                                     </li>
                                 ))}

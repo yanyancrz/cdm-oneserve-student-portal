@@ -18,6 +18,7 @@ import CounselorProfilePage from "../counselor/CounselorProfilePage";
 import ManageAvailabilityPage from "../counselor/ManageAvailabilityPage";
 import RecordsPage from "../counselor/RecordsPage";
 import ReportsPage from "../counselor/ReportsPage";
+import NarrativeReportsPage from "../counselor/NarrativeReportsPage";
 
 // There is intentionally NO /guidance/login. The shared "/" login is used.
 
@@ -54,6 +55,7 @@ export const guidanceCounselorRoutes = (
             <Route path="availability" element={<ManageAvailabilityPage />} />
             <Route path="records" element={<RecordsPage />} />
             <Route path="reports" element={<ReportsPage />} />
+            <Route path="narrative-reports" element={<NarrativeReportsPage />} />
             <Route path="profile" element={<CounselorProfilePage />} />
             <Route path="chat" element={<ChatListPage audience="counselor" />} />
             <Route path="chat/:conversationId" element={<ChatThreadPage audience="counselor" />} />

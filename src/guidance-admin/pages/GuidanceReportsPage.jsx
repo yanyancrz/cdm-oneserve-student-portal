@@ -598,7 +598,7 @@ export default function GuidanceReportsPage() {
         let cancelled = false;
 
         guidanceHeadService
-            .listNarrativeReports()
+            .listNarrativeReportsLegacy()
             .then((data) => {
                 if (!cancelled) setRepoFiles(Array.isArray(data) ? data : []);
             })
