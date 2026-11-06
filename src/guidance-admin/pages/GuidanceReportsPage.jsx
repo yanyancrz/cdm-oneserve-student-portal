@@ -669,7 +669,7 @@ export default function GuidanceReportsPage() {
     const generateNarrative = () => {
         if (!report) return;
         const lines = [];
-        lines.push("NARRATIVE REPORT - GUIDANCE COUNSELING MONITORING");
+        lines.push("REPORTS - GUIDANCE COUNSELING MONITORING");
         lines.push(`Period: ${periodLabel}`);
         lines.push("");
         lines.push(`Total appointments: ${appointmentsTotal}`);
@@ -699,7 +699,7 @@ export default function GuidanceReportsPage() {
         }
 
         openNarrative(lines.join("\n"), {
-            title: "Overall narrative report",
+            title: "Overall report",
             subtitle: periodLabel,
             filename: "guidance-narrative-report.docx",
         });
@@ -707,7 +707,7 @@ export default function GuidanceReportsPage() {
 
     const generateCounselorNarrative = (c) => {
         const lines = [];
-        lines.push("COUNSELOR NARRATIVE REPORT");
+        lines.push("COUNSELOR REPORT");
         lines.push(`Counselor: ${c.fullName}`);
         lines.push(`Period: ${periodLabel}`);
         lines.push("");
@@ -721,7 +721,7 @@ export default function GuidanceReportsPage() {
             .replace(/^-|-$/g, "");
 
         openNarrative(lines.join("\n"), {
-            title: `Narrative report - ${c.fullName}`,
+            title: `Report - ${c.fullName}`,
             subtitle: periodLabel,
             filename: `counselor-narrative-${slug || "report"}.docx`,
         });
@@ -760,7 +760,7 @@ export default function GuidanceReportsPage() {
             await guidanceHeadService.uploadNarrativeReport(file);
             setRepoReloadKey((n) => n + 1);
             setNarrativeOpen(false);
-            setToast({ type: "success", text: "Narrative saved to the repository." });
+            setToast({ type: "success", text: "Report saved to the repository." });
         } catch (err) {
             setToast({ type: "error", text: err?.message || "Unable to save the narrative." });
         } finally {
@@ -1117,7 +1117,7 @@ export default function GuidanceReportsPage() {
                             </span>
                         </h2>
                         <p className="mt-0.5 text-xs text-gray-400">
-                            Saved and uploaded narrative reports. You can also drag files onto this
+                            Saved and uploaded reports. You can also drag files onto this
                             card.
                         </p>
                     </div>
@@ -1188,7 +1188,7 @@ export default function GuidanceReportsPage() {
                             No reports in the repository yet
                         </p>
                         <p className="mt-1 max-w-sm text-xs text-gray-400">
-                            Generate a narrative and choose &ldquo;Save to repository&rdquo;, or
+                            Generate a report and choose &ldquo;Save to repository&rdquo;, or
                             upload a file. Accepted: PDF, DOC, DOCX, TXT (up to {MAX_FILE_MB} MB).
                         </p>
                     </div>
