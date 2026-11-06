@@ -1040,7 +1040,7 @@ export default function GuidanceReportsPage() {
                                     <th className="px-4 py-3 font-medium">Appointments</th>
                                     <th className="px-4 py-3 font-medium">Completed</th>
                                     <th className="px-4 py-3 font-medium">Records</th>
-                                    <th className="px-4 py-3 text-right font-medium">Narrative</th>
+                                    <th className="px-4 py-3 text-right font-medium">Reports</th>
                                 </tr>
                             </thead>
 
