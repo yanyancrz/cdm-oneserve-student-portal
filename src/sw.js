@@ -85,6 +85,10 @@ self.addEventListener("fetch", (event) => {
 
     // Never touch the API, uploads or any third party.
     if (url.origin !== self.location.origin) return;
+    if (url.pathname.startsWith("/api/") ||
+        url.pathname.startsWith("/hubs/") ||
+        request.headers.has("Authorization") ||
+        request.cache === "no-store") return;
 
     if (request.mode === "navigate") {
         event.respondWith(handleNavigation(request));

@@ -24,23 +24,29 @@ export default function ClinicIntegration() {
     const [data, setData] = useState(null);
     const [logs, setLogs] = useState([]);
     const failuresOnly = view === "errors";
+    const viewingRecords = view === "records";
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    const load = useCallback(async () => {
+    const load = useCallback(async (signal) => {
         setLoading(true);
         setError("");
         try {
             const [summary, logResult] = await Promise.all([
-                call(),
-                call(`/logs?page=1&pageSize=25${failuresOnly ? "&failuresOnly=true" : ""}`),
+                call("", { signal }),
+                call(`/logs?page=1&pageSize=25${failuresOnly ? "&failuresOnly=true" : ""}`, { signal }),
             ]);
             setData(summary);
             setLogs(logResult.items || []);
-        } catch (e) { setError(e.message); }
-        finally { setLoading(false); }
+        } catch (e) { if (e.name !== "AbortError") setError(e.message); }
+        finally { if (!signal?.aborted) setLoading(false); }
     }, [failuresOnly]);
-    useEffect(() => { const timer = setTimeout(load, 0); return () => clearTimeout(timer); }, [load]);
+    useEffect(() => {
+        if (viewingRecords) return;
+        const controller = new AbortController();
+        const timer = setTimeout(() => load(controller.signal), 0);
+        return () => { clearTimeout(timer); controller.abort(); };
+    }, [load, viewingRecords]);
 
     const summary = data?.summary;
     const connection = data?.connection;
@@ -52,10 +58,10 @@ export default function ClinicIntegration() {
     ];
 
     return <main className="admin-service-report mx-auto max-w-6xl space-y-5 p-4 sm:p-7">
-        <header className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-3xl font-semibold text-[#1F1F1F]">Clinic</h1><p className="mt-1 text-sm text-gray-500">Medical records and service information from the Clinic CMS.</p></div><div className="admin-no-print flex gap-2"><button onClick={() => window.print()} disabled={loading || !data} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"><FileDown size={15} />Generate PDF report</button><button onClick={load} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm"><RefreshCw size={15} className={loading ? "animate-spin" : ""} />Refresh</button></div></header>
+        <header className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-3xl font-semibold text-[#1F1F1F]">Clinic</h1><p className="mt-1 text-sm text-gray-500">Medical records and service information from the Clinic CMS.</p></div>{!viewingRecords && <div className="admin-no-print flex gap-2"><button onClick={() => window.print()} disabled={loading || !data} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"><FileDown size={15} />Generate PDF report</button><button onClick={() => load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm"><RefreshCw size={15} className={loading ? "animate-spin" : ""} />Refresh</button></div>}</header>
         <p className="admin-print-meta text-xs text-gray-500">CDM OneServe · Clinic integration report · Generated {new Date().toLocaleString()}</p>
-        <div className="flex flex-wrap gap-2" aria-label="Clinic monitoring features">{[["overview", "Overview"], ...(data?.canViewMedicalRecords ? [["records", "Medical records"]] : []), ["activity", "Integration activity"], ["errors", "Failed requests"]].map(([key, label]) => <Link key={key} to={`?view=${key}`} className={`rounded-full px-3 py-1.5 text-xs font-medium ${view === key ? "bg-[#0E3B22] text-white" : "bg-white text-gray-600 ring-1 ring-gray-200"}`}>{label}</Link>)}</div>
-        {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</div>}
+        <div className="flex flex-wrap gap-2" aria-label="Clinic monitoring features">{[["overview", "Overview"], ["records", "Medical records"], ["activity", "Integration activity"], ["errors", "Failed requests"]].map(([key, label]) => <Link key={key} to={`?view=${key}`} className={`rounded-full px-3 py-1.5 text-xs font-medium ${view === key ? "bg-[#0E3B22] text-white" : "bg-white text-gray-600 ring-1 ring-gray-200"}`}>{label}</Link>)}</div>
+        {!viewingRecords && error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</div>}
         {view === "records" ? <ClinicMedicalRecords /> : <>
         <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border bg-white p-5">
             <div className="flex items-center gap-3"><div className={`grid h-11 w-11 place-items-center rounded-full ${tone(connection?.status)}`}><Wifi size={20} /></div><div><p className="font-semibold">Clinic CMS connection</p><p className="text-xs text-gray-500">{connection?.message || "Connection status is not available."}</p></div></div>

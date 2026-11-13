@@ -9,7 +9,6 @@ import {
     Mail,
     MessageCircleHeart,
     SearchCheck,
-    ShoppingBag,
     Stethoscope,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -18,6 +17,7 @@ import LoadingModal from "../../components/LoadingModal/LoadingModal";
 import BackgroundLayout from "../../layouts/BackgroundLayout";
 import CdmLogo from "../../assets/images/cdm-logo.png";
 import { API_URL } from "../../config/api";
+import { loadGoogleIdentity, bindGoogleIdentity } from "../../services/googleIdentity";
 import { isPWAInstalled } from "../../utils/pwa";
 import { LIBRARY_HOME_ROUTE, clearSession } from "../../library-admin/utils/session";
 import { rememberSessionKey } from "../../session/deviceSession";
@@ -382,7 +382,7 @@ export default function Login() {
 
     useEffect(() => {
         let cancelled = false;
-        let script = null;
+        let unbindGoogle;
 
         const init = async () => {
             try {
@@ -401,27 +401,14 @@ export default function Login() {
 
                 setGoogleClientId(clientId);
 
-                await new Promise((resolve, reject) => {
-                    script = document.createElement("script");
-                    script.src = "https://accounts.google.com/gsi/client";
-                    script.async = true;
-                    script.defer = true;
-                    script.onload = resolve;
-                    script.onerror = reject;
-                    document.head.appendChild(script);
-                });
+                await loadGoogleIdentity();
 
                 if (cancelled || !window.google?.accounts?.id) {
                     return;
                 }
 
-                window.google.accounts.id.initialize({
-                    client_id: clientId,
-                    callback: (response) =>
-                        googleCallbackRef.current?.(response),
-                    auto_select: false,
-                    cancel_on_tap_outside: true,
-                });
+                unbindGoogle = bindGoogleIdentity(clientId, response =>
+                    googleCallbackRef.current?.(response));
 
                 // The button container only exists once
                 // googleClientId is set - wait for the
@@ -471,7 +458,7 @@ export default function Login() {
 
         return () => {
             cancelled = true;
-            script?.remove();
+            unbindGoogle?.();
         };
     }, []);
 
