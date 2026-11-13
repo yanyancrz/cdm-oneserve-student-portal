@@ -57,18 +57,14 @@ export default function AdminDashboard() {
                     localStorage.getItem("token") ||
                     localStorage.getItem("authToken");
 
-                const [dashboardResponse, usersResponse] = await Promise.all([
-                    fetch(`${API_URL}/api/admin/dashboard`, {
+                const dashboardResponse = await fetch(
+                    `${API_URL}/api/admin/dashboard`,
+                    {
                         headers: token
                             ? { Authorization: `Bearer ${token}` }
                             : {},
-                    }),
-                    fetch(`${API_URL}/api/auth/users`, {
-                        headers: token
-                            ? { Authorization: `Bearer ${token}` }
-                            : {},
-                    }),
-                ]);
+                    }
+                );
 
                 if (dashboardResponse.status === 401) {
                     throw new Error(
@@ -88,27 +84,10 @@ export default function AdminDashboard() {
 
                 const data = await dashboardResponse.json();
 
-                // Only show modules that have an active service head
-                // (or admin/super admin) in the database.
-                let activeHeadModules = new Set();
-                if (usersResponse.ok) {
-                    const users = await usersResponse.json();
-                    (Array.isArray(users) ? users : []).forEach((u) => {
-                        if (u?.accountStatus === "Active" || u?.status === "Active") {
-                            if (u?.adminModule) activeHeadModules.add(u.adminModule);
-                            if (u?.role === "SuperAdmin" || u?.role === "Admin") {
-                                // System-level accounts keep the portal considered active.
-                            }
-                        }
-                    });
-                }
-
-                if (Array.isArray(data.modules)) {
-                    data.modules = data.modules.filter((m) =>
-                        activeHeadModules.has(m?.name)
-                    );
-                }
-
+                // Show every module the API reports. A module is no longer
+                // hidden just because it has no active service head - the
+                // usage counts are real activity, so Clinic must stay visible
+                // even when it has no OneServe admin account yet.
                 setDashboard({
                     totalUsers: data.totalUsers ?? 0,
                     totalStudents: data.totalStudents ?? 0,
