@@ -559,12 +559,12 @@ export default function AdminDashboard() {
                                                 {module.usageNote || "No usage note supplied by the dashboard API."}
                                             </p>
 
-                                            {module.path || ({ Library: "/admin/library", Guidance: "/admin/guidance", "Lost & Found": "/lost-found/admin" }[module.name]) ? (
-                                                <button type="button" onClick={() => navigate(module.path || ({ Library: "/admin/library", Guidance: "/admin/guidance", "Lost & Found": "/lost-found/admin" }[module.name]))} className="relative mt-4 text-xs font-semibold text-[#106A2E] hover:underline">
-                                                    Open service console →
+                                            {({ Library: "/admin/services/library", Clinic: "/admin/services/clinic", Guidance: "/admin/services/guidance", "Lost & Found": "/admin/services/lost-found" }[module.name]) ? (
+                                                <button type="button" onClick={() => navigate(({ Library: "/admin/services/library", Clinic: "/admin/services/clinic", Guidance: "/admin/services/guidance", "Lost & Found": "/admin/services/lost-found" }[module.name]))} className="relative mt-4 text-xs font-semibold text-[#106A2E] hover:underline">
+                                                    View monitoring →
                                                 </button>
                                             ) : (
-                                                <p className="relative mt-4 text-xs text-gray-400">The integration management page is not available here yet.</p>
+                                                <p className="relative mt-4 text-xs text-gray-400">Monitoring data is not available.</p>
                                             )}
 
                                         </div>

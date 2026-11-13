@@ -1,5 +1,6 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Megaphone, CalendarDays, BarChart3, KeyRound, BookOpen, Stethoscope, Compass, SearchCheck, ScrollText } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Megaphone, CalendarDays, BarChart3, KeyRound, ScrollText, ChevronDown, LayoutGrid, BookOpen, Stethoscope, Compass, SearchCheck } from "lucide-react";
 import Logo from "../assets/images/cdm-white.png";
 import BackgroundImage from "../assets/images/admin-bg.png";
 
@@ -26,6 +27,37 @@ const SESSION_KEYS = [
 export default function AdminLayout() {
     const navigate = useNavigate();
     const location = useLocation();
+    const serviceGroups = [
+        {
+            id: "library", label: "Library", icon: <BookOpen size={16} />, path: "/admin/services/library",
+            features: [
+                ["Overview", "overview"], ["Inventory", "inventory"], ["Circulation", "circulation"],
+                ["Reservations", "reservations"], ["Recent activity", "activity"],
+            ],
+        },
+        {
+            id: "clinic", label: "Clinic", icon: <Stethoscope size={16} />, path: "/admin/services/clinic",
+            features: [["Overview", "overview"], ["Integration activity", "activity"], ["Failed requests", "errors"]],
+        },
+        {
+            id: "guidance", label: "Guidance", icon: <Compass size={16} />, path: "/admin/services/guidance",
+            features: [["Overview", "overview"], ["Appointments", "appointments"], ["Counselor activity", "counselors"], ["Chat & report statistics", "systems"]],
+        },
+        {
+            id: "lost-found", label: "Lost & Found", icon: <SearchCheck size={16} />, path: "/admin/services/lost-found",
+            features: [["Overview", "overview"], ["Reports", "reports"], ["Claims", "claims"], ["Pickups", "pickups"], ["Recent activity", "activity"]],
+        },
+    ];
+    const activeService = serviceGroups.find((group) => location.pathname.startsWith(group.path));
+    const [servicesOpen, setServicesOpen] = useState(Boolean(activeService));
+    const [openService, setOpenService] = useState(activeService?.id || null);
+
+    useEffect(() => {
+        if (activeService) {
+            setServicesOpen(true);
+            setOpenService(activeService.id);
+        }
+    }, [activeService?.id]);
 
     // =====================================================
     // LOGOUT
@@ -92,6 +124,12 @@ export default function AdminLayout() {
         },
 
         {
+            label: "Services",
+            group: true,
+            icon: <LayoutGrid size={18} />,
+        },
+
+        {
             label: "User Management",
             path: "/admin/users",
             icon: (
@@ -135,30 +173,6 @@ export default function AdminLayout() {
             label: "Roles & Permissions",
             path: "/admin/roles-permissions",
             icon: <KeyRound size={18} />,
-        },
-
-        {
-            label: "Library Management",
-            path: "/admin/services/library",
-            icon: <BookOpen size={18} />,
-        },
-
-        {
-            label: "Clinic Integration",
-            path: "/admin/services/clinic",
-            icon: <Stethoscope size={18} />,
-        },
-
-        {
-            label: "Guidance Management",
-            path: "/admin/services/guidance",
-            icon: <Compass size={18} />,
-        },
-
-        {
-            label: "Lost & Found Management",
-            path: "/admin/services/lost-found",
-            icon: <SearchCheck size={18} />,
         },
 
         {
@@ -206,10 +220,12 @@ export default function AdminLayout() {
         },
     ];
 
-    const currentPage =
-        navItems.find(
-            (item) => item.path === location.pathname
-        )?.label || "Overview";
+    const currentFeature = activeService?.features.find(([, view]) =>
+        new URLSearchParams(location.search).get("view") === view
+    );
+    const currentPage = activeService
+        ? `${activeService.label} · ${currentFeature?.[0] || "Overview"}`
+        : navItems.find((item) => item.path === location.pathname)?.label || "Overview";
 
     const today = new Date().toLocaleDateString("en-US", {
         weekday: "short",
@@ -290,6 +306,62 @@ export default function AdminLayout() {
                 <nav className="flex-1 space-y-1 p-2 lg:p-4">
 
                     {navItems.map((item) => {
+                        if (item.group) {
+                            const isServicesActive = Boolean(activeService);
+                            return (
+                                <div key={item.label} className="space-y-1">
+                                    <button
+                                        type="button"
+                                        onClick={() => setServicesOpen((open) => !open)}
+                                        title="Services"
+                                        aria-expanded={servicesOpen}
+                                        className={`group flex w-full items-center justify-center gap-3 rounded-xl px-3 py-3 text-left text-sm transition lg:justify-start lg:px-4 ${isServicesActive ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white"}`}
+                                    >
+                                        <span className="flex h-5 w-5 shrink-0 items-center justify-center">{item.icon}</span>
+                                        <span className="hidden flex-1 truncate lg:block">Services</span>
+                                        <ChevronDown size={15} className={`hidden transition-transform lg:block ${servicesOpen ? "rotate-180" : ""}`} />
+                                    </button>
+
+                                    {servicesOpen && <div className="space-y-1 lg:pl-2">
+                                        {serviceGroups.map((service) => {
+                                            const isServiceOpen = openService === service.id;
+                                            const isServiceActive = activeService?.id === service.id;
+                                            return <div key={service.id}>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setOpenService((open) => open === service.id ? null : service.id)}
+                                                    title={service.label}
+                                                    aria-expanded={isServiceOpen}
+                                                    className={`flex w-full items-center justify-center gap-2 rounded-lg px-2 py-2.5 text-left text-xs transition lg:justify-start lg:px-3 ${isServiceActive ? "text-white" : "text-white/60 hover:bg-white/5 hover:text-white"}`}
+                                                >
+                                                    <span className="flex h-4 w-4 shrink-0 items-center justify-center">{service.icon}</span>
+                                                    <span className="hidden flex-1 truncate lg:block">{service.label}</span>
+                                                    <ChevronDown size={13} className={`hidden transition-transform lg:block ${isServiceOpen ? "rotate-180" : ""}`} />
+                                                </button>
+                                                {isServiceOpen && <div className="space-y-0.5 lg:ml-5 lg:border-l lg:border-white/15 lg:pl-2">
+                                                    {service.features.map(([label, view]) => {
+                                                        const path = `${service.path}?view=${view}`;
+                                                        const isFeatureActive = location.pathname === service.path && (new URLSearchParams(location.search).get("view") || "overview") === view;
+                                                        return <button
+                                                            key={view}
+                                                            type="button"
+                                                            onClick={() => navigate(path)}
+                                                            title={`${service.label} ${label}`}
+                                                            aria-current={isFeatureActive ? "page" : undefined}
+                                                            className={`flex w-full items-center justify-center rounded-md px-2 py-2 text-[11px] transition lg:justify-start lg:px-3 ${isFeatureActive ? "bg-white/10 text-white" : "text-white/55 hover:bg-white/5 hover:text-white"}`}
+                                                        >
+                                                            <span className="hidden truncate lg:block">{label}</span>
+                                                            <span className="lg:hidden">·</span>
+                                                        </button>;
+                                                    })}
+                                                </div>}
+                                            </div>;
+                                        })}
+                                    </div>}
+                                </div>
+                            );
+                        }
+
                         const isActive =
                             location.pathname === item.path;
 
