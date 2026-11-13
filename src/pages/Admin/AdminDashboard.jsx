@@ -2,6 +2,16 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from "../../config/api";
 
+// Accent colors for the per-module statistic cards.
+const MODULE_ACCENTS = {
+    "Lost & Found": { bg: "#FEF3C7", color: "#B45309" },
+    Library: { bg: "#DBEAFE", color: "#1D4ED8" },
+    Clinic: { bg: "#FFE4E6", color: "#BE123C" },
+    Guidance: { bg: "#EDE9FE", color: "#6D28D9" },
+};
+
+const DEFAULT_ACCENT = { bg: "#ECE9E2", color: "#1F1F1F" };
+
 const Bone = ({ className = "" }) => (
     <div className={`animate-pulse rounded-xl bg-slate-200/70 ${className}`} />
 );
@@ -172,90 +182,6 @@ export default function AdminDashboard() {
             color: "#1F1F1F",
         },
     ];
-
-    // --------------------------------------------------
-    // ICON
-    // --------------------------------------------------
-
-    const Icon = ({ type, size = 20 }) => {
-        const common = {
-            width: size,
-            height: size,
-            viewBox: "0 0 24 24",
-            fill: "none",
-            stroke: "currentColor",
-            strokeWidth: "1.8",
-            strokeLinecap: "round",
-            strokeLinejoin: "round",
-        };
-
-        if (type === "users") {
-            return (
-                <svg {...common}>
-                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                    <circle cx="9" cy="7" r="4" />
-                    <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                    <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-                </svg>
-            );
-        }
-
-        if (type === "clock") {
-            return (
-                <svg {...common}>
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M12 7v5l3 2" />
-                </svg>
-            );
-        }
-
-        if (type === "check") {
-            return (
-                <svg {...common}>
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="m8 12 2.5 2.5L16 9" />
-                </svg>
-            );
-        }
-
-        if (type === "x") {
-            return (
-                <svg {...common}>
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="m9 9 6 6" />
-                    <path d="m15 9-6 6" />
-                </svg>
-            );
-        }
-
-        if (type === "arrow") {
-            return (
-                <svg {...common}>
-                    <path d="M5 12h14" />
-                    <path d="m13 6 6 6-6 6" />
-                </svg>
-            );
-        }
-
-        if (type === "shield") {
-            return (
-                <svg {...common}>
-                    <path d="M12 3 20 6v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6l8-3Z" />
-                    <path d="m9 12 2 2 4-4" />
-                </svg>
-            );
-        }
-
-        if (type === "activity") {
-            return (
-                <svg {...common}>
-                    <path d="M3 12h4l2-7 4 14 2-7h6" />
-                </svg>
-            );
-        }
-
-        return null;
-    };
 
     // --------------------------------------------------
     // SKELETON
@@ -432,25 +358,17 @@ export default function AdminDashboard() {
                         MODULE MONITORING
                     ================================================== */}
 
-                    <section
-                        className="
-                            bg-white
-                            rounded-2xl
-                            border
-                            border-[#1F1F1F]/[0.05]
-                            overflow-hidden
-                        "
-                    >
+                    <section>
 
-                        <div className="flex items-center justify-between px-5 sm:px-6 pt-6 pb-4">
+                        <div className="mb-4 flex items-center justify-between">
 
                             <div>
                                 <h2 className="font-display text-xl text-[#1F1F1F]">
-                                    Module Monitoring
+                                    Student Usage per Module
                                 </h2>
 
                                 <p className="text-xs text-gray-500 mt-1">
-                                    Current service availability
+                                    Active students with activity in each service
                                 </p>
                             </div>
 
@@ -472,46 +390,91 @@ export default function AdminDashboard() {
 
                         </div>
 
-                        <div className="px-5 sm:px-6 pb-5">
-                            {dashboard.modules && dashboard.modules.length > 0 ? (
-                                dashboard.modules.map((module, index) => {
+                        {dashboard.modules && dashboard.modules.length > 0 ? (
+                            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                                {dashboard.modules.map((module, index) => {
+                                    const accent =
+                                        MODULE_ACCENTS[module.name] ||
+                                        DEFAULT_ACCENT;
+
+                                    const hasCount =
+                                        typeof module.studentCount === "number";
+
                                     return (
                                         <div
                                             key={index}
-                                            className="flex items-center justify-between px-3 py-2"
+                                            className="
+                                                group
+                                                relative
+                                                overflow-hidden
+                                                rounded-2xl
+                                                border
+                                                border-[#1F1F1F]/[0.06]
+                                                bg-white
+                                                p-5
+                                                shadow-sm
+                                                transition
+                                                hover:-translate-y-0.5
+                                                hover:shadow-md
+                                            "
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <Icon type={module.icon} size={20} />
-                                                <div>
-                                                    <span className="text-sm font-medium text-[#1F1F1F]">
-                                                        {module.name}
-                                                    </span>
-                                                    {module.usageNote && (
-                                                        <p className="mt-0.5 text-[11px] text-gray-400">
-                                                            {module.usageNote}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-3">
-                                                <span className="rounded-full bg-[#ECE9E2] px-2.5 py-1 text-[11px] font-semibold text-[#1F1F1F]">
-                                                    {typeof module.studentCount === "number"
-                                                        ? `${module.studentCount} student${module.studentCount === 1 ? "" : "s"}`
-                                                        : "—"}
+                                            <div
+                                                className="pointer-events-none absolute -right-8 -top-8 h-24 w-24 rounded-full opacity-10"
+                                                style={{ background: accent.color }}
+                                            />
+
+                                            <div className="relative flex items-start justify-between">
+
+                                                <span
+                                                    className="flex h-11 w-11 items-center justify-center rounded-xl text-xl"
+                                                    style={{ background: accent.bg }}
+                                                >
+                                                    {module.icon}
                                                 </span>
-                                                <span className="text-xs text-gray-400">
+
+                                                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#E1F0E4] px-2.5 py-1 text-[10px] font-semibold text-[#106A2E]">
+                                                    <span className="h-1.5 w-1.5 rounded-full bg-[#106A2E]" />
                                                     {module.status}
                                                 </span>
+
                                             </div>
+
+                                            <p className="relative mt-4 text-sm font-medium text-[#1F1F1F]">
+                                                {module.name}
+                                            </p>
+
+                                            <div className="relative mt-1 flex items-end gap-1.5">
+
+                                                <span className="text-4xl font-semibold tracking-tight text-[#1F1F1F]">
+                                                    {hasCount ? module.studentCount : "—"}
+                                                </span>
+
+                                                <span className="mb-1 text-xs font-medium text-gray-400">
+                                                    {hasCount
+                                                        ? module.studentCount === 1
+                                                            ? "student"
+                                                            : "students"
+                                                        : "N/A"}
+                                                </span>
+
+                                            </div>
+
+                                            <p className="relative mt-2 text-[11px] leading-4 text-gray-400">
+                                                {module.usageNote}
+                                            </p>
+
                                         </div>
                                     );
-                                })
-                            ) : (
-                                <p className="px-3 py-2 text-sm text-gray-400">
-                                    No module status data available.
+                                })}
+                            </div>
+                        ) : (
+                            <div className="rounded-2xl border border-dashed border-[#1F1F1F]/10 bg-white px-5 py-8 text-center">
+                                <p className="text-sm text-gray-400">
+                                    No module usage data available.
                                 </p>
-                            )}
-                        </div>
+                            </div>
+                        )}
+
                     </section>
 
                 </div>
