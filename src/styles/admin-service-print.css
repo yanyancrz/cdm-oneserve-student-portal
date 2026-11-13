@@ -1,0 +1,53 @@
+.admin-print-meta {
+    display: none;
+}
+
+@media print {
+    @page {
+        size: A4 portrait;
+        margin: 14mm;
+    }
+
+    body {
+        background: #fff !important;
+        color: #111827 !important;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .admin-sidebar,
+    .admin-topbar,
+    .admin-no-print {
+        display: none !important;
+    }
+
+    .admin-layout-main {
+        min-height: 0 !important;
+        padding-left: 0 !important;
+    }
+
+    .admin-service-report {
+        display: block !important;
+        width: 100% !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        color: #111827 !important;
+    }
+
+    .admin-service-report article,
+    .admin-service-report section,
+    .admin-service-report aside {
+        break-inside: avoid;
+        box-shadow: none !important;
+    }
+
+    .admin-service-report article,
+    .admin-service-report section {
+        border-color: #d1d5db !important;
+    }
+
+    .admin-print-meta {
+        display: block !important;
+    }
+}

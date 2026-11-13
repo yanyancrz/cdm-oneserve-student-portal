@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Megaphone, CalendarDays, BarChart3, KeyRound, ScrollText, ChevronDown, LayoutGrid, BookOpen, Stethoscope, Compass, SearchCheck } from "lucide-react";
 import Logo from "../assets/images/cdm-white.png";
 import BackgroundImage from "../assets/images/admin-bg.png";
+import "../styles/admin-service-print.css";
 
 // Route ng Login page. Palitan kung iba ang path.
 const LOGIN_PATH = "/";
@@ -244,6 +245,7 @@ export default function AdminLayout() {
             <aside
                 className="
                     fixed
+                    admin-sidebar
                     inset-y-0
                     left-0
                     z-50
@@ -490,6 +492,7 @@ export default function AdminLayout() {
 
             <div
                 className="
+                    admin-layout-main
                     min-h-screen
                     pl-20
                     lg:pl-64
@@ -502,6 +505,7 @@ export default function AdminLayout() {
 
                 <header
                     className="
+                        admin-topbar
                         flex
                         min-h-[72px]
                         items-center

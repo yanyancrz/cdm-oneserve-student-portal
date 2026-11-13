@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Activity, BookOpen, ClipboardList, RefreshCw, ShieldCheck, Users } from "lucide-react";
+import { Activity, BookOpen, ClipboardList, FileDown, RefreshCw, ShieldCheck, Users } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { API_URL } from "../../config/api";
 
@@ -96,16 +96,23 @@ export default function AdminServiceOversight({ module }) {
     const isLostFound = module === "lost-found";
     const upcomingAppointments = module === "guidance" && view === "appointments" ? data?.upcomingAppointments || [] : [];
 
-    return <main className="mx-auto max-w-6xl space-y-5 p-4 sm:p-7">
+    return <main className="admin-service-report mx-auto max-w-6xl space-y-5 p-4 sm:p-7">
         <header className="flex flex-wrap items-end justify-between gap-3">
             <div>
                 <h1 className="text-3xl font-semibold text-[#1F1F1F]">{config.title}</h1>
                 <p className="mt-1 text-sm text-gray-500">{config.description}</p>
             </div>
-            <button onClick={load} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm">
-                <RefreshCw size={15} className={loading ? "animate-spin" : ""} />Refresh
-            </button>
+            <div className="admin-no-print flex gap-2">
+                <button onClick={() => window.print()} disabled={loading || !data} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                    <FileDown size={15} />Generate PDF report
+                </button>
+                <button onClick={load} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm">
+                    <RefreshCw size={15} className={loading ? "animate-spin" : ""} />Refresh
+                </button>
+            </div>
         </header>
+
+        <p className="admin-print-meta text-xs text-gray-500">CDM OneServe · Service monitoring report · Generated {new Date().toLocaleString()}</p>
 
         <div className="flex flex-wrap gap-2" aria-label={`${config.title} features`}>
             {Object.entries(featureLabels[module] || featureLabels.library).map(([key, label]) => (

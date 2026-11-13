@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Activity, AlertTriangle, CheckCircle2, Clock3, RefreshCw, ShieldCheck, Wifi } from "lucide-react";
+import { Activity, AlertTriangle, CheckCircle2, Clock3, FileDown, RefreshCw, ShieldCheck, Wifi } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { API_URL } from "../../config/api";
 
@@ -50,8 +50,9 @@ export default function ClinicIntegration() {
         ["Average response", summary?.averageLatencyMs == null ? "—" : `${summary.averageLatencyMs} ms`, Clock3],
     ];
 
-    return <main className="mx-auto max-w-6xl space-y-5 p-4 sm:p-7">
-        <header className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-3xl font-semibold text-[#1F1F1F]">Clinic monitoring</h1><p className="mt-1 text-sm text-gray-500">Connection health and available usage statistics from the external Clinic CMS integration.</p></div><button onClick={load} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm"><RefreshCw size={15} className={loading ? "animate-spin" : ""} />Refresh</button></header>
+    return <main className="admin-service-report mx-auto max-w-6xl space-y-5 p-4 sm:p-7">
+        <header className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-3xl font-semibold text-[#1F1F1F]">Clinic monitoring</h1><p className="mt-1 text-sm text-gray-500">Connection health and available usage statistics from the external Clinic CMS integration.</p></div><div className="admin-no-print flex gap-2"><button onClick={() => window.print()} disabled={loading || !data} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"><FileDown size={15} />Generate PDF report</button><button onClick={load} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm"><RefreshCw size={15} className={loading ? "animate-spin" : ""} />Refresh</button></div></header>
+        <p className="admin-print-meta text-xs text-gray-500">CDM OneServe · Clinic integration report · Generated {new Date().toLocaleString()}</p>
         <div className="flex flex-wrap gap-2" aria-label="Clinic monitoring features">{[["overview", "Overview"], ["activity", "Integration activity"], ["errors", "Failed requests"]].map(([key, label]) => <span key={key} className={`rounded-full px-3 py-1.5 text-xs font-medium ${view === key ? "bg-[#0E3B22] text-white" : "bg-white text-gray-600 ring-1 ring-gray-200"}`}>{label}</span>)}</div>
         {error && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</div>}
         <section className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border bg-white p-5">
