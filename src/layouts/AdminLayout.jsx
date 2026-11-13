@@ -38,7 +38,7 @@ export default function AdminLayout() {
         },
         {
             id: "clinic", label: "Clinic", icon: <Stethoscope size={16} />, path: "/admin/services/clinic",
-            features: [["Overview", "overview"], ["Medical records", "records"], ["Integration activity", "activity"], ["Failed requests", "errors"]],
+            features: [["Medical records", "records"]],
         },
         {
             id: "guidance", label: "Guidance", icon: <Compass size={16} />, path: "/admin/services/guidance",
