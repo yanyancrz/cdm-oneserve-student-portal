@@ -482,13 +482,27 @@ export default function AdminDashboard() {
                                         >
                                             <div className="flex items-center gap-3">
                                                 <Icon type={module.icon} size={20} />
-                                                <span className="text-sm font-medium text-[#1F1F1F]">
-                                                    {module.name}
+                                                <div>
+                                                    <span className="text-sm font-medium text-[#1F1F1F]">
+                                                        {module.name}
+                                                    </span>
+                                                    {module.usageNote && (
+                                                        <p className="mt-0.5 text-[11px] text-gray-400">
+                                                            {module.usageNote}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <span className="rounded-full bg-[#ECE9E2] px-2.5 py-1 text-[11px] font-semibold text-[#1F1F1F]">
+                                                    {typeof module.studentCount === "number"
+                                                        ? `${module.studentCount} student${module.studentCount === 1 ? "" : "s"}`
+                                                        : "—"}
+                                                </span>
+                                                <span className="text-xs text-gray-400">
+                                                    {module.status}
                                                 </span>
                                             </div>
-                                            <span className="text-xs text-gray-400">
-                                                {module.status}
-                                            </span>
                                         </div>
                                     );
                                 })
