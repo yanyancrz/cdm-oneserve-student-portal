@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { API_URL } from "../../config/api";
 
 // Accent colors for the per-module statistic cards.
@@ -23,7 +22,6 @@ const BoneOnDark = ({ className = "" }) => (
 );
 
 export default function AdminDashboard() {
-    const navigate = useNavigate();
 
     const [dashboard, setDashboard] = useState({
         totalUsers: null,
@@ -259,7 +257,7 @@ export default function AdminDashboard() {
                                         </p>
 
                                         <p className="mt-0.5 text-[11px] text-white/50">
-                                            Reported by the admin dashboard API
+                                            Accounts currently marked active
                                         </p>
 
                                     </div>
@@ -348,7 +346,7 @@ export default function AdminDashboard() {
                     <section aria-labelledby="admin-overview-heading" className="mb-8">
                         <div className="mb-4">
                             <h2 id="admin-overview-heading" className="font-display text-xl text-[#1F1F1F]">System overview</h2>
-                            <p className="mt-1 text-xs text-gray-500">Values are supplied by the OneServe admin dashboard API.</p>
+                            <p className="mt-1 text-xs text-gray-500">Registered accounts across OneServe.</p>
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                             {overviewStats.map((item) => (
@@ -361,7 +359,7 @@ export default function AdminDashboard() {
                         </div>
                     </section>
 
-                    <div className="mb-8 grid gap-5 xl:grid-cols-2">
+                    <div className="mb-8 grid gap-5">
                         <section aria-labelledby="registration-trends-heading" className="rounded-2xl border border-[#1F1F1F]/[0.06] bg-white p-5 shadow-sm">
                             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                                 <div>
@@ -395,29 +393,7 @@ export default function AdminDashboard() {
                             )}
                         </section>
 
-                        <section aria-labelledby="system-health-heading" className="rounded-2xl border border-[#1F1F1F]/[0.06] bg-white p-5 shadow-sm">
-                            <div className="mb-4">
-                                <h2 id="system-health-heading" className="font-display text-lg text-[#1F1F1F]">System health</h2>
-                                <p className="mt-1 text-xs text-gray-500">Live checks returned by the API.</p>
-                            </div>
-                            {dashboard.systemHealth?.components?.length ? (
-                                <div className="space-y-2">
-                                    {dashboard.systemHealth.components.map((component) => {
-                                        const healthy = ["online", "enabled"].includes(String(component.status).toLowerCase());
-                                        return (
-                                            <div key={component.component} className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2.5">
-                                                <span className="text-sm text-slate-700">{component.name || component.component}</span>
-                                                <span className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${healthy ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>
-                                                    {component.status || "Unavailable"}{component.latencyMs == null ? "" : ` · ${component.latencyMs} ms`}
-                                                </span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            ) : (
-                                <p className="py-12 text-center text-sm text-gray-400">Health check data is unavailable.</p>
-                            )}
-                        </section>
+
                     </div>
 
                     <section aria-labelledby="recent-activity-heading" className="mb-8 rounded-2xl border border-[#1F1F1F]/[0.06] bg-white p-5 shadow-sm">
@@ -456,7 +432,7 @@ export default function AdminDashboard() {
                                 </h2>
 
                                 <p className="text-xs text-gray-500 mt-1">
-                                    Current student and Clinic integration activity reported by each module
+                                    Unique users per service. Each user is counted once within each service.
                                 </p>
                             </div>
 
@@ -485,14 +461,7 @@ export default function AdminDashboard() {
                                         MODULE_ACCENTS[module.name] ||
                                         DEFAULT_ACCENT;
 
-                                    const hasCount =
-                                        typeof module.studentCount === "number" || typeof module.activityCount === "number";
-                                    const status = String(module.status || "Unavailable");
-                                    const statusStyle = ["disabled", "offline", "degraded", "unknown"].some((value) => status.toLowerCase().includes(value))
-                                        ? "bg-amber-100 text-amber-800"
-                                        : status === "Unavailable"
-                                            ? "bg-slate-100 text-slate-500"
-                                            : "bg-[#E1F0E4] text-[#106A2E]";
+                                    const userCount = module.userCount;
 
                                     return (
                                         <div
@@ -526,10 +495,7 @@ export default function AdminDashboard() {
                                                     {module.icon}
                                                 </span>
 
-                                                <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold ${statusStyle}`}>
-                                                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                                                    {status}
-                                                </span>
+
 
                                             </div>
 
@@ -540,17 +506,11 @@ export default function AdminDashboard() {
                                             <div className="relative mt-1 flex items-end gap-1.5">
 
                                                 <span className="text-4xl font-semibold tracking-tight text-[#1F1F1F]">
-                                                    {typeof module.studentCount === "number" ? module.studentCount : typeof module.activityCount === "number" ? module.activityCount : "—"}
+                                                    {isLoading ? "..." : metricValue(userCount)}
                                                 </span>
 
                                                 <span className="mb-1 text-xs font-medium text-gray-400">
-                                                    {hasCount
-                                                        ? typeof module.studentCount === "number"
-                                                            ? module.studentCount === 1
-                                                            ? "student"
-                                                            : "students"
-                                                            : "CMS calls (24h)"
-                                                        : "N/A"}
+                                                    {typeof userCount === "number" ? (userCount === 1 ? "user" : "users") : ""}
                                                 </span>
 
                                             </div>
@@ -559,13 +519,7 @@ export default function AdminDashboard() {
                                                 {module.usageNote || "No usage note supplied by the dashboard API."}
                                             </p>
 
-                                            {({ Library: "/admin/services/library", Clinic: "/admin/services/clinic", Guidance: "/admin/services/guidance", "Lost & Found": "/admin/services/lost-found" }[module.name]) ? (
-                                                <button type="button" onClick={() => navigate(({ Library: "/admin/services/library", Clinic: "/admin/services/clinic", Guidance: "/admin/services/guidance", "Lost & Found": "/admin/services/lost-found" }[module.name]))} className="relative mt-4 text-xs font-semibold text-[#106A2E] hover:underline">
-                                                    View monitoring →
-                                                </button>
-                                            ) : (
-                                                <p className="relative mt-4 text-xs text-gray-400">Monitoring data is not available.</p>
-                                            )}
+
 
                                         </div>
                                     );
