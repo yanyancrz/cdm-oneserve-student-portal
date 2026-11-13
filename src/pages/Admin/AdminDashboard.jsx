@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { API_URL } from "../../config/api";
 
 // Accent colors for the per-module statistic cards.
@@ -518,6 +519,7 @@ export default function AdminDashboard() {
                                             <p className="relative mt-2 text-[11px] leading-4 text-gray-400">
                                                 {module.usageNote || "No usage note supplied by the dashboard API."}
                                             </p>
+                                            {module.name === "Clinic" && <Link to="/admin/services/clinic?view=records" className="relative mt-4 inline-block text-xs font-semibold text-[#106A2E] hover:underline">View medical records</Link>}
 
 
 
