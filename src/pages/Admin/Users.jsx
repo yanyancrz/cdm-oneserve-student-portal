@@ -10,6 +10,8 @@ import {
     Users as UsersIcon,
     UserCheck,
     Clock3,
+    History,
+    LogOut,
     Ban,
     Trash2,
     ChevronLeft,
@@ -61,15 +63,27 @@ import {
 } from "./userAdminUtils";
 
 // ─────────────────────────────────────────────────────────────
-// Students + faculty only. Module heads and admins live on the
-// Service Heads page (ServiceHeads.jsx); shared table chrome,
-// modals and forms live in userAdminShared.jsx.
+// Central account directory. Administrative account creation and module
+// assignments continue to use the existing Service Heads console.
 // ─────────────────────────────────────────────────────────────
-const ROLE_FILTERS = ["All", "Student", "Faculty"];
+const ROLE_FILTERS = ["All", "Student", "Faculty", "Admin", "Staff"];
 const MEMBER_ROLE_OPTIONS = ["Student", "Faculty"];
 
 // Students + faculty only - heads and admins live on ServiceHeads.jsx.
 const isMemberRole = (role) => role === "Student" || role === "Faculty";
+const serviceAccessFor = (user) => {
+    if (user.status !== "Active") return "Unavailable while account is inactive";
+    if (user.adminModule) return user.adminModule;
+    const role = String(user.role || "").toLowerCase();
+    if (role === "admin" || role === "superadmin" || role === "student" || role === "faculty") {
+        return "Library, Clinic, Guidance, Lost & Found";
+    }
+    if (role.includes("library")) return "Library";
+    if (role.includes("clinic")) return "Clinic";
+    if (role.includes("guidance") || role.includes("counselor")) return "Guidance";
+    if (role.includes("lostfound") || role.includes("lost & found")) return "Lost & Found";
+    return "No module access assigned";
+};
 
 // ─────────────────────────────────────────────────────────────
 // Member form (add student / faculty)
@@ -263,6 +277,7 @@ export default function Users() {
     const [statusFilter, setStatusFilter] = useState("All statuses");
     const [instituteFilter, setInstituteFilter] = useState("All institutes");
     const [courseFilter, setCourseFilter] = useState("All courses");
+    const [directoryView, setDirectoryView] = useState("all");
 
     const [sort, setSort] = useState({ key: null, dir: "asc" });
     const [page, setPage] = useState(1);
@@ -270,6 +285,8 @@ export default function Users() {
 
     const [modal, setModal] = useState(null);
     const [activeUser, setActiveUser] = useState(null);
+    const [loginHistory, setLoginHistory] = useState(null);
+    const [historyLoading, setHistoryLoading] = useState(false);
     const [busyId, setBusyId] = useState(null);
 
     const [adding, setAdding] = useState(false);
@@ -413,6 +430,7 @@ export default function Users() {
 
     const clearAllFilters = () => {
         setSearch("");
+        setDirectoryView("all");
         setRoleFilter("All");
         setStatusFilter("All statuses");
         setInstituteFilter("All institutes");
@@ -423,8 +441,15 @@ export default function Users() {
         const query = search.trim().toLowerCase();
 
         return users.filter((u) => {
-            // This page is students + faculty only.
-            if (!isMemberRole(u.role)) return false;
+            const role = String(u.role || "").toLowerCase();
+            const isAdmin = role.includes("admin");
+            const matchesView = (directoryView === "all" && u.status !== "Deleted")
+                || (directoryView === "students" && role === "student")
+                || (directoryView === "faculty" && role === "faculty")
+                || (directoryView === "administrators" && isAdmin)
+                || (directoryView === "staff" && !isMemberRole(u.role) && !isAdmin)
+                || (directoryView === "inactive" && u.status !== "Active" && u.status !== "Deleted");
+            if (!matchesView) return false;
 
             const matchesSearch =
                 !query ||
@@ -442,7 +467,10 @@ export default function Users() {
                     .filter(Boolean)
                     .some((value) => String(value).toLowerCase().includes(query));
 
-            const matchesRole = roleFilter === "All" || u.role === roleFilter;
+            const matchesRole = roleFilter === "All"
+                || (roleFilter === "Staff" && !isMemberRole(u.role) && !isAdmin)
+                || (roleFilter === "Admin" && isAdmin)
+                || u.role === roleFilter;
 
             const matchesStatus = statusFilter === "All statuses" || u.status === statusFilter;
 
@@ -457,6 +485,7 @@ export default function Users() {
         });
     }, [
         users,
+        directoryView,
         search,
         roleFilter,
         statusFilter,
@@ -522,7 +551,7 @@ export default function Users() {
 
     useEffect(() => {
         setPage(1);
-    }, [search, roleFilter, statusFilter, instituteFilter, courseFilter, sort, pageSize]);
+    }, [search, roleFilter, statusFilter, instituteFilter, courseFilter, directoryView, sort, pageSize]);
 
     const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
     const currentPage = Math.min(page, totalPages);
@@ -531,11 +560,11 @@ export default function Users() {
 
     // ── Stats (students + faculty only) ───────────────────
     const stats = useMemo(() => {
-        const members = users.filter((u) => isMemberRole(u.role));
-        const count = (status) => members.filter((u) => u.status === status).length;
+        const accounts = users.filter((u) => u.status !== "Deleted");
+        const count = (status) => accounts.filter((u) => u.status === status).length;
 
         return [
-            { key: "All statuses", kind: "status", label: "Total users", value: members.length, icon: UsersIcon, tone: "bg-[#ECE9E2] text-[#1F1F1F]", number: "text-[#1F1F1F]" },
+            { key: "All statuses", kind: "status", label: "Total users", value: accounts.length, icon: UsersIcon, tone: "bg-[#ECE9E2] text-[#1F1F1F]", number: "text-[#1F1F1F]" },
             { key: "Active", kind: "status", label: "Active", value: count("Active"), icon: UserCheck, tone: "bg-[#E1F0E4] text-[#106A2E]", number: "text-[#106A2E]" },
             { key: "Pending", kind: "status", label: "Pending", value: count("Pending"), icon: Clock3, tone: "bg-amber-50 text-amber-600", number: "text-amber-600" },
             { key: "Suspended", kind: "status", label: "Suspended", value: count("Suspended"), icon: Ban, tone: "bg-red-50 text-red-500", number: "text-red-600" },
@@ -556,9 +585,47 @@ export default function Users() {
         setModal("add-member");
     };
 
-    const openView = (user) => {
+    const openView = async (user) => {
         setActiveUser(user);
         setModal("view");
+        setLoginHistory(null);
+        setHistoryLoading(true);
+        try {
+            const data = await request(`${API_URL}/api/admin/security/users/${user.id}/login-history`, {
+                fallback: "Could not load login history.",
+            });
+            setLoginHistory(data);
+        } catch (err) {
+            setLoginHistory({ error: err.message || "Login history is unavailable." });
+        } finally {
+            setHistoryLoading(false);
+        }
+    };
+
+    const signOutEverywhere = async (user) => {
+        try {
+            await request(`${API_URL}/api/admin/security/users/${user.id}/sign-out-all?reason=${encodeURIComponent("Administrator signed out all user sessions")}`, {
+                method: "POST",
+                fallback: "Could not sign the user out.",
+            });
+            toast.success("User sessions signed out.");
+            await openView(user);
+        } catch (err) {
+            toast.error(err.message || "Could not sign the user out.");
+        }
+    };
+
+    const sendPasswordReset = async (user) => {
+        try {
+            await request(`${AUTH_BASE}/forgot-password`, {
+                method: "POST",
+                fallback: "Could not start the secure password reset process.",
+                body: { email: user.email },
+            });
+            toast.success(`Password reset code sent to ${user.email}.`);
+        } catch (err) {
+            toast.error(err.message || "Could not send the password reset code.");
+        }
     };
 
     const openEdit = (user) => {
@@ -845,7 +912,7 @@ export default function Users() {
                 <div>
                     <h1 className="font-display text-3xl text-[#1F1F1F] sm:text-4xl">Users</h1>
                     <p className="mt-1 text-sm text-gray-500">
-                        Manage student and faculty accounts.
+                        Manage OneServe accounts. Use Service Heads to assign module administrators.
                     </p>
                 </div>
 
@@ -865,6 +932,22 @@ export default function Users() {
                         Add Student / Faculty
                     </button>
                 </div>
+            </div>
+
+            <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="User account views">
+                {[["all", "All users"], ["students", "Students"], ["faculty", "Faculty"], ["administrators", "Administrators"], ["staff", "Staff accounts"], ["inactive", "Inactive accounts"]].map(([key, label]) => {
+                    const count = key === "all" ? users.filter(u => u.status !== "Deleted").length
+                        : key === "students" ? users.filter(u => u.role === "Student").length
+                        : key === "faculty" ? users.filter(u => u.role === "Faculty").length
+                        : key === "administrators" ? users.filter(u => String(u.role || "").toLowerCase().includes("admin")).length
+                        : key === "staff" ? users.filter(u => !isMemberRole(u.role) && !String(u.role || "").toLowerCase().includes("admin")).length
+                        : users.filter(u => u.status !== "Active" && u.status !== "Deleted").length;
+                    return <button key={key} type="button" role="tab" aria-selected={directoryView === key}
+                        onClick={() => { setDirectoryView(key); setRoleFilter("All"); setPage(1); }}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${directoryView === key ? "border-[#0E3B22] bg-[#0E3B22] text-white" : "border-[#E5E1D8] bg-white text-gray-600 hover:bg-gray-50"}`}>
+                        {label} <span className="ml-1 opacity-75">{count}</span>
+                    </button>;
+                })}
             </div>
 
             {/* Stats (also status filters) */}
@@ -1083,7 +1166,7 @@ export default function Users() {
                                         />
 
                                         <SortHeader
-                                            label="Last active"
+                            label="Last login"
                                             sortKey="lastActive"
                                             sort={sort}
                                             onSort={toggleSort}
@@ -1167,7 +1250,7 @@ export default function Users() {
                                             <p className="mt-2 text-xs text-gray-400">
                                                 {[
                                                     u.idNumber,
-                                                    `Active ${timeAgo(u.lastActive)}`,
+                                                    `Last login ${timeAgo(u.lastActive)}`,
                                                 ]
                                                     .filter(Boolean)
                                                     .join("  •  ")}
@@ -1278,6 +1361,7 @@ export default function Users() {
 
                     <div className="space-y-2 text-sm">
                         <DetailRow label="Role">{roleLabel(activeUser.role)}</DetailRow>
+                        <DetailRow label="Service access">{serviceAccessFor(activeUser)}</DetailRow>
 
                         {activeUser.adminModule && (
                             <DetailRow label="Assigned module">{activeUser.adminModule}</DetailRow>
@@ -1303,8 +1387,26 @@ export default function Users() {
                             <StatusPill status={activeUser.status} />
                         </DetailRow>
 
-                        <DetailRow label="Last active">{formatDate(activeUser.lastActive)}</DetailRow>
+                        <DetailRow label="Registered">{formatDate(activeUser.registrationDate)}</DetailRow>
+                        <DetailRow label="Last login">{formatDate(activeUser.lastActive)}</DetailRow>
                     </div>
+
+                    <section className="mt-4 rounded-xl border border-[#E5E1D8] p-3" aria-label="Login and device sessions">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                            <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700"><History size={15} /> Login history & devices</h3>
+                            <div className="flex items-center gap-3"><button type="button" onClick={() => sendPasswordReset(activeUser)} className="text-xs font-semibold text-[#0E3B22] hover:underline">Send reset code</button><button type="button" onClick={() => signOutEverywhere(activeUser)} className="text-xs font-semibold text-red-700 hover:underline"><LogOut size={13} className="mr-1 inline" />Sign out all</button></div>
+                        </div>
+                        {historyLoading ? <p className="mt-2 text-xs text-gray-400">Loading login history…</p>
+                            : loginHistory?.error ? <p className="mt-2 text-xs text-amber-700">{loginHistory.error}</p>
+                            : <div className="mt-2 space-y-2">
+                                {(loginHistory?.sessions || []).filter(s => !s.isRevoked && !s.loggedOutAt).map(session => <div key={session.userSessionId} className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">
+                                    <p className="font-medium">{session.deviceLabel || "Device"} · {session.ipAddress || "IP unavailable"}</p>
+                                    <p>Last seen {formatDate(session.lastSeenAt || session.createdAt)} · Expires {formatDate(session.expiresAt)}</p>
+                                </div>)}
+                                {(loginHistory?.logins || []).slice(0, 5).map((entry, index) => <p key={`${entry.createdAt}-${index}`} className="text-xs text-gray-500">Login · {formatDate(entry.createdAt)}</p>)}
+                                {!loginHistory?.sessions?.some(s => !s.isRevoked && !s.loggedOutAt) && !loginHistory?.logins?.length && <p className="text-xs text-gray-400">No login history or active sessions available.</p>}
+                            </div>}
+                    </section>
 
                     <div className="flex justify-end gap-2 pt-4">
                         <button

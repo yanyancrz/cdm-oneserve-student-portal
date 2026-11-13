@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 // ==========================================
 // PWA GUARD
@@ -52,6 +52,11 @@ import AdminLayout from "./layouts/AdminLayout";
 // ==========================================
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import Users from "./pages/Admin/Users";
+import RolesPermissions from "./pages/Admin/RolesPermissions";
+import ClinicIntegration from "./pages/Admin/ClinicIntegration";
+import AuditLogs from "./pages/Admin/AuditLogs";
+import AdminServiceOversight from "./pages/Admin/AdminServiceOversight";
+import GuidanceAppointments from "./pages/Admin/GuidanceAppointments";
 import ServiceHeads from "./pages/Admin/ServiceHeads";
 import AdminProfile from "./pages/Admin/AdminProfile";
 import Announcements from "./pages/Admin/Announcements";
@@ -234,6 +239,13 @@ function App() {
                 >
                     <Route path="/admin/dashboard" element={<AdminDashboard />} />
                     <Route path="/admin/users" element={<Users />} />
+                    <Route path="/admin/roles-permissions" element={<RolesPermissions />} />
+                    <Route path="/admin/services/clinic" element={<ClinicIntegration />} />
+                    <Route path="/admin/services/library" element={<Navigate to="/admin/library" replace />} />
+                    <Route path="/admin/audit-logs" element={<AuditLogs />} />
+                    <Route path="/admin/services/guidance" element={<AdminServiceOversight module="guidance" />} />
+                    <Route path="/admin/services/guidance/appointments" element={<GuidanceAppointments />} />
+                    <Route path="/admin/services/lost-found" element={<AdminServiceOversight module="lost-found" />} />
                     <Route path="/admin/service-heads" element={<ServiceHeads />} />
                     <Route path="/admin/school-records" element={<SchoolRecords />} />
 <Route path="/admin/reports" element={<Reports />} />

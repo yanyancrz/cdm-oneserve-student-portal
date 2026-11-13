@@ -1,5 +1,5 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
-import { Megaphone, CalendarDays, BarChart3 } from "lucide-react";
+import { Megaphone, CalendarDays, BarChart3, KeyRound, BookOpen, Stethoscope, Compass, SearchCheck, ScrollText } from "lucide-react";
 import Logo from "../assets/images/cdm-white.png";
 import BackgroundImage from "../assets/images/admin-bg.png";
 
@@ -129,6 +129,42 @@ export default function AdminLayout() {
                     <path d="m9 12 2 2 4-4" />
                 </svg>
             ),
+        },
+
+        {
+            label: "Roles & Permissions",
+            path: "/admin/roles-permissions",
+            icon: <KeyRound size={18} />,
+        },
+
+        {
+            label: "Library Management",
+            path: "/admin/services/library",
+            icon: <BookOpen size={18} />,
+        },
+
+        {
+            label: "Clinic Integration",
+            path: "/admin/services/clinic",
+            icon: <Stethoscope size={18} />,
+        },
+
+        {
+            label: "Guidance Management",
+            path: "/admin/services/guidance",
+            icon: <Compass size={18} />,
+        },
+
+        {
+            label: "Lost & Found Management",
+            path: "/admin/services/lost-found",
+            icon: <SearchCheck size={18} />,
+        },
+
+        {
+            label: "Audit Logs",
+            path: "/admin/audit-logs",
+            icon: <ScrollText size={18} />,
         },
 
         {

@@ -27,7 +27,7 @@ export default function LibraryAccessGate() {
                 title="Access restricted"
                 message={
                     error ||
-                    "Only Library Head and Library Staff accounts can open the Library Administration module."
+                    "An active Library Head or Staff account, or central Admin with Library service permission, is required."
                 }
                 actionLabel="Sign out"
                 onAction={logout}
