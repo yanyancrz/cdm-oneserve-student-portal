@@ -157,7 +157,7 @@ mysql -u root -p cdm_oneserve < CDM-OneServe-API\Database\Notifications\001_web_
 ### React frontend — `.env` (and `.env.example`, committed)
 
 ```ini
-VITE_API_URL=https://api.cdmconnect.online
+VITE_API_URL=https://cdm-oneserve-api-capstone-h0g9cpg8dhd3e4a2.koreacentral-01.azurewebsites.net
 
 # VAPID PUBLIC key - safe to ship in the browser bundle.
 VITE_VAPID_PUBLIC_KEY=<your 87-char base64url public key>
