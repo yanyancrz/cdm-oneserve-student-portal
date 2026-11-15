@@ -2,9 +2,36 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import * as XLSX from "xlsx";
 import { createReportBlob } from "../src/pages/Admin/reportExport.js";
+import { medicalRecordsCsv, studentVisitsCsv } from "../src/pages/Admin/clinicRecordExport.js";
 
 const csv = '\uFEFF"Student number","Name","Notes"\r\n"00123","Cruz, Ana","Line one\nLine two"';
 const options = { csv, title: "Clinic records", subtitle: "2026-11-01 to 2026-11-15" };
+
+test("Clinic student slip uses portrait pages and signatories without losing long notes", async () => {
+    const records = [
+        { medicalRecordId: 1, visitDate: "2026-11-14", clinicalNotes: "Follow-up notes. ".repeat(800) + "FINAL CLINICAL NOTE" },
+        { medicalRecordId: 2, visitDate: "2026-11-15", clinicalNotes: "SECOND CONSULTATION" },
+    ];
+    const blob = await createReportBlob({ ...options, csv: medicalRecordsCsv({ fullName: "Ana Cruz", idNumber: "00123" }, records), format: "pdf", clinicPdf: "student" });
+    const pdf = await blob.text();
+    assert.ok(pdf.includes("FINAL CLINICAL NOTE"));
+    assert.ok(pdf.includes("SECOND CONSULTATION"));
+    assert.ok(pdf.includes("Ana Cruz"));
+    assert.equal((pdf.match(/\(Prepared by\)/g) || []).length, 2);
+    assert.equal((pdf.match(/\(Reviewed by\)/g) || []).length, 2);
+    const boxes = [...pdf.matchAll(/\/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]/g)];
+    assert.ok(boxes.length >= 2);
+    boxes.forEach(([, width, height]) => assert.ok(Number(width) < Number(height)));
+});
+
+test("Clinic visit report remains portrait with date range and signatories", async () => {
+    const report = studentVisitsCsv([{ student: { fullName: "Ana Cruz", idNumber: "00123" }, records: [{ medicalRecordId: 1, visitDate: "2026-11-14" }] }]);
+    const blob = await createReportBlob({ ...options, csv: report.csv, format: "pdf", clinicPdf: "visits" });
+    const pdf = await blob.text();
+    for (const text of ["Prepared by", "Reviewed by", "Ana Cruz", "2026-11-01 to 2026-11-15"]) assert.ok(pdf.includes(text));
+    const [, width, height] = pdf.match(/\/MediaBox \[0 0 ([\d.]+) ([\d.]+)\]/);
+    assert.ok(Number(width) < Number(height));
+});
 
 test("CSV export preserves original rows", async () => {
     const blob = await createReportBlob({ ...options, format: "csv" });

@@ -9,7 +9,7 @@ function download(blob, filename) {
     setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export async function createReportBlob({ csv, title, subtitle = "", format }) {
+export async function createReportBlob({ csv, title, subtitle = "", format, clinicPdf }) {
     if (format === "csv") return new Blob([csv], { type: "text/csv;charset=utf-8" });
     const XLSX = await import("xlsx");
     const workbook = XLSX.read(csv.replace(/^\uFEFF/, ""), { type: "string", raw: true });
@@ -22,6 +22,10 @@ export async function createReportBlob({ csv, title, subtitle = "", format }) {
         return new Blob([XLSX.write(output, { bookType: "xlsx", type: "array" })], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
     }
     if (format === "pdf") {
+        if (clinicPdf) {
+            const { createClinicPdf } = await import("./clinicPdf.js");
+            return createClinicPdf(rows, { title, subtitle, individual: clinicPdf === "student" });
+        }
         const [{ jsPDF }, { autoTable }] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
         const doc = new jsPDF({ orientation: rows[0]?.length > 6 ? "landscape" : "portrait" });
         doc.setFontSize(16);

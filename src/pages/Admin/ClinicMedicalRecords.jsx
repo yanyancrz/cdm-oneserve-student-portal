@@ -36,7 +36,7 @@ export default function ClinicMedicalRecords() {
         setStudentExporting(true);
         setStudentExportError("");
         try {
-            await exportReport({ csv: medicalRecordsCsv(student, records), filename: `clinic-records-${filename}`, title: "Student medical records", subtitle: `${student.fullName} | ${student.idNumber}`, format: studentFormat });
+            await exportReport({ csv: medicalRecordsCsv(student, records), filename: `clinic-records-${filename}`, title: "Student medical records", subtitle: `${student.fullName} | ${student.idNumber}`, format: studentFormat, clinicPdf: "student" });
         } catch (e) { setStudentExportError(`Export failed. ${e.message}`); }
         finally { setStudentExporting(false); }
     };
@@ -65,7 +65,7 @@ export default function ClinicMedicalRecords() {
                 setExportError("No clinic visits found for the selected date range.");
                 return;
             }
-            await exportReport({ csv: report.csv, filename: `clinic-visit-history-${from || "start"}-to-${to || "latest"}`, title: "Clinic visit history", subtitle: `Visit dates: ${from || "Start"} to ${to || "Latest"}`, format: visitFormat, signal: controller.signal });
+            await exportReport({ csv: report.csv, filename: `clinic-visit-history-${from || "start"}-to-${to || "latest"}`, title: "Clinic visit history", subtitle: `Visit dates: ${from || "Start"} to ${to || "Latest"}`, format: visitFormat, clinicPdf: "visits", signal: controller.signal });
             setExportMessage(`Exported ${report.visitCount} clinic visit(s).`);
         } catch (e) {
             controller.abort();
