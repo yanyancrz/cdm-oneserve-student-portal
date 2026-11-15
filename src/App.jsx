@@ -52,7 +52,6 @@ import AdminLayout from "./layouts/AdminLayout";
 // ==========================================
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import Users from "./pages/Admin/Users";
-import RolesPermissions from "./pages/Admin/RolesPermissions";
 import ClinicIntegration from "./pages/Admin/ClinicIntegration";
 import AuditLogs from "./pages/Admin/AuditLogs";
 import AdminServiceOversight from "./pages/Admin/AdminServiceOversight";
@@ -238,7 +237,6 @@ function App() {
                 >
                     <Route path="/admin/dashboard" element={<AdminDashboard />} />
                     <Route path="/admin/users" element={<Users />} />
-                    <Route path="/admin/roles-permissions" element={<RolesPermissions />} />
                     <Route path="/admin/services/clinic" element={<ClinicIntegration />} />
                     <Route path="/admin/services/library" element={<AdminServiceOversight module="library" />} />
                     <Route path="/admin/audit-logs" element={<AuditLogs />} />

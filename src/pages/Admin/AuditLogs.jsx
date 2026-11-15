@@ -1,14 +1,20 @@
 import { useCallback, useEffect, useState } from "react";
 import { Download, Eye, RefreshCw, Search, ShieldCheck, X } from "lucide-react";
 import { API_URL } from "../../config/api";
+import { useSearchParams } from "react-router-dom";
+
+const MODULES = [
+    ["", "All modules"], ["LostFound", "Lost & Found"],
+    ["Library", "Library"], ["Guidance", "Guidance"], ["Clinic", "Clinic"],
+];
 
 const BASE = `${API_URL}/api/admin/audit-logs`;
 const authHeaders = () => {
     const value = localStorage.getItem("token") || localStorage.getItem("authToken");
     return value ? { Authorization: `Bearer ${value}` } : {};
 };
-async function get(path) {
-    const response = await fetch(`${BASE}${path}`, { headers: authHeaders() });
+async function get(path, signal) {
+    const response = await fetch(`${BASE}${path}`, { headers: authHeaders(), signal });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.message || "Could not load audit records.");
     return data;
@@ -16,6 +22,8 @@ async function get(path) {
 const dateLabel = value => value ? new Date(value).toLocaleString() : "—";
 
 export default function AuditLogs() {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeModule = searchParams.get("module") || "";
     const [facets, setFacets] = useState({ modules: [], categories: [], actions: [] });
     const [items, setItems] = useState([]);
     const [users, setUsers] = useState([]);
@@ -28,24 +36,31 @@ export default function AuditLogs() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
+    useEffect(() => { setPage(1); setSelected(null); }, [activeModule]);
+
     const queryString = (values, pageNumber = 1) => {
         const params = new URLSearchParams({ page: String(pageNumber), pageSize: "25" });
-        Object.entries(values).forEach(([key, value]) => { if (value) params.set(key, value); });
+        Object.entries({ ...values, module: activeModule }).forEach(([key, value]) => { if (value) params.set(key, value); });
         return params.toString();
     };
-    const load = useCallback(async () => {
+    const load = useCallback(async (signal) => {
         setLoading(true); setError("");
         try {
             const [logs, options, userRows] = await Promise.all([
-                get(`?${queryString(query, page)}`), get("/facets"),
-                fetch(`${API_URL}/api/auth/users`, { headers: authHeaders() }).then(async response => { const body = await response.json().catch(() => []); if (!response.ok) throw new Error(body.message || "User filter could not be loaded."); return body; }),
+                get(`?${queryString(query, page)}`, signal), get("/facets", signal),
+                fetch(`${API_URL}/api/auth/users`, { headers: authHeaders(), signal }).then(async response => { const body = await response.json().catch(() => []); if (!response.ok) throw new Error(body.message || "User filter could not be loaded."); return body; }),
             ]);
+            if (signal?.aborted) return;
             setItems(logs.items || []); setTotalPages(logs.totalPages || 0); setTotalItems(logs.totalItems || 0); setFacets(options);
             setUsers(Array.isArray(userRows) ? userRows : []);
-        } catch (e) { setError(e.message); }
-        finally { setLoading(false); }
-    }, [query, page]);
-    useEffect(() => { load(); }, [load]);
+        } catch (e) { if (!signal?.aborted) setError(e.message); }
+        finally { if (!signal?.aborted) setLoading(false); }
+    }, [query, page, activeModule]);
+    useEffect(() => {
+        const controller = new AbortController();
+        load(controller.signal);
+        return () => controller.abort();
+    }, [load]);
 
     const exportCsv = async () => {
         try {
@@ -60,14 +75,23 @@ export default function AuditLogs() {
         try { setSelected(await get(`/${id}`)); }
         catch (e) { setError(e.message); }
     };
-    const clear = () => { const empty = { module: "", category: "", userId: "", action: "", search: "", from: "", to: "" }; setFilters(empty); setQuery(empty); setPage(1); };
+    const clear = () => { const empty = { category: "", userId: "", action: "", search: "", from: "", to: "" }; setFilters(empty); setQuery(empty); setPage(1); };
+    const selectModule = module => {
+        setPage(1);
+        setSelected(null);
+        setItems([]);
+        setSearchParams(module ? { module } : {});
+    };
 
     return <main className="mx-auto max-w-7xl space-y-5 p-4 sm:p-7">
-        <header className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-3xl font-semibold text-[#1F1F1F]">Central Audit Logs</h1><p className="mt-1 text-sm text-gray-500">Append-only record of OneServe administrator and module activity.</p></div><div className="flex gap-2"><button onClick={load} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm"><RefreshCw size={15} className={loading ? "animate-spin" : ""} />Refresh</button><button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-3 py-2 text-sm font-semibold text-white"><Download size={15} />Export CSV</button></div></header>
+        <header className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-3xl font-semibold text-[#1F1F1F]">Central Audit Logs</h1><p className="mt-1 text-sm text-gray-500">Review recorded changes and activity across Lost & Found, Library, Guidance, and Clinic.</p></div><div className="flex gap-2"><button onClick={() => load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm"><RefreshCw size={15} className={loading ? "animate-spin" : ""} />Refresh</button><button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-3 py-2 text-sm font-semibold text-white"><Download size={15} />Export CSV</button></div></header>
         {error && <div role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">{error}</div>}
+        <nav aria-label="Audit log modules" className="flex flex-wrap gap-2">
+            {MODULES.map(([module, label]) => <button key={module} type="button" onClick={() => selectModule(module)} aria-pressed={activeModule === module} className={`rounded-xl border px-4 py-2 text-sm font-semibold ${activeModule === module ? "border-[#0E3B22] bg-[#0E3B22] text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}>{label}</button>)}
+        </nav>
+        {activeModule === "Clinic" && <p className="rounded-xl bg-blue-50 p-3 text-sm text-blue-900">Clinic access in the super admin portal is view-only. This trail shows recorded Clinic activity; medical records are maintained in the Clinic system.</p>}
         <section className="rounded-2xl border bg-white p-4"><form onSubmit={e => { e.preventDefault(); setQuery(filters); setPage(1); }} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <label className="relative sm:col-span-2"><span className="sr-only">Search logs</span><Search size={15} className="absolute left-3 top-3 text-gray-400" /><input value={filters.search} onChange={e => setFilters({ ...filters, search: e.target.value })} placeholder="Search actor, action, record or details" className="w-full rounded-lg border py-2.5 pl-9 pr-3 text-sm" /></label>
-            <select value={filters.module} onChange={e => setFilters({ ...filters, module: e.target.value })} className="rounded-lg border px-3 py-2 text-sm"><option value="">All modules</option>{(facets.modules || []).map(x => <option key={x} value={x}>{x}</option>)}</select>
             <select value={filters.category} onChange={e => setFilters({ ...filters, category: e.target.value })} className="rounded-lg border px-3 py-2 text-sm"><option value="">All categories</option>{(facets.categories || []).map(x => <option key={x} value={x}>{x}</option>)}</select>
             <select value={filters.action} onChange={e => setFilters({ ...filters, action: e.target.value })} className="rounded-lg border px-3 py-2 text-sm"><option value="">All actions</option>{(facets.actions || []).map(x => <option key={x} value={x}>{x}</option>)}</select>
             <select value={filters.userId} onChange={e => setFilters({ ...filters, userId: e.target.value })} className="rounded-lg border px-3 py-2 text-sm"><option value="">All users</option>{users.map(user => <option key={user.id} value={user.id}>{user.fullName} · {user.email}</option>)}</select>

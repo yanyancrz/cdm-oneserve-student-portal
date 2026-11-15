@@ -1,6 +1,6 @@
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { Megaphone, CalendarDays, BarChart3, KeyRound, ScrollText, ChevronDown, LayoutGrid, BookOpen, Stethoscope, Compass, SearchCheck } from "lucide-react";
+import { Megaphone, CalendarDays, BarChart3, ScrollText, ChevronDown, LayoutGrid, BookOpen, Stethoscope, Compass, SearchCheck } from "lucide-react";
 import Logo from "../assets/images/cdm-white.png";
 import BackgroundImage from "../assets/images/admin-bg.png";
 import "../styles/admin-service-print.css";
@@ -171,12 +171,6 @@ export default function AdminLayout() {
         },
 
         {
-            label: "Roles & Permissions",
-            path: "/admin/roles-permissions",
-            icon: <KeyRound size={18} />,
-        },
-
-        {
             label: "Audit Logs",
             path: "/admin/audit-logs",
             icon: <ScrollText size={18} />,
@@ -308,6 +302,18 @@ export default function AdminLayout() {
                 <nav className="flex-1 space-y-1 p-2 lg:p-4">
 
                     {navItems.map((item) => {
+                        if (item.path === "/admin/audit-logs") {
+                            const isActive = location.pathname === item.path;
+                            const module = new URLSearchParams(location.search).get("module") || "";
+                            return <div key={item.path} className="space-y-1">
+                                <button type="button" onClick={() => navigate(item.path)} title={item.label} className={`flex w-full items-center justify-center gap-3 rounded-xl px-3 py-3 text-sm lg:justify-start lg:px-4 ${isActive ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white"}`}>
+                                    {item.icon}<span className="hidden lg:block">{item.label}</span>
+                                </button>
+                                {isActive && <div className="space-y-1 lg:ml-5 lg:border-l lg:border-white/15 lg:pl-2">
+                                    {[["LostFound", "Lost & Found"], ["Library", "Library"], ["Guidance", "Guidance"], ["Clinic", "Clinic"]].map(([value, label]) => <button key={value} type="button" title={label} onClick={() => navigate(`${item.path}?module=${value}`)} aria-current={module === value ? "page" : undefined} className={`w-full rounded-lg px-2 py-2 text-xs lg:text-left ${module === value ? "bg-white/10 text-white" : "text-white/60 hover:bg-white/5 hover:text-white"}`}><span className="hidden lg:inline">{label}</span><span className="lg:hidden">{label === "Lost & Found" ? "LF" : label[0]}</span></button>)}
+                                </div>}
+                            </div>;
+                        }
                         if (item.group) {
                             const isServicesActive = Boolean(activeService);
                             return (
