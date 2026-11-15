@@ -1,3 +1,5 @@
+import AdminFilterPanel from "./AdminFilterPanel";
+import AdminPageHeader from "./AdminPageHeader";
 import ExportFormatSelect from "./ExportFormatSelect";
 import { exportReport } from "./reportExport";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -107,7 +109,7 @@ function BarChart({ data, color = "#106A2E", emptyLabel = "No data" }) {
                     <div className="w-40 shrink-0 truncate text-xs text-gray-600" title={d.label}>
                         {d.label}
                     </div>
-                    <div className="relative h-6 flex-1 overflow-hidden rounded-lg bg-[#F0EDE4]">
+                    <div className="relative h-6 flex-1 overflow-hidden rounded-lg bg-gray-100">
                         <div
                             className="h-full rounded-lg transition-all"
                             style={{
@@ -283,9 +285,8 @@ export default function Reports() {
     };
 
     return (
-        <div className="users-root w-full min-w-0 max-w-[1250px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8">
+        <div className="admin-page users-root">
             <style>{`
-                .font-display { font-family: 'Fraunces', serif; }
                 .users-root { font-family: 'Inter', system-ui, sans-serif; }
                 @media (prefers-reduced-motion: reduce) {
                     .users-root * { transition: none !important; animation: none !important; }
@@ -293,14 +294,7 @@ export default function Reports() {
             `}</style>
 
             {/* Header */}
-            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                    <h1 className="font-display text-3xl text-[#1F1F1F] sm:text-4xl">Reports</h1>
-                    <p className="mt-1 text-sm text-gray-500">
-                        Generate and export account reports with filters and charts.
-                    </p>
-                </div>
-
+            <AdminPageHeader icon="reports" title="Reports" description="Generate account reports with filters, charts, and export options.">
                 <div className="flex flex-wrap items-center gap-2">
                     <button
                         type="button"
@@ -323,10 +317,10 @@ export default function Reports() {
                         Print
                     </button>
                 </div>
-            </div>
+            </AdminPageHeader>
 
             {/* Filter bar */}
-            <div className="mb-4 rounded-2xl border border-[#E5E1D8] bg-white p-3">
+            <AdminFilterPanel>
                 <div className="flex flex-wrap items-center gap-3">
                     <div className="relative min-w-[220px] flex-1">
                         <Search
@@ -339,7 +333,7 @@ export default function Reports() {
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search by name, email, ID, role..."
                             aria-label="Search accounts"
-                            className="w-full rounded-lg border border-[#E5E1D8] py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-[#106A2E] focus:ring-2 focus:ring-[#106A2E]/15"
+                            className="w-full rounded-lg border border-gray-200 py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-[#106A2E] focus:ring-2 focus:ring-[#106A2E]/15"
                         />
                     </div>
 
@@ -382,7 +376,7 @@ export default function Reports() {
                         ))}
                     </select>
                 </div>
-            </div>
+            </AdminFilterPanel>
 
             {/* Error */}
             {error && (
@@ -413,13 +407,13 @@ export default function Reports() {
                 ].map((s) => (
                     <div
                         key={s.label}
-                        className="rounded-2xl border border-black/[0.05] bg-white p-4 shadow-sm"
+                        className="admin-surface rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
                     >
                         <p className="text-xs font-medium text-gray-500">{s.label}</p>
                         {loading ? (
                             <div className="mt-2 h-8 w-10 animate-pulse rounded bg-gray-200" />
                         ) : (
-                            <p className={`mt-1 font-display text-3xl ${s.tone}`}>{s.value}</p>
+                            <p className={`mt-1 font-semibold text-3xl ${s.tone}`}>{s.value}</p>
                         )}
                     </div>
                 ))}
@@ -427,7 +421,7 @@ export default function Reports() {
 
             {/* Charts */}
             <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-                <div className="rounded-2xl border border-[#E5E1D8] bg-white p-5 shadow-sm">
+                <div className="admin-surface rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
                     <div className="mb-3 flex items-center gap-2">
                         <BarChart3 size={18} className="text-[#106A2E]" />
                         <h2 className="text-sm font-semibold text-gray-800">
@@ -441,7 +435,7 @@ export default function Reports() {
                     )}
                 </div>
 
-                <div className="rounded-2xl border border-[#E5E1D8] bg-white p-5 shadow-sm">
+                <div className="admin-surface rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
                     <div className="mb-3 flex items-center gap-2">
                         <BarChart3 size={18} className="text-blue-600" />
                         <h2 className="text-sm font-semibold text-gray-800">
@@ -455,7 +449,7 @@ export default function Reports() {
                     )}
                 </div>
 
-                <div className="rounded-2xl border border-[#E5E1D8] bg-white p-5 shadow-sm">
+                <div className="admin-surface rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
                     <div className="mb-3 flex items-center gap-2">
                         <BarChart3 size={18} className="text-amber-600" />
                         <h2 className="text-sm font-semibold text-gray-800">Accounts by status</h2>
@@ -467,7 +461,7 @@ export default function Reports() {
                     )}
                 </div>
 
-                <div className="rounded-2xl border border-[#E5E1D8] bg-white p-5 shadow-sm">
+                <div className="admin-surface rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
                     <div className="mb-3 flex items-center gap-2">
                         <BarChart3 size={18} className="text-purple-600" />
                         <h2 className="text-sm font-semibold text-gray-800">Accounts by role</h2>
@@ -481,7 +475,7 @@ export default function Reports() {
             </div>
 
             {/* Table preview */}
-            <div className="overflow-hidden rounded-2xl border border-[#E5E1D8] bg-white">
+            <div className="admin-surface overflow-hidden rounded-2xl border border-gray-200 bg-white">
                 {loading ? (
                     <div className="px-5 py-14 text-center text-sm text-gray-400">Loading accounts…</div>
                 ) : filtered.length === 0 ? (
@@ -495,22 +489,22 @@ export default function Reports() {
                         <table className="w-full text-sm">
                             <thead>
                                 <tr>
-                                    <th className="sticky top-0 z-10 bg-white text-left font-semibold text-gray-500 px-5 py-3 text-xs border-b border-[#E5E1D8]">
+                                    <th className="sticky top-0 z-10 bg-white text-left font-semibold text-gray-500 px-5 py-3 text-xs border-b border-gray-200">
                                         Name
                                     </th>
-                                    <th className="sticky top-0 z-10 bg-white text-left font-semibold text-gray-500 px-5 py-3 text-xs border-b border-[#E5E1D8]">
+                                    <th className="sticky top-0 z-10 bg-white text-left font-semibold text-gray-500 px-5 py-3 text-xs border-b border-gray-200">
                                         Email
                                     </th>
-                                    <th className="sticky top-0 z-10 bg-white text-left font-semibold text-gray-500 px-5 py-3 text-xs border-b border-[#E5E1D8]">
+                                    <th className="sticky top-0 z-10 bg-white text-left font-semibold text-gray-500 px-5 py-3 text-xs border-b border-gray-200">
                                         Role
                                     </th>
-                                    <th className="sticky top-0 z-10 bg-white text-left font-semibold text-gray-500 px-5 py-3 text-xs border-b border-[#E5E1D8]">
+                                    <th className="sticky top-0 z-10 bg-white text-left font-semibold text-gray-500 px-5 py-3 text-xs border-b border-gray-200">
                                         Institute
                                     </th>
-                                    <th className="sticky top-0 z-10 bg-white text-left font-semibold text-gray-500 px-5 py-3 text-xs border-b border-[#E5E1D8]">
+                                    <th className="sticky top-0 z-10 bg-white text-left font-semibold text-gray-500 px-5 py-3 text-xs border-b border-gray-200">
                                         Status
                                     </th>
-                                    <th className="sticky top-0 z-10 bg-white text-left font-semibold text-gray-500 px-5 py-3 text-xs border-b border-[#E5E1D8]">
+                                    <th className="sticky top-0 z-10 bg-white text-left font-semibold text-gray-500 px-5 py-3 text-xs border-b border-gray-200">
                                         Last active
                                     </th>
                                 </tr>
@@ -550,7 +544,7 @@ export default function Reports() {
                             <select
                                 value={pageSize}
                                 onChange={(e) => setPageSize(Number(e.target.value))}
-                                className="rounded-lg border border-[#E5E1D8] bg-white px-2 py-1.5 text-xs outline-none focus:border-[#106A2E]"
+                                className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-[#106A2E]"
                             >
                                 {[10, 25, 50].map((size) => (
                                     <option key={size} value={size}>
@@ -566,7 +560,7 @@ export default function Reports() {
                                 onClick={() => setPage(currentPage - 1)}
                                 disabled={currentPage <= 1}
                                 aria-label="Previous page"
-                                className={`inline-flex items-center gap-1 rounded-lg border border-[#E5E1D8] bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 ${focusRing}`}
+                                className={`inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 ${focusRing}`}
                             >
                                 <ChevronLeft size={14} />
                                 Previous
@@ -581,7 +575,7 @@ export default function Reports() {
                                 onClick={() => setPage(currentPage + 1)}
                                 disabled={currentPage >= totalPages}
                                 aria-label="Next page"
-                                className={`inline-flex items-center gap-1 rounded-lg border border-[#E5E1D8] bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 ${focusRing}`}
+                                className={`inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 ${focusRing}`}
                             >
                                 Next
                                 <ChevronRight size={14} />

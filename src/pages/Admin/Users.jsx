@@ -1,3 +1,5 @@
+import AdminFilterPanel from "./AdminFilterPanel";
+import AdminPageHeader from "./AdminPageHeader";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
@@ -564,7 +566,7 @@ export default function Users() {
         const count = (status) => accounts.filter((u) => u.status === status).length;
 
         return [
-            { key: "All statuses", kind: "status", label: "Total users", value: accounts.length, icon: UsersIcon, tone: "bg-[#ECE9E2] text-[#1F1F1F]", number: "text-[#1F1F1F]" },
+            { key: "All statuses", kind: "status", label: "Total users", value: accounts.length, icon: UsersIcon, tone: "bg-gray-100 text-[#1F1F1F]", number: "text-[#1F1F1F]" },
             { key: "Active", kind: "status", label: "Active", value: count("Active"), icon: UserCheck, tone: "bg-[#E1F0E4] text-[#106A2E]", number: "text-[#106A2E]" },
             { key: "Pending", kind: "status", label: "Pending", value: count("Pending"), icon: Clock3, tone: "bg-amber-50 text-amber-600", number: "text-amber-600" },
             { key: "Suspended", kind: "status", label: "Suspended", value: count("Suspended"), icon: Ban, tone: "bg-red-50 text-red-500", number: "text-red-600" },
@@ -898,9 +900,8 @@ export default function Users() {
     const rangeEnd = Math.min(pageStart + pageSize, sorted.length);
 
     return (
-        <div className="users-root w-full min-w-0 max-w-[1250px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8">
+        <div className="admin-page users-root">
             <style>{`
-                .font-display { font-family: 'Fraunces', serif; }
                 .users-root { font-family: 'Inter', system-ui, sans-serif; }
                 @media (prefers-reduced-motion: reduce) {
                     .users-root * { transition: none !important; animation: none !important; }
@@ -908,14 +909,7 @@ export default function Users() {
             `}</style>
 
             {/* Header */}
-            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                    <h1 className="font-display text-3xl text-[#1F1F1F] sm:text-4xl">Users</h1>
-                    <p className="mt-1 text-sm text-gray-500">
-                        Manage OneServe accounts. Use Service Heads to assign module administrators.
-                    </p>
-                </div>
-
+            <AdminPageHeader icon="users" title="Users" description="Manage OneServe accounts and review student, faculty, and staff access.">
                 <div className="flex flex-wrap items-center gap-2">
                     <button
                         type="button"
@@ -932,7 +926,7 @@ export default function Users() {
                         Add Student / Faculty
                     </button>
                 </div>
-            </div>
+            </AdminPageHeader>
 
             <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="User account views">
                 {[["all", "All users"], ["students", "Students"], ["faculty", "Faculty"], ["administrators", "Administrators"], ["staff", "Staff accounts"], ["inactive", "Inactive accounts"]].map(([key, label]) => {
@@ -944,14 +938,14 @@ export default function Users() {
                         : users.filter(u => u.status !== "Active" && u.status !== "Deleted").length;
                     return <button key={key} type="button" role="tab" aria-selected={directoryView === key}
                         onClick={() => { setDirectoryView(key); setRoleFilter("All"); setPage(1); }}
-                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${directoryView === key ? "border-[#0E3B22] bg-[#0E3B22] text-white" : "border-[#E5E1D8] bg-white text-gray-600 hover:bg-gray-50"}`}>
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${directoryView === key ? "border-[#0E3B22] bg-[#0E3B22] text-white" : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50"}`}>
                         {label} <span className="ml-1 opacity-75">{count}</span>
                     </button>;
                 })}
             </div>
 
             {/* Stats (also status filters) */}
-            <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-3">
+            <div className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
                 {stats.map((stat) => {
                     const StatIcon = stat.icon;
                     const selected = isStatSelected(stat);
@@ -962,10 +956,10 @@ export default function Users() {
                             type="button"
                             onClick={() => applyStatFilter(stat)}
                             aria-pressed={selected}
-                            className={`rounded-2xl border bg-white p-4 text-left shadow-sm transition ${focusRing} ${
+                            className={`admin-surface rounded-2xl border border-gray-200 bg-white p-4 text-left shadow-sm transition ${focusRing} ${
                                 selected
                                     ? "border-[#106A2E]/40 ring-2 ring-[#106A2E]/20"
-                                    : "border-black/[0.05] hover:border-gray-200"
+                                    : "border-gray-200 hover:border-gray-200"
                             }`}
                         >
                             <div className="flex items-start justify-between gap-2">
@@ -975,7 +969,7 @@ export default function Users() {
                                     {loading ? (
                                         <div className="mt-2 h-8 w-10 animate-pulse rounded bg-gray-200" />
                                     ) : (
-                                        <p className={`mt-1 font-display text-3xl ${stat.number}`}>
+                                        <p className={`mt-1 font-semibold text-3xl ${stat.number}`}>
                                             {stat.value}
                                         </p>
                                     )}
@@ -993,7 +987,7 @@ export default function Users() {
             </div>
 
             {/* Filter bar */}
-            <div className="mb-4 rounded-2xl border border-[#E5E1D8] bg-white p-3">
+            <AdminFilterPanel>
                 <div className="flex flex-wrap items-center gap-3">
                     <div className="relative min-w-[220px] flex-1">
                         <Search
@@ -1007,7 +1001,7 @@ export default function Users() {
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search by name, email, ID, role..."
                             aria-label="Search users"
-                            className="w-full rounded-lg border border-[#E5E1D8] py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-[#106A2E] focus:ring-2 focus:ring-[#106A2E]/15"
+                            className="w-full rounded-lg border border-gray-200 py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-[#106A2E] focus:ring-2 focus:ring-[#106A2E]/15"
                         />
                     </div>
 
@@ -1078,7 +1072,7 @@ export default function Users() {
                                     type="button"
                                     onClick={chip.clear}
                                     aria-label={`Remove filter ${chip.label}`}
-                                    className={`rounded-full p-0.5 hover:bg-[#106A2E]/10 ${focusRing}`}
+                                    className={`rounded-full p-0.5 hover:bg-[#0E3B22]/10 ${focusRing}`}
                                 >
                                     <X size={12} />
                                 </button>
@@ -1094,7 +1088,7 @@ export default function Users() {
                         </button>
                     </div>
                 )}
-            </div>
+            </AdminFilterPanel>
 
             {/* Error */}
             {error && (
@@ -1115,12 +1109,12 @@ export default function Users() {
             )}
 
             {/* Results */}
-            <div className="overflow-hidden rounded-2xl border border-[#E5E1D8] bg-white">
+            <div className="admin-surface overflow-hidden rounded-2xl border border-gray-200 bg-white">
                 {loading ? (
                     <LoadingSkeleton />
                 ) : sorted.length === 0 ? (
                     <div className="px-5 py-14 text-center">
-                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F7F5EF] text-gray-300">
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-transparent text-gray-300">
                             <UsersIcon size={20} />
                         </div>
 
@@ -1144,7 +1138,7 @@ export default function Users() {
                     <>
                         {/* Desktop table */}
                         <div className="hidden max-h-[70vh] overflow-auto md:block">
-                            <table className="w-full text-sm">
+                            <table className="w-full min-w-[800px] text-sm">
                                 <thead>
                                     <tr>
                                         <SortHeader
@@ -1205,9 +1199,6 @@ export default function Users() {
 
                                             <td className="px-5 py-3.5">
                                                 <RolePill role={u.role} />
-                                            </td>
-
-                                            <td className="px-5 py-3.5">
                                             </td>
 
                                             <td className="px-5 py-3.5">
@@ -1280,7 +1271,7 @@ export default function Users() {
                             <select
                                 value={pageSize}
                                 onChange={(e) => setPageSize(Number(e.target.value))}
-                                className="rounded-lg border border-[#E5E1D8] bg-white px-2 py-1.5 text-xs outline-none focus:border-[#106A2E]"
+                                className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-[#106A2E]"
                             >
                                 {PAGE_SIZES.map((size) => (
                                     <option key={size} value={size}>
@@ -1296,7 +1287,7 @@ export default function Users() {
                                 onClick={() => setPage(currentPage - 1)}
                                 disabled={currentPage <= 1}
                                 aria-label="Previous page"
-                                className={`inline-flex items-center gap-1 rounded-lg border border-[#E5E1D8] bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 ${focusRing}`}
+                                className={`inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 ${focusRing}`}
                             >
                                 <ChevronLeft size={14} />
                                 Previous
@@ -1311,7 +1302,7 @@ export default function Users() {
                                 onClick={() => setPage(currentPage + 1)}
                                 disabled={currentPage >= totalPages}
                                 aria-label="Next page"
-                                className={`inline-flex items-center gap-1 rounded-lg border border-[#E5E1D8] bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 ${focusRing}`}
+                                className={`inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 ${focusRing}`}
                             >
                                 Next
                                 <ChevronRight size={14} />
@@ -1391,7 +1382,7 @@ export default function Users() {
                         <DetailRow label="Last login">{formatDate(activeUser.lastActive)}</DetailRow>
                     </div>
 
-                    <section className="mt-4 rounded-xl border border-[#E5E1D8] p-3" aria-label="Login and device sessions">
+                    <section className="mt-4 rounded-xl border border-gray-200 p-3" aria-label="Login and device sessions">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700"><History size={15} /> Login history & devices</h3>
                             <div className="flex items-center gap-3"><button type="button" onClick={() => sendPasswordReset(activeUser)} className="text-xs font-semibold text-[#0E3B22] hover:underline">Send reset code</button><button type="button" onClick={() => signOutEverywhere(activeUser)} className="text-xs font-semibold text-red-700 hover:underline"><LogOut size={13} className="mr-1 inline" />Sign out all</button></div>
@@ -1416,7 +1407,7 @@ export default function Users() {
                                 setModal(null);
                                 openEdit(user);
                             }}
-                            className={`inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg border border-[#E5E1D8] text-gray-600 transition hover:bg-gray-50 ${focusRing}`}
+                            className={`inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50 ${focusRing}`}
                         >
                             <Pencil size={13} />
                             Edit

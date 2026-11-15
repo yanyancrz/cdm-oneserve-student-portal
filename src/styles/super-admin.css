@@ -1,0 +1,69 @@
+/* Shared Clinic-inspired surfaces. Scoped to the central admin outlet. */
+.super-admin-content {
+    color: #111827;
+    font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    --admin-green: #0e3b22;
+}
+
+.super-admin-content .admin-page {
+    width: 100%;
+    min-width: 0;
+    max-width: 80rem;
+    margin-inline: auto;
+    padding: 1.5rem 1rem 3rem;
+}
+
+.super-admin-content .admin-surface {
+    border: 1px solid #e5e7eb;
+    border-radius: 1rem;
+    background-color: #fff;
+    box-shadow: 0 1px 2px rgb(0 0 0 / .05);
+}
+
+.super-admin-content .admin-page-header {
+    margin-bottom: 1.5rem;
+}
+
+.super-admin-content :where(input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="color"]), select, textarea) {
+    border-color: #e5e7eb;
+    border-radius: .75rem;
+    transition: border-color .15s, box-shadow .15s, background-color .15s;
+}
+
+.super-admin-content :where(input, select, textarea):focus-visible {
+    outline: none;
+    border-color: #059669;
+    box-shadow: 0 0 0 3px rgb(5 150 105 / .15);
+}
+
+.super-admin-content :where(button, a):focus-visible {
+    outline: 2px solid #059669;
+    outline-offset: 3px;
+}
+
+.super-admin-content :where(button) {
+    transition: background-color .15s, border-color .15s, color .15s, box-shadow .15s;
+}
+
+.super-admin-content :where(button):disabled { cursor: not-allowed; }
+.super-admin-content :where(thead) { background-color: #f9fafb; }
+.super-admin-content :where(th) { color: #6b7280; }
+.super-admin-content :where(tbody tr) { border-color: #f3f4f6; }
+.super-admin-content :where(tbody tr:hover) { background-color: #f9fafb; }
+.super-admin-content :where(tbody td) { vertical-align: middle; }
+
+@media (min-width: 640px) {
+    .super-admin-content .admin-page { padding: 1.75rem 1.5rem 3rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .super-admin-content *, .super-admin-content *::before, .super-admin-content *::after {
+        transition: none !important;
+        animation: none !important;
+    }
+}
+
+@media print {
+    .super-admin-content .admin-page { max-width: none; padding: 0; }
+    .super-admin-content .admin-surface { box-shadow: none; }
+}

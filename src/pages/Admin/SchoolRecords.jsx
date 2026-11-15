@@ -1,3 +1,4 @@
+import AdminPageHeader from "./AdminPageHeader";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
@@ -201,18 +202,9 @@ export default function SchoolRecords() {
     }, [records, search]);
 
     return (
-        <div className="min-h-screen bg-[#F7F5EF] text-[#1F1F1F]">
-            <main className="mx-auto w-full max-w-[1000px] px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
-                <p className="mb-1 text-xs font-medium uppercase tracking-[0.18em] text-[#106A2E]/70">
-                    Admin
-                </p>
-                <h1 className="text-2xl font-semibold lg:text-3xl">
-                    School Records
-                </h1>
-                <p className="mt-1 text-sm text-gray-500">
-                    Official ID Numbers allowed to register. IDs live only in
-                    the database — the app never hardcodes them.
-                </p>
+        <div className="min-h-screen bg-transparent text-[#1F1F1F]">
+            <main className="admin-page">
+                <AdminPageHeader icon="records" title="School Records" description="Manage the official student and faculty ID numbers allowed to register." />
 
                 {usingFallback && (
                     <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">
@@ -225,7 +217,7 @@ export default function SchoolRecords() {
                 )}
 
                 {/* ADD FORM */}
-                <div className="mt-6 rounded-2xl border border-[#1F1F1F]/5 bg-white p-5">
+                <div className="admin-surface mt-6 rounded-2xl border border-gray-200 bg-white p-5">
                     <h2 className="text-sm font-semibold">Add record</h2>
                     <div className="mt-3 grid gap-2 sm:grid-cols-[1fr_160px_auto]">
                         <input
@@ -265,7 +257,7 @@ export default function SchoolRecords() {
                 </div>
 
                 {/* LIST */}
-                <div className="mt-4 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+                <div className="admin-surface mt-4 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
                     <div className="border-b border-gray-100 px-5 py-4">
                         <p className="text-sm font-semibold">
                             {filtered.length} record{filtered.length !== 1 ? "s" : ""}

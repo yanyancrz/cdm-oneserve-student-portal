@@ -4,6 +4,7 @@ import { Megaphone, CalendarDays, BarChart3, ScrollText, ChevronDown, LayoutGrid
 import Logo from "../assets/images/cdm-white.png";
 import BackgroundImage from "../assets/images/admin-bg.png";
 import "../styles/admin-service-print.css";
+import "../styles/super-admin.css";
 
 // Route ng Login page. Palitan kung iba ang path.
 const LOGIN_PATH = "/";
@@ -660,7 +661,7 @@ export default function AdminLayout() {
 
                     {/* PAGE */}
 
-                    <div className="relative z-10">
+                    <div className="super-admin-content relative z-10">
 
                         <Outlet />
 

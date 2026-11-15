@@ -1,3 +1,4 @@
+import AdminPageHeader from "./AdminPageHeader";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
@@ -16,7 +17,7 @@ const NAME_MAX_LENGTH = 60;
 const PHONE_MAX_LENGTH = 15;
 const FONTS_LINK_ID = "admin-profile-fonts";
 const FONTS_HREF =
-    "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap";
+    "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
 
 const ICON_PATHS = {
     user: "M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2 M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z",
@@ -116,14 +117,14 @@ function getPasswordStrength(password) {
     if (passed <= 3) {
         return { score: 2, label: "Fair", bar: "bg-amber-500", text: "text-amber-600" };
     }
-    return { score: 3, label: "Strong", bar: "bg-[#106A2E]", text: "text-[#106A2E]" };
+    return { score: 3, label: "Strong", bar: "bg-[#0E3B22]", text: "text-[#106A2E]" };
 }
 
 const inputBase =
     "w-full px-4 py-2.5 rounded-xl border bg-gray-50 text-sm outline-none input-transition focus:bg-white focus:border-[#106A2E] focus:ring-2 focus:ring-[#106A2E]/15";
 
 const primaryButton =
-    "inline-flex items-center justify-center gap-2 bg-[#106A2E] hover:bg-[#0d5224] text-white px-6 py-2.5 rounded-xl font-semibold text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#106A2E]/40 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
+    "inline-flex items-center justify-center gap-2 bg-[#0E3B22] hover:bg-[#145a33] text-white px-6 py-2.5 rounded-xl font-semibold text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#106A2E]/40 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed";
 
 const secondaryButton =
     "inline-flex items-center justify-center px-5 py-2.5 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[#106A2E]/30 disabled:opacity-50 disabled:cursor-not-allowed";
@@ -137,7 +138,7 @@ function Toggle({ checked, onChange, label }) {
             aria-label={label}
             onClick={onChange}
             className={`relative w-11 h-6 rounded-full flex-shrink-0 mt-1 transition-colors duration-200 outline-none focus-visible:ring-2 focus-visible:ring-[#106A2E]/40 focus-visible:ring-offset-2 ${
-                checked ? "bg-[#106A2E]" : "bg-gray-300"
+                checked ? "bg-[#0E3B22]" : "bg-gray-300"
             }`}
         >
             <span
@@ -151,13 +152,13 @@ function Toggle({ checked, onChange, label }) {
 
 function ProfileSkeleton() {
     return (
-        <main className="flex-1 w-full min-w-0 max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8 animate-pulse">
+        <main className="admin-page animate-pulse">
             <div className="mb-8 space-y-3">
                 <div className="h-3 w-28 bg-gray-200 rounded" />
                 <div className="h-9 w-48 bg-gray-200 rounded" />
                 <div className="h-3 w-64 bg-gray-100 rounded" />
             </div>
-            <div className="bg-white rounded-2xl border border-[#1F1F1F]/[0.05] overflow-hidden mb-6">
+            <div className="admin-surface bg-white rounded-2xl border border-[#1F1F1F]/[0.05] overflow-hidden mb-6">
                 <div className="h-24 bg-gray-200" />
                 <div className="p-6 flex items-center gap-5">
                     <div className="w-20 h-20 -mt-12 rounded-full bg-gray-300 ring-4 ring-white" />
@@ -172,7 +173,7 @@ function ProfileSkeleton() {
                     <div key={i} className="h-10 w-28 bg-gray-100 rounded-xl" />
                 ))}
             </div>
-            <div className="bg-white rounded-2xl border border-[#1F1F1F]/[0.05] p-6">
+            <div className="admin-surface bg-white rounded-2xl border border-[#1F1F1F]/[0.05] p-6">
                 <div className="h-5 w-44 bg-gray-200 rounded mb-5" />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -612,7 +613,6 @@ export default function AdminProfile() {
     return (
         <>
             <style>{`
-                .font-display { font-family: 'Fraunces', serif; }
                 .ap-root { font-family: 'Inter', system-ui, sans-serif; }
                 .tab-transition,
                 .input-transition,
@@ -624,34 +624,21 @@ export default function AdminProfile() {
                 }
             `}</style>
 
-            <main className="ap-root flex-1 w-full min-w-0 max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8">
+            <main className="admin-page ap-root">
                 {/* Header */}
-                <div className="mb-8">
-                    <p className="text-xs uppercase tracking-[0.18em] text-[#106A2E]/70 font-medium mb-1">
-                        Account Settings
-                    </p>
-                    <h2 className="font-display text-3xl md:text-4xl text-[#1F1F1F]">My Profile</h2>
-                    <p className="text-gray-500 text-sm mt-1">
-                        Manage your account information and preferences
-                    </p>
-                </div>
+                <AdminPageHeader icon="profile" title="My Profile" description="Manage your account information and preferences." />
 
                 {/* Profile Header Card */}
                 <div
-                    className="relative overflow-hidden rounded-2xl mb-6 shadow-sm text-white"
-                    style={{ background: "linear-gradient(120deg, #0b4d21 0%, #106A2E 60%, #1a8a3a 100%)" }}
+                    className="admin-surface relative overflow-hidden rounded-2xl mb-6 text-gray-900"
                 >
-                    <div
-                        className="pointer-events-none absolute -right-16 -top-24 w-72 h-72 rounded-full bg-white/[0.06]"
-                        aria-hidden="true"
-                    />
-                    <div
+<div
                         className="pointer-events-none absolute right-28 -bottom-28 w-60 h-60 rounded-full bg-white/[0.05]"
                         aria-hidden="true"
                     />
 
                     <div className="relative p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center gap-5">
-                        <div className="w-20 h-20 rounded-full bg-white/15 ring-2 ring-white/40 flex items-center justify-center text-2xl font-display font-medium flex-shrink-0 overflow-hidden">
+                        <div className="w-20 h-20 rounded-full bg-[#0E3B22] text-white ring-2 ring-emerald-100 flex items-center justify-center text-2xl font-semibold font-medium flex-shrink-0 overflow-hidden">
                             {profile.photoUrl ? (
                                 <img
                                     src={profile.photoUrl}
@@ -664,27 +651,27 @@ export default function AdminProfile() {
                         </div>
 
                         <div className="flex-1 min-w-0">
-                            <h3 className="font-display text-2xl sm:text-[28px] leading-tight text-white truncate">
+                            <h3 className="font-semibold text-2xl sm:text-[28px] leading-tight text-gray-900 truncate">
                                 {profile.fullName}
                             </h3>
-                            <p className="text-sm text-white/80 truncate mt-0.5">{profile.email}</p>
+                            <p className="text-sm text-gray-500 truncate mt-0.5">{profile.email}</p>
                             <div className="flex flex-wrap gap-2 mt-3">
-                                <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-white/15 text-white">
+                                <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200">
                                     {profile.role || "Admin"}
                                 </span>
                                 {profile.position && (
-                                    <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-white/90">
+                                    <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
                                         {profile.position}
                                     </span>
                                 )}
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-white/10 text-xs text-white/80 flex-shrink-0">
-                            <Icon name="calendar" className="w-4 h-4 text-white" />
+                        <div className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gray-50 text-xs text-gray-500 flex-shrink-0">
+                            <Icon name="calendar" className="w-4 h-4 text-[#0E3B22]" />
                             <div>
                                 <p>Member since</p>
-                                <p className="font-medium text-white text-sm">{formatDate(profile.dateJoined)}</p>
+                                <p className="font-medium text-gray-900 text-sm">{formatDate(profile.dateJoined)}</p>
                             </div>
                         </div>
                     </div>
@@ -706,7 +693,7 @@ export default function AdminProfile() {
                                 onClick={() => handleTabChange(tab.key)}
                                 className={`flex items-center gap-2 whitespace-nowrap px-4 py-2.5 rounded-xl text-sm font-medium tab-transition outline-none focus-visible:ring-2 focus-visible:ring-[#106A2E]/40 ${
                                     isActive
-                                        ? "bg-[#106A2E] text-white shadow-sm"
+                                        ? "bg-[#0E3B22] text-white shadow-sm"
                                         : "text-gray-500 hover:text-gray-800 hover:bg-gray-100"
                                 }`}
                             >
@@ -720,12 +707,12 @@ export default function AdminProfile() {
                 {/* Tab Content */}
                 <div
                     role="tabpanel"
-                    className="bg-white rounded-2xl border border-[#1F1F1F]/[0.05] p-6 shadow-sm"
+                    className="admin-surface bg-white rounded-2xl border border-[#1F1F1F]/[0.05] p-6 shadow-sm"
                 >
                     {/* Overview Tab */}
                     {activeTab === "overview" && (
                         <div>
-                            <h3 className="font-display text-lg text-[#1F1F1F] mb-5">Account Information</h3>
+                            <h3 className="font-semibold text-lg text-[#1F1F1F] mb-5">Account Information</h3>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 {overviewItems.map((item) => (
@@ -763,7 +750,7 @@ export default function AdminProfile() {
                     {/* Edit Profile Tab */}
                     {activeTab === "edit" && (
                         <div>
-                            <h3 className="font-display text-lg text-[#1F1F1F] mb-5">Edit Profile</h3>
+                            <h3 className="font-semibold text-lg text-[#1F1F1F] mb-5">Edit Profile</h3>
 
                             <div className="space-y-5 max-w-md">
                                 <div>
@@ -862,7 +849,7 @@ export default function AdminProfile() {
                     {/* Change Password Tab */}
                     {activeTab === "password" && (
                         <div>
-                            <h3 className="font-display text-lg text-[#1F1F1F] mb-5">Change Password</h3>
+                            <h3 className="font-semibold text-lg text-[#1F1F1F] mb-5">Change Password</h3>
 
                             <div className="space-y-5 max-w-md">
                                 {renderPasswordField({

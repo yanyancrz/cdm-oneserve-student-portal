@@ -1,3 +1,5 @@
+import AdminFilterPanel from "./AdminFilterPanel";
+import AdminPageHeader from "./AdminPageHeader";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
@@ -274,7 +276,7 @@ export default function ServiceHeads() {
         ).size;
 
         return [
-            { key: "all", label: "Total heads", value: heads.length, icon: UsersIcon, tone: "bg-[#ECE9E2] text-[#1F1F1F]", number: "text-[#1F1F1F]" },
+            { key: "all", label: "Total heads", value: heads.length, icon: UsersIcon, tone: "bg-gray-100 text-[#1F1F1F]", number: "text-[#1F1F1F]" },
             { key: "active", label: "Active", value: heads.filter((u) => u.status === "Active").length, icon: UserCheck, tone: "bg-[#E1F0E4] text-[#106A2E]", number: "text-[#106A2E]" },
             { key: "suspended", label: "Suspended", value: heads.filter((u) => u.status === "Suspended").length, icon: Ban, tone: "bg-red-50 text-red-500", number: "text-red-600" },
             { key: "modules", label: `Modules with heads (${ADMIN_MODULES.length})`, value: modulesCovered, icon: ShieldCheck, tone: "bg-blue-50 text-blue-700", number: "text-blue-700" },
@@ -558,9 +560,8 @@ export default function ServiceHeads() {
     const rangeEnd = Math.min(pageStart + pageSize, sorted.length);
 
     return (
-        <div className="users-root w-full min-w-0 max-w-[1250px] mx-auto px-4 sm:px-6 lg:px-10 py-6 lg:py-8">
+        <div className="admin-page users-root">
             <style>{`
-                .font-display { font-family: 'Fraunces', serif; }
                 .users-root { font-family: 'Inter', system-ui, sans-serif; }
                 @media (prefers-reduced-motion: reduce) {
                     .users-root * { transition: none !important; animation: none !important; }
@@ -568,14 +569,7 @@ export default function ServiceHeads() {
             `}</style>
 
             {/* Header */}
-            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                    <h1 className="font-display text-3xl text-[#1F1F1F] sm:text-4xl">Service Heads</h1>
-                    <p className="mt-1 text-sm text-gray-500">
-                        Manage module head and admin accounts.
-                    </p>
-                </div>
-
+            <AdminPageHeader icon="heads" title="Service Heads" description="Manage module head and administrator accounts.">
                 <div className="flex flex-wrap items-center gap-2">
                     <button
                         type="button"
@@ -592,7 +586,7 @@ export default function ServiceHeads() {
                         Add Head
                     </button>
                 </div>
-            </div>
+            </AdminPageHeader>
 
             {/* Stats */}
             <div className="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -602,7 +596,7 @@ export default function ServiceHeads() {
                     return (
                         <div
                             key={stat.key}
-                            className="rounded-2xl border border-black/[0.05] bg-white p-4 shadow-sm"
+                            className="admin-surface rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
                         >
                             <div className="flex items-start justify-between gap-2">
                                 <div>
@@ -611,7 +605,7 @@ export default function ServiceHeads() {
                                     {loading ? (
                                         <div className="mt-2 h-8 w-10 animate-pulse rounded bg-gray-200" />
                                     ) : (
-                                        <p className={`mt-1 font-display text-3xl ${stat.number}`}>
+                                        <p className={`mt-1 font-semibold text-3xl ${stat.number}`}>
                                             {stat.value}
                                         </p>
                                     )}
@@ -629,7 +623,7 @@ export default function ServiceHeads() {
             </div>
 
             {/* Filter bar */}
-            <div className="mb-4 rounded-2xl border border-[#E5E1D8] bg-white p-3">
+            <AdminFilterPanel>
                 <div className="flex flex-wrap items-center gap-3">
                     <div className="relative min-w-[220px] flex-1">
                         <Search
@@ -643,7 +637,7 @@ export default function ServiceHeads() {
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder="Search by name, email, ID, module..."
                             aria-label="Search service heads"
-                            className="w-full rounded-lg border border-[#E5E1D8] py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-[#106A2E] focus:ring-2 focus:ring-[#106A2E]/15"
+                            className="w-full rounded-lg border border-gray-200 py-2.5 pl-9 pr-3 text-sm outline-none transition focus:border-[#106A2E] focus:ring-2 focus:ring-[#106A2E]/15"
                         />
                     </div>
 
@@ -686,7 +680,7 @@ export default function ServiceHeads() {
                                     type="button"
                                     onClick={chip.clear}
                                     aria-label={`Remove filter ${chip.label}`}
-                                    className={`rounded-full p-0.5 hover:bg-[#106A2E]/10 ${focusRing}`}
+                                    className={`rounded-full p-0.5 hover:bg-[#0E3B22]/10 ${focusRing}`}
                                 >
                                     <X size={12} />
                                 </button>
@@ -702,7 +696,7 @@ export default function ServiceHeads() {
                         </button>
                     </div>
                 )}
-            </div>
+            </AdminFilterPanel>
 
             {/* Error */}
             {error && (
@@ -723,12 +717,12 @@ export default function ServiceHeads() {
             )}
 
             {/* Results */}
-            <div className="overflow-hidden rounded-2xl border border-[#E5E1D8] bg-white">
+            <div className="admin-surface overflow-hidden rounded-2xl border border-gray-200 bg-white">
                 {loading ? (
                     <LoadingSkeleton />
                 ) : sorted.length === 0 ? (
                     <div className="px-5 py-14 text-center">
-                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F7F5EF] text-gray-300">
+                        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-transparent text-gray-300">
                             <UsersIcon size={20} />
                         </div>
 
@@ -752,7 +746,7 @@ export default function ServiceHeads() {
                     <>
                         {/* Desktop table */}
                         <div className="hidden max-h-[70vh] overflow-auto md:block">
-                            <table className="w-full text-sm">
+                            <table className="w-full min-w-[900px] text-sm">
                                 <thead>
                                     <tr>
                                         <SortHeader
@@ -893,7 +887,7 @@ export default function ServiceHeads() {
                             <select
                                 value={pageSize}
                                 onChange={(e) => setPageSize(Number(e.target.value))}
-                                className="rounded-lg border border-[#E5E1D8] bg-white px-2 py-1.5 text-xs outline-none focus:border-[#106A2E]"
+                                className="rounded-lg border border-gray-200 bg-white px-2 py-1.5 text-xs outline-none focus:border-[#106A2E]"
                             >
                                 {PAGE_SIZES.map((size) => (
                                     <option key={size} value={size}>
@@ -909,7 +903,7 @@ export default function ServiceHeads() {
                                 onClick={() => setPage(currentPage - 1)}
                                 disabled={currentPage <= 1}
                                 aria-label="Previous page"
-                                className={`inline-flex items-center gap-1 rounded-lg border border-[#E5E1D8] bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 ${focusRing}`}
+                                className={`inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 ${focusRing}`}
                             >
                                 <ChevronLeft size={14} />
                                 Previous
@@ -924,7 +918,7 @@ export default function ServiceHeads() {
                                 onClick={() => setPage(currentPage + 1)}
                                 disabled={currentPage >= totalPages}
                                 aria-label="Next page"
-                                className={`inline-flex items-center gap-1 rounded-lg border border-[#E5E1D8] bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 ${focusRing}`}
+                                className={`inline-flex items-center gap-1 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-40 ${focusRing}`}
                             >
                                 Next
                                 <ChevronRight size={14} />
@@ -998,7 +992,7 @@ export default function ServiceHeads() {
                                 setModal(null);
                                 openEdit(user);
                             }}
-                            className={`inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg border border-[#E5E1D8] text-gray-600 transition hover:bg-gray-50 ${focusRing}`}
+                            className={`inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50 ${focusRing}`}
                         >
                             <Pencil size={13} />
                             Edit

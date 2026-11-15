@@ -87,7 +87,7 @@ export function Initials({ name, size = "w-9 h-9", picture }) {
 export function RolePill({ role }) {
     return (
         <span
-            className={`inline-block text-xs font-semibold px-2.5 py-1 rounded-full ${
+            className={`inline-block whitespace-nowrap text-xs font-semibold px-2.5 py-1 rounded-full ${
                 ROLE_STYLES[role] || "bg-gray-100 text-gray-700"
             }`}
         >
@@ -99,7 +99,7 @@ export function RolePill({ role }) {
 export function VerificationPill({ method }) {
     if (method === "PNM Email") {
         return (
-            <span className="inline-block text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">
+            <span className="inline-block whitespace-nowrap text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700">
                 PNM Email
             </span>
         );
@@ -155,8 +155,8 @@ export function Modal({ title, onClose, children, locked = false, size = "max-w-
                 aria-labelledby={titleId}
                 className={`bg-white rounded-2xl w-full ${size} shadow-xl max-h-[90vh] overflow-y-auto outline-none`}
             >
-                <div className="flex items-center justify-between px-5 py-4 border-b border-[#E5E1D8]">
-                    <h3 id={titleId} className="font-display text-lg text-[#1F1F1F]">
+                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+                    <h3 id={titleId} className="font-semibold text-lg text-[#1F1F1F]">
                         {title}
                     </h3>
 
@@ -253,7 +253,7 @@ export function ConfirmDialog({ config, onClose }) {
                         onClick={handleConfirm}
                         disabled={busy}
                         className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white transition disabled:opacity-60 ${focusRing} ${
-                            isDanger ? "bg-red-600 hover:bg-red-700" : "bg-[#106A2E] hover:bg-[#0d5224]"
+                            isDanger ? "bg-red-600 hover:bg-red-700" : "bg-[#0E3B22] hover:bg-[#145a33]"
                         }`}
                     >
                         {busy && <RefreshCw size={14} className="animate-spin" />}
@@ -284,7 +284,7 @@ export function TextField({ label, labelAction, error, hint, rightSlot, readOnly
                     aria-invalid={Boolean(error)}
                     className={`${fieldBase} ${
                         readOnly ? "bg-gray-50 text-gray-600 cursor-default" : "bg-white"
-                    } ${error ? "border-red-500" : "border-[#E5E1D8]"} ${className}`}
+                    } ${error ? "border-red-500" : "border-gray-200"} ${className}`}
                     {...props}
                 />
                 {rightSlot}
@@ -311,7 +311,7 @@ export function SelectField({ label, options, placeholder, ...props }) {
 
             <select
                 id={id}
-                className={`${fieldBase} mt-1 bg-white border-[#E5E1D8]`}
+                className={`${fieldBase} mt-1 bg-white border-gray-200`}
                 {...props}
             >
                 {placeholder && <option value="">{placeholder}</option>}
@@ -337,7 +337,7 @@ export function FormActions({ onCancel, submitting, submitLabel, submittingLabel
                 type="button"
                 onClick={onCancel}
                 disabled={submitting}
-                className={`text-xs font-semibold px-4 py-2 rounded-lg border border-[#E5E1D8] text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 ${focusRing}`}
+                className={`text-xs font-semibold px-4 py-2 rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50 disabled:opacity-50 ${focusRing}`}
             >
                 Cancel
             </button>
@@ -775,7 +775,7 @@ export function CredentialsModal({ data, onClose }) {
                     onClick={() =>
                         copyText(`Email: ${data.email}\nPassword: ${data.password}`, "Credentials")
                     }
-                    className={`inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg border border-[#E5E1D8] text-gray-600 transition hover:bg-gray-50 ${focusRing}`}
+                    className={`inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50 ${focusRing}`}
                 >
                     <Copy size={13} />
                     Copy both
@@ -892,7 +892,7 @@ export function RowMenu({ items, label }) {
                 <div
                     ref={menuRef}
                     role="menu"
-                    className="fixed z-[55] w-44 rounded-xl border border-[#E5E1D8] bg-white p-1 shadow-lg"
+                    className="fixed z-[55] w-44 rounded-xl border border-gray-200 bg-white p-1 shadow-lg"
                     style={{ top: pos.top, left: pos.left }}
                 >
                     {items.map((item) => {

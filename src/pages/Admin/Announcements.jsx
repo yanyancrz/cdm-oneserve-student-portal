@@ -1,3 +1,4 @@
+import AdminPageHeader from "./AdminPageHeader";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import toast from "react-hot-toast";
@@ -29,7 +30,7 @@ const COLLAPSE_AT = 140;
 // Same fonts and link id as AdminProfile, so they are only loaded once
 const FONTS_LINK_ID = "admin-profile-fonts";
 const FONTS_HREF =
-    "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap";
+    "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
 
 const EMPTY_FORM = {
     title: "",
@@ -138,7 +139,7 @@ function Switch({ checked, onChange, disabled, label }) {
             disabled={disabled}
             onClick={onChange}
             className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50 ${focusRing} ${
-                checked ? "bg-[#106A2E]" : "bg-gray-300"
+                checked ? "bg-[#0E3B22]" : "bg-gray-300"
             }`}
         >
             <span
@@ -726,8 +727,8 @@ export default function Announcements() {
     // ── Access guard ────────────────────────────────────────
     if (!isAdmin) {
         return (
-            <main className="min-h-[calc(100vh-72px)] bg-[#F7F5EF] px-4 py-10 sm:px-6 lg:px-10">
-                <div className="mx-auto max-w-xl rounded-3xl border border-red-100 bg-white p-8 text-center shadow-sm">
+            <main className="min-h-[calc(100vh-72px)] bg-transparent px-4 py-10 sm:px-6 lg:px-10">
+                <div className="admin-surface mx-auto max-w-xl rounded-2xl border border-red-100 bg-white p-8 text-center shadow-sm">
                     <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-500">
                         <X size={24} />
                     </div>
@@ -747,28 +748,17 @@ export default function Announcements() {
 
     // ── Main ────────────────────────────────────────────────
     return (
-        <main className="ann-root min-h-[calc(100vh-72px)] bg-[#F7F5EF] px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
+        <main className="admin-page ann-root">
             <style>{`
-                .font-display { font-family: 'Fraunces', serif; }
                 .ann-root { font-family: 'Inter', system-ui, sans-serif; }
                 @media (prefers-reduced-motion: reduce) {
                     .ann-root * { transition: none !important; animation: none !important; }
                 }
             `}</style>
 
-            <div className="mx-auto w-full max-w-[1250px]">
+            <div className="w-full">
                 {/* Header */}
-                <div className="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                        <h1 className="font-display text-3xl text-[#1F1F1F] sm:text-4xl">
-                            Announcements
-                        </h1>
-                        <p className="mt-1 max-w-2xl text-sm text-gray-500">
-                            Create and manage announcements that appear on the Student and Faculty
-                            dashboard.
-                        </p>
-                    </div>
-
+                <AdminPageHeader icon="announcements" title="Announcements" description="Create and manage announcements for the Student and Faculty dashboard.">
                     <div className="flex items-center gap-2">
                         <button
                             type="button"
@@ -783,13 +773,13 @@ export default function Announcements() {
                         <button
                             type="button"
                             onClick={openCreateForm}
-                            className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#106A2E] px-4 text-sm font-semibold text-white transition hover:bg-[#0d5224] ${focusRing}`}
+                            className={`inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#0E3B22] px-4 text-sm font-semibold text-white transition hover:bg-[#145a33] ${focusRing}`}
                         >
                             <Plus size={16} />
                             New Announcement
                         </button>
                     </div>
-                </div>
+                </AdminPageHeader>
 
                 {/* Stats (also act as filters) */}
                 <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -802,7 +792,7 @@ export default function Announcements() {
                                 ? "bg-[#E1F0E4] text-[#106A2E]"
                                 : item.key === "hidden"
                                 ? "bg-gray-100 text-gray-500"
-                                : "bg-[#ECE9E2] text-[#1F1F1F]";
+                                : "bg-gray-100 text-[#1F1F1F]";
                         const numberStyle =
                             item.key === "active"
                                 ? "text-[#106A2E]"
@@ -816,10 +806,10 @@ export default function Announcements() {
                                 type="button"
                                 onClick={() => setFilter(item.key)}
                                 aria-pressed={selected}
-                                className={`rounded-2xl border bg-white p-5 text-left shadow-sm transition ${focusRing} ${
+                                className={`admin-surface rounded-2xl border border-gray-200 bg-white p-5 text-left shadow-sm transition ${focusRing} ${
                                     selected
                                         ? "border-[#106A2E]/40 ring-2 ring-[#106A2E]/20"
-                                        : "border-black/[0.05] hover:border-gray-200"
+                                        : "border-gray-200 hover:border-gray-200"
                                 }`}
                             >
                                 <div className="flex items-start justify-between">
@@ -831,7 +821,7 @@ export default function Announcements() {
                                         {loading ? (
                                             <div className="mt-2 h-9 w-12 animate-pulse rounded bg-gray-200" />
                                         ) : (
-                                            <p className={`mt-1 font-display text-3xl ${numberStyle}`}>
+                                            <p className={`mt-1 font-semibold text-3xl ${numberStyle}`}>
                                                 {counts[item.key]}
                                             </p>
                                         )}
@@ -856,12 +846,12 @@ export default function Announcements() {
                 {showForm && (
                     <section
                         ref={formRef}
-                        className="mb-6 scroll-mt-6 overflow-hidden rounded-3xl border border-black/[0.05] bg-white shadow-sm"
+                        className="admin-surface mb-6 scroll-mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
                     >
                         <div className="border-b border-gray-100 px-5 py-5 sm:px-6">
                             <div className="flex items-center justify-between gap-4">
                                 <div>
-                                    <h2 className="font-display text-xl text-[#1F1F1F]">
+                                    <h2 className="font-semibold text-xl text-[#1F1F1F]">
                                         {editingId ? "Edit Announcement" : "New Announcement"}
                                     </h2>
                                     <p className="mt-1 text-xs text-gray-500">
@@ -1074,7 +1064,7 @@ export default function Announcements() {
                                     </div>
 
                                     {/* Publish toggle */}
-                                    <div className="flex items-start justify-between gap-4 rounded-2xl border border-gray-100 bg-[#F7F5EF] p-4">
+                                    <div className="flex items-start justify-between gap-4 rounded-2xl border border-gray-100 bg-transparent p-4">
                                         <div>
                                             <p
                                                 id="ann-publish-label"
@@ -1096,7 +1086,7 @@ export default function Announcements() {
 
                                     {/* Push notification toggle */}
                                     {form.isActive && (
-                                        <div className="flex items-start justify-between gap-4 rounded-2xl border border-[#106A2E]/20 bg-[#106A2E]/[0.04] p-4">
+                                        <div className="flex items-start justify-between gap-4 rounded-2xl border border-[#106A2E]/20 bg-[#0E3B22]/[0.04] p-4">
                                             <div className="flex gap-3">
                                                 <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#E1F0E4] text-[#106A2E]">
                                                     <Bell size={15} />
@@ -1130,7 +1120,7 @@ export default function Announcements() {
                                         <button
                                             type="submit"
                                             disabled={saving || (Boolean(editingId) && !isDirty)}
-                                            className={`inline-flex items-center justify-center gap-2 rounded-xl bg-[#106A2E] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#0d5224] disabled:cursor-not-allowed disabled:opacity-50 ${focusRing}`}
+                                            className={`inline-flex items-center justify-center gap-2 rounded-xl bg-[#0E3B22] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#145a33] disabled:cursor-not-allowed disabled:opacity-50 ${focusRing}`}
                                         >
                                             {saving ? (
                                                 <>
@@ -1233,11 +1223,11 @@ export default function Announcements() {
                 )}
 
                 {/* List */}
-                <section className="overflow-hidden rounded-3xl border border-black/[0.05] bg-white shadow-sm">
+                <section className="admin-surface overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">
                     <div className="border-b border-gray-100 px-5 py-5 sm:px-6">
                         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                             <div>
-                                <h2 className="font-display text-xl text-[#1F1F1F]">
+                                <h2 className="font-semibold text-xl text-[#1F1F1F]">
                                     Manage Announcements
                                 </h2>
                                 <p className="mt-1 text-xs text-gray-500">
@@ -1268,8 +1258,8 @@ export default function Announcements() {
                         {loading ? (
                             <ListSkeleton />
                         ) : filteredAnnouncements.length === 0 ? (
-                            <div className="rounded-2xl bg-[#F7F5EF] px-5 py-14 text-center">
-                                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-gray-300 shadow-sm">
+                            <div className="rounded-2xl bg-transparent px-5 py-14 text-center">
+                                <div className="admin-surface mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-gray-300 shadow-sm">
                                     <Megaphone size={20} />
                                 </div>
 
@@ -1300,7 +1290,7 @@ export default function Announcements() {
                                     <button
                                         type="button"
                                         onClick={openCreateForm}
-                                        className={`mt-5 inline-flex items-center gap-2 rounded-xl bg-[#106A2E] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0d5224] ${focusRing}`}
+                                        className={`mt-5 inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#145a33] ${focusRing}`}
                                     >
                                         <Plus size={16} />
                                         Create announcement

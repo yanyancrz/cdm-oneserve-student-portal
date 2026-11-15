@@ -1,3 +1,4 @@
+import AdminPageHeader from "./AdminPageHeader";
 import ExportFormatSelect from "./ExportFormatSelect";
 import { exportReport } from "./reportExport";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -120,12 +121,8 @@ export default function AdminServiceOversight({ module }) {
         finally { setExporting(false); }
     };
 
-    return <main className="admin-service-report mx-auto max-w-6xl space-y-5 p-4 sm:p-7">
-        <header className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-                <h1 className="text-3xl font-semibold text-[#1F1F1F]">{config.title}</h1>
-                <p className="mt-1 text-sm text-gray-500">{config.description}</p>
-            </div>
+    return <main className="admin-page admin-service-report space-y-5">
+        <AdminPageHeader icon={module} title={config.title} description={config.description}>
             <div className="admin-no-print flex flex-wrap gap-2">
                 <ExportFormatSelect value={exportFormat} onChange={setExportFormat} disabled={exporting} />
                 <button onClick={handleExport} disabled={loading || !data || exporting} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">
@@ -135,7 +132,7 @@ export default function AdminServiceOversight({ module }) {
                     <RefreshCw size={15} className={loading ? "animate-spin" : ""} />Refresh
                 </button>
             </div>
-        </header>
+        </AdminPageHeader>
 
         <p className="admin-print-meta text-xs text-gray-500">CDM OneServe · Service monitoring report · Generated {new Date().toLocaleString()}</p>
 
@@ -154,13 +151,13 @@ export default function AdminServiceOversight({ module }) {
         </div>}
 
         <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            {cards.map(([label, value, Icon]) => <article key={label} className="rounded-2xl border bg-white p-4">
+            {cards.map(([label, value, Icon]) => <article key={label} className="admin-surface rounded-2xl border border-gray-200 bg-white p-4">
                 <div className="flex items-center justify-between text-xs text-gray-500"><span>{label}</span><Icon size={16} /></div>
                 <p className="mt-2 text-2xl font-semibold">{loading ? "…" : value ?? "—"}</p>
             </article>)}
         </section>
 
-        {module === "guidance" && view === "appointments" && <section className="overflow-hidden rounded-2xl border bg-white">
+        {module === "guidance" && view === "appointments" && <section className="admin-surface overflow-hidden rounded-2xl border border-gray-200 bg-white">
             <h2 className="border-b p-4 font-semibold">Upcoming appointment schedule</h2>
             <div className="overflow-x-auto"><table className="w-full text-left text-xs">
                 <thead className="bg-gray-50 text-gray-500"><tr>{["Date", "Time", "Status"].map(x => <th key={x} className="px-3 py-2">{x}</th>)}</tr></thead>
@@ -170,7 +167,7 @@ export default function AdminServiceOversight({ module }) {
             </table></div>
         </section>}
 
-        {showActivity && <section className="overflow-hidden rounded-2xl border bg-white">
+        {showActivity && <section className="admin-surface overflow-hidden rounded-2xl border border-gray-200 bg-white">
             <h2 className="border-b p-4 font-semibold">{isLostFound ? "Recent reports" : "Recent counselor activity"}</h2>
             <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">

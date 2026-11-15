@@ -112,18 +112,18 @@ export const MIN_PASSWORD_LENGTH = 8;
 
 export const FONTS_LINK_ID = "admin-profile-fonts";
 export const FONTS_HREF =
-    "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap";
+    "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
 
 export const focusRing =
     "outline-none focus-visible:ring-2 focus-visible:ring-[#106A2E]/40 focus-visible:ring-offset-2";
 
 export const fieldBase =
-    "w-full px-3 py-2 border rounded-lg text-sm outline-none transition focus:border-[#106A2E] focus:ring-2 focus:ring-[#106A2E]/15";
+    "w-full px-3 py-2 border border-gray-200 bg-gray-50 rounded-xl text-sm outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20";
 
 export const selectClass =
-    "text-sm border border-[#E5E1D8] bg-white rounded-lg px-3 py-2.5 text-gray-700 outline-none transition focus:border-[#106A2E] focus:ring-2 focus:ring-[#106A2E]/15";
+    "text-sm border border-gray-200 bg-white rounded-xl px-3 py-2.5 text-gray-700 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20";
 
-export const primaryButton = `inline-flex items-center justify-center gap-2 text-white text-sm font-semibold px-4 py-2.5 rounded-xl bg-[#0E3B22] transition hover:bg-[#0a2c19] disabled:opacity-60 disabled:cursor-not-allowed ${focusRing}`;
+export const primaryButton = `inline-flex items-center justify-center gap-2 text-white text-sm font-semibold px-4 py-2.5 rounded-xl bg-[#0E3B22] transition hover:bg-[#145a33] disabled:opacity-60 disabled:cursor-not-allowed ${focusRing}`;
 
 export const outlineButton = `inline-flex items-center justify-center gap-2 text-sm font-semibold px-4 py-2.5 rounded-xl border border-[#0E3B22] text-[#0E3B22] bg-white transition hover:bg-emerald-50 disabled:opacity-60 disabled:cursor-not-allowed ${focusRing}`;
 
@@ -132,7 +132,7 @@ export const ghostButton = `inline-flex items-center justify-center gap-2 text-s
 export const iconButton = `inline-flex h-8 w-8 items-center justify-center rounded-lg text-gray-500 transition hover:bg-gray-100 hover:text-gray-800 disabled:opacity-40 disabled:cursor-not-allowed ${focusRing}`;
 
 export const thClass =
-    "sticky top-0 z-10 bg-white text-left font-semibold text-gray-500 px-5 py-3 text-xs border-b border-[#E5E1D8]";
+    "sticky top-0 z-10 bg-gray-50 text-left font-semibold text-gray-500 px-5 py-3 text-xs border-b border-gray-200";
 
 // ─────────────────────────────────────────────────────────────
 // Verification method (PNM email)
