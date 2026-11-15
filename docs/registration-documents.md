@@ -13,6 +13,12 @@ signatures are checked before registration. EF saves the user and document in
 one transaction; failed registrations do not persist a document. The original
 JSON registration endpoint remains available for older clients.
 
+User Details shows document metadata and loads a PDF/image preview on demand.
+`GET /api/auth/users/{userId}/supporting-document` returns metadata only;
+`GET /api/auth/users/{userId}/supporting-document/content` returns the file bytes.
+Both endpoints require an Admin/SuperAdmin account with UsersManage view
+permission and disable response caching. Accounts without a document return 404.
+
 Existing documents from the earlier filesystem implementation are not migrated
 by this schema script. Database credentials and uploaded documents must never
 be committed to source control.

@@ -1,5 +1,6 @@
 import AdminFilterPanel from "./AdminFilterPanel";
 import AdminPageHeader from "./AdminPageHeader";
+import UserSupportingDocument from "./UserSupportingDocument";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
@@ -1375,6 +1376,8 @@ export default function Users() {
                         <DetailRow label="Registered">{formatDate(activeUser.registrationDate)}</DetailRow>
                         <DetailRow label="Last login">{formatDate(activeUser.lastActive)}</DetailRow>
                     </div>
+
+                    <UserSupportingDocument key={activeUser.id} userId={activeUser.id} />
 
                     <section className="mt-4 rounded-xl border border-gray-200 p-3" aria-label="Login and device sessions">
                         <div className="flex flex-wrap items-center justify-between gap-3">
