@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Download, Loader2 } from "lucide-react";
 import { loadClinicRecords as load } from "../../services/adminClinicRecordsService";
-import { validateMedicalRecords } from "./clinicRecordExport";
+import { validateMedicalRecords, collectClinicVisits, medicalRecordsCsv, studentVisitsCsv, downloadClinicCsv } from "./clinicRecordExport";
 import { formatDate, formatDateTime } from "../../components/Clinic/clinicFormat";
 
 export default function ClinicMedicalRecords() {
@@ -15,6 +16,55 @@ export default function ClinicMedicalRecords() {
     const [error, setError] = useState("");
     const [recordsError, setRecordsError] = useState("");
     const [retry, setRetry] = useState(0);
+    const [from, setFrom] = useState("");
+    const [to, setTo] = useState("");
+    const [exporting, setExporting] = useState(false);
+    const [exportMessage, setExportMessage] = useState("");
+    const [exportError, setExportError] = useState("");
+    const exportController = useRef(null);
+    useEffect(() => () => exportController.current?.abort(), []);
+
+    const exportStudent = () => {
+        if (!student || recordsLoading || recordsError || !records.length) return;
+        const filename = String(student.idNumber || student.id).replace(/[^a-zA-Z0-9_-]/g, "_");
+        downloadClinicCsv(medicalRecordsCsv(student, records), `clinic-records-${filename}.csv`);
+    };
+
+    const exportVisits = async event => {
+        event.preventDefault();
+        if (exportController.current) return;
+        setExportError("");
+        setExportMessage("");
+        if (from && to && from > to) {
+            setExportError("From date must be on or before To date.");
+            return;
+        }
+        const controller = new AbortController();
+        exportController.current = controller;
+        setExporting(true);
+        try {
+            const results = await collectClinicVisits(load, {
+                signal: controller.signal,
+                onProgress: ({ checked, total }) => setExportMessage(`Checking clinic visits: ${checked} of ${total} students`),
+            });
+            controller.signal.throwIfAborted();
+            const report = studentVisitsCsv(results, { from, to });
+            if (!report.visitCount) {
+                setExportMessage("");
+                setExportError("No clinic visits found for the selected date range.");
+                return;
+            }
+            downloadClinicCsv(report.csv, `clinic-visit-history-${from || "start"}-to-${to || "latest"}.csv`);
+            setExportMessage(`Exported ${report.visitCount} clinic visit(s).`);
+        } catch (e) {
+            controller.abort();
+            setExportMessage("");
+            if (e.name !== "AbortError") setExportError(`Export could not be completed. ${e.message}`);
+        } finally {
+            exportController.current = null;
+            setExporting(false);
+        }
+    };
     useEffect(() => {
         const controller = new AbortController();
         const timer = setTimeout(async () => {
@@ -60,8 +110,19 @@ export default function ClinicMedicalRecords() {
     return <section className="space-y-4" aria-labelledby="clinic-medical-records-heading">
         <div>
             <h2 id="clinic-medical-records-heading" className="text-xl font-semibold">Student medical records</h2>
-            <p className="mt-1 text-sm text-gray-500">View-only access. Select a student to view their medical records and consultation history.</p>
+            <p className="mt-1 text-sm text-gray-500">Select a student to view and export their medical records and consultation history.</p>
         </div>
+        <form onSubmit={exportVisits} className="admin-no-print space-y-3 rounded-2xl border bg-white p-4">
+            <div><h3 className="text-sm font-semibold">Export clinic visit history</h3><p className="mt-1 text-xs text-gray-500">Includes only students with clinic visits, one row per visit. Filter by visit date; leave dates blank for all history.</p></div>
+            <div className="flex flex-wrap items-end gap-3">
+                <label className="text-xs font-medium text-gray-600">From<input type="date" value={from} max={to || undefined} disabled={exporting} onChange={e => setFrom(e.target.value)} className="mt-1 block rounded-xl border px-3 py-2 text-sm" /></label>
+                <label className="text-xs font-medium text-gray-600">To<input type="date" value={to} min={from || undefined} disabled={exporting} onChange={e => setTo(e.target.value)} className="mt-1 block rounded-xl border px-3 py-2 text-sm" /></label>
+                <button disabled={exporting} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">{exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}{exporting ? "Exporting..." : "Export visit history (CSV)"}</button>
+                {exporting && <button type="button" onClick={() => exportController.current?.abort()} className="rounded-xl border px-3 py-2 text-sm">Cancel</button>}
+            </div>
+            {exportError && <p role="alert" className="text-sm text-red-700">{exportError}</p>}
+            {exportMessage && <p role="status" className="text-sm text-emerald-800">{exportMessage}</p>}
+        </form>
         <div className="grid items-start gap-4 lg:grid-cols-[320px_1fr]">
             <div className="rounded-2xl border bg-white p-4">
                 <label htmlFor="clinic-student-search" className="text-sm font-medium">Find a student</label>
@@ -84,7 +145,10 @@ export default function ClinicMedicalRecords() {
                 {!student ? <p className="rounded-2xl border bg-white p-8 text-center text-sm text-gray-500">Choose a student to view medical records.</p> : <>
                     <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-white p-5">
                         <div><h3 className="font-semibold">{student.fullName}</h3><p className="text-xs text-gray-500">{student.idNumber}{!recordsLoading && !recordsError ? ` · ${records.length} medical records` : ""}</p></div>
-                        <button disabled={recordsLoading} onClick={() => setRetry(v => v + 1)} className="rounded-lg border px-3 py-2 text-xs disabled:opacity-40">Refresh records</button>
+                        <div className="admin-no-print flex flex-wrap gap-2">
+                            <button type="button" disabled={recordsLoading || Boolean(recordsError) || !records.length} onClick={exportStudent} className="inline-flex items-center gap-2 rounded-lg bg-[#0E3B22] px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"><Download size={14} />Export clinic records (CSV)</button>
+                            <button disabled={recordsLoading} onClick={() => setRetry(v => v + 1)} className="rounded-lg border px-3 py-2 text-xs disabled:opacity-40">Refresh records</button>
+                        </div>
                     </div>
                     {recordsLoading && <p role="status" className="rounded-2xl border bg-white p-6 text-sm text-gray-500">Loading medical records...</p>}
                     {recordsError && <div role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800">{recordsError} <button onClick={() => setRetry(v => v + 1)} className="underline">Retry</button></div>}

@@ -44,6 +44,24 @@ test("spreadsheet formula text is exported as plain text", () => {
     assert.ok(csv.includes('"\'-dangerous ""text"""'));
 });
 
+test("bulk visit date range includes both boundary days and excludes missing dates", () => {
+    const results = [{ student: { fullName: "Student A" }, records: [
+        { medicalRecordId: 1, visitDate: "2026-11-09T23:59:59" },
+        { medicalRecordId: 2, visitDate: "2026-11-10T00:00:00+08:00" },
+        { medicalRecordId: 3, visitDate: "2026-11-14T23:59:59+08:00" },
+        { medicalRecordId: 4, visitDate: "2026-11-15" },
+        { medicalRecordId: 5, createdAt: "2026-11-12" },
+    ] }];
+    const report = studentVisitsCsv(results, { from: "2026-11-10", to: "2026-11-14" });
+    assert.equal(report.visitCount, 2);
+    assert.ok(report.csv.includes("2026-11-10T00:00:00+08:00"));
+    assert.ok(report.csv.includes("2026-11-14T23:59:59+08:00"));
+    assert.equal(studentVisitsCsv(results, { from: "2026-11-14" }).visitCount, 2);
+    assert.equal(studentVisitsCsv(results, { to: "2026-11-10" }).visitCount, 2);
+    assert.equal(studentVisitsCsv(results, { from: "2026-12-01" }).visitCount, 0);
+    assert.throws(() => studentVisitsCsv(results, { from: "2026-11-14", to: "2026-11-10" }), /From date/);
+});
+
 test("bulk export fetches all student pages and limits concurrent record requests", async () => {
     const students = Array.from({ length: 23 }, (_, i) => ({ id: i + 1, fullName: `Student ${i + 1}` }));
     let active = 0;

@@ -23,8 +23,16 @@ export function medicalRecordsCsv(student, records) {
     ]));
 }
 
-export function studentVisitsCsv(results) {
-    const rows = results.flatMap(({ student, records }) => records.map(record => [
+export function studentVisitsCsv(results, { from = "", to = "" } = {}) {
+    if (from && to && from > to) throw new Error("From date must be on or before To date.");
+    const rows = results.flatMap(({ student, records }) => records.filter(record => {
+        if (!from && !to) return true;
+        // Clinic visit dates use the calendar day supplied by the Clinic system.
+        // Do not shift visits into a different day through the browser timezone.
+        const day = String(record.visitDate || "").slice(0, 10);
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return false;
+        return (!from || day >= from) && (!to || day <= to);
+    }).map(record => [
         student.idNumber, student.fullName, student.course, student.yearLevel,
         record.medicalRecordId, record.visitDate,
     ]));
