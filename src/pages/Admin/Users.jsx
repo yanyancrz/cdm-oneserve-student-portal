@@ -25,7 +25,6 @@ import { API_URL } from "../../config/api";
 import {
     ConfirmDialog,
     CredentialsModal,
-    DetailRow,
     ErrorNote,
     FormActions,
     Initials,
@@ -87,6 +86,23 @@ const serviceAccessFor = (user) => {
     if (role.includes("lostfound") || role.includes("lost & found")) return "Lost & Found";
     return "No module access assigned";
 };
+
+// ─────────────────────────────────────────────────────────────
+// Small label/value block used in the View modal (local only,
+// so the shared DetailRow used by other pages is untouched).
+// ─────────────────────────────────────────────────────────────
+function InfoItem({ label, children }) {
+    return (
+        <div className="min-w-0">
+            <dt className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">
+                {label}
+            </dt>
+            <dd className="mt-1 break-words text-sm font-medium text-gray-800">
+                {children || "—"}
+            </dd>
+        </div>
+    );
+}
 
 // ─────────────────────────────────────────────────────────────
 // Member form (add student / faculty)
@@ -1154,7 +1170,7 @@ export default function Users() {
                                         />
 
                                         <SortHeader
-                            label="Last login"
+                                            label="Last login"
                                             sortKey="lastActive"
                                             sort={sort}
                                             onSort={toggleSort}
@@ -1335,68 +1351,157 @@ export default function Users() {
 
             {/* View user */}
             {modal === "view" && activeUser && (
-                <Modal title="User details" onClose={closeModal}>
-                    <div className="mb-4 flex items-center gap-3">
-                        <Initials name={activeUser.fullName} size="w-11 h-11" picture={pictures[activeUser.email?.toLowerCase()]} />
+                <Modal title="User details" onClose={closeModal} size="max-w-3xl">
+                    {/* Profile header */}
+                    <div className="flex flex-wrap items-center gap-4 rounded-2xl border border-[#E1F0E4] bg-gradient-to-br from-[#E1F0E4]/70 via-white to-white p-4 sm:p-5">
+                        <Initials
+                            name={activeUser.fullName}
+                            size="w-16 h-16 text-base ring-4 ring-white shadow-sm"
+                            picture={pictures[activeUser.email?.toLowerCase()]}
+                        />
 
-                        <div className="min-w-0">
-                            <p className="truncate font-medium text-gray-800">{activeUser.fullName}</p>
-                            <p className="truncate text-xs text-gray-400">{activeUser.email}</p>
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-lg font-semibold text-gray-900">{activeUser.fullName}</p>
+                            <p className="truncate text-sm text-gray-500">{activeUser.email}</p>
+
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                                <RolePill role={activeUser.role} />
+                                <StatusPill status={activeUser.status} />
+                            </div>
                         </div>
                     </div>
 
-                    <div className="space-y-2 text-sm">
-                        <DetailRow label="Role">{roleLabel(activeUser.role)}</DetailRow>
-                        <DetailRow label="Service access">{serviceAccessFor(activeUser)}</DetailRow>
+                    <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        {/* Account information */}
+                        <section
+                            className="rounded-2xl border border-gray-200 bg-white p-4"
+                            aria-label="Account information"
+                        >
+                            <h3 className="mb-3 text-sm font-semibold text-gray-700">Account information</h3>
 
-                        {activeUser.adminModule && (
-                            <DetailRow label="Assigned module">{activeUser.adminModule}</DetailRow>
-                        )}
+                            <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
+                                <InfoItem label="ID number">{activeUser.idNumber}</InfoItem>
+                                <InfoItem label="Role">{roleLabel(activeUser.role)}</InfoItem>
 
-                        {activeUser.idNumber && (
-                            <DetailRow label="ID number">{activeUser.idNumber}</DetailRow>
-                        )}
+                                {activeUser.role === "Student" && (
+                                    <>
+                                        <InfoItem label="Year level">{activeUser.yearLevel}</InfoItem>
+                                        <InfoItem label="Institute">{getInstitute(activeUser)}</InfoItem>
+                                        <div className="col-span-2">
+                                            <InfoItem label="Program">{activeUser.course}</InfoItem>
+                                        </div>
+                                    </>
+                                )}
 
-                        {activeUser.role === "Student" && (
-                            <>
-                                <DetailRow label="Institute">{getInstitute(activeUser) || "—"}</DetailRow>
-                                <DetailRow label="Program">{activeUser.course || "—"}</DetailRow>
-                                <DetailRow label="Year level">{activeUser.yearLevel || "—"}</DetailRow>
-                            </>
-                        )}
+                                {activeUser.role === "Faculty" && (
+                                    <div className="col-span-2">
+                                        <InfoItem label="Institute">{activeUser.institute}</InfoItem>
+                                    </div>
+                                )}
 
-                        {activeUser.role === "Faculty" && (
-                            <DetailRow label="Institute">{activeUser.institute || "—"}</DetailRow>
-                        )}
+                                {activeUser.adminModule && (
+                                    <div className="col-span-2">
+                                        <InfoItem label="Assigned module">{activeUser.adminModule}</InfoItem>
+                                    </div>
+                                )}
 
-                        <DetailRow label="Status">
-                            <StatusPill status={activeUser.status} />
-                        </DetailRow>
+                                <div className="col-span-2">
+                                    <InfoItem label="Service access">{serviceAccessFor(activeUser)}</InfoItem>
+                                </div>
 
-                        <DetailRow label="Registered">{formatDate(activeUser.registrationDate)}</DetailRow>
-                        <DetailRow label="Last login">{formatDate(activeUser.lastActive)}</DetailRow>
+                                <InfoItem label="Registered">{formatDate(activeUser.registrationDate)}</InfoItem>
+                                <InfoItem label="Last login">{formatDate(activeUser.lastActive)}</InfoItem>
+                            </dl>
+                        </section>
+
+                        {/* Login history & devices */}
+                        <section
+                            className="flex flex-col rounded-2xl border border-gray-200 bg-white p-4"
+                            aria-label="Login and device sessions"
+                        >
+                            <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700">
+                                <History size={15} className="text-[#106A2E]" />
+                                Login history &amp; devices
+                            </h3>
+
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => sendPasswordReset(activeUser)}
+                                    className={`rounded-lg border border-[#0E3B22]/20 bg-[#E1F0E4]/50 px-3 py-1.5 text-xs font-semibold text-[#0E3B22] transition hover:bg-[#E1F0E4] ${focusRing}`}
+                                >
+                                    Send reset code
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => signOutEverywhere(activeUser)}
+                                    className={`inline-flex items-center gap-1.5 rounded-lg border border-red-200 bg-red-50/60 px-3 py-1.5 text-xs font-semibold text-red-700 transition hover:bg-red-50 ${focusRing}`}
+                                >
+                                    <LogOut size={13} />
+                                    Sign out all
+                                </button>
+                            </div>
+
+                            <div className="mt-3 max-h-60 flex-1 space-y-2 overflow-y-auto pr-1">
+                                {historyLoading ? (
+                                    <p className="text-xs text-gray-400">Loading login history…</p>
+                                ) : loginHistory?.error ? (
+                                    <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                                        {loginHistory.error}
+                                    </p>
+                                ) : (
+                                    <>
+                                        {(loginHistory?.sessions || [])
+                                            .filter((s) => !s.isRevoked && !s.loggedOutAt)
+                                            .map((session) => (
+                                                <div
+                                                    key={session.userSessionId}
+                                                    className="rounded-xl border border-gray-100 bg-gray-50 px-3 py-2.5 text-xs text-gray-600"
+                                                >
+                                                    <p className="font-semibold text-gray-800">
+                                                        {session.deviceLabel || "Device"}
+                                                        <span className="font-normal text-gray-400">
+                                                            {" · "}
+                                                            {session.ipAddress || "IP unavailable"}
+                                                        </span>
+                                                    </p>
+                                                    <p className="mt-0.5 text-gray-500">
+                                                        Last seen {formatDate(session.lastSeenAt || session.createdAt)} · Expires{" "}
+                                                        {formatDate(session.expiresAt)}
+                                                    </p>
+                                                </div>
+                                            ))}
+
+                                        {(loginHistory?.logins || []).slice(0, 5).map((entry, index) => (
+                                            <p
+                                                key={`${entry.createdAt}-${index}`}
+                                                className="flex items-center gap-2 text-xs text-gray-500"
+                                            >
+                                                <span className="h-1.5 w-1.5 rounded-full bg-[#106A2E]/50" />
+                                                Login · {formatDate(entry.createdAt)}
+                                            </p>
+                                        ))}
+
+                                        {!loginHistory?.sessions?.some((s) => !s.isRevoked && !s.loggedOutAt) &&
+                                            !loginHistory?.logins?.length && (
+                                                <p className="text-xs text-gray-400">
+                                                    No login history or active sessions available.
+                                                </p>
+                                            )}
+                                    </>
+                                )}
+                            </div>
+                        </section>
                     </div>
 
-                    <UserSupportingDocument key={activeUser.id} userId={activeUser.id} />
+                    {/* Supporting document */}
+                    <div className="mt-4">
+                        <UserSupportingDocument key={activeUser.id} userId={activeUser.id} />
+                    </div>
 
-                    <section className="mt-4 rounded-xl border border-gray-200 p-3" aria-label="Login and device sessions">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                            <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-700"><History size={15} /> Login history & devices</h3>
-                            <div className="flex items-center gap-3"><button type="button" onClick={() => sendPasswordReset(activeUser)} className="text-xs font-semibold text-[#0E3B22] hover:underline">Send reset code</button><button type="button" onClick={() => signOutEverywhere(activeUser)} className="text-xs font-semibold text-red-700 hover:underline"><LogOut size={13} className="mr-1 inline" />Sign out all</button></div>
-                        </div>
-                        {historyLoading ? <p className="mt-2 text-xs text-gray-400">Loading login history…</p>
-                            : loginHistory?.error ? <p className="mt-2 text-xs text-amber-700">{loginHistory.error}</p>
-                            : <div className="mt-2 space-y-2">
-                                {(loginHistory?.sessions || []).filter(s => !s.isRevoked && !s.loggedOutAt).map(session => <div key={session.userSessionId} className="rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">
-                                    <p className="font-medium">{session.deviceLabel || "Device"} · {session.ipAddress || "IP unavailable"}</p>
-                                    <p>Last seen {formatDate(session.lastSeenAt || session.createdAt)} · Expires {formatDate(session.expiresAt)}</p>
-                                </div>)}
-                                {(loginHistory?.logins || []).slice(0, 5).map((entry, index) => <p key={`${entry.createdAt}-${index}`} className="text-xs text-gray-500">Login · {formatDate(entry.createdAt)}</p>)}
-                                {!loginHistory?.sessions?.some(s => !s.isRevoked && !s.loggedOutAt) && !loginHistory?.logins?.length && <p className="text-xs text-gray-400">No login history or active sessions available.</p>}
-                            </div>}
-                    </section>
-
-                    <div className="flex justify-end gap-2 pt-4">
+                    {/* Footer */}
+                    <div className="mt-5 flex justify-end gap-2 border-t border-gray-100 pt-4">
                         <button
                             type="button"
                             onClick={() => {
@@ -1404,7 +1509,7 @@ export default function Users() {
                                 setModal(null);
                                 openEdit(user);
                             }}
-                            className={`inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50 ${focusRing}`}
+                            className={`inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-xs font-semibold text-gray-600 transition hover:bg-gray-50 ${focusRing}`}
                         >
                             <Pencil size={13} />
                             Edit
@@ -1413,7 +1518,7 @@ export default function Users() {
                         <button
                             type="button"
                             onClick={closeModal}
-                            className={`text-xs font-semibold px-4 py-2 rounded-lg text-white bg-[#0E3B22] transition hover:bg-[#0a2c19] ${focusRing}`}
+                            className={`rounded-lg bg-[#0E3B22] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#0a2c19] ${focusRing}`}
                         >
                             Close
                         </button>
