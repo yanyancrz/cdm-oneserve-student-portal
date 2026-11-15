@@ -65,10 +65,10 @@ import {
 } from "./userAdminUtils";
 
 // ─────────────────────────────────────────────────────────────
-// Central account directory. Administrative account creation and module
+// Student and faculty directory. Administrative account creation and module
 // assignments continue to use the existing Service Heads console.
 // ─────────────────────────────────────────────────────────────
-const ROLE_FILTERS = ["All", "Student", "Faculty", "Admin", "Staff"];
+const ROLE_FILTERS = ["All", "Student", "Faculty"];
 const MEMBER_ROLE_OPTIONS = ["Student", "Faculty"];
 
 // Students + faculty only - heads and admins live on ServiceHeads.jsx.
@@ -322,7 +322,7 @@ export default function Users() {
                 messages: { 403: "You don't have permission to view users." },
             });
 
-            setUsers(Array.isArray(data) ? data : []);
+            setUsers(Array.isArray(data) ? data.filter((user) => isMemberRole(user.role)) : []);
             setError(null);
         } catch (err) {
             console.error(err);
@@ -444,12 +444,9 @@ export default function Users() {
 
         return users.filter((u) => {
             const role = String(u.role || "").toLowerCase();
-            const isAdmin = role.includes("admin");
             const matchesView = (directoryView === "all" && u.status !== "Deleted")
                 || (directoryView === "students" && role === "student")
                 || (directoryView === "faculty" && role === "faculty")
-                || (directoryView === "administrators" && isAdmin)
-                || (directoryView === "staff" && !isMemberRole(u.role) && !isAdmin)
                 || (directoryView === "inactive" && u.status !== "Active" && u.status !== "Deleted");
             if (!matchesView) return false;
 
@@ -470,8 +467,6 @@ export default function Users() {
                     .some((value) => String(value).toLowerCase().includes(query));
 
             const matchesRole = roleFilter === "All"
-                || (roleFilter === "Staff" && !isMemberRole(u.role) && !isAdmin)
-                || (roleFilter === "Admin" && isAdmin)
                 || u.role === roleFilter;
 
             const matchesStatus = statusFilter === "All statuses" || u.status === statusFilter;
@@ -909,7 +904,7 @@ export default function Users() {
             `}</style>
 
             {/* Header */}
-            <AdminPageHeader icon="users" title="Users" description="Manage OneServe accounts and review student, faculty, and staff access.">
+            <AdminPageHeader icon="users" title="Users" description="Manage Student and Faculty accounts and review their service access.">
                 <div className="flex flex-wrap items-center gap-2">
                     <button
                         type="button"
@@ -929,12 +924,10 @@ export default function Users() {
             </AdminPageHeader>
 
             <div className="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="User account views">
-                {[["all", "All users"], ["students", "Students"], ["faculty", "Faculty"], ["administrators", "Administrators"], ["staff", "Staff accounts"], ["inactive", "Inactive accounts"]].map(([key, label]) => {
+                {[["all", "All users"], ["students", "Students"], ["faculty", "Faculty"], ["inactive", "Inactive accounts"]].map(([key, label]) => {
                     const count = key === "all" ? users.filter(u => u.status !== "Deleted").length
                         : key === "students" ? users.filter(u => u.role === "Student").length
                         : key === "faculty" ? users.filter(u => u.role === "Faculty").length
-                        : key === "administrators" ? users.filter(u => String(u.role || "").toLowerCase().includes("admin")).length
-                        : key === "staff" ? users.filter(u => !isMemberRole(u.role) && !String(u.role || "").toLowerCase().includes("admin")).length
                         : users.filter(u => u.status !== "Active" && u.status !== "Deleted").length;
                     return <button key={key} type="button" role="tab" aria-selected={directoryView === key}
                         onClick={() => { setDirectoryView(key); setRoleFilter("All"); setPage(1); }}
@@ -1329,6 +1322,7 @@ export default function Users() {
                 <Modal title="Edit user" onClose={closeModal} locked={editing}>
                     <UserForm
                         initial={activeUser}
+                        allowedRoles={MEMBER_ROLE_OPTIONS}
                         onCancel={closeModal}
                         onSubmit={handleEditSubmit}
                         submitting={editing}

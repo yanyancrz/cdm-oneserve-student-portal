@@ -562,7 +562,7 @@ export function HeadForm({ onCancel, onSubmit, submitting, serverError }) {
 // ─────────────────────────────────────────────────────────────
 // User form (edit only)
 // ─────────────────────────────────────────────────────────────
-export function UserForm({ initial, onCancel, onSubmit, submitting, serverError, submitLabel }) {
+export function UserForm({ initial, onCancel, onSubmit, submitting, serverError, submitLabel, allowedRoles }) {
     const [form, setForm] = useState(initial);
 
     const update = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }));
@@ -573,9 +573,9 @@ export function UserForm({ initial, onCancel, onSubmit, submitting, serverError,
     const grantsAdmin = isAdmin && !isAdminRole(initial.role);
 
     // Keep the current role (e.g. LibraryAdmin) in the dropdown so it doesn't disappear
-    const roleOptions = USER_ROLE_OPTIONS.includes(form.role)
+    const roleOptions = allowedRoles || (USER_ROLE_OPTIONS.includes(form.role)
         ? USER_ROLE_OPTIONS
-        : [form.role, ...USER_ROLE_OPTIONS];
+        : [form.role, ...USER_ROLE_OPTIONS]);
 
     const availablePrograms = form.institute
         ? INSTITUTE_PROGRAMS[form.institute] || []
