@@ -1,3 +1,5 @@
+import ExportFormatSelect from "./ExportFormatSelect";
+import { exportReport } from "./reportExport";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, BookOpen, ClipboardList, FileDown, RefreshCw, ShieldCheck, Users } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
@@ -63,6 +65,8 @@ const featureLabels = {
 };
 
 export default function AdminServiceOversight({ module }) {
+    const [exportFormat, setExportFormat] = useState("pdf");
+    const [exporting, setExporting] = useState(false);
     const config = configByModule[module] || configByModule.library;
     const [searchParams] = useSearchParams();
     const view = searchParams.get("view") || "overview";
@@ -96,15 +100,36 @@ export default function AdminServiceOversight({ module }) {
     const isLostFound = module === "lost-found";
     const upcomingAppointments = module === "guidance" && view === "appointments" ? data?.upcomingAppointments || [] : [];
 
+    const handleExport = async () => {
+        if (!data || exporting) return;
+        setExporting(true);
+        try {
+            const rows = [["Section", "Field / item", "Value / category", "Status / actor", "Date / time"]];
+            cards.forEach(([label, value]) => rows.push(["Statistics", label, value ?? "", "", ""]));
+            if (showActivity) activity.forEach(item => rows.push(isLostFound
+                ? ["Recent reports", item.itemName, item.category, `${item.reportType || ""} / ${item.status || ""}`, formatDate(item.createdAt)]
+                : ["Recent activity", item.type, item.title, item.actor, formatDate(item.at)]));
+            upcomingAppointments.forEach(item => rows.push(["Upcoming appointments", item.date, item.timeSlot, item.status, ""]));
+            const csv = "\uFEFF" + rows.map(row => row.map(value => {
+                let text = String(value ?? "");
+                if (/^\s*[=+\-@]/u.test(text)) text = `'${text}`;
+                return `"${text.replaceAll('"', '""')}"`;
+            }).join(",")).join("\r\n");
+            await exportReport({ csv, title: config.title, subtitle: featureLabels[module]?.[view] || view, filename: `${module}-${view}-report`, format: exportFormat });
+        } catch (e) { setError(`Export failed. ${e.message}`); }
+        finally { setExporting(false); }
+    };
+
     return <main className="admin-service-report mx-auto max-w-6xl space-y-5 p-4 sm:p-7">
         <header className="flex flex-wrap items-end justify-between gap-3">
             <div>
                 <h1 className="text-3xl font-semibold text-[#1F1F1F]">{config.title}</h1>
                 <p className="mt-1 text-sm text-gray-500">{config.description}</p>
             </div>
-            <div className="admin-no-print flex gap-2">
-                <button onClick={() => window.print()} disabled={loading || !data} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">
-                    <FileDown size={15} />Generate PDF report
+            <div className="admin-no-print flex flex-wrap gap-2">
+                <ExportFormatSelect value={exportFormat} onChange={setExportFormat} disabled={exporting} />
+                <button onClick={handleExport} disabled={loading || !data || exporting} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">
+                    <FileDown size={15} />Export report
                 </button>
                 <button onClick={load} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm">
                     <RefreshCw size={15} className={loading ? "animate-spin" : ""} />Refresh

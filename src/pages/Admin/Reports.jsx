@@ -1,3 +1,5 @@
+import ExportFormatSelect from "./ExportFormatSelect";
+import { exportReport } from "./reportExport";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
@@ -90,18 +92,6 @@ function toCsv(rows) {
     return `${header}\n${body}`;
 }
 
-function downloadCsv(filename, content) {
-    const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-}
-
 // ─────────────────────────────────────────────────────────────
 // Simple bar chart (no chart lib)
 // ─────────────────────────────────────────────────────────────
@@ -136,6 +126,8 @@ function BarChart({ data, color = "#106A2E", emptyLabel = "No data" }) {
 }
 
 export default function Reports() {
+    const [exportFormat, setExportFormat] = useState("pdf");
+    const [exporting, setExporting] = useState(false);
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -271,15 +263,19 @@ export default function Reports() {
     }, [filtered]);
 
     // ── Export ───────────────────────────────────────────────
-    const handleExport = () => {
+    const handleExport = async () => {
         if (!filtered.length) {
             toast.error("No records to export.");
             return;
         }
         const csv = toCsv(filtered);
         const stamp = new Date().toISOString().slice(0, 10);
-        downloadCsv(`accounts-report-${category}-${stamp}.csv`, csv);
-        toast.success(`Exported ${filtered.length} record(s).`);
+        setExporting(true);
+        try {
+            await exportReport({ csv, filename: `accounts-report-${category}-${stamp}`, title: "Account report", subtitle: category, format: exportFormat });
+            toast.success(`Exported ${filtered.length} record(s).`);
+        } catch (e) { toast.error(`Export failed. ${e.message}`); }
+        finally { setExporting(false); }
     };
 
     const handlePrint = () => {
@@ -316,9 +312,10 @@ export default function Reports() {
                         Refresh
                     </button>
 
-                    <button type="button" onClick={handleExport} className={primaryButton}>
+                    <ExportFormatSelect value={exportFormat} onChange={setExportFormat} disabled={exporting} />
+                    <button type="button" onClick={handleExport} disabled={exporting} className={primaryButton}>
                         <Download size={16} />
-                        Export CSV
+                        Export report
                     </button>
 
                     <button type="button" onClick={handlePrint} className={outlineButton}>
@@ -595,7 +592,7 @@ export default function Reports() {
             )}
 
             <p className="mt-3 text-xs text-gray-400">
-                Showing {filtered.length} of {users.length} accounts. Use Export CSV to download the filtered list.
+                Showing {filtered.length} of {users.length} accounts. Use Export report to download the filtered list.
             </p>
         </div>
     );

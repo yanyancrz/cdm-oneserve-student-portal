@@ -1,3 +1,5 @@
+import ExportFormatSelect from "./ExportFormatSelect";
+import { exportReport } from "./reportExport";
 import { useCallback, useEffect, useState } from "react";
 import { Download, Eye, RefreshCw, Search, ShieldCheck, X } from "lucide-react";
 import { API_URL } from "../../config/api";
@@ -24,6 +26,8 @@ const dateLabel = value => value ? new Date(value).toLocaleString() : "—";
 export default function AuditLogs() {
     const [searchParams, setSearchParams] = useSearchParams();
     const activeModule = searchParams.get("module") || "";
+    const [exportFormat, setExportFormat] = useState("pdf");
+    const [exporting, setExporting] = useState(false);
     const [facets, setFacets] = useState({ modules: [], categories: [], actions: [] });
     const [items, setItems] = useState([]);
     const [users, setUsers] = useState([]);
@@ -62,14 +66,15 @@ export default function AuditLogs() {
         return () => controller.abort();
     }, [load]);
 
-    const exportCsv = async () => {
+    const exportLogs = async () => {
+        setExporting(true);
         try {
             const response = await fetch(`${BASE}/export?${queryString(query)}`, { headers: authHeaders() });
             if (!response.ok) { const body = await response.json().catch(() => ({})); throw new Error(body.message || "Export failed."); }
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a"); link.href = url; link.download = "oneserve-audit.csv"; link.click(); URL.revokeObjectURL(url);
+            const csv = await response.text();
+            await exportReport({ csv, filename: "oneserve-audit", title: "Central audit logs", subtitle: activeModule || "All modules", format: exportFormat });
         } catch (e) { setError(e.message); }
+        finally { setExporting(false); }
     };
     const openDetails = async id => {
         try { setSelected(await get(`/${id}`)); }
@@ -84,7 +89,7 @@ export default function AuditLogs() {
     };
 
     return <main className="mx-auto max-w-7xl space-y-5 p-4 sm:p-7">
-        <header className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-3xl font-semibold text-[#1F1F1F]">Central Audit Logs</h1><p className="mt-1 text-sm text-gray-500">Review recorded changes and activity across Lost & Found, Library, Guidance, and Clinic.</p></div><div className="flex gap-2"><button onClick={() => load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm"><RefreshCw size={15} className={loading ? "animate-spin" : ""} />Refresh</button><button onClick={exportCsv} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-3 py-2 text-sm font-semibold text-white"><Download size={15} />Export CSV</button></div></header>
+        <header className="flex flex-wrap items-end justify-between gap-3"><div><h1 className="text-3xl font-semibold text-[#1F1F1F]">Central Audit Logs</h1><p className="mt-1 text-sm text-gray-500">Review recorded changes and activity across Lost & Found, Library, Guidance, and Clinic.</p></div><div className="flex flex-wrap gap-2"><button onClick={() => load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm"><RefreshCw size={15} className={loading ? "animate-spin" : ""} />Refresh</button><ExportFormatSelect value={exportFormat} onChange={setExportFormat} disabled={exporting} /><button disabled={exporting} onClick={exportLogs} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-3 py-2 text-sm font-semibold text-white"><Download size={15} />Export logs</button></div></header>
         {error && <div role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">{error}</div>}
         <nav aria-label="Audit log modules" className="flex flex-wrap gap-2">
             {MODULES.map(([module, label]) => <button key={module} type="button" onClick={() => selectModule(module)} aria-pressed={activeModule === module} className={`rounded-xl border px-4 py-2 text-sm font-semibold ${activeModule === module ? "border-[#0E3B22] bg-[#0E3B22] text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}>{label}</button>)}

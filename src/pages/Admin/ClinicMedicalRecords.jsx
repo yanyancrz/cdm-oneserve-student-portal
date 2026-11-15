@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { loadClinicRecords as load } from "../../services/adminClinicRecordsService";
-import { validateMedicalRecords, collectClinicVisits, medicalRecordsCsv, studentVisitsCsv, downloadClinicCsv } from "./clinicRecordExport";
+import { validateMedicalRecords, collectClinicVisits, medicalRecordsCsv, studentVisitsCsv } from "./clinicRecordExport";
+import ExportFormatSelect from "./ExportFormatSelect";
+import { exportReport } from "./reportExport";
 import { formatDate, formatDateTime } from "../../components/Clinic/clinicFormat";
 
 export default function ClinicMedicalRecords() {
@@ -16,6 +18,10 @@ export default function ClinicMedicalRecords() {
     const [error, setError] = useState("");
     const [recordsError, setRecordsError] = useState("");
     const [retry, setRetry] = useState(0);
+    const [studentFormat, setStudentFormat] = useState("pdf");
+    const [visitFormat, setVisitFormat] = useState("pdf");
+    const [studentExporting, setStudentExporting] = useState(false);
+    const [studentExportError, setStudentExportError] = useState("");
     const [from, setFrom] = useState("");
     const [to, setTo] = useState("");
     const [exporting, setExporting] = useState(false);
@@ -24,10 +30,15 @@ export default function ClinicMedicalRecords() {
     const exportController = useRef(null);
     useEffect(() => () => exportController.current?.abort(), []);
 
-    const exportStudent = () => {
+    const exportStudent = async () => {
         if (!student || recordsLoading || recordsError || !records.length) return;
         const filename = String(student.idNumber || student.id).replace(/[^a-zA-Z0-9_-]/g, "_");
-        downloadClinicCsv(medicalRecordsCsv(student, records), `clinic-records-${filename}.csv`);
+        setStudentExporting(true);
+        setStudentExportError("");
+        try {
+            await exportReport({ csv: medicalRecordsCsv(student, records), filename: `clinic-records-${filename}`, title: "Student medical records", subtitle: `${student.fullName} | ${student.idNumber}`, format: studentFormat });
+        } catch (e) { setStudentExportError(`Export failed. ${e.message}`); }
+        finally { setStudentExporting(false); }
     };
 
     const exportVisits = async event => {
@@ -54,7 +65,7 @@ export default function ClinicMedicalRecords() {
                 setExportError("No clinic visits found for the selected date range.");
                 return;
             }
-            downloadClinicCsv(report.csv, `clinic-visit-history-${from || "start"}-to-${to || "latest"}.csv`);
+            await exportReport({ csv: report.csv, filename: `clinic-visit-history-${from || "start"}-to-${to || "latest"}`, title: "Clinic visit history", subtitle: `Visit dates: ${from || "Start"} to ${to || "Latest"}`, format: visitFormat, signal: controller.signal });
             setExportMessage(`Exported ${report.visitCount} clinic visit(s).`);
         } catch (e) {
             controller.abort();
@@ -117,7 +128,8 @@ export default function ClinicMedicalRecords() {
             <div className="flex flex-wrap items-end gap-3">
                 <label className="text-xs font-medium text-gray-600">From<input type="date" value={from} max={to || undefined} disabled={exporting} onChange={e => setFrom(e.target.value)} className="mt-1 block rounded-xl border px-3 py-2 text-sm" /></label>
                 <label className="text-xs font-medium text-gray-600">To<input type="date" value={to} min={from || undefined} disabled={exporting} onChange={e => setTo(e.target.value)} className="mt-1 block rounded-xl border px-3 py-2 text-sm" /></label>
-                <button disabled={exporting} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">{exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}{exporting ? "Exporting..." : "Export visit history (CSV)"}</button>
+                <ExportFormatSelect value={visitFormat} onChange={setVisitFormat} disabled={exporting} />
+                <button disabled={exporting} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-4 py-2 text-sm font-semibold text-white disabled:opacity-40">{exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}{exporting ? "Exporting..." : "Export visit history"}</button>
                 {exporting && <button type="button" onClick={() => exportController.current?.abort()} className="rounded-xl border px-3 py-2 text-sm">Cancel</button>}
             </div>
             {exportError && <p role="alert" className="text-sm text-red-700">{exportError}</p>}
@@ -129,7 +141,7 @@ export default function ClinicMedicalRecords() {
                 <input id="clinic-student-search" value={search} onChange={e => { setSearch(e.target.value); setPage(1); setLoading(true); setStudents([]); }} placeholder="Name or student number" className="mt-2 w-full rounded-xl border px-3 py-2 text-sm" />
                 {error && <div role="alert" className="mt-3 text-sm text-red-700">{error} <button onClick={() => setRetry(v => v + 1)} className="underline">Retry</button></div>}
                 {loading ? <p role="status" className="py-6 text-sm text-gray-500">Loading students...</p> : <div className="mt-3 space-y-1">
-                    {students.map(item => <button key={item.id} onClick={() => { if (student?.id === item.id) return; setRecords([]); setRecordsError(""); setRecordsLoading(true); setStudent(item); }} aria-pressed={student?.id === item.id} className={`w-full rounded-xl p-3 text-left ${student?.id === item.id ? "bg-emerald-50 ring-1 ring-emerald-600" : "hover:bg-gray-50"}`}>
+                    {students.map(item => <button key={item.id} onClick={() => { if (student?.id === item.id) return; setRecords([]); setRecordsError(""); setRecordsLoading(true); setStudent(item); setStudentExportError(""); }} aria-pressed={student?.id === item.id} className={`w-full rounded-xl p-3 text-left ${student?.id === item.id ? "bg-emerald-50 ring-1 ring-emerald-600" : "hover:bg-gray-50"}`}>
                         <span className="block text-sm font-semibold">{item.fullName}</span>
                         <span className="mt-1 block text-xs text-gray-500">{item.idNumber} · {item.course || "Course unavailable"}</span>
                     </button>)}
@@ -146,10 +158,12 @@ export default function ClinicMedicalRecords() {
                     <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border bg-white p-5">
                         <div><h3 className="font-semibold">{student.fullName}</h3><p className="text-xs text-gray-500">{student.idNumber}{!recordsLoading && !recordsError ? ` · ${records.length} medical records` : ""}</p></div>
                         <div className="admin-no-print flex flex-wrap gap-2">
-                            <button type="button" disabled={recordsLoading || Boolean(recordsError) || !records.length} onClick={exportStudent} className="inline-flex items-center gap-2 rounded-lg bg-[#0E3B22] px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"><Download size={14} />Export clinic records (CSV)</button>
+                            <ExportFormatSelect value={studentFormat} onChange={setStudentFormat} disabled={studentExporting} />
+                            <button type="button" disabled={studentExporting || recordsLoading || Boolean(recordsError) || !records.length} onClick={exportStudent} className="inline-flex items-center gap-2 rounded-lg bg-[#0E3B22] px-3 py-2 text-xs font-semibold text-white disabled:opacity-40"><Download size={14} />{studentExporting ? "Exporting..." : "Export clinic records"}</button>
                             <button disabled={recordsLoading} onClick={() => setRetry(v => v + 1)} className="rounded-lg border px-3 py-2 text-xs disabled:opacity-40">Refresh records</button>
                         </div>
                     </div>
+                    {studentExportError && <p role="alert" className="text-sm text-red-700">{studentExportError}</p>}
                     {recordsLoading && <p role="status" className="rounded-2xl border bg-white p-6 text-sm text-gray-500">Loading medical records...</p>}
                     {recordsError && <div role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800">{recordsError} <button onClick={() => setRetry(v => v + 1)} className="underline">Retry</button></div>}
                     {!recordsLoading && !recordsError && !records.length && <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900"><p className="font-semibold">No medical records found.</p><p className="mt-1">The student hasn't been in clinic.</p></div>}
