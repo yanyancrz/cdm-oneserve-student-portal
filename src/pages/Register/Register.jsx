@@ -7,7 +7,7 @@ import BackgroundLayout from "../../layouts/BackgroundLayout";
 
 // =========================================================
 // REGISTER (new flow)
-// Fields: Student/Faculty ID Number + Email + Role only.
+// Fields: Student/Faculty ID Number, Email, Role and supporting document.
 // No names, no password here.
 // After submit, the backend emails the user their login
 // credentials. Names + role confirmation move to Setup Profile.
@@ -20,6 +20,25 @@ export default function Register() {
     const [idNumber, setIdNumber] = useState("");
     const [role, setRole] = useState("");
     const [email, setEmail] = useState("");
+    const [supportingDocument, setSupportingDocument] = useState(null);
+
+    const handleDocumentChange = (event) => {
+        const file = event.target.files?.[0];
+        setSupportingDocument(null);
+        if (!file) return;
+        if (!/\.(pdf|jpe?g|png)$/i.test(file.name) ||
+            !["application/pdf", "image/jpeg", "image/png"].includes(file.type)) {
+            toast.error("Please upload a PDF, JPG, or PNG file.");
+            event.target.value = "";
+            return;
+        }
+        if (file.size === 0 || file.size > 5 * 1024 * 1024) {
+            toast.error("Please upload a non-empty file up to 5 MB.");
+            event.target.value = "";
+            return;
+        }
+        setSupportingDocument(file);
+    };
 
     const [loading, setLoading] = useState(false);
 
@@ -66,6 +85,10 @@ export default function Register() {
             return "Please enter a valid email address.";
         }
 
+        if (!supportingDocument) {
+            return "Please upload an ID, registration form, or OVRF.";
+        }
+
         return null;
     };
 
@@ -74,6 +97,7 @@ export default function Register() {
         idNumber.trim() &&
         email.trim() &&
         isValidEmail(email) &&
+        supportingDocument &&
         !loading;
 
     // =========================================================
@@ -106,25 +130,17 @@ export default function Register() {
         setLoading(true);
 
         try {
+            const formData = new FormData();
+            formData.append("idNumber", idNumber.trim());
+            formData.append("role", role);
+            formData.append("email", email.trim());
+            formData.append("supportingDocument", supportingDocument);
             const response = await fetch(
-                `${API_URL}/api/auth/register`,
+                `${API_URL}/api/auth/register-with-document`,
                 {
                     method: "POST",
 
-                    headers: {
-                        "Content-Type":
-                            "application/json",
-                    },
-
-                    body: JSON.stringify({
-                        idNumber:
-                            idNumber.trim(),
-
-                        role,
-
-                        email:
-                            email.trim(),
-                    }),
+                    body: formData,
                 }
             );
 
@@ -489,6 +505,25 @@ export default function Register() {
                             REGISTER BUTTON
                         ================================================= */}
 
+                        <div className="mb-6">
+                            <label htmlFor="supporting-document" className="mb-1.5 block text-xs font-medium text-slate-500">
+                                Supporting Document <span className="text-red-500">*</span>
+                            </label>
+                            <input
+                                id="supporting-document"
+                                type="file"
+                                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                                onChange={handleDocumentChange}
+                                disabled={loading}
+                                required
+                                aria-describedby="supporting-document-help"
+                                className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-100 file:px-3 file:py-2 file:font-semibold file:text-emerald-800"
+                            />
+                            <p id="supporting-document-help" className="mt-2 text-xs leading-5 text-slate-500">
+                                Upload a clear copy of your ID, registration form, or OVRF. PDF, JPG, or PNG; maximum 5 MB.
+                            </p>
+                        </div>
+
                         <button
                             onClick={handleRegisterClick}
                             disabled={
@@ -634,6 +669,11 @@ export default function Register() {
                                 <dd className="text-right font-semibold text-slate-800 break-all">
                                     {email}
                                 </dd>
+                            </div>
+
+                            <div className="flex items-start justify-between gap-4">
+                                <dt className="text-slate-400">Supporting document</dt>
+                                <dd className="min-w-0 break-all text-right font-semibold text-slate-800">{supportingDocument?.name}</dd>
                             </div>
 
                             <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-800">
