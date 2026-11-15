@@ -382,7 +382,7 @@ function AnnouncementCard({ announcement, pending, onEdit, onToggle, onDelete })
 export default function Announcements() {
     const adminEmail = localStorage.getItem("userEmail") || "";
     const role = localStorage.getItem("role") || localStorage.getItem("userRole") || "";
-    const isAdmin = role.toLowerCase() === "admin";
+    const canManageAnnouncements = ["admin", "superadmin"].includes(role.trim().toLowerCase());
 
     const formRef = useRef(null);
 
@@ -404,7 +404,7 @@ export default function Announcements() {
     // ── Load ────────────────────────────────────────────────
     const loadAnnouncements = useCallback(
         async ({ silent = false } = {}) => {
-            if (!adminEmail || !isAdmin) {
+            if (!adminEmail || !canManageAnnouncements) {
                 setLoading(false);
                 return;
             }
@@ -418,7 +418,7 @@ export default function Announcements() {
                 );
 
                 if (response.status === 403) {
-                    throw new Error("Only the Admin account can manage announcements.");
+                    throw new Error("Only Admin and Super Admin accounts can manage announcements.");
                 }
                 if (!response.ok) {
                     throw new Error("Failed to load announcements.");
@@ -433,7 +433,7 @@ export default function Announcements() {
                 setLoading(false);
             }
         },
-        [adminEmail, isAdmin]
+        [adminEmail, canManageAnnouncements]
     );
 
     useEffect(() => {
@@ -451,12 +451,12 @@ export default function Announcements() {
             setLoading(false);
             return;
         }
-        if (!isAdmin) {
+        if (!canManageAnnouncements) {
             setLoading(false);
             return;
         }
         loadAnnouncements();
-    }, [adminEmail, isAdmin, loadAnnouncements]);
+    }, [adminEmail, canManageAnnouncements, loadAnnouncements]);
 
     // ── Derived ─────────────────────────────────────────────
     const activeCount = useMemo(
@@ -725,7 +725,7 @@ export default function Announcements() {
     };
 
     // ── Access guard ────────────────────────────────────────
-    if (!isAdmin) {
+    if (!canManageAnnouncements) {
         return (
             <main className="min-h-[calc(100vh-72px)] bg-transparent px-4 py-10 sm:px-6 lg:px-10">
                 <div className="admin-surface mx-auto max-w-xl rounded-2xl border border-red-100 bg-white p-8 text-center shadow-sm">
@@ -736,7 +736,7 @@ export default function Announcements() {
                     <h1 className="mt-5 text-xl font-semibold text-gray-900">Access Restricted</h1>
 
                     <p className="mt-2 text-sm leading-6 text-gray-500">
-                        Only the main Admin account can manage CDM OneServe announcements.
+                        Only Admin and Super Admin accounts can manage CDM OneServe announcements.
                     </p>
                 </div>
             </main>
