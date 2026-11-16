@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, BookOpen, ClipboardList, FileDown, RefreshCw, ShieldCheck, Users } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { API_URL } from "../../config/api";
+import { filterRecentRecords, getRecentSection } from "./serviceRecentRecords";
 
 const formatDate = value => value ? new Date(value).toLocaleString() : "—";
 const getToken = () => localStorage.getItem("token") || localStorage.getItem("authToken");
@@ -24,7 +25,6 @@ const configByModule = {
             };
             return all[view] || all.overview;
         },
-        activity: data => data.recentActivity || [],
     },
     guidance: {
         title: "Guidance monitoring", endpoint: "guidance", dataKey: "guidance",
@@ -39,7 +39,6 @@ const configByModule = {
             };
             return all[view] || all.overview;
         },
-        activity: data => data.recentActivity || [],
     },
     "lost-found": {
         title: "Lost & Found monitoring", endpoint: "lost-found", dataKey: "lostFound",
@@ -55,7 +54,6 @@ const configByModule = {
             };
             return all[view] || all.overview;
         },
-        activity: data => data.recentReports || [],
     },
 };
 
@@ -69,49 +67,59 @@ export default function AdminServiceOversight({ module }) {
     const [exportFormat, setExportFormat] = useState("pdf");
     const [exporting, setExporting] = useState(false);
     const config = configByModule[module] || configByModule.library;
-    const [searchParams] = useSearchParams();
-    const view = searchParams.get("view") || "overview";
+    const [searchParams, setSearchParams] = useSearchParams();
+    const requestedView = searchParams.get("view") || "overview";
+    const view = featureLabels[module]?.[requestedView] ? requestedView : "overview";
+    const [recordFilter, setRecordFilter] = useState({ key: "", search: "", status: "" });
+    const filterKey = `${module}:${view}`;
+    const search = recordFilter.key === filterKey ? recordFilter.search : "";
+    const status = recordFilter.key === filterKey ? recordFilter.status : "";
+    const updateFilter = changes => setRecordFilter({ key: filterKey, search, status, ...changes });
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    const load = useCallback(async () => {
+    const load = useCallback(async (signal) => {
         setLoading(true);
         setError("");
         try {
             const response = await fetch(`${API_URL}/api/admin/services/${config.endpoint}`, {
                 headers: { Authorization: `Bearer ${getToken()}` },
+                signal,
             });
             const body = await response.json().catch(() => ({}));
             if (!response.ok) throw new Error(body.message || "Service overview is unavailable.");
-            setResult(body);
+            if (!signal?.aborted) setResult({ ...body, endpoint: config.endpoint });
         } catch (e) {
-            setError(e.message);
+            if (!signal?.aborted) setError(e.message);
         } finally {
-            setLoading(false);
+            if (!signal?.aborted) setLoading(false);
         }
     }, [config.endpoint]);
 
-    useEffect(() => { load(); }, [load]);
+    useEffect(() => {
+        const controller = new AbortController();
+        queueMicrotask(() => { if (!controller.signal.aborted) load(controller.signal); });
+        return () => controller.abort();
+    }, [load]);
 
-    const data = result?.[config.dataKey];
+    const data = result?.endpoint === config.endpoint ? result[config.dataKey] : null;
     const cards = useMemo(() => data ? config.cards(data, view) : [], [data, view, config]);
-    const activity = data ? config.activity(data) : [];
-    const showActivity = view === "activity" || (module === "lost-found" && view === "reports") || (module === "guidance" && view === "counselors");
-    const isLostFound = module === "lost-found";
+    const recent = getRecentSection(module, view, data);
+    const recentRows = filterRecentRecords(recent.rows, recent.columns, search, status);
+    const statuses = [...new Set(recent.rows.map(row => row.status).filter(Boolean))].sort();
     const upcomingAppointments = module === "guidance" && view === "appointments" ? data?.upcomingAppointments || [] : [];
 
     const handleExport = async () => {
         if (!data || exporting) return;
         setExporting(true);
         try {
-            const rows = [["Section", "Field / item", "Value / category", "Status / actor", "Date / time"]];
+            const rows = [["Section", "Field / reference", "Value / item", "Details / actor", "Status", "Recorded / updated", "Schedule / expiry"]];
             cards.forEach(([label, value]) => rows.push(["Statistics", label, value ?? "", "", ""]));
-            if (showActivity) activity.forEach(item => rows.push(isLostFound
-                ? ["Recent reports", item.itemName, item.category, `${item.reportType || ""} / ${item.status || ""}`, formatDate(item.createdAt)]
-                : ["Recent activity", item.type, item.title, item.actor, formatDate(item.at)]));
+            rows.push([recent.title, ...recent.columns.map(column => column.label)]);
+            recentRows.forEach(item => rows.push([recent.title, ...recent.columns.map(column => column.date ? formatDate(item[column.key]) : item[column.key] ?? "")]));
             upcomingAppointments.forEach(item => rows.push(["Upcoming appointments", item.date, item.timeSlot, item.status, ""]));
-            const csv = "\uFEFF" + rows.map(row => row.map(value => {
+            const csv = "\uFEFF" + rows.map(row => Array.from({ length: 7 }, (_, index) => row[index] ?? "").map(value => {
                 let text = String(value ?? "");
                 if (/^\s*[=+\-@]/u.test(text)) text = `'${text}`;
                 return `"${text.replaceAll('"', '""')}"`;
@@ -128,7 +136,7 @@ export default function AdminServiceOversight({ module }) {
                 <button onClick={handleExport} disabled={loading || !data || exporting} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-3 py-2 text-sm font-semibold text-white disabled:opacity-50">
                     <FileDown size={15} />Export report
                 </button>
-                <button onClick={load} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm">
+                <button onClick={() => load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border bg-white px-3 py-2 text-sm">
                     <RefreshCw size={15} className={loading ? "animate-spin" : ""} />Refresh
                 </button>
             </div>
@@ -138,13 +146,13 @@ export default function AdminServiceOversight({ module }) {
 
         <div className="flex flex-wrap gap-2" aria-label={`${config.title} features`}>
             {Object.entries(featureLabels[module] || featureLabels.library).map(([key, label]) => (
-                <span key={key} className={`rounded-full px-3 py-1.5 text-xs font-medium ${view === key ? "bg-[#0E3B22] text-white" : "bg-white text-gray-600 ring-1 ring-gray-200"}`}>{label}</span>
+                <button type="button" key={key} aria-current={view === key ? "page" : undefined} onClick={() => setSearchParams({ view: key })} className={`rounded-full px-3 py-1.5 text-xs font-medium ${view === key ? "bg-[#0E3B22] text-white" : "bg-white text-gray-600 ring-1 ring-gray-200"}`}>{label}</button>
             ))}
         </div>
 
         {error && <div role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">{error}</div>}
 
-        {result && <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-white p-4 text-sm">
+        {data && <div className="flex flex-wrap items-center gap-2 rounded-xl border bg-white p-4 text-sm">
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${result.enabled ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}`}>{result.enabled ? "Service enabled" : "Service disabled"}</span>
             <span className="text-xs text-gray-500">Statistics updated {formatDate(data?.generatedAt)}</span>
             <span className="ml-auto text-xs text-gray-500">Monitoring only</span>
@@ -167,21 +175,25 @@ export default function AdminServiceOversight({ module }) {
             </table></div>
         </section>}
 
-        {showActivity && <section className="admin-surface overflow-hidden rounded-2xl border border-gray-200 bg-white">
-            <h2 className="border-b p-4 font-semibold">{isLostFound ? "Recent reports" : "Recent counselor activity"}</h2>
+        <section className="admin-surface overflow-hidden rounded-2xl border border-gray-200 bg-white">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4">
+                <div><h2 className="font-semibold">{recent.title}</h2><p className="mt-1 text-xs text-gray-500">Latest {recent.limit} records · {recentRows.length} shown{search || status ? " after filtering" : ""}</p></div>
+                <div className="admin-no-print flex flex-wrap gap-2">
+                    <input type="search" aria-label={`Search ${recent.title.toLowerCase()}`} placeholder="Search recent records..." value={search} onChange={event => updateFilter({ search: event.target.value })} className="rounded-xl border px-3 py-2 text-xs" />
+                    {statuses.length > 0 && <select aria-label="Filter recent records by status" value={status} onChange={event => updateFilter({ status: event.target.value })} className="rounded-xl border bg-white px-3 py-2 text-xs"><option value="">All statuses</option>{statuses.map(value => <option key={value}>{value}</option>)}</select>}
+                    {(search || status) && <button type="button" onClick={() => updateFilter({ search: "", status: "" })} className="text-xs font-semibold text-[#0E3B22]">Clear filters</button>}
+                </div>
+            </div>
             <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                    <thead className="bg-gray-50 text-gray-500"><tr>{isLostFound ? ["Item", "Category", "Type", "Status", "Reported"].map(x => <th key={x} className="px-3 py-2">{x}</th>) : ["Activity", "Details", "Actor", "Time"].map(x => <th key={x} className="px-3 py-2">{x}</th>)}</tr></thead>
+                    <thead className="bg-gray-50 text-gray-500"><tr>{recent.columns.map(column => <th key={column.key} className="px-3 py-2">{column.label}</th>)}</tr></thead>
                     <tbody>
-                        {activity.map((item, index) => isLostFound
-                            ? <tr key={item.reportId} className="border-t"><td className="px-3 py-2">{item.itemName}</td><td className="px-3 py-2">{item.category}</td><td className="px-3 py-2">{item.reportType}</td><td className="px-3 py-2">{item.status}</td><td className="px-3 py-2">{formatDate(item.createdAt)}</td></tr>
-                            : <tr key={`${item.type}-${item.at}-${index}`} className="border-t"><td className="px-3 py-2">{item.type}</td><td className="px-3 py-2">{item.title || "—"}</td><td className="px-3 py-2">{item.actor || "—"}</td><td className="px-3 py-2">{formatDate(item.at)}</td></tr>
-                        )}
-                        {!activity.length && <tr><td colSpan="5" className="px-3 py-8 text-center text-gray-400">{loading ? "Loading activity…" : "No recorded activity."}</td></tr>}
+                        {!loading && recentRows.map((item, index) => <tr key={item.id ?? item.reportId ?? index} className="border-t">{recent.columns.map(column => <td key={column.key} className="px-3 py-2">{column.date ? formatDate(item[column.key]) : item[column.key] || "—"}</td>)}</tr>)}
+                        {(loading || !recentRows.length) && <tr><td colSpan={recent.columns.length} className="px-3 py-8 text-center text-gray-400">{loading ? "Loading recent records…" : search || status ? "No recent records match your filters." : "No recent records."}</td></tr>}
                     </tbody>
                 </table>
             </div>
-        </section>}
+        </section>
 
         <aside className="flex gap-3 rounded-xl bg-blue-50 p-4 text-xs leading-5 text-blue-900"><ShieldCheck className="mt-0.5 shrink-0" size={17} /><p>{result?.note || config.note}</p></aside>
     </main>;
