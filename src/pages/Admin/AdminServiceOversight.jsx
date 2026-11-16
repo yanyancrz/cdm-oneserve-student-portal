@@ -59,7 +59,7 @@ const configByModule = {
 
 const featureLabels = {
     library: { overview: "Overview", inventory: "Inventory", circulation: "Circulation", reservations: "Reservations", activity: "Recent activity" },
-    guidance: { overview: "Overview", appointments: "Appointments", counselors: "Counselor activity", systems: "Report statistics" },
+    guidance: { overview: "Overview", appointments: "Appointments", counselors: "Counselors", systems: "Report statistics" },
     "lost-found": { overview: "Overview", reports: "Reports", claims: "Claims", pickups: "Pickups", activity: "Recent activity" },
 };
 
@@ -120,7 +120,9 @@ export default function AdminServiceOversight({ module }) {
             recentRows.forEach(item => rows.push([recent.title, ...recent.columns.map(column => column.date ? formatDate(item[column.key]) : formatServiceStatus(item[column.key]) ?? "")]));
             if (upcomingAppointments.length) rows.push(["Upcoming appointments", "Student", "Counselor", "Date", "Time", "Status"]);
             upcomingAppointments.forEach(item => rows.push(["Upcoming appointments", item.studentName || "—", item.counselorName || "Unassigned", item.date, item.timeSlot, formatServiceStatus(item.status)]));
-            const csv = "\uFEFF" + rows.map(row => Array.from({ length: 7 }, (_, index) => row[index] ?? "").map(value => {
+            const columnCount = Math.max(...rows.map(row => row.length));
+            while (rows[0].length < columnCount) rows[0].push("Additional details");
+            const csv = "\uFEFF" + rows.map(row => Array.from({ length: columnCount }, (_, index) => row[index] ?? "").map(value => {
                 let text = String(value ?? "");
                 if (/^\s*[=+\-@]/u.test(text)) text = `'${text}`;
                 return `"${text.replaceAll('"', '""')}"`;
@@ -178,9 +180,9 @@ export default function AdminServiceOversight({ module }) {
 
         <section className="admin-surface overflow-hidden rounded-2xl border border-gray-200 bg-white">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b p-4">
-                <div><h2 className="font-semibold">{recent.title}</h2><p className="mt-1 text-xs text-gray-500">Latest {recent.limit} records · {recentRows.length} shown{search || status ? " after filtering" : ""}</p></div>
+                <div><h2 className="font-semibold">{recent.title}</h2><p className="mt-1 text-xs text-gray-500">{recent.limit ? `Latest ${recent.limit} records` : `${recent.rows.length} counselors`} · {recentRows.length} shown{search || status ? " after filtering" : ""}</p></div>
                 <div className="admin-no-print flex flex-wrap gap-2">
-                    <input type="search" aria-label={`Search ${recent.title.toLowerCase()}`} placeholder="Search recent records..." value={search} onChange={event => updateFilter({ search: event.target.value })} className="rounded-xl border px-3 py-2 text-xs" />
+                    <input type="search" aria-label={`Search ${recent.title.toLowerCase()}`} placeholder={recent.limit ? "Search recent records..." : "Search counselors..."} value={search} onChange={event => updateFilter({ search: event.target.value })} className="rounded-xl border px-3 py-2 text-xs" />
                     {statuses.length > 0 && <select aria-label="Filter recent records by status" value={status} onChange={event => updateFilter({ status: event.target.value })} className="rounded-xl border bg-white px-3 py-2 text-xs"><option value="">All statuses</option>{statuses.map(value => <option key={value} value={value}>{formatServiceStatus(value)}</option>)}</select>}
                     {(search || status) && <button type="button" onClick={() => updateFilter({ search: "", status: "" })} className="text-xs font-semibold text-[#0E3B22]">Clear filters</button>}
                 </div>
@@ -190,7 +192,7 @@ export default function AdminServiceOversight({ module }) {
                     <thead className="bg-gray-50 text-gray-500"><tr>{recent.columns.map(column => <th key={column.key} className="px-3 py-2">{column.label}</th>)}</tr></thead>
                     <tbody>
                         {!loading && recentRows.map((item, index) => <tr key={item.id ?? item.reportId ?? index} className="border-t">{recent.columns.map(column => <td key={column.key} className="px-3 py-2">{column.date ? formatDate(item[column.key]) : formatServiceStatus(item[column.key]) || "—"}</td>)}</tr>)}
-                        {(loading || !recentRows.length) && <tr><td colSpan={recent.columns.length} className="px-3 py-8 text-center text-gray-400">{loading ? "Loading recent records…" : search || status ? "No recent records match your filters." : "No recent records."}</td></tr>}
+                        {(loading || !recentRows.length) && <tr><td colSpan={recent.columns.length} className="px-3 py-8 text-center text-gray-400">{loading ? (recent.limit ? "Loading recent records…" : "Loading counselors…") : search || status ? "No records match your filters." : recent.limit ? "No recent records." : "No counselors found."}</td></tr>}
                     </tbody>
                 </table>
             </div>

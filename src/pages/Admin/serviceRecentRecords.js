@@ -22,6 +22,10 @@ const definitions = {
 };
 
 export function getRecentSection(module, view, data) {
+    if (module === "guidance" && view === "counselors") return {
+        title: "Counselors", limit: null, rows: data?.counselors || [],
+        columns: [column("fullName", "Counselor"), column("email", "Email"), column("contact", "Contact"), column("department", "Department"), column("specializations", "Specializations"), column("room", "Office / room"), column("status", "Status")],
+    };
     const definition = definitions[module]?.[view];
     if (definition) return { ...definition, rows: data?.recentRecords?.[view] || [], limit: 20 };
     if (module === "lost-found") {

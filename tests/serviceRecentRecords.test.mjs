@@ -48,3 +48,13 @@ test("Appointment History shows and searches participants instead of appointment
     assert.deepEqual(filterRecentRecords(section.rows, section.columns, "ana", ""), [record]);
     assert.deepEqual(filterRecentRecords(section.rows, section.columns, "reyes", ""), [record]);
 });
+
+test("Counselors shows profile details and supports department and status filtering", () => {
+    const row = { id: 1, fullName: "Ana Santos", email: "ana@example.test", contact: "123", department: "Guidance", specializations: "Career", room: "101", status: "Active" };
+    const section = getRecentSection("guidance", "counselors", { counselors: [row], recentActivity: [{ type: "Appointment" }] });
+    assert.equal(section.title, "Counselors");
+    assert.equal(section.limit, null);
+    assert.deepEqual(section.columns.map(column => column.label), ["Counselor", "Email", "Contact", "Department", "Specializations", "Office / room", "Status"]);
+    assert.deepEqual(filterRecentRecords(section.rows, section.columns, "career", "Active"), [row]);
+    assert.deepEqual(filterRecentRecords(section.rows, section.columns, "", "Inactive"), []);
+});

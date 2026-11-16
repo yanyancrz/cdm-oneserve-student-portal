@@ -23,6 +23,8 @@ public static class ServiceOversightIntegration
         db.Add(new ClaimSchedule { ClaimId = claim.ClaimId, ClaimantUserId = 2, ScheduledDateTime = now.AddDays(1), PickupLocation = "Admin office", CreatedAt = now });
         await db.SaveChangesAsync();
         var service = new AdminServiceSummaryService(db);
+        db.GuidanceCounselorProfiles.Add(new GuidanceCounselorProfile { UserId = 1, Phone = "123", Department = "Guidance", Room = "101", Specializations = "Career" });
+        await db.SaveChangesAsync();
         var library = await service.GetLibraryAsync();
         var lostFound = await service.GetLostFoundAsync();
         var guidance = await service.GetGuidanceAsync();
@@ -36,6 +38,7 @@ public static class ServiceOversightIntegration
         Check(guidance.RecentRecords["appointments"].Any(x => x.StudentName == "Student" && x.CounselorName == "Counselor"), "Appointment history participant names missing");
         Check(guidance.UpcomingAppointments.Any(x => x.StudentName == "Student" && x.CounselorName == "Counselor"), "Upcoming appointment participant names missing");
         Check(guidance.RecentRecords["systems"].Single().Status == "Draft", "Report metadata missing");
+        Check(guidance.Counselors.Single().FullName == "Counselor" && guidance.Counselors.Single().Room == "101" && guidance.Counselors.Single().Contact == "123", "Counselor profile details missing");
         Check(!JsonSerializer.Serialize(new { library, lostFound, guidance }).Contains("PRIVATE_"), "Confidential content leaked into oversight");
         Console.WriteLine("PASS: recent books, loans, reservations, claims, pickups, appointments and report metadata; confidential fields excluded.");
     }
