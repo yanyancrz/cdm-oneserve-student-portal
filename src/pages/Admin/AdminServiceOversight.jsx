@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, BookOpen, ClipboardList, FileDown, RefreshCw, ShieldCheck, Users } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import { API_URL } from "../../config/api";
-import { filterRecentRecords, getRecentSection } from "./serviceRecentRecords";
+import { filterRecentRecords, formatServiceStatus, getRecentSection } from "./serviceRecentRecords";
 
 const formatDate = value => value ? new Date(value).toLocaleString() : "—";
 const getToken = () => localStorage.getItem("token") || localStorage.getItem("authToken");
@@ -33,7 +33,7 @@ const configByModule = {
         cards: (data, view) => {
             const all = {
                 overview: [["Counselors", data.totalCounselors, Users], ["Active counselors", data.activeCounselors, Users], ["Appointments", data.totalAppointments, ClipboardList], ["Pending appointments", data.pendingAppointments, Activity], ["Completed appointments", data.completedAppointments, ClipboardList]],
-                appointments: Object.entries(data.appointmentStatuses || {}).map(([status, count]) => [status, count, ClipboardList]),
+                appointments: Object.entries(data.appointmentStatuses || {}).map(([status, count]) => [formatServiceStatus(status), count, ClipboardList]),
                 counselors: [["Total counselors", data.totalCounselors, Users], ["Active counselors", data.activeCounselors, Users]],
                 systems: [["Narrative reports", data.narrativeReports, ShieldCheck], ["Finalized reports", data.finalizedNarrativeReports, ShieldCheck]],
             };
@@ -117,8 +117,9 @@ export default function AdminServiceOversight({ module }) {
             const rows = [["Section", "Field / reference", "Value / item", "Details / actor", "Status", "Recorded / updated", "Schedule / expiry"]];
             cards.forEach(([label, value]) => rows.push(["Statistics", label, value ?? "", "", ""]));
             rows.push([recent.title, ...recent.columns.map(column => column.label)]);
-            recentRows.forEach(item => rows.push([recent.title, ...recent.columns.map(column => column.date ? formatDate(item[column.key]) : item[column.key] ?? "")]));
-            upcomingAppointments.forEach(item => rows.push(["Upcoming appointments", item.date, item.timeSlot, item.status, ""]));
+            recentRows.forEach(item => rows.push([recent.title, ...recent.columns.map(column => column.date ? formatDate(item[column.key]) : formatServiceStatus(item[column.key]) ?? "")]));
+            if (upcomingAppointments.length) rows.push(["Upcoming appointments", "Student", "Counselor", "Date", "Time", "Status"]);
+            upcomingAppointments.forEach(item => rows.push(["Upcoming appointments", item.studentName || "—", item.counselorName || "Unassigned", item.date, item.timeSlot, formatServiceStatus(item.status)]));
             const csv = "\uFEFF" + rows.map(row => Array.from({ length: 7 }, (_, index) => row[index] ?? "").map(value => {
                 let text = String(value ?? "");
                 if (/^\s*[=+\-@]/u.test(text)) text = `'${text}`;
@@ -168,9 +169,9 @@ export default function AdminServiceOversight({ module }) {
         {module === "guidance" && view === "appointments" && <section className="admin-surface overflow-hidden rounded-2xl border border-gray-200 bg-white">
             <h2 className="border-b p-4 font-semibold">Upcoming appointment schedule</h2>
             <div className="overflow-x-auto"><table className="w-full text-left text-xs">
-                <thead className="bg-gray-50 text-gray-500"><tr>{["Date", "Time", "Status"].map(x => <th key={x} className="px-3 py-2">{x}</th>)}</tr></thead>
-                <tbody>{upcomingAppointments.map(item => <tr key={item.id} className="border-t"><td className="px-3 py-2">{item.date}</td><td className="px-3 py-2">{item.timeSlot}</td><td className="px-3 py-2">{item.status}</td></tr>)}
-                    {!upcomingAppointments.length && <tr><td colSpan="3" className="px-3 py-8 text-center text-gray-400">{loading ? "Loading schedule…" : "No upcoming appointments."}</td></tr>}
+                <thead className="bg-gray-50 text-gray-500"><tr>{["Student", "Counselor", "Date", "Time", "Status"].map(x => <th key={x} className="px-3 py-2">{x}</th>)}</tr></thead>
+                <tbody>{upcomingAppointments.map(item => <tr key={item.id} className="border-t"><td className="px-3 py-2">{item.studentName || "—"}</td><td className="px-3 py-2">{item.counselorName || "Unassigned"}</td><td className="px-3 py-2">{item.date}</td><td className="px-3 py-2">{item.timeSlot}</td><td className="px-3 py-2">{formatServiceStatus(item.status)}</td></tr>)}
+                    {!upcomingAppointments.length && <tr><td colSpan="5" className="px-3 py-8 text-center text-gray-400">{loading ? "Loading schedule…" : "No upcoming appointments."}</td></tr>}
                 </tbody>
             </table></div>
         </section>}
@@ -180,7 +181,7 @@ export default function AdminServiceOversight({ module }) {
                 <div><h2 className="font-semibold">{recent.title}</h2><p className="mt-1 text-xs text-gray-500">Latest {recent.limit} records · {recentRows.length} shown{search || status ? " after filtering" : ""}</p></div>
                 <div className="admin-no-print flex flex-wrap gap-2">
                     <input type="search" aria-label={`Search ${recent.title.toLowerCase()}`} placeholder="Search recent records..." value={search} onChange={event => updateFilter({ search: event.target.value })} className="rounded-xl border px-3 py-2 text-xs" />
-                    {statuses.length > 0 && <select aria-label="Filter recent records by status" value={status} onChange={event => updateFilter({ status: event.target.value })} className="rounded-xl border bg-white px-3 py-2 text-xs"><option value="">All statuses</option>{statuses.map(value => <option key={value}>{value}</option>)}</select>}
+                    {statuses.length > 0 && <select aria-label="Filter recent records by status" value={status} onChange={event => updateFilter({ status: event.target.value })} className="rounded-xl border bg-white px-3 py-2 text-xs"><option value="">All statuses</option>{statuses.map(value => <option key={value} value={value}>{formatServiceStatus(value)}</option>)}</select>}
                     {(search || status) && <button type="button" onClick={() => updateFilter({ search: "", status: "" })} className="text-xs font-semibold text-[#0E3B22]">Clear filters</button>}
                 </div>
             </div>
@@ -188,7 +189,7 @@ export default function AdminServiceOversight({ module }) {
                 <table className="w-full text-left text-xs">
                     <thead className="bg-gray-50 text-gray-500"><tr>{recent.columns.map(column => <th key={column.key} className="px-3 py-2">{column.label}</th>)}</tr></thead>
                     <tbody>
-                        {!loading && recentRows.map((item, index) => <tr key={item.id ?? item.reportId ?? index} className="border-t">{recent.columns.map(column => <td key={column.key} className="px-3 py-2">{column.date ? formatDate(item[column.key]) : item[column.key] || "—"}</td>)}</tr>)}
+                        {!loading && recentRows.map((item, index) => <tr key={item.id ?? item.reportId ?? index} className="border-t">{recent.columns.map(column => <td key={column.key} className="px-3 py-2">{column.date ? formatDate(item[column.key]) : formatServiceStatus(item[column.key]) || "—"}</td>)}</tr>)}
                         {(loading || !recentRows.length) && <tr><td colSpan={recent.columns.length} className="px-3 py-8 text-center text-gray-400">{loading ? "Loading recent records…" : search || status ? "No recent records match your filters." : "No recent records."}</td></tr>}
                     </tbody>
                 </table>

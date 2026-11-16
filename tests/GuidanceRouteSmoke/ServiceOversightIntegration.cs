@@ -33,6 +33,7 @@ public static class ServiceOversightIntegration
         Check(lostFound.RecentRecords["claims"].Single().Id == claim.ClaimId, "Claims missing");
         Check(lostFound.RecentRecords["pickups"].Single().Detail == "Admin office", "Pickup location missing");
         Check(guidance.RecentRecords["appointments"].Count > 0, "Recent appointments missing");
+        Check(guidance.UpcomingAppointments.Any(x => x.StudentName == "Student" && x.CounselorName == "Counselor"), "Upcoming appointment participant names missing");
         Check(guidance.RecentRecords["systems"].Single().Status == "Draft", "Report metadata missing");
         Check(!JsonSerializer.Serialize(new { library, lostFound, guidance }).Contains("PRIVATE_"), "Confidential content leaked into oversight");
         Console.WriteLine("PASS: recent books, loans, reservations, claims, pickups, appointments and report metadata; confidential fields excluded.");

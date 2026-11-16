@@ -12,7 +12,7 @@ const definitions = {
         reservations: { title: "Recent reservations", columns: recordColumns("Book", "Reserved by", "Expires") },
     },
     guidance: {
-        appointments: { title: "Recent appointments", columns: recordColumns("Appointment", "Schedule") },
+        appointments: { title: "Appointment History", columns: recordColumns("Appointment", "Schedule") },
         systems: { title: "Recent report updates", columns: recordColumns("Report", "Counselor") },
     },
     "lost-found": {
@@ -39,5 +39,7 @@ export function getRecentSection(module, view, data) {
 
 export function filterRecentRecords(rows, columns, search, status) {
     const query = search.trim().toLowerCase();
-    return rows.filter(row => (!status || row.status === status) && (!query || columns.some(({ key }) => String(row[key] ?? "").toLowerCase().includes(query))));
+    return rows.filter(row => (!status || row.status === status) && (!query || columns.some(({ key }) => String(formatServiceStatus(row[key]) ?? "").toLowerCase().includes(query))));
 }
+
+export const formatServiceStatus = value => value === "NoShow" ? "No Show" : value;

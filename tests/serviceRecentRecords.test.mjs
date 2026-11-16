@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { filterRecentRecords, getRecentSection } from "../src/pages/Admin/serviceRecentRecords.js";
+import { filterRecentRecords, formatServiceStatus, getRecentSection } from "../src/pages/Admin/serviceRecentRecords.js";
 
 test("Library activity uses its own heading; every subpage uses the matching record source", () => {
     assert.equal(getRecentSection("library", "activity", {}).title, "Recent library activity");
@@ -30,4 +30,13 @@ test("Search and status filters combine and clearing filters restores the availa
     assert.deepEqual(filterRecentRecords(rows, columns, "personal", ""), rows);
     assert.deepEqual(filterRecentRecords(rows, columns, "no match", ""), []);
     assert.deepEqual(filterRecentRecords(rows, columns, "", ""), rows);
+});
+
+test("Appointment History displays and searches No Show while retaining the stored status", () => {
+    const section = getRecentSection("guidance", "appointments", { recentRecords: { appointments: [{ id: 1, title: "Appointment #1", status: "NoShow" }] } });
+    assert.equal(section.title, "Appointment History");
+    assert.equal(formatServiceStatus("NoShow"), "No Show");
+    assert.equal(formatServiceStatus("Confirmed"), "Confirmed");
+    assert.equal(filterRecentRecords(section.rows, section.columns, "no show", "NoShow").length, 1);
+    assert.equal(section.rows[0].status, "NoShow");
 });
