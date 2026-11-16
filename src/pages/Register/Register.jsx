@@ -335,8 +335,8 @@ export default function Register() {
                             will be sent to your email. Use them to log
                             in, then complete your profile.
                             <br />
-                            Only official School Record ID numbers can
-                            register — IDs are verified against the database.
+                            Choose Student or Faculty, enter your ID number,
+                            and upload your supporting document.
                         </p>
 
                         {/* =================================================

@@ -157,6 +157,7 @@ public static class RescheduleIntegration
             Console.WriteLine("PASS: mutual consent, ownership, direct agreement, notifications/history, repeated counters, stale/duplicate responses, calendar revalidation, concurrent conflicts, cancellation, and negotiation-aware lifecycle processing.");
             await using (var db = new AppDbContext(options)) await ServiceOversightIntegration.Run(db);
             await using (var db = new AppDbContext(options)) await NarrativePermissionIntegration.Run(db);
+            await using (var db = new AppDbContext(options)) await RegistrationIntegration.Run(db);
         } finally {
             MySqlConnection.ClearAllPools();
             if (!database.StartsWith("oneserve_reschedule_test_") || database.Length != 57) throw new Exception("Unsafe test database cleanup target");
