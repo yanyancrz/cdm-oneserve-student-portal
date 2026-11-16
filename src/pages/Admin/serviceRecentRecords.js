@@ -12,7 +12,7 @@ const definitions = {
         reservations: { title: "Recent reservations", columns: recordColumns("Book", "Reserved by", "Expires") },
     },
     guidance: {
-        appointments: { title: "Appointment History", columns: recordColumns("Appointment", "Schedule") },
+        appointments: { title: "Appointment History", columns: [column("studentName", "Student"), column("counselorName", "Counselor"), column("detail", "Schedule"), column("status", "Status"), column("at", "Last recorded", true)] },
         systems: { title: "Recent report updates", columns: recordColumns("Report", "Counselor") },
     },
     "lost-found": {

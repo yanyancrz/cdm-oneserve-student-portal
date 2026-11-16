@@ -40,3 +40,11 @@ test("Appointment History displays and searches No Show while retaining the stor
     assert.equal(filterRecentRecords(section.rows, section.columns, "no show", "NoShow").length, 1);
     assert.equal(section.rows[0].status, "NoShow");
 });
+
+test("Appointment History shows and searches participants instead of appointment references", () => {
+    const record = { id: 5, title: "Appointment #5", studentName: "Ana Santos", counselorName: "Marco Reyes", status: "Confirmed" };
+    const section = getRecentSection("guidance", "appointments", { recentRecords: { appointments: [record] } });
+    assert.deepEqual(section.columns.map(column => column.label), ["Student", "Counselor", "Schedule", "Status", "Last recorded"]);
+    assert.deepEqual(filterRecentRecords(section.rows, section.columns, "ana", ""), [record]);
+    assert.deepEqual(filterRecentRecords(section.rows, section.columns, "reyes", ""), [record]);
+});
