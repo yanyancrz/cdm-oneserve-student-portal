@@ -10,7 +10,7 @@ Deployment order:
 2. Deploy the updated API. This includes the model, context mapping, DTOs, rescheduling controller/service, service registration, notification routes, and appointment lifecycle changes. The old counselor PATCH reschedule endpoint now proposes a schedule instead of confirming it directly.
 3. Deploy the frontend. Both Guidance layouts host the rescheduling dialogs and refresh appointment data on notification events, local changes, focus and proposal polling. The existing Manage Availability screen uses the same proposal workflow.
 
-The production database has not been changed by this implementation.
+Production deployment completed on November 16, 2026: the additive proposal-table migration was applied after verifying both existing appointment conflict indexes; existing appointment records were preserved. The Azure API and Vercel frontend were deployed successfully. Read-only live checks passed for Student and Counselor proposal/rules endpoints, and the production JavaScript bundle includes the counselor availability review. No real appointment or notification was created by these checks.
 
 Validation:
 
