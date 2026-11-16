@@ -1,5 +1,5 @@
 import HandwrittenNarrative from "../../modules/guidance/components/HandwrittenNarrative";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
     CalendarDays,
@@ -41,7 +41,7 @@ function StatusBadge({ status }) {
     );
 }
 
-function ReportDetailModal({ report, loading, error, onClose, onExport, onDownload, busy }) {
+function ReportDetailModal({ report, loading, error, onClose, onExport, onDownload, onPreview, preview, onClosePreview, busy, embedded }) {
     useEffect(() => {
         if (!report && !loading) return undefined;
         const onKey = (event) => {
@@ -57,7 +57,7 @@ function ReportDetailModal({ report, loading, error, onClose, onExport, onDownlo
 
     return (
         <div
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 lg:left-64"
+            className={`fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 ${embedded ? "" : "lg:left-64"}`}
             onMouseDown={(event) => {
                 if (event.target === event.currentTarget) onClose();
             }}
@@ -163,7 +163,7 @@ function ReportDetailModal({ report, loading, error, onClose, onExport, onDownlo
                                 </h3>
                                 <p className="mt-1 text-sm text-amber-900">
                                     {report.privateNotesRedacted
-                                        ? "Private notes are withheld from Guidance Head accounts. Only the authoring counselor can read them."
+                                        ? "Only the authoring counselor can read private notes."
                                         : report.privateNotes || "No private notes."}
                                 </p>
                             </section>
@@ -180,6 +180,7 @@ function ReportDetailModal({ report, loading, error, onClose, onExport, onDownlo
                                                 <span className="min-w-0 flex-1 truncate text-xs text-gray-700">
                                                     {attachment.fileName}
                                                 </span>
+                                                {onPreview && <button type="button" onClick={() => onPreview(attachment)} className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100" aria-label={`View ${attachment.fileName}`}><Eye size={14} /></button>}
                                                 <button
                                                     type="button"
                                                     onClick={() => onDownload(attachment)}
@@ -192,6 +193,12 @@ function ReportDetailModal({ report, loading, error, onClose, onExport, onDownlo
                                             </li>
                                         ))}
                                     </ul>
+                                    {preview && <div className="mt-3 space-y-2 rounded-xl border border-gray-200 p-3">
+                                        <div className="flex items-center justify-between gap-2"><p className="truncate text-xs font-semibold">{preview.fileName}</p><button type="button" onClick={onClosePreview} aria-label="Close file preview" className="rounded-lg p-1 text-gray-500"><X size={16} /></button></div>
+                                        {preview.loading && <p role="status" className="text-xs text-gray-500">Loading file preview...</p>}
+                                        {preview.error && <p role="alert" className="text-xs text-red-700">{preview.error}</p>}
+                                        {preview.url && (preview.contentType === "application/pdf" ? <iframe title={`Preview ${preview.fileName}`} src={preview.url} className="h-[60vh] w-full rounded border" /> : <img src={preview.url} alt={preview.fileName} className="max-h-[65vh] w-full rounded object-contain" />)}
+                                    </div>}
                                 </section>
                             )}
 
@@ -253,12 +260,12 @@ function ReportDetailModal({ report, loading, error, onClose, onExport, onDownlo
     );
 }
 
-export default function GuidanceNarrativeReportsPage() {
+export default function GuidanceNarrativeReportsPage({ readOnly = false }) {
     const [params, setParams] = useSearchParams();
 
     const [filters, setFilters] = useState({
         search: "",
-        status: "All",
+        status: readOnly ? "Finalized" : "All",
         subjectRole: "All",
         studentId: params.get("studentId") || "",
         counselorId: params.get("counselorId") || "",
@@ -279,15 +286,22 @@ export default function GuidanceNarrativeReportsPage() {
     const [detailLoading, setDetailLoading] = useState(false);
     const [detailError, setDetailError] = useState("");
     const [busy, setBusy] = useState("");
+    const [preview, setPreview] = useState(null);
+    const detailRequest = useRef(null);
+    const previewRequest = useRef(null);
+    useEffect(() => () => { detailRequest.current?.abort(); previewRequest.current?.abort(); }, []);
+    useEffect(() => () => { if (preview?.url) URL.revokeObjectURL(preview.url); }, [preview?.url]);
 
     const subjectLabel = params.get("subjectName");
     const counselorLabel = params.get("counselorName");
 
     useEffect(() => {
+        const controller = new AbortController();
         guidanceHeadService
-            .listCounselors({ page: 1, pageSize: 100 })
+            .listCounselors({ page: 1, pageSize: 100 }, { signal: controller.signal })
             .then((pageData) => setCounselors(pageData.items || []))
-            .catch(() => setCounselors([]));
+            .catch(() => { if (!controller.signal.aborted) setCounselors([]); });
+        return () => controller.abort();
     }, []);
 
     const queryParams = useMemo(
@@ -309,6 +323,7 @@ export default function GuidanceNarrativeReportsPage() {
         const controller = new AbortController();
 
         queueMicrotask(() => {
+            if (controller.signal.aborted) return;
             setLoading(true);
             setError(null);
 
@@ -317,6 +332,7 @@ export default function GuidanceNarrativeReportsPage() {
                 guidanceHeadService.getNarrativeReportStats({ signal: controller.signal }),
             ])
                 .then(([list, overview]) => {
+                    if (controller.signal.aborted) return;
                     setData(list);
                     setStats(overview);
                 })
@@ -339,21 +355,27 @@ export default function GuidanceNarrativeReportsPage() {
     const clearPersonFilter = () => {
         setFilters((prev) => ({ ...prev, studentId: "", counselorId: "" }));
         setPage(1);
-        setParams({});
+        setParams(readOnly ? { view: "systems" } : {});
     };
 
     const openReport = async (id) => {
+        detailRequest.current?.abort();
+        previewRequest.current?.abort();
+        const controller = new AbortController();
+        detailRequest.current = controller;
+        setPreview(null);
         setDetailId(id);
         setDetail(null);
         setDetailError("");
         setDetailLoading(true);
 
         try {
-            setDetail(await guidanceHeadService.getNarrativeReport(id));
+            const report = await guidanceHeadService.getNarrativeReport(id, { signal: controller.signal });
+            if (!controller.signal.aborted) setDetail(report);
         } catch (err) {
-            setDetailError(err?.message || "Unable to open that report.");
+            if (!controller.signal.aborted) setDetailError(err?.message || "Unable to open that report.");
         } finally {
-            setDetailLoading(false);
+            if (!controller.signal.aborted) setDetailLoading(false);
         }
     };
 
@@ -386,6 +408,27 @@ export default function GuidanceNarrativeReportsPage() {
         }
     };
 
+    const closePreview = () => { previewRequest.current?.abort(); setPreview(null); };
+    const previewAttachment = async (attachment) => {
+        if (!detail) return;
+        previewRequest.current?.abort();
+        const controller = new AbortController();
+        previewRequest.current = controller;
+        setPreview({ fileName: attachment.fileName, loading: true });
+        try {
+            const { blob } = await guidanceHeadService.downloadNarrativeAttachment(detail.id, attachment.id, { signal: controller.signal });
+            if (controller.signal.aborted) return;
+            const contentType = blob.type.split(";")[0];
+            if (!["application/pdf", "image/jpeg", "image/png", "image/webp"].includes(contentType)) {
+                setPreview({ fileName: attachment.fileName, error: "This file format has no browser preview. Use Download to view the document." });
+                return;
+            }
+            setPreview({ fileName: attachment.fileName, contentType, url: URL.createObjectURL(blob), loading: false });
+        } catch (err) {
+            if (!controller.signal.aborted) setPreview({ fileName: attachment.fileName, error: err.message || "Unable to preview this file." });
+        }
+    };
+
     const items = data?.items || [];
     const totalPages = data?.totalPages || 1;
     const currentPage = data?.page || 1;
@@ -409,10 +452,10 @@ export default function GuidanceNarrativeReportsPage() {
                 }
             />
 
-            <div className="mb-5 space-y-2">
+            {!readOnly && <div className="mb-5 space-y-2">
             <HandwrittenNarrative onSave={(file) => guidanceHeadService.uploadNarrativeReport(file)} />
             <p className="text-xs text-gray-500">Saved handwritten documents are stored in the existing <Link to="/admin/guidance/reports" className="font-semibold text-green-700 underline">Reports document repository</Link>.</p>
-            </div>
+            </div>}
 
             {(filters.studentId || filters.counselorId) && (
                 <div className="mb-5 flex flex-wrap items-center gap-2 rounded-xl border border-[#106A2E]/20 bg-[#106A2E]/5 px-4 py-3 text-sm text-[#0a2c19]">
@@ -645,12 +688,19 @@ export default function GuidanceNarrativeReportsPage() {
                     error={detailError}
                     busy={busy}
                     onClose={() => {
+                        detailRequest.current?.abort();
+                        closePreview();
+                        setDetailLoading(false);
                         setDetailId(null);
                         setDetail(null);
                         setDetailError("");
                     }}
                     onExport={exportReport}
                     onDownload={downloadAttachment}
+                    onPreview={readOnly ? previewAttachment : undefined}
+                    preview={preview}
+                    onClosePreview={closePreview}
+                    embedded={readOnly}
                 />
             )}
         </>

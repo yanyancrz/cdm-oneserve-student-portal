@@ -6,6 +6,7 @@ import { Activity, BookOpen, ClipboardList, FileDown, RefreshCw, ShieldCheck, Us
 import { useSearchParams } from "react-router-dom";
 import { API_URL } from "../../config/api";
 import { filterRecentRecords, formatServiceStatus, getRecentSection } from "./serviceRecentRecords";
+import GuidanceNarrativeReportsPage from "../../guidance-admin/pages/GuidanceNarrativeReportsPage";
 
 const formatDate = value => value ? new Date(value).toLocaleString() : "—";
 const getToken = () => localStorage.getItem("token") || localStorage.getItem("authToken");
@@ -59,7 +60,7 @@ const configByModule = {
 
 const featureLabels = {
     library: { overview: "Overview", inventory: "Inventory", circulation: "Circulation", reservations: "Reservations", activity: "Recent activity" },
-    guidance: { overview: "Overview", appointments: "Appointments", counselors: "Counselors", systems: "Report statistics" },
+    guidance: { overview: "Overview", appointments: "Appointments", counselors: "Counselors", systems: "Narrative Reports" },
     "lost-found": { overview: "Overview", reports: "Reports", claims: "Claims", pickups: "Pickups", activity: "Recent activity" },
 };
 
@@ -70,6 +71,7 @@ export default function AdminServiceOversight({ module }) {
     const [searchParams, setSearchParams] = useSearchParams();
     const requestedView = searchParams.get("view") || "overview";
     const view = featureLabels[module]?.[requestedView] ? requestedView : "overview";
+    const narrativeView = module === "guidance" && view === "systems";
     const [recordFilter, setRecordFilter] = useState({ key: "", search: "", status: "" });
     const filterKey = `${module}:${view}`;
     const search = recordFilter.key === filterKey ? recordFilter.search : "";
@@ -98,10 +100,11 @@ export default function AdminServiceOversight({ module }) {
     }, [config.endpoint]);
 
     useEffect(() => {
+        if (narrativeView) return;
         const controller = new AbortController();
         queueMicrotask(() => { if (!controller.signal.aborted) load(controller.signal); });
         return () => controller.abort();
-    }, [load]);
+    }, [load, narrativeView]);
 
     const data = result?.endpoint === config.endpoint ? result[config.dataKey] : null;
     const cards = useMemo(() => data ? config.cards(data, view) : [], [data, view, config]);
@@ -132,6 +135,13 @@ export default function AdminServiceOversight({ module }) {
         finally { setExporting(false); }
     };
 
+    const tabs = <div className="flex flex-wrap gap-2" aria-label={`${config.title} features`}>
+        {Object.entries(featureLabels[module] || featureLabels.library).map(([key, label]) => (
+            <button type="button" key={key} aria-current={view === key ? "page" : undefined} onClick={() => setSearchParams({ view: key })} className={`rounded-full px-3 py-1.5 text-xs font-medium ${view === key ? "bg-[#0E3B22] text-white" : "bg-white text-gray-600 ring-1 ring-gray-200"}`}>{label}</button>
+        ))}
+    </div>;
+    if (narrativeView) return <main className="admin-page admin-service-report space-y-5">{tabs}<GuidanceNarrativeReportsPage readOnly /></main>;
+
     return <main className="admin-page admin-service-report space-y-5">
         <AdminPageHeader icon={module} title={config.title} description={config.description}>
             <div className="admin-no-print flex flex-wrap gap-2">
@@ -147,11 +157,7 @@ export default function AdminServiceOversight({ module }) {
 
         <p className="admin-print-meta text-xs text-gray-500">CDM OneServe · Service monitoring report · Generated {new Date().toLocaleString()}</p>
 
-        <div className="flex flex-wrap gap-2" aria-label={`${config.title} features`}>
-            {Object.entries(featureLabels[module] || featureLabels.library).map(([key, label]) => (
-                <button type="button" key={key} aria-current={view === key ? "page" : undefined} onClick={() => setSearchParams({ view: key })} className={`rounded-full px-3 py-1.5 text-xs font-medium ${view === key ? "bg-[#0E3B22] text-white" : "bg-white text-gray-600 ring-1 ring-gray-200"}`}>{label}</button>
-            ))}
-        </div>
+        {tabs}
 
         {error && <div role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">{error}</div>}
 
