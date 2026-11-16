@@ -1,3 +1,4 @@
+import RescheduleProvider from "../components/RescheduleProvider";
 import { useRef } from "react";
 import { Outlet } from "react-router-dom";
 import {
@@ -5,12 +6,10 @@ import {
     CalendarPlus,
     HeartHandshake,
     LayoutDashboard,
-    MessageCircle,
     Users,
 } from "lucide-react";
 
 import { useGuidanceRealtime } from "../hooks/useGuidanceRealtime";
-import { useUnreadChats } from "../hooks/useUnreadChats";
 import { useGuidanceChrome } from "../hooks/useGuidanceChrome";
 import ModuleBottomNav from "../../../components/BottomNavigation/ModuleBottomNav";
 import { GUIDANCE_LOGO_SRC } from "../../../lost-found/components/lfBrand";
@@ -20,7 +19,6 @@ const TABS = [
     { to: "/guidance/counselors", label: "Counselors", icon: Users },
     { to: "/guidance/book", label: "Book", icon: CalendarPlus },
     { to: "/guidance/appointments", label: "Appointments", icon: CalendarCheck2 },
-    { to: "/guidance/chat", label: "Messages", icon: MessageCircle },
 ];
 
 // Student Guidance shell. Uses the shared <ModuleBottomNav>, the same bar the
@@ -29,14 +27,10 @@ const TABS = [
 // previously had its own full-width fixed bottom bar, which put Guidance at
 // its own third style - one system, so one bar.
 export default function GuidanceStudentLayout() {
-    // Real-time channel: live chat toasts + unread marks.
+    // Keep appointment and counseling alerts live.
     useGuidanceRealtime();
 
-    // Unread chat count for the Messages tab.
-    const unreadChats = useUnreadChats("student");
-
-    // Measure the shared nav's two bars so the chat thread sits flush above
-    // whatever is showing, with no dead space.
+    // Measure the shared navigation to keep page content clear of it.
     const rootRef = useRef(null);
     const navWrapRef = useRef(null);
 
@@ -52,8 +46,6 @@ export default function GuidanceStudentLayout() {
         path: tab.to,
         icon: tab.icon,
         end: tab.end,
-        // Unread mark on the Messages icon.
-        badge: tab.to === "/guidance/chat" ? unreadChats : 0,
     }));
 
     return (
@@ -76,7 +68,7 @@ export default function GuidanceStudentLayout() {
             </div>
 
             <div className="relative z-10 mx-auto w-full max-w-xl">
-                <Outlet />
+                <RescheduleProvider audience="student"><Outlet /></RescheduleProvider>
             </div>
 
             {/* The two bars ModuleBottomNav renders are found by aria-label

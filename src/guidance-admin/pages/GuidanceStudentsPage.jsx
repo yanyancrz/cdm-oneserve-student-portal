@@ -205,7 +205,6 @@ export default function GuidanceStudentsPage() {
                                         <th className="px-4 py-3 font-medium">Role</th>
                                         <th className="px-4 py-3 font-medium">Program / Year</th>
                                         <th className="px-4 py-3 font-medium">Appts</th>
-                                        <th className="px-4 py-3 font-medium">Chat</th>
                                         <th className="px-4 py-3 font-medium">Last login</th>
                                         <th className="px-4 py-3 font-medium">Status</th>
                                     </tr>
@@ -258,9 +257,6 @@ export default function GuidanceStudentsPage() {
                                                 {formatNumber(s.appointments)}
                                             </td>
 
-                                            <td className={`${cell} text-gray-600`}>
-                                                {formatNumber(s.chatConversations)}
-                                            </td>
 
                                             <td className={`${cell} whitespace-nowrap text-gray-500`}>
                                                 {formatDateTime(s.lastLoginAt)}

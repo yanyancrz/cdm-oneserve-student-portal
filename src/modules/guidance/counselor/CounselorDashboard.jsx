@@ -1,3 +1,5 @@
+import { useAppointmentUpdates } from "../hooks/useAppointmentUpdates";
+import { useRescheduling } from "../components/RescheduleContext";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -20,6 +22,7 @@ const byWhen = (a, b) => a.date.localeCompare(b.date) || slotToMinutes(a.timeSlo
 
 export default function CounselorDashboard() {
     const { me } = useGuidanceMe();
+    const { proposals } = useRescheduling();
     const p = me.counselorProfile;
 
     const [stats, setStats] = useState(null);
@@ -129,6 +132,8 @@ export default function CounselorDashboard() {
         };
     }, [appts]);
 
+    useAppointmentUpdates(load);
+
     // Photo for an appointment: direct from the payload
     // (if the backend ever includes it) or fetched by email.
     const pictureFor = (a) =>
@@ -151,8 +156,9 @@ export default function CounselorDashboard() {
     };
 
     const today = todayISO();
-    const pending = appts.filter((a) => a.status === "Pending" && a.date >= today).sort(byWhen).slice(0, 5);
-    const todays = appts.filter((a) => a.status === "Confirmed" && a.date === today).sort(byWhen);
+    const negotiating = new Set(proposals.filter((p) => p.status === "Pending").map((p) => p.appointmentId));
+    const pending = appts.filter((a) => a.status === "Pending" && a.date >= today && !negotiating.has(a.id)).sort(byWhen).slice(0, 5);
+    const todays = appts.filter((a) => a.status === "Confirmed" && a.date === today && !negotiating.has(a.id)).sort(byWhen);
 
     // Appointments grouped per day for the calendar dots.
     const byDate = {};

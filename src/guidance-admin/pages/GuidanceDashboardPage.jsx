@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import {
     CalendarCheck2,
     GraduationCap,
-    MessageSquareMore,
     NotebookPen,
     UserRoundX,
     UsersRound,
@@ -26,7 +25,6 @@ const ACTIVITY_ICONS = {
     appointment: CalendarCheck2,
     session: NotebookPen,
     account: UsersRound,
-    chat: MessageSquareMore,
     "follow-up": NotebookPen,
 };
 
@@ -111,7 +109,7 @@ export default function GuidanceDashboardPage() {
                 eyebrow="Guidance"
                 icon={CalendarCheck2}
                 title="Dashboard"
-                description="Appointments, sessions, counseling accounts and chat activity across the Guidance module."
+                description="Appointments, sessions and counseling accounts across the Guidance module."
                 loading={loading && !overview}
                 actions={
                     <button
@@ -169,16 +167,6 @@ export default function GuidanceDashboardPage() {
                 />
                 <KpiCard
                     loading={loading && !overview}
-                    icon={MessageSquareMore}
-                    label="Chat messages"
-                    value={formatNumber(overview?.chat.messages)}
-                    sub={`${overview?.chat.messagesLast24Hours ?? 0} in the last 24h · ${
-                        overview?.chat.unreadMessages ?? 0
-                    } unread`}
-                    tone="blue"
-                />
-                <KpiCard
-                    loading={loading && !overview}
                     icon={UserRoundX}
                     label="Never signed in"
                     value={formatNumber(neverSignedIn)}
@@ -209,7 +197,7 @@ export default function GuidanceDashboardPage() {
                                 Recent activity
                             </h2>
                             <p className="mt-0.5 text-xs text-gray-400">
-                                Latest sign-ins, bookings, sessions and chat
+                                Latest sign-ins, bookings and sessions
                             </p>
                         </div>
                     </div>

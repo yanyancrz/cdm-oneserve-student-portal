@@ -291,24 +291,12 @@ export const guidanceApi = {
     respondFollowUp: (id, status) =>
         guidanceFetch(`/student/follow-ups/${id}`, { method: "PATCH", body: { status } }),
 
-    // ---- chat (audience = "student" | "counselor") ----
-    getConversations: (audience, signal) =>
-        guidanceFetch(`/${audience}/conversations`, { signal }).then((d) => d.conversations || []),
-
-    startConversation: (counselorId) =>
-        guidanceFetch("/student/conversations", { method: "POST", body: { counselorId } }),
-
-    getMessages: (audience, conversationId, signal) =>
-        guidanceFetch(`/${audience}/conversations/${conversationId}/messages`, { signal }).then((d) => d.messages || []),
-
-    sendMessage: (audience, conversationId, body, clientId) =>
-        guidanceFetch(`/${audience}/conversations/${conversationId}/messages`, {
-            method: "POST",
-            body: { body, clientId },
-        }),
-
-    markChatRead: (audience, conversationId) =>
-        guidanceFetch(`/${audience}/conversations/${conversationId}/read`, { method: "POST" }),
+    // Mutual appointment rescheduling (server derives participant and role from JWT).
+    getRescheduleProposals: (signal) => guidanceFetch("/reschedules", { signal }).then((d) => d.proposals || []),
+    getRescheduleRules: (signal) => guidanceFetch("/reschedules/rules", { signal }),
+    getProposalAvailability: (id, date, signal) => guidanceFetch(`/reschedules/${id}/availability?date=${encodeURIComponent(date)}`, { signal }).then((d) => d.data),
+    proposeReschedule: (id, body) => guidanceFetch(`/reschedules/${id}/proposals`, { method: "POST", body }),
+    acceptReschedule: (id, proposalId) => guidanceFetch(`/reschedules/${id}/accept`, { method: "POST", body: { proposalId } }),
 
     // ---- alerts (student, faculty and counselor) ----
     // -> { notifications: [{ id, title, message, type, isRead, createdAt }], unreadCount }

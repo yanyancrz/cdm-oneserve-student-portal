@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { CalendarClock, CalendarX2, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Clock3, X, ArrowUpDown } from "lucide-react";
+import { CalendarX2, Check, CheckCircle2, ChevronDown, ChevronLeft, ChevronRight, Clock3, X, ArrowUpDown } from "lucide-react";
 
 import StatusBadge from "../components/StatusBadge";
 import RoleBadge from "../components/RoleBadge";
@@ -9,8 +9,10 @@ import { Avatar, DateBadge, FilterChips, SearchBar } from "../components/Guidanc
 import { guidanceApi } from "../services/guidanceApi";
 import { personDetails } from "../utils/people";
 import { arrivalWindow, formatYMD, slotToMinutes } from "../utils/dateTime";
-import RescheduleSheet from "./RescheduleSheet";
-import SessionRecordSheet from "./SessionRecordSheet";
+import RescheduleActions from "../components/RescheduleActions";
+import { APPOINTMENTS_UPDATED, useRescheduling } from "../components/RescheduleContext";
+import { useAppointmentUpdates } from "../hooks/useAppointmentUpdates";
+import { useNavigate } from "react-router-dom";
 import FollowUpSheet from "./FollowUpSheet";
 
 const FILTERS = ["All", "Pending", "Confirmed", "Arrived", "NoShow", "Completed", "Cancelled", "Rejected", "Expired"];
@@ -25,8 +27,8 @@ export default function CounselorAppointmentsPage() {
     const [filter, setFilter] = useState("All");
     const [search, setSearch] = useState("");
     const [busy, setBusy] = useState(null);
-    const [resched, setResched] = useState(null);
-    const [recordFor, setRecordFor] = useState(null);
+    const { proposals } = useRescheduling();
+    const navigate = useNavigate();
     const [followUpFor, setFollowUpFor] = useState(null);
     const [open, setOpen] = useState({}); // which person cards are expanded
     const [sortDesc, setSortDesc] = useState({}); // per-card sort direction
@@ -51,6 +53,8 @@ export default function CounselorAppointmentsPage() {
         return () => c.abort();
     }, [load]);
 
+    useAppointmentUpdates(load);
+
     const act = async (id, status, confirmText) => {
         if (confirmText && !window.confirm(confirmText)) return;
         setBusy(id);
@@ -58,6 +62,7 @@ export default function CounselorAppointmentsPage() {
             const r = await guidanceApi.updateAppointmentStatus(id, status);
             toast.success(r.message || "Updated.");
             setItems((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
+            window.dispatchEvent(new Event(APPOINTMENTS_UPDATED));
         } catch (e) {
             toast.error(e.message || "Could not update the appointment.");
             load();
@@ -184,6 +189,7 @@ export default function CounselorAppointmentsPage() {
                                         <>
                                             {apptItems.map((a) => {
                                     const isBusy = busy === a.id;
+                                    const negotiating = proposals.some((p) => p.appointmentId === a.id && p.status === "Pending");
                                     const active = a.status === "Pending" || a.status === "Confirmed";
 
                                     return (
@@ -218,13 +224,9 @@ export default function CounselorAppointmentsPage() {
 
                         {a.status === "Pending" && (
                             <div className="mt-3 flex gap-2">
-                                <button type="button" disabled={isBusy} onClick={() => act(a.id, "Confirmed")}
+                                <button type="button" disabled={isBusy || negotiating} onClick={() => act(a.id, "Confirmed")}
                                     className={`${btn} bg-[#106A2E] text-white shadow-sm`}>
                                     <Check size={14} aria-hidden="true" /> {isBusy ? "…" : "Accept"}
-                                </button>
-                                <button type="button" disabled={isBusy} onClick={() => setResched(a)}
-                                    className={`${btn} border border-slate-200 text-slate-700`}>
-                                    <CalendarClock size={14} aria-hidden="true" /> Reschedule
                                 </button>
                                 <button type="button" disabled={isBusy} onClick={() => act(a.id, "Rejected", "Decline this request?")}
                                     className={`${btn} border border-red-200 bg-red-50 text-red-700`}>
@@ -233,7 +235,7 @@ export default function CounselorAppointmentsPage() {
                             </div>
                         )}
 
-                        {a.status === "Confirmed" && (
+                        {a.status === "Confirmed" && !negotiating && (
                             <ConfirmedArrivalBox
                                 appointment={a}
                                 isBusy={isBusy}
@@ -248,17 +250,13 @@ export default function CounselorAppointmentsPage() {
                                     className={`${btn} bg-sky-600 text-white shadow-sm`}>
                                     <CheckCircle2 size={14} aria-hidden="true" /> Done
                                 </button>
-                                <button type="button" disabled={isBusy} onClick={() => setResched(a)}
-                                    className={`${btn} border border-slate-200 text-slate-700`}>
-                                    <CalendarClock size={14} aria-hidden="true" /> Reschedule
-                                </button>
                             </div>
                         )}
                             {a.status === "Completed" && (
                                 <div className="mt-3 flex gap-2">
-                                    <button type="button" onClick={() => setRecordFor(a)}
+                                    <button type="button" onClick={() => navigate("/guidance/counselor/narrative-reports")}
                                         className={`${btn} bg-[#106A2E] text-white shadow-sm`}>
-                                        Session notes
+                                        Narrative Report
                                     </button>
                                     <button type="button" onClick={() => setFollowUpFor(a)}
                                         className={`${btn} border border-slate-200 text-slate-700`}>
@@ -266,6 +264,7 @@ export default function CounselorAppointmentsPage() {
                                     </button>
                                 </div>
                             )}
+                        <RescheduleActions appointment={a} />
                                     </article>
                                     );
                                 })}
@@ -335,29 +334,6 @@ export default function CounselorAppointmentsPage() {
                         </button>
                     </div>
                 </div>
-            )}
-
-            {resched && (
-                <RescheduleSheet
-                    appointment={resched}
-                    onClose={() => setResched(null)}
-                    onDone={() => {
-                        setResched(null);
-                        toast.success("Appointment rescheduled.");
-                        load();
-                    }}
-                />
-            )}
-
-            {recordFor && (
-                <SessionRecordSheet
-                    appointment={recordFor}
-                    onClose={() => setRecordFor(null)}
-                    onDone={(message) => {
-                        setRecordFor(null);
-                        toast.success(message || "Session record saved.");
-                    }}
-                />
             )}
 
             {followUpFor && (

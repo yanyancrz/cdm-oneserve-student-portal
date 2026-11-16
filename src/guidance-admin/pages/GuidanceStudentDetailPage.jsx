@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, CalendarCheck2, FileText, GraduationCap, Mail, MessageSquareMore, Phone } from "lucide-react";
+import { ArrowLeft, CalendarCheck2, FileText, GraduationCap, Mail, Phone } from "lucide-react";
 
 import KpiCard from "../components/dashboard/KpiCard";
 import { ErrorMessage, PageHeader, StatusBadge } from "../components/common";
@@ -130,17 +130,11 @@ export default function GuidanceStudentDetailPage() {
                 </section>
 
                 <div className="space-y-4 lg:col-span-2">
-                    <div className="grid gap-4 sm:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2">
                         <KpiCard
                             icon={CalendarCheck2}
                             label="Appointments"
                             value={formatNumber(student.appointments)}
-                        />
-                        <KpiCard
-                            icon={MessageSquareMore}
-                            label="Chat conversations"
-                            value={formatNumber(student.chatConversations)}
-                            tone="blue"
                         />
                         <KpiCard
                             icon={GraduationCap}

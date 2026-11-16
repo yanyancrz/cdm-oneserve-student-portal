@@ -1,29 +1,8 @@
 import { useLayoutEffect } from "react";
 
 // =====================================================
-// Measuring the Guidance chrome so full-height pages (the chat thread)
-// can sit exactly on top of whatever navigation is showing, with no
-// dead space.
-//
-// The shared <ModuleBottomNav> renders TWO bars from one component: a
-// fixed top bar on desktop (md:block, hidden below) and a floating
-// bottom pill on mobile (md:hidden, visible below). Which one is
-// showing is decided by the breakpoint, so the heights this layout
-// needs are the heights of whichever is actually visible:
-//
-//   --guidance-nav-h     bottom pill height on mobile, 0 on desktop
-//   --guidance-top-h     top bar height on desktop, 0 on mobile
-//   --guidance-header-h  top-h + the page header, i.e. everything above
-//                        the chat thread - subtracted from 100dvh by the
-//                        thread so its composer ends at the right edge.
-//
-// Measured live (ResizeObserver) rather than hard-coded, because the
-// pill's height includes padding and the safe-area, and the header's
-// height includes its own padding - guessing them wrong leaves a gap
-// or, worse, cuts the composer off. The old nav was a fixed bar at
-// bottom:0, so offsetHeight was exact; the new pill sits at bottom-3,
-// so the space it really occupies is (viewport bottom - its top edge),
-// which is what innerHeight - rect.top gives.
+// Measure the visible navigation and header so Guidance pages have
+// the right padding on both mobile and desktop.
 // =====================================================
 export function useGuidanceChrome({ rootRef, navWrapRef, headerRef, brandSubtitle }) {
     useLayoutEffect(() => {

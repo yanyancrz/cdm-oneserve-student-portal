@@ -1,4 +1,4 @@
-import { Route } from "react-router-dom";
+import { Navigate, Route } from "react-router-dom";
 
 import PWAInstallGuard from "../../../components/PWAInstallGuard/PWAInstallGuard";
 import DeviceRestriction from "../../../components/DeviceRestriction/DeviceRestriction";
@@ -9,14 +9,11 @@ import GuidanceStudentHome from "../student/GuidanceStudentHome";
 import CounselorsPage from "../student/CounselorsPage";
 import BookAppointmentPage from "../student/BookAppointmentPage";
 import MyAppointmentsPage from "../student/MyAppointmentsPage";
-import ChatListPage from "../chat/ChatListPage";
-import ChatThreadPage from "../chat/ChatThreadPage";
 import CounselorLayout from "../counselor/CounselorLayout";
 import CounselorDashboard from "../counselor/CounselorDashboard";
 import CounselorAppointmentsPage from "../counselor/CounselorAppointmentsPage";
 import CounselorProfilePage from "../counselor/CounselorProfilePage";
 import ManageAvailabilityPage from "../counselor/ManageAvailabilityPage";
-import RecordsPage from "../counselor/RecordsPage";
 import ReportsPage from "../counselor/ReportsPage";
 import NarrativeReportsPage from "../counselor/NarrativeReportsPage";
 
@@ -31,8 +28,7 @@ export const guidanceStudentRoutes = (
             <Route path="counselors" element={<CounselorsPage />} />
             <Route path="book" element={<BookAppointmentPage />} />
             <Route path="appointments" element={<MyAppointmentsPage />} />
-            <Route path="chat" element={<ChatListPage audience="student" accent="pink" />} />
-            <Route path="chat/:conversationId" element={<ChatThreadPage audience="student" />} />
+            <Route path="chat/*" element={<Navigate to="/guidance" replace />} />
         </Route>
     </Route>
 );
@@ -53,12 +49,11 @@ export const guidanceCounselorRoutes = (
             <Route index element={<CounselorDashboard />} />
             <Route path="appointments" element={<CounselorAppointmentsPage />} />
             <Route path="availability" element={<ManageAvailabilityPage />} />
-            <Route path="records" element={<RecordsPage />} />
+            <Route path="records" element={<Navigate to="/guidance/counselor/narrative-reports" replace />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="narrative-reports" element={<NarrativeReportsPage />} />
             <Route path="profile" element={<CounselorProfilePage />} />
-            <Route path="chat" element={<ChatListPage audience="counselor" />} />
-            <Route path="chat/:conversationId" element={<ChatThreadPage audience="counselor" />} />
+            <Route path="chat/*" element={<Navigate to="/guidance/counselor" replace />} />
         </Route>
     </Route>
 );

@@ -1,3 +1,6 @@
+import RescheduleActions from "../components/RescheduleActions";
+import { APPOINTMENTS_UPDATED, useRescheduling } from "../components/RescheduleContext";
+import { useAppointmentUpdates } from "../hooks/useAppointmentUpdates";
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, CalendarClock, CalendarX2, ChevronDown, ChevronUp, Clock3 } from "lucide-react";
@@ -19,6 +22,7 @@ const byWhen = (a, b) => a.date.localeCompare(b.date) || slotToMinutes(a.timeSlo
 
 export default function MyAppointmentsPage() {
     const { me } = useGuidanceMe();
+    const { proposals } = useRescheduling();
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
@@ -58,12 +62,15 @@ export default function MyAppointmentsPage() {
         return () => c.abort();
     }, [load]);
 
+    useAppointmentUpdates(load);
+
     const cancel = async (id) => {
         if (!window.confirm("Cancel this appointment? This frees the time slot for other students.")) return;
         setCancelling(id);
         try {
             await guidanceApi.cancelAppointment(id);
             setItems((prev) => prev.map((a) => (a.id === id ? { ...a, status: "Cancelled" } : a)));
+            window.dispatchEvent(new Event(APPOINTMENTS_UPDATED));
             toast.success("Appointment cancelled.");
         } catch (e) {
             toast.error(e.message || "Could not cancel.");
@@ -100,6 +107,7 @@ export default function MyAppointmentsPage() {
     }, {});
 
     const card = (a) => {
+        const negotiating = proposals.some((p) => p.appointmentId === a.id && p.status === "Pending");
         const changes = a.reschedules || [];
         const sched = openSched === a.id;
         const canHide = ["Cancelled", "Completed", "Expired", "Rejected"].includes(a.status);
@@ -143,7 +151,7 @@ export default function MyAppointmentsPage() {
 
                 {/* Arrive-on-time reminder for today's confirmed sessions (the
                     server also sends a push 1 hour before - this is the in-app backup). */}
-                {a.status === "Confirmed" && a.date === today && (
+                {a.status === "Confirmed" && a.date === today && !negotiating && (
                     <p className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] font-medium leading-5 text-amber-800">
                         <Clock3 size={14} aria-hidden="true" className="mt-0.5 shrink-0" />
                         Please arrive on time - your {a.timeSlot} session is today. Each session is 30 minutes.
@@ -207,6 +215,7 @@ export default function MyAppointmentsPage() {
                         )}
                     </div>
                 )}
+                <RescheduleActions appointment={a} />
             </article>
         );
     };

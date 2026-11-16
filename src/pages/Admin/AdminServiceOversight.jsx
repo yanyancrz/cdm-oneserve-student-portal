@@ -28,14 +28,14 @@ const configByModule = {
     },
     guidance: {
         title: "Guidance monitoring", endpoint: "guidance", dataKey: "guidance",
-        description: "Service statistics only. Counseling details, narrative contents and private chat messages are not shown.",
-        note: "Aggregate monitoring only. Student counseling histories, narrative text, private notes and chat contents remain private to authorized Guidance staff.",
+        description: "Service statistics only. Counseling details, narrative contents and private notes are not shown.",
+        note: "Aggregate monitoring only. Student counseling histories, narrative text and private notes remain private to authorized Guidance staff.",
         cards: (data, view) => {
             const all = {
                 overview: [["Counselors", data.totalCounselors, Users], ["Active counselors", data.activeCounselors, Users], ["Appointments", data.totalAppointments, ClipboardList], ["Pending appointments", data.pendingAppointments, Activity], ["Completed appointments", data.completedAppointments, ClipboardList]],
                 appointments: Object.entries(data.appointmentStatuses || {}).map(([status, count]) => [status, count, ClipboardList]),
                 counselors: [["Total counselors", data.totalCounselors, Users], ["Active counselors", data.activeCounselors, Users]],
-                systems: [["Chat conversations", data.chatConversations, Activity], ["Chat messages · week", data.chatMessagesThisWeek, Activity], ["Narrative reports", data.narrativeReports, ShieldCheck], ["Finalized reports", data.finalizedNarrativeReports, ShieldCheck]],
+                systems: [["Narrative reports", data.narrativeReports, ShieldCheck], ["Finalized reports", data.finalizedNarrativeReports, ShieldCheck]],
             };
             return all[view] || all.overview;
         },
@@ -61,7 +61,7 @@ const configByModule = {
 
 const featureLabels = {
     library: { overview: "Overview", inventory: "Inventory", circulation: "Circulation", reservations: "Reservations", activity: "Recent activity" },
-    guidance: { overview: "Overview", appointments: "Appointments", counselors: "Counselor activity", systems: "Chat & report statistics" },
+    guidance: { overview: "Overview", appointments: "Appointments", counselors: "Counselor activity", systems: "Report statistics" },
     "lost-found": { overview: "Overview", reports: "Reports", claims: "Claims", pickups: "Pickups", activity: "Recent activity" },
 };
 

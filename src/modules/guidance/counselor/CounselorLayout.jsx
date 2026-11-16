@@ -1,14 +1,13 @@
+import RescheduleProvider from "../components/RescheduleProvider";
 import { useRef, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import {
     Bell,
     CalendarCheck2,
     ChevronRight,
-    ClipboardList,
     FileText,
     HeartHandshake,
     LayoutDashboard,
-    MessageCircle,
 } from "lucide-react";
 
 import { useGuidanceMe } from "../components/GuidanceGate";
@@ -17,19 +16,16 @@ import { API_URL } from "../../../config/api";
 import { signOut } from "../utils/session";
 import { ACCENTS } from "../components/GuidanceUi";
 import { useGuidanceRealtime } from "../hooks/useGuidanceRealtime";
-import { useUnreadChats } from "../hooks/useUnreadChats";
 import { useGuidanceChrome } from "../hooks/useGuidanceChrome";
 import ModuleBottomNav from "../../../components/BottomNavigation/ModuleBottomNav";
 
-// Dashboard, Appointments, Messages, plus Alerts (a sheet, not a page).
+// Dashboard, Appointments, Narrative Report, plus Alerts (a sheet).
 // Profile lives on the header identity (tap your name), so the bar keeps four
 // tabs - no "More" overflow, and the Alerts unread badge stays visible.
 const TABS = [
     { to: "/guidance/counselor", label: "Dashboard", icon: LayoutDashboard, end: true },
     { to: "/guidance/counselor/appointments", label: "Appointments", icon: CalendarCheck2 },
-    { to: "/guidance/counselor/records", label: "Records", icon: ClipboardList },
-    { to: "/guidance/counselor/narrative-reports", label: "Reports", icon: FileText },
-    { to: "/guidance/counselor/chat", label: "Messages", icon: MessageCircle },
+    { to: "/guidance/counselor/narrative-reports", label: "Narrative Report", icon: FileText },
 ];
 
 // Where a tapped alert goes: new / cancelled requests are all handled in Appointments.
@@ -47,8 +43,7 @@ export default function CounselorLayout() {
     const { me } = useGuidanceMe();
     const navigate = useNavigate();
 
-    // Measure the header + the shared nav's two bars so the chat thread sits
-    // flush against whichever nav is showing.
+    // Measure the header and navigation to keep page content clear of them.
     const rootRef = useRef(null);
     const headerRef = useRef(null);
     const navWrapRef = useRef(null);
@@ -60,11 +55,10 @@ export default function CounselorLayout() {
         brandSubtitle: "Counselor",
     });
 
-    // Real-time channel (chat + notification pushes).
+    // Keep appointment and counseling alerts live.
     useGuidanceRealtime();
 
     const alerts = useGuidanceNotifications();
-    const unreadChats = useUnreadChats("counselor");
 
     const [alertsOpen, setAlertsOpen] = useState(false);
 
@@ -83,7 +77,6 @@ export default function CounselorLayout() {
             path: tab.to,
             icon: tab.icon,
             end: tab.end,
-            badge: tab.to === "/guidance/counselor/chat" ? unreadChats : 0,
         })),
         // ALERTS opens a sheet in place, it does not navigate. It stays in the
         // bar (rather than behind "More") so a new request is visible at a
@@ -148,7 +141,7 @@ export default function CounselorLayout() {
                     </button>
                 </header>
 
-                <Outlet />
+                <RescheduleProvider audience="counselor"><Outlet /></RescheduleProvider>
             </div>
 
             {/* The two bars ModuleBottomNav renders are found by aria-label

@@ -24,7 +24,7 @@ import { signOut } from "../utils/session";
 // Pages that used to live in the "More" menu.
 const QUICK_LINKS = [
     { to: "/guidance/counselor/availability", label: "Availability", icon: CalendarClock, note: "Your weekly schedule" },
-    { to: "/guidance/counselor/records", label: "Records", icon: FolderOpen, note: "Session notes & summaries" },
+    { to: "/guidance/counselor/narrative-reports", label: "Narrative Report", icon: FolderOpen, note: "Counseling documentation & handwritten reports" },
     { to: "/guidance/counselor/reports", label: "Reports", icon: BarChart3, note: "Analytics & insights" },
 ];
 

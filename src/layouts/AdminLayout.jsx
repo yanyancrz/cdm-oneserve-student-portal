@@ -43,7 +43,7 @@ export default function AdminLayout() {
         },
         {
             id: "guidance", label: "Guidance", icon: <Compass size={16} />, path: "/admin/services/guidance",
-            features: [["Overview", "overview"], ["Appointments", "appointments"], ["Counselor activity", "counselors"], ["Chat & report statistics", "systems"]],
+            features: [["Overview", "overview"], ["Appointments", "appointments"], ["Counselor activity", "counselors"], ["Report statistics", "systems"]],
         },
         {
             id: "lost-found", label: "Lost & Found", icon: <SearchCheck size={16} />, path: "/admin/services/lost-found",

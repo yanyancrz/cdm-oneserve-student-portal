@@ -1,3 +1,4 @@
+import HandwrittenNarrative from "../components/HandwrittenNarrative";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     ArrowLeft,
@@ -350,7 +351,7 @@ export default function NarrativeReportsPage() {
                         <p className="text-xs text-slate-500">
                             {editingId
                                 ? "Only a draft can be edited."
-                                : "Saved as a draft first, then finalized."}
+                                : "Save a draft first, then upload handwritten pages and export PDF or Word from the report."}
                         </p>
                     </div>
                 </div>
@@ -462,7 +463,7 @@ export default function NarrativeReportsPage() {
                     </label>
 
                     {[
-                        ["sessionSummary", "Session summary"],
+                        ["sessionSummary", "Narrative report"],
                         ["sessionObjectives", "Session objectives"],
                         ["observations", "Observations"],
                         ["interventions", "Interventions / actions taken"],
@@ -550,6 +551,7 @@ export default function NarrativeReportsPage() {
                 <div className="flex items-center gap-2">
                     <button
                         type="button"
+                        disabled={!!busy}
                         onClick={() => {
                             setView("list");
                             setSelected(null);
@@ -613,7 +615,7 @@ export default function NarrativeReportsPage() {
                 </section>
 
                 {[
-                    ["Session summary", selected.sessionSummary],
+                    ["Narrative report", selected.sessionSummary],
                     ["Session objectives", selected.sessionObjectives],
                     ["Observations", selected.observations],
                     ["Interventions / actions taken", selected.interventions],
@@ -627,6 +629,12 @@ export default function NarrativeReportsPage() {
                         </p>
                     </section>
                 ))}
+
+                <HandwrittenNarrative key={selected.id} disabled={!!busy && busy !== "handwritten"} onBusyChange={(value) => setBusy(value ? "handwritten" : "")} onSave={isDraft ? async (file) => {
+                    await guidanceApi.uploadNarrativeAttachment(selected.id, file);
+                    setSelected(await guidanceApi.getNarrativeReport(selected.id));
+                    refresh();
+                } : undefined} />
 
                 <section className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4 shadow-sm">
                     <SectionTitle>
@@ -649,7 +657,7 @@ export default function NarrativeReportsPage() {
                                     <input
                                         type="file"
                                         className="hidden"
-                                        disabled={busy === "attachment"}
+                                        disabled={!!busy}
                                         onChange={uploadAttachment}
                                         accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
                                     />
@@ -674,7 +682,7 @@ export default function NarrativeReportsPage() {
                                     <button
                                         type="button"
                                         onClick={() => downloadAttachment(a)}
-                                        disabled={busy === `download-${a.id}`}
+                                        disabled={!!busy}
                                         className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"
                                         aria-label={`Download ${a.fileName}`}
                                     >
@@ -684,7 +692,7 @@ export default function NarrativeReportsPage() {
                                         <button
                                             type="button"
                                             onClick={() => removeAttachment(a)}
-                                            disabled={busy === `remove-${a.id}`}
+                                            disabled={!!busy}
                                             className="grid h-8 w-8 place-items-center rounded-lg text-rose-500 hover:bg-rose-50"
                                             aria-label={`Remove ${a.fileName}`}
                                         >
@@ -728,6 +736,7 @@ export default function NarrativeReportsPage() {
                         <>
                             <button
                                 type="button"
+                                disabled={!!busy}
                                 onClick={() => openEdit(selected.id)}
                                 className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600"
                             >
@@ -736,7 +745,7 @@ export default function NarrativeReportsPage() {
                             <button
                                 type="button"
                                 onClick={() => runAction("finalizeNarrativeReport", "finalize")}
-                                disabled={busy === "finalizeNarrativeReport"}
+                                disabled={!!busy}
                                 className="flex-1 rounded-xl bg-[#106A2E] px-3 py-2.5 text-xs font-semibold text-white disabled:opacity-60"
                             >
                                 {busy === "finalizeNarrativeReport" ? "Finalizing…" : "Finalize"}
@@ -744,6 +753,7 @@ export default function NarrativeReportsPage() {
                             <button
                                 type="button"
                                 onClick={removeDraft}
+                                disabled={!!busy}
                                 className="rounded-xl border border-rose-200 bg-white px-3 py-2.5 text-xs font-semibold text-rose-600"
                             >
                                 Delete
@@ -755,7 +765,7 @@ export default function NarrativeReportsPage() {
                         <button
                             type="button"
                             onClick={() => runAction("archiveNarrativeReport", "archive")}
-                            disabled={busy === "archiveNarrativeReport"}
+                            disabled={!!busy}
                             className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600 disabled:opacity-60"
                         >
                             {busy === "archiveNarrativeReport" ? "Archiving…" : "Archive"}
@@ -865,7 +875,7 @@ export default function NarrativeReportsPage() {
                 <Empty
                     icon={SearchX}
                     title="No reports found"
-                    note="Create your first narrative report for a student or faculty member."
+                    note="Create a narrative report for a student or faculty member. Save a draft to upload handwritten pages and export them as PDF or Word."
                 />
             )}
 

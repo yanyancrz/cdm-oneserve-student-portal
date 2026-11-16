@@ -8,7 +8,8 @@ import MonthCalendar from "../components/MonthCalendar";
 import { guidanceApi } from "../services/guidanceApi";
 import { todayISO } from "../utils/dateTime";
 import { getPHHolidays } from "../utils/phHolidays";
-import RescheduleSheet from "./RescheduleSheet";
+import { useRescheduling } from "../components/RescheduleContext";
+import { useAppointmentUpdates } from "../hooks/useAppointmentUpdates";
 
 const DAYS = [
     { idx: 1, label: "Monday" },
@@ -56,7 +57,7 @@ export default function ManageAvailabilityPage() {
     const [affected, setAffected] = useState(null); // appointments on the picked date
     const [checkingDay, setCheckingDay] = useState(false);
     const [savingDayOff, setSavingDayOff] = useState(false);
-    const [resched, setResched] = useState(null);
+    const { open: openReschedule } = useRescheduling();
 
     // Default office schedule: Mon-Fri, 8:00 AM - 12:00 NN and
     // 1:00 PM - 5:00 PM. Lunch (12-1) is left with NO block, so it is
@@ -99,6 +100,17 @@ export default function ManageAvailabilityPage() {
             setLoading(false);
         }
     }, []);
+
+    const refreshAppointments = useCallback(async (signal) => {
+        await load(signal);
+        if (dayOffDate) {
+            try {
+                const list = await guidanceApi.getCounselorAppointments({ date: dayOffDate }, signal);
+                setAffected(list.filter((a) => ["Pending", "Confirmed", "Arrived"].includes(a.status)));
+            } catch (e) { if (e.name !== "AbortError") setError(e.message); }
+        }
+    }, [load, dayOffDate]);
+    useAppointmentUpdates(refreshAppointments);
 
     useEffect(() => {
         const c = new AbortController();
@@ -430,7 +442,7 @@ export default function ManageAvailabilityPage() {
                                             </div>
                                             <button
                                                 type="button"
-                                                onClick={() => setResched(a)}
+                                                onClick={() => openReschedule(a)}
                                                 className="shrink-0 rounded-lg border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-700 transition active:scale-95"
                                             >
                                                 Reschedule
@@ -474,18 +486,6 @@ export default function ManageAvailabilityPage() {
                 )}
             </section>
 
-            {resched && (
-                <RescheduleSheet
-                    appointment={resched}
-                    onClose={() => setResched(null)}
-                    onDone={() => {
-                        setResched(null);
-                        toast.success("Appointment rescheduled.");
-                        if (dayOffDate) checkDay();
-                        load();
-                    }}
-                />
-            )}
         </main>
     );
 }

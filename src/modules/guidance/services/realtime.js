@@ -6,10 +6,8 @@ import { getToken } from "../utils/session";
 // =========================================================
 // GUIDANCE REAL-TIME (SignalR)
 //
-// The API pushes two events to every signed-in user:
-//   - "ChatMessage"   -> a new chat message (to user:{id} and
-//                        convo:{id} groups)
-//   - "Notification"  -> a new Guidance alert (to user:{id})
+// The API pushes Guidance appointment and counseling alerts through
+// the "Notification" event to the signed-in user.
 //
 // This module keeps ONE connection for the whole Guidance module,
 // reconnects automatically when it drops, and never throws —
@@ -44,7 +42,6 @@ function build() {
         .configureLogging(LogLevel.Warning)
         .build();
 
-    connection.on("ChatMessage", (payload) => emit("ChatMessage", payload));
     connection.on("Notification", (payload) => emit("Notification", payload));
 
     connection.onclose(() => {
@@ -84,27 +81,13 @@ export async function connectGuidanceHub() {
     return startPromise;
 }
 
-// Subscribe to a hub event ("ChatMessage" | "Notification").
+// Subscribe to Guidance notification events.
 // Returns an unsubscribe function.
 export function onGuidanceEvent(event, handler) {
     if (!handlers.has(event)) handlers.set(event, new Set());
     handlers.get(event).add(handler);
 
     return () => handlers.get(event)?.delete(handler);
-}
-
-// Invoke a hub method (e.g. JoinConversation). Safe to call
-// before the connection is up — it just no-ops.
-export async function invokeGuidanceHub(method, ...args) {
-    try {
-        await connectGuidanceHub();
-
-        if (connection && connection.state === "Connected") {
-            await connection.invoke(method, ...args);
-        }
-    } catch {
-        // Real-time is best-effort; polling still works.
-    }
 }
 
 export function guidanceHubState() {

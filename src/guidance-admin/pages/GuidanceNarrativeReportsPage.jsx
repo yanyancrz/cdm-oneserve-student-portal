@@ -1,5 +1,6 @@
+import HandwrittenNarrative from "../../modules/guidance/components/HandwrittenNarrative";
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
     CalendarDays,
     Download,
@@ -139,7 +140,7 @@ function ReportDetailModal({ report, loading, error, onClose, onExport, onDownlo
                             )}
 
                             {[
-                                ["Session summary", report.sessionSummary],
+                                ["Narrative report", report.sessionSummary],
                                 ["Session objectives", report.sessionObjectives],
                                 ["Observations", report.observations],
                                 ["Interventions / actions taken", report.interventions],
@@ -407,6 +408,11 @@ export default function GuidanceNarrativeReportsPage() {
                     </button>
                 }
             />
+
+            <div className="mb-5 space-y-2">
+            <HandwrittenNarrative onSave={(file) => guidanceHeadService.uploadNarrativeReport(file)} />
+            <p className="text-xs text-gray-500">Saved handwritten documents are stored in the existing <Link to="/admin/guidance/reports" className="font-semibold text-green-700 underline">Reports document repository</Link>.</p>
+            </div>
 
             {(filters.studentId || filters.counselorId) && (
                 <div className="mb-5 flex flex-wrap items-center gap-2 rounded-xl border border-[#106A2E]/20 bg-[#106A2E]/5 px-4 py-3 text-sm text-[#0a2c19]">

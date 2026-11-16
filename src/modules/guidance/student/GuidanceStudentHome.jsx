@@ -1,3 +1,4 @@
+import { APPOINTMENTS_UPDATED } from "../components/RescheduleContext";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -5,7 +6,6 @@ import {
     CalendarPlus,
     ChevronRight,
     HeartHandshake,
-    MessageCircle,
     Users,
 } from "lucide-react";
 
@@ -14,7 +14,6 @@ import RoleBadge from "../components/RoleBadge";
 import StatusBadge from "../components/StatusBadge";
 import { Skeleton } from "../components/GuidanceStates";
 import { Avatar, DateBadge } from "../components/GuidanceUi";
-import { useUnreadChats } from "../hooks/useUnreadChats";
 import { personDetails } from "../utils/people";
 import { guidanceApi } from "../services/guidanceApi";
 import { GUIDANCE_LOGO_SRC } from "../../../lost-found/components/lfBrand";
@@ -32,8 +31,6 @@ const byWhen = (a, b) => a.date.localeCompare(b.date) || slotToMinutes(a.timeSlo
 export default function GuidanceStudentHome() {
     const { me } = useGuidanceMe();
 
-    // Live unread chat count for the Messages card.
-    const unreadChats = useUnreadChats("student");
 
     // The student's next booking. undefined = still loading, null = none.
     const [next, setNext] = useState(undefined);
@@ -41,7 +38,7 @@ export default function GuidanceStudentHome() {
     useEffect(() => {
         const c = new AbortController();
 
-        guidanceApi
+        const refresh = () => guidanceApi
             .getMyAppointments(c.signal)
             .then((items) => {
                 const today = todayISO();
@@ -52,7 +49,9 @@ export default function GuidanceStudentHome() {
                 if (e?.name !== "AbortError") setNext(null);
             });
 
-        return () => c.abort();
+        refresh();
+        window.addEventListener(APPOINTMENTS_UPDATED, refresh);
+        return () => { c.abort(); window.removeEventListener(APPOINTMENTS_UPDATED, refresh); };
     }, []);
 
     const firstName = String(me.fullName || "").split(" ")[0];
@@ -239,31 +238,6 @@ export default function GuidanceStudentHome() {
                             </Link>
                         ))}
 
-                        <Link
-                            to="/guidance/chat"
-                            className="group relative flex items-center gap-3 overflow-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition active:scale-[0.99]"
-                        >
-                            <div className="absolute -right-5 -top-5 h-20 w-20 rounded-full bg-emerald-200/20 opacity-0 blur-2xl transition group-hover:opacity-100" />
-
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-100 bg-emerald-50 text-[#106A2E]">
-                                <MessageCircle size={19} aria-hidden="true" />
-                            </div>
-
-                            <div className="min-w-0 flex-1">
-                                <p className="text-sm font-semibold text-slate-800">Messages</p>
-                                <p className="truncate text-xs text-slate-400">Chat with your counselor</p>
-                            </div>
-
-                            {unreadChats > 0 && (
-                                <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-[#D9578F] px-1.5 text-[10px] font-bold text-white" aria-label={`${unreadChats} unread messages`}>
-                                    {unreadChats > 9 ? "9+" : unreadChats}
-                                </span>
-                            )}
-
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-200 text-slate-400 transition group-hover:text-slate-700">
-                                →
-                            </span>
-                        </Link>
                     </div>
                 </section>
             </main>
