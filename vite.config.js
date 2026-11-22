@@ -19,15 +19,8 @@ export default defineConfig({
             srcDir: "src",
 
             injectManifest: {
-                // Match the old generateSW output: the shell, the hashed
-                // bundles and the two manifest icons, nothing else. The
-                // 5 MB icon is deliberately listed explicitly, not by a
-                // glob, so public/icons/icon-192 copy.png cannot sneak in.
-                // The plugin adds the manifest icons and manifest.webmanifest
-                // itself (additionalManifestEntries), so only the shell and the
-                // hashed bundles are globbed here. The 5 MB logo icon is listed
-                // by the plugin explicitly rather than by a glob, so
-                // public/icons/icon-192 copy.png cannot sneak into the precache.
+                // Precache the shell and bundles. The plugin adds the manifest
+                // and its icons separately.
                 globPatterns: ["**/*.{js,css,html}"],
                 globIgnores: ["sw.js", "workbox-*.js"],
                 // Same limit the old config used, now on the injectManifest side.
