@@ -26,6 +26,15 @@ import { formatYMD } from "../utils/dateTime";
 
 const STATUS_FILTERS = ["All", "Draft", "Finalized", "Archived"];
 
+const NARRATIVE_TEXT_FIELDS = [
+    "sessionSummary", "sessionObjectives", "observations", "interventions",
+    "recommendations", "followUpPlan", "privateNotes",
+];
+
+const isHandwrittenReport = (report) =>
+    !NARRATIVE_TEXT_FIELDS.some((field) => report[field]?.trim()) &&
+    (!!report.attachments?.length || report.events?.some((event) => event.action === "AttachmentAdded"));
+
 const emptyForm = {
     studentId: "",
     sessionDate: new Date().toISOString().slice(0, 10),
@@ -71,6 +80,11 @@ export default function NarrativeReportsPage() {
     const [reloadKey, setReloadKey] = useState(0);
 
     const [selected, setSelected] = useState(null);
+    const [preview, setPreview] = useState(null);
+    const previewUrl = preview?.url;
+    useEffect(() => () => {
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+    }, [previewUrl]);
     const [detailLoading, setDetailLoading] = useState(false);
     const [busy, setBusy] = useState("");
 
@@ -157,10 +171,13 @@ export default function NarrativeReportsPage() {
 
     const openDetail = async (id) => {
         setDetailLoading(true);
+        setPreview(null);
         setError("");
         setView("detail");
         try {
-            setSelected(await guidanceApi.getNarrativeReport(id));
+            const report = await guidanceApi.getNarrativeReport(id);
+            setSelected(report);
+            setReportMode(isHandwrittenReport(report) ? "handwritten" : "typing");
         } catch (e) {
             setError(e.message || "Could not load that report.");
         } finally {
@@ -175,7 +192,7 @@ export default function NarrativeReportsPage() {
         try {
             const report = await guidanceApi.getNarrativeReport(id);
             setEditingId(report.id);
-            setReportMode(!report.attachments?.length && !["sessionSummary", "sessionObjectives", "observations", "interventions", "recommendations", "followUpPlan", "privateNotes"].some((field) => report[field]?.trim()) ? "handwritten" : "typing");
+            setReportMode(isHandwrittenReport(report) ? "handwritten" : "typing");
             setSelected(report);
             setSubjects((prev) => {
                 if (prev.some((s) => s.userId === report.subjectId)) return prev;
@@ -220,6 +237,11 @@ export default function NarrativeReportsPage() {
     const saveDraft = async () => {
         if (!form.studentId) {
             setError("Choose the student or faculty member this report is about.");
+            return;
+        }
+
+        if (reportMode === "handwritten" && !attachmentFile && !selected?.attachments?.length) {
+            setError("Take a photo or attach the handwritten report to save this draft.");
             return;
         }
 
@@ -311,6 +333,7 @@ export default function NarrativeReportsPage() {
         if (!file || !selected) return;
 
         setBusy("attachment");
+        setError("");
         try {
             await guidanceApi.uploadNarrativeAttachment(selected.id, file);
             const fresh = await guidanceApi.getNarrativeReport(selected.id);
@@ -338,9 +361,33 @@ export default function NarrativeReportsPage() {
         }
     };
 
+    const viewAttachment = async (attachment) => {
+        setBusy(`preview-${attachment.id}`);
+        setError("");
+        setPreview(null);
+        try {
+            const { blob, fileName } = await guidanceApi.downloadNarrativeAttachment(
+                selected.id, attachment.id, attachment.fileName
+            );
+            const type = blob.type.split(";")[0];
+            if (type === "image/jpeg" || type === "image/png" || type === "application/pdf") {
+                setPreview({ id: attachment.id, url: URL.createObjectURL(blob), fileName, type });
+            } else if (type === "text/plain") {
+                setPreview({ id: attachment.id, fileName, text: await blob.text() });
+            } else {
+                saveBlob(blob, fileName);
+            }
+        } catch (error) {
+            setError(error.message || "Could not open the attachment.");
+        } finally {
+            setBusy("");
+        }
+    };
+
     const removeAttachment = async (attachment) => {
         if (!window.confirm(`Remove ${attachment.fileName}?`)) return;
         setBusy(`remove-${attachment.id}`);
+        if (preview?.id === attachment.id) setPreview(null);
         try {
             await guidanceApi.deleteNarrativeAttachment(selected.id, attachment.id);
             const fresh = await guidanceApi.getNarrativeReport(selected.id);
@@ -427,9 +474,6 @@ export default function NarrativeReportsPage() {
                             : "You can attach a photo, scan, PDF or Word file with your typed report."}
                         {" "}Files up to 10 MB upload when you save the draft.
                     </p>
-                    {reportMode === "handwritten" && form.sessionSummary.trim() && (
-                        <p className="text-xs text-slate-600">Your typed narrative is kept when you switch formats.</p>
-                    )}
                     <div className="grid gap-2 sm:flex">
                         {[
                             { label: "Choose File", icon: UploadCloud, accept: ".pdf,.doc,.docx,.jpg,.jpeg,.png" },
@@ -657,6 +701,8 @@ export default function NarrativeReportsPage() {
 
         const isDraft = selected.status === "Draft";
         const isFinal = selected.status === "Finalized";
+        const handwritten = reportMode === "handwritten";
+        const attachments = [...(selected.attachments ?? [])].sort((a, b) => a.id - b.id);
 
         return (
             <main className="space-y-4 p-4">
@@ -667,6 +713,7 @@ export default function NarrativeReportsPage() {
                         onClick={() => {
                             setView("list");
                             setSelected(null);
+                            setPreview(null);
                             setError("");
                         }}
                         className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500"
@@ -687,11 +734,13 @@ export default function NarrativeReportsPage() {
 
                 {error && <ErrorBox message={error} />}
 
-                <HandwrittenNarrative key={selected.id} disabled={!!busy && busy !== "handwritten"} onBusyChange={(value) => setBusy(value ? "handwritten" : "")} onSave={isDraft ? async (file) => {
-                    await guidanceApi.uploadNarrativeAttachment(selected.id, file);
-                    setSelected(await guidanceApi.getNarrativeReport(selected.id));
-                    refresh();
-                } : undefined} />
+                {isDraft && !handwritten && (
+                    <HandwrittenNarrative key={selected.id} disabled={!!busy && busy !== "handwritten"} onBusyChange={(value) => setBusy(value ? "handwritten" : "")} onSave={isDraft ? async (file) => {
+                        await guidanceApi.uploadNarrativeAttachment(selected.id, file);
+                        setSelected(await guidanceApi.getNarrativeReport(selected.id));
+                        refresh();
+                    } : undefined} />
+                )}
 
                 <section className="rounded-2xl border border-black/[0.05] bg-white p-4 shadow-sm">
                     <div className="flex items-center gap-3">
@@ -732,7 +781,7 @@ export default function NarrativeReportsPage() {
                     )}
                 </section>
 
-                {[
+                {!handwritten && [
                     ["Narrative report", selected.sessionSummary],
                     ["Session objectives", selected.sessionObjectives],
                     ["Observations", selected.observations],
@@ -748,68 +797,88 @@ export default function NarrativeReportsPage() {
                     </section>
                 ))}
 
-                <section className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4 shadow-sm">
-                    <SectionTitle>
-                        <span className="flex items-center gap-1">
-                            <Lock size={12} /> Private notes
-                        </span>
-                    </SectionTitle>
-                    <p className="mt-1.5 whitespace-pre-wrap text-xs leading-6 text-amber-900">
-                        {detailText(selected.privateNotes)}
-                    </p>
-                </section>
+                {!handwritten && (
+                    <section className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4 shadow-sm">
+                        <SectionTitle>
+                            <span className="flex items-center gap-1">
+                                <Lock size={12} /> Private notes
+                            </span>
+                        </SectionTitle>
+                        <p className="mt-1.5 whitespace-pre-wrap text-xs leading-6 text-amber-900">
+                            {detailText(selected.privateNotes)}
+                        </p>
+                    </section>
+                )}
 
                 <section className="rounded-2xl border border-black/[0.05] bg-white p-4 shadow-sm">
-                    <SectionTitle
-                        right={
-                            isDraft ? (
-                                <label className="inline-flex cursor-pointer items-center gap-1 text-[11px] font-semibold text-[#106A2E]">
-                                    <UploadCloud size={13} />
-                                    {busy === "attachment" ? "Uploading…" : "Attach"}
-                                    <input
-                                        type="file"
-                                        className="hidden"
-                                        disabled={!!busy}
-                                        onChange={uploadAttachment}
-                                        accept=".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png"
-                                    />
+                    <SectionTitle>{handwritten ? "Handwritten uploads" : "Supporting files"}</SectionTitle>
+                    {isDraft && (
+                        <div className="mt-3 flex flex-wrap gap-2">
+                            {[
+                                { label: "Upload File", icon: UploadCloud, accept: ".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png" },
+                                { label: "Take Photo", icon: Camera, accept: "image/jpeg,image/png", capture: "environment" },
+                            ].map(({ label, icon: Icon, accept, capture }) => (
+                                <label key={label}>
+                                    <input type="file" className="peer sr-only" disabled={!!busy}
+                                        accept={accept} capture={capture} onChange={uploadAttachment} />
+                                    <span className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-xs font-semibold text-emerald-900 hover:bg-emerald-100 peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-600 peer-disabled:opacity-50">
+                                        <Icon size={15} aria-hidden="true" /> {label}
+                                    </span>
                                 </label>
-                            ) : null
-                        }
-                    >
-                        Supporting files
-                    </SectionTitle>
-
-                    {selected.attachments?.length ? (
+                            ))}
+                            {busy === "attachment" && <p role="status" className="self-center text-xs text-slate-600">Uploading?</p>}
+                        </div>
+                    )}
+                    {attachments.length ? (
                         <ul className="mt-2 divide-y divide-slate-100">
-                            {selected.attachments.map((a) => (
-                                <li key={a.id} className="flex items-center gap-2 py-2">
-                                    <Paperclip size={14} className="shrink-0 text-slate-400" />
-                                    <div className="min-w-0 flex-1">
-                                        <p className="truncate text-xs font-semibold text-slate-700">{a.fileName}</p>
-                                        <p className="text-[10px] text-slate-400">
-                                            {Math.max(1, Math.round(a.sizeBytes / 1024))} KB
-                                        </p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => downloadAttachment(a)}
-                                        disabled={!!busy}
-                                        className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"
-                                        aria-label={`Download ${a.fileName}`}
-                                    >
-                                        <Download size={14} />
-                                    </button>
-                                    {isDraft && (
+                            {attachments.map((a, index) => (
+                                <li key={a.id} className="py-2">
+                                    <div className="flex items-center gap-2">
+                                        <Paperclip size={14} className="shrink-0 text-slate-400" />
+                                        <div className="min-w-0 flex-1">
+                                            <button type="button" onClick={() => viewAttachment(a)} disabled={!!busy}
+                                                className="block max-w-full truncate text-left text-xs font-semibold text-emerald-800 underline decoration-emerald-300 underline-offset-2 hover:decoration-current disabled:opacity-50">
+                                                {handwritten && `Upload ${index + 1}: `}{a.fileName}
+                                            </button>
+                                            <p className="text-[10px] text-slate-400">
+                                                {Math.max(1, Math.round(a.sizeBytes / 1024))} KB
+                                            </p>
+                                        </div>
                                         <button
                                             type="button"
-                                            onClick={() => removeAttachment(a)}
+                                            onClick={() => downloadAttachment(a)}
                                             disabled={!!busy}
-                                            className="grid h-8 w-8 place-items-center rounded-lg text-rose-500 hover:bg-rose-50"
-                                            aria-label={`Remove ${a.fileName}`}
+                                            className="grid h-8 w-8 place-items-center rounded-lg text-slate-500 hover:bg-slate-100"
+                                            aria-label={`Download ${a.fileName}`}
                                         >
-                                            <Trash2 size={14} />
+                                            <Download size={14} />
                                         </button>
+                                        {isDraft && (
+                                            <button
+                                                type="button"
+                                                onClick={() => removeAttachment(a)}
+                                                disabled={!!busy}
+                                                className="grid h-8 w-8 place-items-center rounded-lg text-rose-500 hover:bg-rose-50"
+                                                aria-label={`Remove ${a.fileName}`}
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        )}
+                                    </div>
+                                    {preview?.id === a.id && (
+                                        <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-2">
+                                            <button type="button" onClick={() => setPreview(null)}
+                                                className="mb-2 rounded px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-200">
+                                                Close preview
+                                            </button>
+                                            {preview.type === "application/pdf" ? (
+                                                <iframe src={preview.url} title={preview.fileName} className="h-[60dvh] w-full rounded bg-white" />
+                                            ) : preview.url ? (
+                                                <img src={preview.url} alt={preview.fileName} className="mx-auto max-h-[65dvh] max-w-full object-contain" />
+                                            ) : (
+                                                <pre className="max-h-[60dvh] overflow-auto whitespace-pre-wrap text-xs">{preview.text}</pre>
+                                            )}
+                                        </div>
                                     )}
                                 </li>
                             ))}
@@ -846,18 +915,20 @@ export default function NarrativeReportsPage() {
                 <div className="flex flex-wrap gap-2">
                     {isDraft && (
                         <>
-                            <button
-                                type="button"
-                                disabled={!!busy}
-                                onClick={() => openEdit(selected.id)}
-                                className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600"
-                            >
-                                Edit draft
-                            </button>
+                            {!handwritten && (
+                                <button
+                                    type="button"
+                                    disabled={!!busy}
+                                    onClick={() => openEdit(selected.id)}
+                                    className="flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-xs font-semibold text-slate-600"
+                                >
+                                    Edit draft
+                                </button>
+                            )}
                             <button
                                 type="button"
                                 onClick={() => runAction("finalizeNarrativeReport", "finalize")}
-                                disabled={!!busy}
+                                disabled={!!busy || (handwritten && !attachments.length)}
                                 className="flex-1 rounded-xl bg-[#106A2E] px-3 py-2.5 text-xs font-semibold text-white disabled:opacity-60"
                             >
                                 {busy === "finalizeNarrativeReport" ? "Finalizing…" : "Finalize"}
