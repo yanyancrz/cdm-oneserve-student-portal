@@ -216,8 +216,8 @@ export default function Register() {
 
             <BackgroundLayout>
                 <div className="auth-page">
-                    <div className="auth-frame mx-auto grid min-h-dvh w-full max-w-6xl items-center justify-items-center gap-8 px-4 py-8 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:px-12 lg:py-12">
-                        <main className="auth-card auth-enter w-full max-w-xl p-5 sm:p-8 lg:p-10">
+                    <div className="auth-frame mx-auto grid min-h-dvh w-full max-w-6xl items-center justify-items-center gap-8 px-4 py-8 sm:px-8 lg:h-dvh lg:grid-cols-2 lg:grid-rows-[minmax(0,1fr)] lg:gap-16 lg:px-12 lg:py-8">
+                        <main className="auth-card auth-enter w-full min-w-0 max-w-xl p-5 sm:p-8 lg:col-start-1 lg:row-start-1 lg:max-h-full lg:min-h-0 lg:overflow-y-auto lg:overscroll-contain lg:p-10">
                             <AuthCardHeader page="register" />
 
                             <p className="mb-6 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs leading-5 text-emerald-900">
@@ -416,7 +416,7 @@ export default function Register() {
                             </button>
 
                         </main>
-                        <AuthServicePanel className="w-full" />
+                        <AuthServicePanel className="w-full lg:col-start-2 lg:row-start-1" />
                     </div>
                 </div>
             </BackgroundLayout>
