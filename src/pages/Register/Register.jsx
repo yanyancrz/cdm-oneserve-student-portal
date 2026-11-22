@@ -213,7 +213,7 @@ export default function Register() {
             )}
 
             <BackgroundLayout>
-                <div className="auth-page grid place-items-center px-4 py-8 sm:px-8 sm:py-12">
+                <div className="auth-page auth-frame grid place-items-center px-4 py-8 sm:px-8 sm:py-12">
                     <main className="auth-card auth-enter w-full max-w-xl p-5 sm:p-8 lg:p-10">
                         <div className="mb-6 flex items-center gap-4 border-b border-slate-100 pb-5">
                             <img src={CdmLogo} alt="" className="h-16 w-16 shrink-0 object-contain" />

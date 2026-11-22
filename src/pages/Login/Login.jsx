@@ -478,7 +478,7 @@ export default function Login() {
 
             <BackgroundLayout>
                 <div className="auth-page">
-                    <div className="mx-auto grid min-h-dvh w-full max-w-6xl items-center gap-8 px-4 py-8 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:px-12 lg:py-12">
+                    <div className="auth-frame mx-auto grid min-h-dvh w-full max-w-6xl items-center gap-8 px-4 py-8 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:px-12 lg:py-12">
                         {/* ================= BRAND PANEL (desktop) ================= */}
                         <section className="auth-enter auth-brand-enter order-1 hidden lg:order-none lg:block">
                             <h2 className="text-5xl font-bold tracking-tight text-white">
@@ -658,7 +658,7 @@ export default function Login() {
                             </div>
 
                             {/* ================= SERVICE CHIPS (mobile / tablet) ================= */}
-                            <div className="mt-6 flex max-w-sm flex-wrap justify-center gap-2 lg:hidden">
+                            <div className="auth-service-list mt-6 flex max-w-sm flex-wrap justify-center gap-2 lg:hidden">
                                 {SERVICES.map(({ name, icon: Icon }) => (
                                     <span
                                         key={name}
