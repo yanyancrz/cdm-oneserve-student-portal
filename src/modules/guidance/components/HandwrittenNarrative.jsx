@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Upload } from "lucide-react";
 import { buildHandwrittenDocument } from "../utils/handwrittenDocument";
 
 // Normalize camera orientation and size locally; report images never leave the
@@ -82,8 +83,13 @@ export default function HandwrittenNarrative({ onSave, disabled = false, onBusyC
         <h2 className="text-sm font-bold text-slate-800">Handwritten narrative report</h2>
         <p className="text-xs text-slate-500">Upload photos or scanned pages in reading order. PDF and Word exports preserve your handwriting as images, without text transcription. Images stay on this device until you save the converted document.</p>
         <label className="block text-xs font-semibold">Document name<input value={title} onChange={(event) => setTitle(event.target.value)} disabled={working} className="mt-1 block w-full rounded-lg border border-slate-200 p-2" /></label>
-        <label className="block text-xs font-semibold">Add report images (JPEG, PNG, WebP; up to 10 pages, 10 MB each)
-            <input type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={working} onChange={upload} className="mt-2 block w-full text-xs" />
+        <label className="block text-xs font-semibold text-slate-700">
+            <span className="block">Add report images (JPEG, PNG, WebP; up to 10 pages, 10 MB each)</span>
+            <input type="file" accept="image/jpeg,image/png,image/webp" multiple disabled={working} onChange={upload} className="peer sr-only" />
+            <span className="mt-2 inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-800 bg-[#106A2E] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#0D5927] active:translate-y-px active:bg-[#0A4720] active:shadow-none peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-600 peer-focus-visible:ring-offset-2 peer-disabled:pointer-events-none peer-disabled:opacity-50 motion-reduce:transition-none sm:w-auto">
+                <Upload size={16} aria-hidden="true" />
+                Choose Files
+            </span>
         </label>
         <ol className="flex flex-wrap gap-3">{pages.map((page, index) => <li key={`${index}-${page.name}`} className="w-32 space-y-1">
             <img src={page.data} alt={`Report page ${index + 1}`} className="h-36 w-32 rounded border object-contain" />
