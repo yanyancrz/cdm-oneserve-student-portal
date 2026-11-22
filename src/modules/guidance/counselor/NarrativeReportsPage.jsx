@@ -13,6 +13,7 @@ import {
     SearchX,
     ShieldCheck,
     Trash2,
+    Camera,
     UploadCloud,
 } from "lucide-react";
 
@@ -381,6 +382,44 @@ export default function NarrativeReportsPage() {
 
                 {error && <ErrorBox message={error} />}
 
+                <section className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                    <h2 className="text-sm font-bold text-slate-800">Handwritten report <span className="font-normal text-slate-600">(optional)</span></h2>
+                    <p className="text-xs text-slate-600">Take a photo or attach a scan, PDF or Word file up to 10 MB. It uploads when you save the draft.</p>
+                    <div className="grid gap-2 sm:flex">
+                        {[
+                            { label: "Choose File", icon: UploadCloud, accept: ".pdf,.doc,.docx,.jpg,.jpeg,.png" },
+                            { label: "Take Photo", icon: Camera, accept: "image/jpeg,image/png", capture: "environment" },
+                        ].map(({ label, icon: Icon, accept, capture }) => (
+                            <label key={label} className="block">
+                                <input
+                                    type="file"
+                                    accept={accept}
+                                    capture={capture}
+                                    disabled={busy === "save"}
+                                    onChange={(event) => {
+                                        const file = event.currentTarget.files?.[0];
+                                        if (file) setHandwrittenFile(file);
+                                        event.currentTarget.value = "";
+                                    }}
+                                    className="peer sr-only"
+                                />
+                                <span className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-[#106A2E] bg-[#106A2E] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#0D5927] active:bg-[#0A4720] peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-600 peer-focus-visible:ring-offset-2 peer-disabled:opacity-50">
+                                    <Icon size={16} aria-hidden="true" /> {label}
+                                </span>
+                            </label>
+                        ))}
+                    </div>
+                    {handwrittenFile && (
+                        <div className="flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs">
+                            <span className="min-w-0 break-all text-slate-700" role="status">{handwrittenFile.name}</span>
+                            <button type="button" onClick={() => setHandwrittenFile(null)} disabled={busy === "save"}
+                                className="shrink-0 rounded px-2 py-1 font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50">
+                                Remove
+                            </button>
+                        </div>
+                    )}
+                </section>
+
                 <section className="space-y-3 rounded-2xl border border-black/[0.05] bg-white p-4 shadow-sm">
                     <SectionTitle>Subject</SectionTitle>
 
@@ -533,20 +572,6 @@ export default function NarrativeReportsPage() {
                     </label>
                 </section>
 
-                <label className="block rounded-2xl border border-slate-200 bg-white p-4 text-xs font-semibold text-slate-600">
-                    Handwritten report upload (optional)
-                    <input
-                        type="file"
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                        disabled={busy === "save"}
-                        onChange={(event) => setHandwrittenFile(event.target.files?.[0] ?? null)}
-                        className="mt-2 block w-full"
-                    />
-                    <span className="mt-2 block font-normal">
-                        Attach a scan, photo, PDF or Word file when you save the draft. Up to 10 MB.
-                    </span>
-                </label>
-
                 <button
                     type="button"
                     onClick={saveDraft}
@@ -612,6 +637,12 @@ export default function NarrativeReportsPage() {
 
                 {error && <ErrorBox message={error} />}
 
+                <HandwrittenNarrative key={selected.id} disabled={!!busy && busy !== "handwritten"} onBusyChange={(value) => setBusy(value ? "handwritten" : "")} onSave={isDraft ? async (file) => {
+                    await guidanceApi.uploadNarrativeAttachment(selected.id, file);
+                    setSelected(await guidanceApi.getNarrativeReport(selected.id));
+                    refresh();
+                } : undefined} />
+
                 <section className="rounded-2xl border border-black/[0.05] bg-white p-4 shadow-sm">
                     <div className="flex items-center gap-3">
                         <Avatar name={selected.subjectName} accent="green" />
@@ -666,12 +697,6 @@ export default function NarrativeReportsPage() {
                         </p>
                     </section>
                 ))}
-
-                <HandwrittenNarrative key={selected.id} disabled={!!busy && busy !== "handwritten"} onBusyChange={(value) => setBusy(value ? "handwritten" : "")} onSave={isDraft ? async (file) => {
-                    await guidanceApi.uploadNarrativeAttachment(selected.id, file);
-                    setSelected(await guidanceApi.getNarrativeReport(selected.id));
-                    refresh();
-                } : undefined} />
 
                 <section className="rounded-2xl border border-amber-100 bg-amber-50/70 p-4 shadow-sm">
                     <SectionTitle>
