@@ -14,6 +14,7 @@ import {
     ShieldCheck,
     Trash2,
     Camera,
+    Keyboard,
     UploadCloud,
 } from "lucide-react";
 
@@ -58,7 +59,7 @@ function StatusPill({ status }) {
 }
 
 export default function NarrativeReportsPage() {
-    const [view, setView] = useState("list"); // list | editor | detail
+    const [view, setView] = useState("list"); // list | format | editor | detail
     const [items, setItems] = useState([]);
     const [meta, setMeta] = useState({ page: 1, totalPages: 1, totalItems: 0 });
     const [stats, setStats] = useState(null);
@@ -150,9 +151,8 @@ export default function NarrativeReportsPage() {
     const openCreate = () => {
         resetEditor();
         setAttachmentFile(null);
-        setReportMode("typing");
         setSelected(null);
-        setView("editor");
+        setView("format");
     };
 
     const openDetail = async (id) => {
@@ -175,7 +175,7 @@ export default function NarrativeReportsPage() {
         try {
             const report = await guidanceApi.getNarrativeReport(id);
             setEditingId(report.id);
-            setReportMode(!report.sessionSummary?.trim() && report.attachments?.length ? "handwritten" : "typing");
+            setReportMode(!report.attachments?.length && !["sessionSummary", "sessionObjectives", "observations", "interventions", "recommendations", "followUpPlan", "privateNotes"].some((field) => report[field]?.trim()) ? "handwritten" : "typing");
             setSelected(report);
             setSubjects((prev) => {
                 if (prev.some((s) => s.userId === report.subjectId)) return prev;
@@ -352,6 +352,38 @@ export default function NarrativeReportsPage() {
         }
     };
 
+    if (view === "format") {
+        return (
+            <main className="space-y-4 p-4">
+                <button type="button" onClick={() => setView("list")}
+                    className="inline-flex min-h-11 items-center gap-2 rounded-xl px-3 text-sm font-semibold text-slate-600 hover:bg-white">
+                    <ArrowLeft size={17} aria-hidden="true" /> Back to reports
+                </button>
+                <section aria-labelledby="report-format-title" className="rounded-2xl border border-emerald-100 bg-white p-4 shadow-sm">
+                    <h1 id="report-format-title" className="text-base font-bold text-slate-800">New narrative report</h1>
+                    <p className="mt-1 text-sm text-slate-600">How would you like to create your report?</p>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        {[
+                            { mode: "typing", label: "Typing", icon: Keyboard, description: "Write your report and optionally attach a photo or file." },
+                            { mode: "handwritten", label: "Handwritten", icon: Camera, description: "Take a photo or upload your handwritten report." },
+                        ].map(({ mode, label, icon: Icon, description }) => (
+                            <button key={mode} type="button" onClick={() => {
+                                setReportMode(mode);
+                                setView("editor");
+                            }} className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-left transition hover:border-emerald-600 hover:bg-emerald-100 focus-visible:ring-2 focus-visible:ring-emerald-600 active:bg-emerald-200">
+                                <Icon size={20} className="shrink-0 text-[#106A2E]" aria-hidden="true" />
+                                <span>
+                                    <span className="block text-sm font-bold text-emerald-900">{label}</span>
+                                    <span className="mt-1 block text-xs text-slate-600">{description}</span>
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </section>
+            </main>
+        );
+    }
+
     // ------------------------------------------------------------------
     // EDITOR
     // ------------------------------------------------------------------
@@ -362,7 +394,7 @@ export default function NarrativeReportsPage() {
                     <button
                         type="button"
                         onClick={() => {
-                            setView(selected ? "detail" : "list");
+                            setView(selected ? "detail" : "format");
                             setError("");
                         }}
                         disabled={busy === "save"}
@@ -378,7 +410,7 @@ export default function NarrativeReportsPage() {
                         <p className="text-xs text-slate-500">
                             {editingId
                                 ? "Only a draft can be edited."
-                                : "Choose how you want to write the report, then save a draft."}
+                                : reportMode === "handwritten" ? "Handwritten report" : "Typed report"}
                         </p>
                     </div>
                 </div>
@@ -386,20 +418,6 @@ export default function NarrativeReportsPage() {
                 {error && <ErrorBox message={error} />}
 
                 <section className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                    <fieldset>
-                        <legend className="text-sm font-bold text-slate-800">Report format</legend>
-                        <div className="mt-2 grid grid-cols-2 gap-2">
-                            {[["typing", "Typing"], ["handwritten", "Handwritten"]].map(([value, label]) => (
-                                <label key={value}>
-                                    <input type="radio" name="narrative-format" value={value} checked={reportMode === value}
-                                        disabled={busy === "save"} onChange={() => setReportMode(value)} className="peer sr-only" />
-                                    <span className="flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-emerald-200 bg-white px-2 py-2 text-sm font-semibold text-emerald-900 transition hover:border-emerald-600 peer-checked:border-[#106A2E] peer-checked:bg-[#106A2E] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-600 peer-focus-visible:ring-offset-2 peer-disabled:opacity-50">
-                                        {label}
-                                    </span>
-                                </label>
-                            ))}
-                        </div>
-                    </fieldset>
                     <h2 className="text-sm font-bold text-slate-800">
                         {reportMode === "handwritten" ? "Handwritten report attachment" : "Optional attachment"}
                     </h2>
@@ -541,49 +559,54 @@ export default function NarrativeReportsPage() {
                         </label>
                     </div>
 
-                    <label className="block text-xs font-semibold text-slate-600">
-                        Report title
-                        <input
-                            value={form.reportTitle}
-                            onChange={(e) => setForm((f) => ({ ...f, reportTitle: e.target.value }))}
-                            placeholder="Leave blank to use the subject and date"
-                            className={fieldClass("green")}
-                        />
-                    </label>
+                    {reportMode === "typing" && (
+                        <>
+                            <label className="block text-xs font-semibold text-slate-600">
+                                Report title
+                                <input
+                                    value={form.reportTitle}
+                                    onChange={(e) => setForm((f) => ({ ...f, reportTitle: e.target.value }))}
+                                    placeholder="Leave blank to use the subject and date"
+                                    className={fieldClass("green")}
+                                />
+                            </label>
 
-                    {[
-                        ...(reportMode === "typing" ? [["sessionSummary", "Narrative report"]] : []),
-                        ["sessionObjectives", "Session objectives"],
-                        ["observations", "Observations"],
-                        ["interventions", "Interventions / actions taken"],
-                        ["recommendations", "Recommendations"],
-                        ["followUpPlan", "Follow-up plan"],
-                    ].map(([key, label]) => (
-                        <label key={key} className="block text-xs font-semibold text-slate-600">
-                            {label}
-                            <textarea
-                                rows={3}
-                                value={form[key]}
-                                onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                                className={`${fieldClass("green")} resize-y`}
-                            />
-                        </label>
-                    ))}
+                            {[
+                                ["sessionSummary", "Narrative report"],
+                                ["sessionObjectives", "Session objectives"],
+                                ["observations", "Observations"],
+                                ["interventions", "Interventions / actions taken"],
+                                ["recommendations", "Recommendations"],
+                                ["followUpPlan", "Follow-up plan"],
+                            ].map(([key, label]) => (
+                                <label key={key} className="block text-xs font-semibold text-slate-600">
+                                    {label}
+                                    <textarea
+                                        rows={3}
+                                        value={form[key]}
+                                        onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                                        className={`${fieldClass("green")} resize-y`}
+                                    />
+                                </label>
+                            ))}
 
-                    <label className="block text-xs font-semibold text-amber-700">
-                        <span className="flex items-center gap-1">
-                            <Lock size={12} /> Private notes (counselor only)
-                        </span>
-                        <textarea
-                            rows={3}
-                            value={form.privateNotes}
-                            onChange={(e) => setForm((f) => ({ ...f, privateNotes: e.target.value }))}
-                            className={`${fieldClass("green")} resize-y`}
-                        />
-                        <span className="mt-1 block text-[11px] font-normal text-slate-400">
-                            Never shown to the Guidance Head, in exports, or to the student.
-                        </span>
-                    </label>
+                            <label className="block text-xs font-semibold text-amber-700">
+                                <span className="flex items-center gap-1">
+                                    <Lock size={12} /> Private notes (counselor only)
+                                </span>
+                                <textarea
+                                    rows={3}
+                                    value={form.privateNotes}
+                                    onChange={(e) => setForm((f) => ({ ...f, privateNotes: e.target.value }))}
+                                    className={`${fieldClass("green")} resize-y`}
+                                />
+                                <span className="mt-1 block text-[11px] font-normal text-slate-400">
+                                    Never shown to the Guidance Head, in exports, or to the student.
+                                </span>
+                            </label>
+
+                        </>
+                    )}
 
                     <label className="flex items-start gap-2 rounded-xl bg-amber-50 p-3 text-xs text-amber-800">
                         <input
