@@ -107,6 +107,16 @@ export default function LfAdminStatisticsPage() {
                 <LfButton type="button" variant="secondary" disabled={!result}
                     onClick={() => window.print()}>Print</LfButton>
             </form>
+            {!result && (
+                <section aria-labelledby="statistics-guide" className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 text-sm text-slate-700">
+                    <h3 id="statistics-guide" className="font-semibold text-emerald-900">How to generate a report</h3>
+                    <ol className="mt-2 list-decimal space-y-1 pl-5">
+                        <li>Choose a category. Select All to include every report type.</li>
+                        <li>Set the From Date and To Date. The report includes submissions on both dates.</li>
+                        <li>Select Generate report to see the summary and matching records. Select Print to print or save as PDF.</li>
+                    </ol>
+                </section>
+            )}
             {error && <LfNotice tone="bad">{error}</LfNotice>}
             {result && <>
                 <Report result={result} visibleRows={table.rows} />
