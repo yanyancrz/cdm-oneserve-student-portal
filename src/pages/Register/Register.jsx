@@ -153,7 +153,7 @@ export default function Register() {
 
             if (response.ok) {
                 toast.success(
-                    "Registered! Check your email for your login credentials."
+                    "Registered! Check your email for your login credentials, including your Spam or Junk folder."
                 );
 
                 setTimeout(() => {
@@ -678,7 +678,8 @@ export default function Register() {
 
                             <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs leading-5 text-emerald-800">
                                 Your login credentials will be sent to
-                                this email after you continue.
+                                this email after you continue. If you don’t see
+                                the email in your inbox, check your Spam or Junk folder.
                             </p>
                         </dl>
 
