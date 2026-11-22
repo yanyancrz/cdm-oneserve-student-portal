@@ -1,5 +1,6 @@
 import "../authPages.css";
 import CdmLogo from "../../assets/images/cdm-logo.png";
+import { GraduationCap, UsersRound } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -215,8 +216,8 @@ export default function Register() {
             <BackgroundLayout>
                 <div className="auth-page auth-frame grid place-items-center px-4 py-8 sm:px-8 sm:py-12">
                     <main className="auth-card auth-enter w-full max-w-xl p-5 sm:p-8 lg:p-10">
-                        <div className="mb-6 flex items-center gap-4 border-b border-slate-100 pb-5">
-                            <img src={CdmLogo} alt="" className="h-16 w-16 shrink-0 object-contain" />
+                        <div className="auth-masthead">
+                            <img src={CdmLogo} alt="" className="auth-logo" />
                             <div>
                                 <p className="text-xs font-semibold text-[#106A2E]">CDM OneServe</p>
                                 <h1 className="text-2xl font-bold tracking-tight text-slate-900">Create account</h1>
@@ -233,7 +234,7 @@ export default function Register() {
                             ACCOUNT TYPE
                         ================================================= */}
 
-                        <div className="mb-3.5">
+                        <div className="auth-step mb-3.5">
                             <label
                                 className="
                                     block
@@ -250,50 +251,17 @@ export default function Register() {
                                 </span>
                             </label>
 
-                            <div className="grid grid-cols-2 gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setRole("Student")
-                                    }
-                                    className={`
-                                        py-3
-                                        rounded-xl
-                                        border
-                                        text-sm
-                                        font-medium
-                                        transition-all
-                                        ${
-                                            role === "Student"
-                                                ? "border-[#106A2E] bg-emerald-50 text-[#106A2E]"
-                                                : "border-slate-200 bg-slate-50 text-slate-500 hover:bg-white"
-                                        }
-                                    `}
-                                >
-                                    Student
-                                </button>
-
-                                <button
-                                    type="button"
-                                    onClick={() =>
-                                        setRole("Faculty")
-                                    }
-                                    className={`
-                                        py-3
-                                        rounded-xl
-                                        border
-                                        text-sm
-                                        font-medium
-                                        transition-all
-                                        ${
-                                            role === "Faculty"
-                                                ? "border-[#106A2E] bg-emerald-50 text-[#106A2E]"
-                                                : "border-slate-200 bg-slate-50 text-slate-500 hover:bg-white"
-                                        }
-                                    `}
-                                >
-                                    Faculty
-                                </button>
+                            <div className="grid grid-cols-2 gap-2" role="group" aria-label="Account type">
+                                {[
+                                    { value: "Student", icon: GraduationCap },
+                                    { value: "Faculty", icon: UsersRound },
+                                ].map(({ value, icon: Icon }) => (
+                                    <button key={value} type="button" onClick={() => setRole(value)}
+                                        aria-pressed={role === value} className="auth-role">
+                                        <Icon size={17} aria-hidden="true" />
+                                        {value}
+                                    </button>
+                                ))}
                             </div>
                         </div>
 
@@ -397,7 +365,7 @@ export default function Register() {
                             REGISTER BUTTON
                         ================================================= */}
 
-                        <div className="mb-6">
+                        <div className="auth-step auth-step-next mb-6">
                             <label htmlFor="supporting-document" className="mb-1.5 block text-xs font-medium text-slate-500">
                                 Supporting Document <span className="text-red-500">*</span>
                             </label>
@@ -497,9 +465,10 @@ export default function Register() {
 
                         <p
                             className="
+                                auth-switch
                                 text-center
                                 text-sm
-                                text-slate-500
+                                text-slate-600
                             "
                         >
                             Already have an account?{" "}

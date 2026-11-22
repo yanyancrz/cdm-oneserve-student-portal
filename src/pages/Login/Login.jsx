@@ -517,11 +517,11 @@ export default function Login() {
                         <section className="flex flex-col items-center">
                             <div className="auth-card auth-enter w-full max-w-md p-5 sm:p-8 lg:p-9">
                                 {/* Brand (same on mobile and desktop) */}
-                                <div className="mb-7 flex items-center gap-4 border-b border-slate-100 pb-5">
+                                <div className="auth-masthead">
                                     <img
                                         src={CdmLogo}
                                         alt=""
-                                        className="h-16 w-16 shrink-0 object-contain"
+                                        className="auth-logo"
                                     />
                                     <div>
                                         <p className="text-xs font-semibold text-[#106A2E]">CDM OneServe</p>
@@ -530,7 +530,7 @@ export default function Login() {
                                 </div>
 
                                 {/* ---------- EMAIL ---------- */}
-                                <div className="mb-3.5">
+                                <div className="auth-step mb-3.5">
                                     <label
                                         htmlFor="login-email"
                                         className="mb-1.5 block text-xs font-medium text-slate-500"
@@ -555,7 +555,7 @@ export default function Login() {
                                 </div>
 
                                 {/* ---------- PASSWORD ---------- */}
-                                <div className="mb-2">
+                                <div className="auth-step auth-step-next mb-2">
                                     <label
                                         htmlFor="login-password"
                                         className="mb-1.5 block text-xs font-medium text-slate-500"
@@ -589,7 +589,7 @@ export default function Login() {
                                 </div>
 
                                 {/* ---------- FORGOT PASSWORD ---------- */}
-                                <div className="flex justify-end">
+                                <div className="auth-step auth-step-next flex justify-end">
                                     <Link
                                         to="/forgot-password"
                                         className="text-xs font-medium text-[#106A2E] hover:underline"
@@ -602,7 +602,7 @@ export default function Login() {
                                 <button
                                     onClick={() => handleLogin()}
                                     disabled={loading}
-                                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] p-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition hover:brightness-110 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-70"
+                                    className="auth-step auth-step-last mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] p-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition hover:brightness-110 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-70"
                                 >
                                     {loading ? (
                                         <>
@@ -643,7 +643,7 @@ export default function Login() {
 
                                 {/* ---------- REGISTER ---------- */}
                                 <p
-                                    className={`text-center text-sm text-slate-500 ${
+                                    className={`auth-switch text-center text-sm text-slate-600 ${
                                         googleClientId ? "mt-6" : "mt-5"
                                     }`}
                                 >

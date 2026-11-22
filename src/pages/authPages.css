@@ -37,6 +37,64 @@
     box-shadow: 0 0 0 3px rgb(16 106 46 / .12);
 }
 
+.auth-masthead {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    padding: .875rem;
+    border: 1px solid #dbeadf;
+    border-radius: 1.25rem;
+    background: linear-gradient(115deg, #eaf5ec, #f8faf3);
+}
+
+.auth-logo {
+    flex: none;
+    width: 3.75rem;
+    height: 3.75rem;
+    padding: .375rem;
+    border-radius: 1rem;
+    background: white;
+    object-fit: contain;
+}
+
+.auth-switch {
+    padding: .75rem;
+    border-radius: .875rem;
+    background: #f4f7f3;
+}
+
+.auth-role {
+    display: flex;
+    min-height: 48px;
+    align-items: center;
+    justify-content: center;
+    gap: .5rem;
+    padding: .625rem .375rem;
+    border: 1px solid #dce6df;
+    border-radius: .75rem;
+    background: #f7f9f7;
+    color: #334155;
+    font-size: .875rem;
+    font-weight: 600;
+    transition: background-color 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+.auth-role:hover, .auth-role[aria-pressed="true"] {
+    border-color: #19733b;
+    background: #e8f4ea;
+    color: #105530;
+}
+
+.auth-role:focus-visible {
+    outline: 2px solid #19733b;
+    outline-offset: 2px;
+}
+
+.auth-role:active {
+    transform: scale(.98);
+}
+
 .auth-enter {
     animation: auth-enter 380ms cubic-bezier(.2,.75,.3,1) backwards;
 }
@@ -76,6 +134,17 @@
         gap: .375rem;
         margin-top: 1rem;
     }
+
+    .auth-masthead {
+        animation: auth-enter 340ms 40ms cubic-bezier(.2,.75,.3,1) backwards;
+    }
+
+    .auth-step {
+        animation: auth-enter 320ms 85ms cubic-bezier(.2,.75,.3,1) backwards;
+    }
+
+    .auth-step-next { animation-delay: 120ms; }
+    .auth-step-last { animation-delay: 155ms; }
 }
 
 @keyframes auth-enter {
@@ -89,7 +158,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .auth-enter, .auth-dialog, .auth-page .animate-pulse { animation: none; }
+    .auth-enter, .auth-dialog, .auth-masthead, .auth-step, .auth-page .animate-pulse { animation: none; }
     .auth-page *, .auth-dialog * { transition: none; }
-    .auth-page button:active, .auth-dialog button:active { scale: none; }
+    .auth-page button:active, .auth-dialog button:active { scale: none; transform: none; }
 }
