@@ -1,3 +1,5 @@
+import "../authPages.css";
+import CdmLogo from "../../assets/images/cdm-logo.png";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -211,132 +213,20 @@ export default function Register() {
             )}
 
             <BackgroundLayout>
-                <div
-                    className="
-                        relative
-                        min-h-screen
-                        overflow-hidden
-                        bg-[#F7F5EF]
-                        flex
-                        items-center
-                        justify-center
-                        p-6
-                    "
-                >
-                    {/* =================================================
-                        BACKGROUND
-                    ================================================= */}
-
-                    <div className="pointer-events-none fixed inset-0 overflow-hidden">
-                        <div className="absolute -left-28 -top-28 h-96 w-96 rounded-full bg-emerald-400/10 blur-3xl" />
-
-                        <div className="absolute right-[-140px] top-[30%] h-[32rem] w-[32rem] rounded-full bg-cyan-300/10 blur-3xl" />
-
-                        <div className="absolute bottom-[-120px] left-[30%] h-[28rem] w-[28rem] rounded-full bg-amber-300/10 blur-3xl" />
-
-                        <div className="absolute inset-0 opacity-[0.035] bg-[linear-gradient(rgba(16,106,46,.35)_1px,transparent_1px),linear-gradient(90deg,rgba(16,106,46,.35)_1px,transparent_1px)] bg-[size:40px_40px]" />
-                    </div>
-
-                    <style>{`
-                        @keyframes registerReveal {
-                            from {
-                                opacity: 0;
-                                transform: translateY(15px);
-                            }
-
-                            to {
-                                opacity: 1;
-                                transform: translateY(0);
-                            }
-                        }
-
-                        .register-reveal {
-                            animation: registerReveal .65s cubic-bezier(.2,.8,.2,1) both;
-                        }
-                    `}</style>
-
-                    <div
-                        className="
-                            register-reveal
-                            bg-white
-                            rounded-[28px]
-                            p-9
-                            w-full
-                            max-w-md
-                            shadow-xl
-                            shadow-black/5
-                            border
-                            border-slate-200
-                            relative
-                            z-10
-                        "
-                    >
-                        {/* =================================================
-                            ICON
-                        ================================================= */}
-
-                        <div
-                            className="
-                                w-14
-                                h-14
-                                rounded-2xl
-                                bg-gradient-to-br
-                                from-[#106A2E]
-                                to-[#0E3B22]
-                                flex
-                                items-center
-                                justify-center
-                                mx-auto
-                                mb-4
-                                shadow-lg
-                                shadow-emerald-900/20
-                            "
-                        >
-                            <svg
-                                width="26"
-                                height="26"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="white"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                            >
-                                <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
-                                <path d="M6 12v5c3 3 9 3 12 0v-5" />
-                            </svg>
+                <div className="auth-page grid place-items-center px-4 py-8 sm:px-8 sm:py-12">
+                    <main className="auth-card auth-enter w-full max-w-xl p-5 sm:p-8 lg:p-10">
+                        <div className="mb-6 flex items-center gap-4 border-b border-slate-100 pb-5">
+                            <img src={CdmLogo} alt="" className="h-16 w-16 shrink-0 object-contain" />
+                            <div>
+                                <p className="text-xs font-semibold text-[#106A2E]">CDM OneServe</p>
+                                <h1 className="text-2xl font-bold tracking-tight text-slate-900">Create account</h1>
+                            </div>
                         </div>
 
-                        <h1
-                            className="
-                                text-xl
-                                font-semibold
-                                text-center
-                                text-slate-800
-                            "
-                        >
-                            Create Account
-                        </h1>
-
-                        <p
-                            className="
-                                text-sm
-                                text-slate-400
-                                text-center
-                                mt-1
-                                mb-5
-                            "
-                        >
-                            Register for your CDM OneServe account
-                        </p>
-
-                        <p className="mb-6 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-[11px] leading-5 text-emerald-800">
+                        <p className="mb-6 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs leading-5 text-emerald-900">
                             After you register, your login credentials
                             will be sent to your email. Use them to log
                             in, then complete your profile.
-                            <br />
-                            Choose Student or Faculty, enter your ID number,
-                            and upload your supporting document.
                         </p>
 
                         {/* =================================================
@@ -432,6 +322,7 @@ export default function Register() {
                                 type="text"
                                 placeholder={idPlaceholder}
                                 className="
+                                    auth-field
                                     w-full
                                     px-4
                                     py-3
@@ -479,6 +370,7 @@ export default function Register() {
                                 type="email"
                                 placeholder="you@example.com"
                                 className="
+                                    auth-field
                                     w-full
                                     px-4
                                     py-3
@@ -517,7 +409,7 @@ export default function Register() {
                                 disabled={loading}
                                 required
                                 aria-describedby="supporting-document-help"
-                                className="w-full rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-emerald-100 file:px-3 file:py-2 file:font-semibold file:text-emerald-800"
+                                className="auth-field w-full cursor-pointer rounded-xl border border-dashed border-emerald-300 bg-emerald-50/60 p-2 text-xs text-slate-700 file:mr-2 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[#106A2E] file:px-3 file:py-2.5 file:font-semibold file:text-white hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-emerald-700"
                             />
                             <p id="supporting-document-help" className="mt-2 text-xs leading-5 text-slate-500">
                                 Upload a clear copy of your ID, registration form, or OVRF. PDF, JPG, or PNG; maximum 5 MB.
@@ -541,7 +433,10 @@ export default function Register() {
                                 p-3
                                 rounded-xl
                                 font-semibold
-                                transition-all
+                                transition
+                                focus-visible:ring-2
+                                focus-visible:ring-emerald-600
+                                focus-visible:ring-offset-2
                                 shadow-lg
                                 shadow-emerald-900/20
                                 disabled:from-slate-300
@@ -620,7 +515,7 @@ export default function Register() {
                                 Login
                             </Link>
                         </p>
-                    </div>
+                    </main>
                 </div>
             </BackgroundLayout>
 
@@ -640,7 +535,7 @@ export default function Register() {
                         onClick={() => setConfirming(false)}
                     />
 
-                    <div className="relative w-full max-w-sm rounded-[24px] border border-slate-200 bg-white p-6 shadow-2xl shadow-black/10">
+                    <div className="auth-dialog relative max-h-[calc(100dvh-2rem)] w-full max-w-md overflow-y-auto rounded-[24px] border border-slate-200 bg-white p-5 shadow-2xl shadow-black/20 sm:p-7">
                         <h2 className="text-lg font-semibold text-slate-800">
                             Review your details
                         </h2>

@@ -1,3 +1,4 @@
+import "../authPages.css";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -469,64 +470,43 @@ export default function Login() {
     };
 
     const inputClass =
-        "w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 text-sm text-slate-700 outline-none transition-colors focus:border-[#106A2E] focus:bg-white";
+        "auth-field w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pl-10 text-sm text-slate-700 outline-none transition-colors focus:border-[#106A2E] focus:bg-white";
 
     return (
         <>
             {loading && <LoadingModal message="Signing In..." />}
 
             <BackgroundLayout>
-                <div className="relative min-h-screen overflow-hidden bg-[#F7F5EF]">
-                    {/* ================= BACKGROUND ================= */}
-                    <div className="pointer-events-none fixed inset-0 overflow-hidden">
-                        <div className="absolute -left-28 -top-28 h-96 w-96 rounded-full bg-emerald-400/10 blur-3xl" />
-                        <div className="absolute right-[-140px] top-[30%] h-[32rem] w-[32rem] rounded-full bg-cyan-300/10 blur-3xl" />
-                        <div className="absolute bottom-[-120px] left-[30%] h-[28rem] w-[28rem] rounded-full bg-amber-300/10 blur-3xl" />
-                        <div className="absolute inset-0 bg-[linear-gradient(rgba(16,106,46,.35)_1px,transparent_1px),linear-gradient(90deg,rgba(16,106,46,.35)_1px,transparent_1px)] bg-[size:40px_40px] opacity-[0.035]" />
-                    </div>
-
-                    <style>{`
-                        @keyframes loginReveal {
-                            from { opacity: 0; transform: translateY(15px); }
-                            to   { opacity: 1; transform: translateY(0); }
-                        }
-                        .login-reveal {
-                            animation: loginReveal .65s cubic-bezier(.2,.8,.2,1) both;
-                        }
-                        .login-reveal-delay {
-                            animation: loginReveal .65s cubic-bezier(.2,.8,.2,1) .12s both;
-                        }
-                    `}</style>
-
-                    <div className="relative z-10 mx-auto grid min-h-screen w-full max-w-6xl items-center gap-10 p-6 lg:grid-cols-2 lg:gap-16 lg:p-10">
+                <div className="auth-page">
+                    <div className="mx-auto grid min-h-dvh w-full max-w-6xl items-center gap-8 px-4 py-8 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:px-12 lg:py-12">
                         {/* ================= BRAND PANEL (desktop) ================= */}
-                        <section className="login-reveal hidden lg:block">
-                            <h1 className="text-4xl font-bold tracking-tight text-slate-800">
+                        <section className="auth-enter auth-brand-enter order-1 hidden lg:order-none lg:block">
+                            <h2 className="text-5xl font-bold tracking-tight text-white">
                                 CDM OneServe
-                            </h1>
+                            </h2>
 
-                            <p className="mt-2 text-lg font-medium text-[#106A2E]">
+                            <p className="mt-2 text-lg font-medium text-emerald-200">
                                 An Integrated Campus Service Management
                             </p>
 
-                            <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-500">
+                            <p className="mt-3 max-w-md text-sm leading-relaxed text-emerald-50/75">
                                 One account for every service at Colegio de Montalban,
                                 from the clinic to the library and everything in between.
                             </p>
 
-                            <ul className="mt-8 grid max-w-md gap-3">
+                            <ul className="mt-8 grid max-w-md gap-2.5">
                                 {SERVICES.map(({ name, description, icon: Icon }) => (
                                     <li
                                         key={name}
-                                        className="flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-white/70 p-3 backdrop-blur"
+                                        className="flex items-center gap-3 rounded-2xl border border-white/15 bg-white/8 p-3"
                                     >
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#E1F0E4] text-[#106A2E]">
+                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-[#106A2E]">
                                             <Icon size={18} />
                                         </div>
 
                                         <div className="min-w-0">
-                                            <p className="text-sm font-semibold text-slate-800">{name}</p>
-                                            <p className="truncate text-xs text-slate-500">{description}</p>
+                                            <p className="text-sm font-semibold text-white">{name}</p>
+                                            <p className="text-xs leading-5 text-emerald-50/75">{description}</p>
                                         </div>
                                     </li>
                                 ))}
@@ -535,14 +515,18 @@ export default function Login() {
 
                         {/* ================= LOGIN CARD ================= */}
                         <section className="flex flex-col items-center">
-                            <div className="login-reveal-delay relative z-10 w-full max-w-sm rounded-[28px] border border-slate-200 bg-white p-9 shadow-xl shadow-black/5">
+                            <div className="auth-card auth-enter w-full max-w-md p-5 sm:p-8 lg:p-9">
                                 {/* Brand (same on mobile and desktop) */}
-                                <div className="mx-auto mb-7 flex justify-center">
+                                <div className="mb-7 flex items-center gap-4 border-b border-slate-100 pb-5">
                                     <img
                                         src={CdmLogo}
-                                        alt="CDM OneServe"
-                                        className="h-28 w-auto object-contain"
+                                        alt=""
+                                        className="h-16 w-16 shrink-0 object-contain"
                                     />
+                                    <div>
+                                        <p className="text-xs font-semibold text-[#106A2E]">CDM OneServe</p>
+                                        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Sign in</h1>
+                                    </div>
                                 </div>
 
                                 {/* ---------- EMAIL ---------- */}
@@ -587,7 +571,7 @@ export default function Login() {
                                             type={showPassword ? "text" : "password"}
                                             autoComplete="current-password"
                                             placeholder="••••••••"
-                                            className={`${inputClass} pr-10`}
+                                            className={`${inputClass} pr-12`}
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                             onKeyDown={handleEnter}
@@ -597,9 +581,8 @@ export default function Login() {
                                             type="button"
                                             onClick={() => setShowPassword((prev) => !prev)}
                                             aria-label={showPassword ? "Hide password" : "Show password"}
-                                            className="absolute right-3.5 text-slate-400 transition-colors hover:text-[#106A2E]"
-                                            tabIndex={-1}
-                                        >
+                                            className="absolute right-1 grid size-10 place-items-center rounded-lg text-slate-500 transition-colors hover:text-[#106A2E] focus-visible:ring-2 focus-visible:ring-emerald-600"
+                                            >
                                             {showPassword ? <EyeOff size={17} /> : <Eye size={17} />}
                                         </button>
                                     </div>
@@ -619,7 +602,7 @@ export default function Login() {
                                 <button
                                     onClick={() => handleLogin()}
                                     disabled={loading}
-                                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] p-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-70"
+                                    className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-[#106A2E] to-[#0E3B22] p-3 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 transition hover:brightness-110 focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-70"
                                 >
                                     {loading ? (
                                         <>
@@ -675,19 +658,19 @@ export default function Login() {
                             </div>
 
                             {/* ================= SERVICE CHIPS (mobile / tablet) ================= */}
-                            <div className="login-reveal-delay mt-6 flex max-w-sm flex-wrap justify-center gap-2 lg:hidden">
+                            <div className="mt-6 flex max-w-sm flex-wrap justify-center gap-2 lg:hidden">
                                 {SERVICES.map(({ name, icon: Icon }) => (
                                     <span
                                         key={name}
-                                        className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white/80 px-3 py-1.5 text-xs font-medium text-slate-600"
+                                        className="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/8 px-3 py-1.5 text-xs font-medium text-emerald-50"
                                     >
-                                        <Icon size={13} className="text-[#106A2E]" />
+                                        <Icon size={13} className="text-emerald-200" />
                                         {name}
                                     </span>
                                 ))}
                             </div>
 
-                            <p className="mt-6 text-center text-[11px] text-slate-400">
+                            <p className="mt-6 text-center text-xs text-emerald-50/75">
                                 Colegio de Montalban &middot; CDM OneServe
                             </p>
                         </section>
