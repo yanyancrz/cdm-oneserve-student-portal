@@ -1,3 +1,5 @@
+import { RecordPagination } from "../components/LfRecords";
+import { useRecordTable } from "../components/useRecordTable.js";
 import { useEffect, useState } from "react";
 import {
     CheckCircle2,
@@ -37,6 +39,7 @@ export default function LfAdminAdminsPage() {
     const canManage = consoleAdmin.canManageAdmins;
 
     const [admins, setAdmins] = useState([]);
+    const table = useRecordTable(admins, [], {});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [saving, setSaving] = useState(false);
@@ -271,7 +274,7 @@ export default function LfAdminAdminsPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {admins.map((admin) => (
+                                {table.rows.map((admin) => (
                                     <tr key={admin.id} className={lfTrClass}>
                                         <td className={lfTdClass}>
                                             <span className="block font-semibold text-slate-800">
@@ -342,7 +345,8 @@ export default function LfAdminAdminsPage() {
                             </tbody>
                         </table>
                     </div>
-                </LfPanel>
+                    <RecordPagination {...table.pagination} />
+            </LfPanel>
             )}
         </div>
     );

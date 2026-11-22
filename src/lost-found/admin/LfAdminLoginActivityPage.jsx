@@ -1,3 +1,5 @@
+import { RecordPagination } from "../components/LfRecords";
+import { useRecordTable } from "../components/useRecordTable.js";
 import { useEffect, useState } from "react";
 import { Clock, Monitor, RefreshCw, ShieldCheck } from "lucide-react";
 
@@ -37,6 +39,7 @@ export default function LfAdminLoginActivityPage() {
     const canManage = consoleAdmin.canManageAdmins;
 
     const [rows, setRows] = useState([]);
+    const table = useRecordTable(rows, [], {}, "loginAt");
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState("");
@@ -98,7 +101,7 @@ export default function LfAdminLoginActivityPage() {
                     </h2>
                     <p className="mt-0.5 text-xs text-slate-500">
                         Every Lost &amp; Found administrator sign-in, with the
-                        current session state. Showing the last 90 days.
+                        current session state.
                     </p>
                 </div>
 
@@ -137,7 +140,7 @@ export default function LfAdminLoginActivityPage() {
                                 </tr>
                             </thead>
                             <tbody>
-                                {rows.map((row) => (
+                                {table.rows.map((row) => (
                                     <tr key={row.sessionId} className={lfTrClass}>
                                         <td className={lfTdClass}>
                                             <span className="block font-semibold text-slate-800">
@@ -204,6 +207,7 @@ export default function LfAdminLoginActivityPage() {
                         </table>
                     </div>
                 )}
+                <RecordPagination {...table.pagination} />
             </LfPanel>
 
             <p className="text-[11px] leading-5 text-slate-400">

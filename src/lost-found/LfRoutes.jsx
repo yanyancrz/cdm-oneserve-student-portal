@@ -20,6 +20,7 @@ import LfNotificationsPage from "./user/LfNotificationsPage";
 import LfAdminGate from "./admin/LfAdminGate";
 import LfAdminLayout from "./admin/LfAdminLayout";
 import LfAdminOverviewPage from "./admin/LfAdminOverviewPage";
+import LfAdminStatisticsPage from "./admin/LfAdminStatisticsPage";
 import LfAdminReportsPage from "./admin/LfAdminReportsPage";
 import LfAdminReportDetailsPage from "./admin/LfAdminReportDetailsPage";
 import LfAdminClaimsPage from "./admin/LfAdminClaimsPage";
@@ -94,6 +95,7 @@ export const lostFoundAdminRoutes = (
         }
     >
         <Route path="/lost-found/admin" element={<LfAdminOverviewPage />} />
+        <Route path="/lost-found/admin/statistics" element={<LfAdminStatisticsPage />} />
         <Route
             path="/lost-found/admin/reports"
             element={<LfAdminReportsPage />}

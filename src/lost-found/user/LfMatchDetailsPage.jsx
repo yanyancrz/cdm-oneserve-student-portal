@@ -1,3 +1,4 @@
+import { MissingDuration } from "../components/LfRecords";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, GitCompare } from "lucide-react";
@@ -217,6 +218,7 @@ function MatchItemCard({ label, report, onOpen }) {
                     </span>
                     {report.reportType && <LfTypeTag type={report.reportType} />}
                     {report.status && <LfStatusChip status={report.status} />}
+                    <MissingDuration item={report} />
                 </span>
             </button>
 

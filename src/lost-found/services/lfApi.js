@@ -252,7 +252,7 @@ export const lfAdminApi = {
     me: () => http.get("/api/lostfound/admin/me"),
 
     stats: () => http.get("/api/lostfound/admin/stats"),
-    reports: () => http.get("/api/lostfound/admin/reports"),
+    reports: (params) => http.get("/api/lostfound/admin/reports", { params }),
     reportDetail: (id) => http.get(`/api/lostfound/admin/reports/${id}`),
     claims: () => http.get("/api/lostfound/admin/claims"),
     schedules: () => http.get("/api/lostfound/admin/schedules"),
@@ -280,8 +280,8 @@ export const lfAdminApi = {
     setAdminStatus: (id, isActive) =>
         http.put(`/api/lostfound/admin/admins/${id}/status`, { isActive }),
     loginActivity: () => http.get("/api/lostfound/admin/login-activity"),
-    activityLog: (params) =>
-        http.get("/api/lostfound/admin/activity-log", { params }),
+    activityLog: (params, signal) =>
+        http.get("/api/lostfound/admin/activity-log", { params, signal }),
 
     /** Ends this device's session record before dropping the local token. */
     logout: () => http.post("/api/auth/session/logout", {}),

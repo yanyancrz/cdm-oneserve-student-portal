@@ -1,3 +1,5 @@
+import { usePhilippineDay } from "../components/usePhilippineDay.js";
+import { MissingDuration } from "../components/LfRecords";
 import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -45,6 +47,7 @@ import {
 // =====================================================
 
 export default function LfAdminReportDetailsPage() {
+    const philippineDay = usePhilippineDay();
     const { reportId } = useParams();
     const navigate = useNavigate();
 
@@ -75,7 +78,7 @@ export default function LfAdminReportDetailsPage() {
         return () => {
             cancelled = true;
         };
-    }, [load]);
+    }, [philippineDay, load]);
 
     const onReviewReport = async (status) => {
         const verb = status === "Published" ? "publish" : "reject";
@@ -162,6 +165,7 @@ export default function LfAdminReportDetailsPage() {
                     <h2 className="text-2xl font-bold tracking-tight text-slate-800">
                         {report.itemName}
                     </h2>
+                        <MissingDuration item={report} />
                     <LfTypeTag type={report.reportType} />
                     <LfStatusChip status={report.status} />
                 </div>

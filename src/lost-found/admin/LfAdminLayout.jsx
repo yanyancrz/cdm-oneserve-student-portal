@@ -8,6 +8,7 @@ import {
     LayoutDashboard,
     LogOut,
     Menu,
+    Printer,
     SearchCheck,
     Settings,
     ShieldCheck,
@@ -41,6 +42,7 @@ const NAV = [
         end: true,
     },
     { to: "/lost-found/admin/reports", label: "Reports", icon: SearchCheck },
+    { to: "/lost-found/admin/statistics", label: "Printable Statistics", icon: Printer },
     { to: "/lost-found/admin/claims", label: "Claims", icon: HandHelping },
     {
         to: "/lost-found/admin/schedules",

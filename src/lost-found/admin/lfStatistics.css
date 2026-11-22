@@ -1,0 +1,48 @@
+.lf-statistics dt {
+    display: inline;
+    font-weight: 600;
+}
+
+.lf-statistics dd {
+    display: inline;
+    margin-inline-start: .5rem;
+}
+
+.lf-statistics th,
+.lf-statistics td {
+    border-bottom: 1px solid #cbd5e1;
+    padding: .45rem;
+    vertical-align: top;
+}
+
+.lf-statistics-print {
+    display: none;
+}
+
+@media print {
+    body:has(> .lf-statistics-print) > :not(.lf-statistics-print) {
+        display: none !important;
+    }
+
+    .lf-statistics-print {
+        display: block;
+        color: #000;
+    }
+
+    .lf-statistics-print article {
+        padding: 0;
+        border: 0;
+    }
+
+    .lf-statistics-print .overflow-x-auto {
+        overflow: visible;
+    }
+
+    .lf-statistics-print thead {
+        display: table-header-group;
+    }
+
+    .lf-statistics-print tr {
+        break-inside: avoid;
+    }
+}

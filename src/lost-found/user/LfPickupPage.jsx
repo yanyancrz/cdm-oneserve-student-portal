@@ -1,3 +1,5 @@
+import { usePhilippineDay } from "../components/usePhilippineDay.js";
+import { MissingDuration } from "../components/LfRecords";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, CalendarClock, IdCard, MapPin } from "lucide-react";
@@ -20,6 +22,7 @@ import {
 // =====================================================
 
 export default function LfPickupPage() {
+    const philippineDay = usePhilippineDay();
     const { claimId } = useParams();
     const navigate = useNavigate();
 
@@ -60,7 +63,7 @@ export default function LfPickupPage() {
         return () => {
             cancelled = true;
         };
-    }, [claimId]);
+    }, [claimId, philippineDay]);
 
     if (loading) return <LfSkeleton rows={4} />;
 
@@ -80,6 +83,7 @@ export default function LfPickupPage() {
                 </button>
 
                 <LfPanel title="Your pickup">
+                    <MissingDuration item={schedule} />
                     <div className="rounded-xl border border-[#0D7856]/20 bg-[#0D7856]/5 p-4">
                         <p className="flex items-center gap-2 text-sm font-semibold text-slate-800">
                             <CalendarClock size={16} className="text-[#0D7856]" aria-hidden="true" />
@@ -112,6 +116,7 @@ export default function LfPickupPage() {
                 Back
             </button>
 
+            <MissingDuration item={schedule} />
             <LfPanel
                 title="Office availability"
                 subtitle="No need to book - come to the OneServe Student Affairs Office during any window below."

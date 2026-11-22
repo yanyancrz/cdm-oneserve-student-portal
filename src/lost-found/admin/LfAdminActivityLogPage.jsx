@@ -1,3 +1,5 @@
+import { RECORDS_PER_PAGE } from "../components/recordTable.js";
+import { RecordPagination, SortHeader } from "../components/LfRecords";
 import { useEffect, useState } from "react";
 import { History, RefreshCw, ShieldCheck } from "lucide-react";
 
@@ -9,7 +11,6 @@ import {
     LfEmpty,
     LfNotice,
     LfPanel,
-    LfSkeleton,
     lfTdClass,
     lfThClass,
     lfTrClass,
@@ -31,7 +32,8 @@ const ENTITY_FILTERS = [
     { value: "Administrator", label: "Administrators" },
 ];
 
-const PAGE_SIZE = 50;
+
+const DEFAULT_QUERY = { page: 1, sort: "timestamp", descending: true };
 
 export default function LfAdminActivityLogPage() {
     const consoleAdmin = getConsoleAdmin();
@@ -39,51 +41,37 @@ export default function LfAdminActivityLogPage() {
 
     const [items, setItems] = useState([]);
     const [total, setTotal] = useState(0);
-    const [page, setPage] = useState(1);
-    const [entityType, setEntityType] = useState("");
+    const [query, setQuery] = useState(DEFAULT_QUERY);
+    const [draft, setDraft] = useState({ search: "", administrator: "", activity: "", date: "", entityType: "" });
+    const [refresh, setRefresh] = useState(0);
     const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState("");
-
-    const load = async ({ resetPage = false, isRefresh = false } = {}) => {
-        const nextPage = resetPage ? 1 : page;
-
-        if (isRefresh) setRefreshing(true);
-
-        try {
-            const response = await lfAdminApi.activityLog({
-                page: nextPage,
-                pageSize: PAGE_SIZE,
-                entityType: entityType || undefined,
-            });
-
-            setItems(response.data?.items || []);
-            setTotal(response.data?.total || 0);
-            if (resetPage) setPage(1);
-            setError("");
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
+    const { page } = query;
+    const table = {
+        sort: { key: query.sort, desc: query.descending },
+        changeSort: (key) => setQuery((previous) => ({
+            ...previous, page: 1, sort: key,
+            descending: previous.sort === key && !previous.descending,
+        })),
     };
 
     useEffect(() => {
-        let cancelled = false;
-
-        (async () => {
-            if (cancelled) return;
-
-            if (canManage) await load({ resetPage: true });
-            else if (!cancelled) setLoading(false);
-        })();
-
-        return () => {
-            cancelled = true;
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [canManage, entityType]);
+        if (!canManage) return;
+        const controller = new AbortController();
+        lfAdminApi.activityLog({ ...query, pageSize: RECORDS_PER_PAGE }, controller.signal)
+            .then((response) => {
+                setItems(response.data?.items || []);
+                setTotal(response.data?.total || 0);
+                setError("");
+            })
+            .catch((error) => {
+                if (!controller.signal.aborted) setError(error.message);
+            })
+            .finally(() => {
+                if (!controller.signal.aborted) setLoading(false);
+            });
+        return () => controller.abort();
+    }, [canManage, query, refresh]);
 
     if (!canManage) {
         return (
@@ -100,10 +88,7 @@ export default function LfAdminActivityLogPage() {
         );
     }
 
-    if (loading) return <LfSkeleton rows={6} />;
-    if (error) return <LfNotice tone="bad">{error}</LfNotice>;
-
-    const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    const totalPages = Math.max(1, Math.ceil(total / RECORDS_PER_PAGE));
 
     return (
         <div className="space-y-4">
@@ -118,38 +103,46 @@ export default function LfAdminActivityLogPage() {
                     </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                    <select
-                        value={entityType}
-                        onChange={(event) => setEntityType(event.target.value)}
-                        className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 focus:outline-none"
-                    >
-                        {ENTITY_FILTERS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-
-                    <LfButton
-                        variant="secondary"
-                        onClick={() => load({ isRefresh: true })}
-                        loading={refreshing}
-                    >
-                        <RefreshCw size={14} aria-hidden="true" />
-                        Refresh
-                    </LfButton>
-                </div>
+                <LfButton variant="secondary" onClick={() => setRefresh((value) => value + 1)}>
+                    <RefreshCw size={14} aria-hidden="true" /> Refresh
+                </LfButton>
             </div>
+            <form className="flex flex-wrap items-end gap-3 text-xs" onSubmit={(event) => {
+                event.preventDefault();
+                setQuery((previous) => ({ ...previous, ...draft, page: 1 }));
+            }}>
+                {[
+                    ["search", "Search records", "search"],
+                    ["administrator", "Administrator name", "text"],
+                    ["activity", "Activity type", "text"],
+                    ["date", "Activity date", "date"],
+                ].map(([field, label, type]) => (
+                    <label key={field}>
+                        <span className="block font-semibold">{label}</span>
+                        <input className="rounded-lg border p-2" type={type} value={draft[field]}
+                            onChange={(event) => setDraft({ ...draft, [field]: event.target.value })} />
+                    </label>
+                ))}
+                <label>
+                    <span className="block font-semibold">Record type</span>
+                    <select className="rounded-lg border p-2" value={draft.entityType}
+                        onChange={(event) => setDraft({ ...draft, entityType: event.target.value })}>
+                        {ENTITY_FILTERS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                    </select>
+                </label>
+                <LfButton type="submit">Apply filters</LfButton>
+                <LfButton type="button" variant="secondary" onClick={() => {
+                    setDraft({ search: "", administrator: "", activity: "", date: "", entityType: "" });
+                    setQuery(DEFAULT_QUERY);
+                }}>Reset filters</LfButton>
+            </form>
 
-            <LfPanel
-                title="Recorded actions"
-                subtitle={`${total} entr${total === 1 ? "y" : "ies"} · page ${page} of ${totalPages}`}
-            >
-                {items.length === 0 ? (
+            {error && <LfNotice tone="bad">{error}</LfNotice>}
+            <LfPanel title="Recorded actions">
+                {loading ? <p role="status">Loading activity…</p> : items.length === 0 ? (
                     <LfEmpty
                         icon={History}
-                        title="No activity recorded"
+                        title="No matching activity"
                         message="Report reviews, claim decisions, pickups and account changes appear here."
                     />
                 ) : (
@@ -157,13 +150,13 @@ export default function LfAdminActivityLogPage() {
                         <table className="w-full min-w-[1100px] text-left text-xs">
                             <thead>
                                 <tr className="border-b border-slate-100">
-                                    <th className={lfThClass}>When</th>
-                                    <th className={lfThClass}>Administrator</th>
-                                    <th className={lfThClass}>Role</th>
-                                    <th className={lfThClass}>Action</th>
-                                    <th className={lfThClass}>Record</th>
-                                    <th className={lfThClass}>Status change</th>
-                                    <th className={lfThClass}>Details</th>
+                                    <SortHeader table={table} field="timestamp" className={lfThClass}>When</SortHeader>
+                                    <SortHeader table={table} field="actorName" className={lfThClass}>Administrator</SortHeader>
+                                    <SortHeader table={table} field="actorRole" className={lfThClass}>Role</SortHeader>
+                                    <SortHeader table={table} field="action" className={lfThClass}>Action</SortHeader>
+                                    <SortHeader table={table} field="entityId" className={lfThClass}>Record</SortHeader>
+                                    <SortHeader table={table} field="newStatus" className={lfThClass}>Status change</SortHeader>
+                                    <SortHeader table={table} field="details" className={lfThClass}>Details</SortHeader>
                                 </tr>
                             </thead>
                             <tbody>
@@ -212,55 +205,8 @@ export default function LfAdminActivityLogPage() {
                     </div>
                 )}
 
-                {totalPages > 1 && (
-                    <div className="mt-3 flex items-center justify-between gap-2">
-                        <button
-                            type="button"
-                            disabled={page <= 1}
-                            onClick={() => {
-                                const next = page - 1;
-                                setPage(next);
-                                lfAdminApi
-                                    .activityLog({
-                                        page: next,
-                                        pageSize: PAGE_SIZE,
-                                        entityType: entityType || undefined,
-                                    })
-                                    .then((response) => {
-                                        setItems(response.data?.items || []);
-                                        setTotal(response.data?.total || 0);
-                                    });
-                            }}
-                            className="rounded-xl border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 disabled:opacity-40"
-                        >
-                            Previous
-                        </button>
-                        <span className="text-[11px] text-slate-400">
-                            {page} / {totalPages}
-                        </span>
-                        <button
-                            type="button"
-                            disabled={page >= totalPages}
-                            onClick={() => {
-                                const next = page + 1;
-                                setPage(next);
-                                lfAdminApi
-                                    .activityLog({
-                                        page: next,
-                                        pageSize: PAGE_SIZE,
-                                        entityType: entityType || undefined,
-                                    })
-                                    .then((response) => {
-                                        setItems(response.data?.items || []);
-                                        setTotal(response.data?.total || 0);
-                                    });
-                            }}
-                            className="rounded-xl border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 disabled:opacity-40"
-                        >
-                            Next
-                        </button>
-                    </div>
-                )}
+                <RecordPagination page={Math.min(page, totalPages)} pages={totalPages} total={total}
+                    onPage={(next) => setQuery((previous) => ({ ...previous, page: next }))} />
             </LfPanel>
         </div>
     );

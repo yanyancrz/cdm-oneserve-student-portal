@@ -1,3 +1,7 @@
+import { usePhilippineDay } from "../components/usePhilippineDay.js";
+import { MissingDuration, RecordPagination, SortHeader, TableFilters } from "../components/LfRecords";
+import { useRecordTable } from "../components/useRecordTable.js";
+import { reportCategories } from "../components/recordTable.js";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Eye, SearchCheck } from "lucide-react";
@@ -7,15 +11,12 @@ import {
     formatDate,
     formatDateTime,
     formatItemId,
-    isExactItemIdMatch,
     lfAttribution,
 } from "../config/lfTheme";
 import { lfImageUrl } from "../config/lfImage";
 import {
     LfEmpty,
     LfImage,
-    LfItemIdEmpty,
-    LfItemIdSearch,
     LfNotice,
     LfSkeleton,
     LfStatusChip,
@@ -26,27 +27,11 @@ import {
     lfTrClass,
 } from "../components/lfUi";
 
-// =====================================================
-// Every report, newest first. The row only opens the
-// detail view - publishing or rejecting happens there,
-// after the admin has seen the full item.
-//
-// SEARCH: exact Item ID only. The whole report list is
-// already loaded from /api/lostfound/admin/reports, so the
-// match is an equality check against the report's own id -
-// nothing is sent to the server and no LIKE substring
-// search is involved.
-// =====================================================
-
 export default function LfAdminReportsPage() {
+    const philippineDay = usePhilippineDay();
     const [reports, setReports] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    // Draft = what is typed. Applied = what the table actually filters on,
-    // updated by Enter / Search / Clear so the list never flickers mid-typing.
-    const [draft, setDraft] = useState("");
-    const [applied, setApplied] = useState("");
-
     const load = async () => {
         try {
             const response = await lfAdminApi.reports();
@@ -68,20 +53,17 @@ export default function LfAdminReportsPage() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [philippineDay]);
 
-    const searching = applied.trim().length > 0;
-
-    // Exact match only: "1", "001" and "#001" are the same item;
-    // "10", "0012" or "LF-2026-001" match nothing.
-    const visible = searching
-        ? reports.filter((report) => isExactItemIdMatch(report.reportId, applied))
-        : reports;
-
-    const clearSearch = () => {
-        setDraft("");
-        setApplied("");
-    };
+    const table = useRecordTable(reports,
+        ["itemName", "reporterName", "reporterIdNumber", "category", "location", "description", "status", "lifecycleStatus"],
+        {
+            ...reportCategories,
+            "Pending review": (report) => report.status === "Pending",
+            Published: (report) => report.status === "Published",
+            Rejected: (report) => report.status === "Rejected",
+        }, "createdAt");
+    const visible = table.rows;
 
     if (loading) return <LfSkeleton rows={5} />;
 
@@ -95,29 +77,7 @@ export default function LfAdminReportsPage() {
 
     return (
         <div className="space-y-4">
-            {/* ---------- toolbar: counts + exact Item ID search ---------- */}
-            <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                    <h2 className="text-sm font-semibold text-slate-700">Reports</h2>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                        {reports.length} total ·{" "}
-                        {reports.filter((r) => r.status === "Pending").length} awaiting review ·{" "}
-                        {reports.filter((r) => r.status === "Published").length} on the board
-                    </p>
-                </div>
-
-                <div className="w-full sm:w-96">
-                    <LfItemIdSearch
-                        value={draft}
-                        onChange={setDraft}
-                        onSubmit={setApplied}
-                        onClear={clearSearch}
-                        loading={loading}
-                    />
-                </div>
-            </div>
-
-            {/* ---------- table ---------- */}
+            <TableFilters table={table} />
             {reports.length === 0 ? (
                 <LfEmpty
                     icon={SearchCheck}
@@ -125,15 +85,17 @@ export default function LfAdminReportsPage() {
                     message="Reports submitted by students and faculty appear here for review."
                 />
             ) : visible.length === 0 ? (
-                <LfItemIdEmpty icon={SearchCheck} recordNoun="report" onClear={clearSearch} />
+                <p className="text-sm text-slate-500">No matching records.</p>
             ) : (
                 <LfTableShell>
                     <thead>
                         <tr className="border-b border-slate-100">
-                            <th className={lfThClass}>Item</th>
-                            <th className={lfThClass}>Type</th>
-                            <th className={lfThClass}>Reported</th>
-                            <th className={lfThClass}>Status</th>
+                            <SortHeader table={table} field="itemName" className={lfThClass}>Item name</SortHeader>
+                            <SortHeader table={table} field="reportId" className={lfThClass}>Item ID</SortHeader>
+                            <SortHeader table={table} field="reportType" className={lfThClass}>Type</SortHeader>
+                            <SortHeader table={table} field="reporterName" className={lfThClass}>Student name</SortHeader>
+                            <SortHeader table={table} field="createdAt" className={lfThClass}>Reported</SortHeader>
+                            <SortHeader table={table} field="lifecycleStatus" className={lfThClass}>Status</SortHeader>
                             <th className={`${lfThClass} text-right`}>Detail</th>
                         </tr>
                     </thead>
@@ -152,9 +114,6 @@ export default function LfAdminReportsPage() {
                                             />
                                             <div className="min-w-0">
                                                 <span className="flex flex-wrap items-center gap-1.5">
-                                                    <span className="rounded-md bg-[#10231B] px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-white ring-1 ring-white/30">
-                                                        {formatItemId(report.reportId)}
-                                                    </span>
                                                     <Link
                                                         to={`/lost-found/admin/reports/${report.reportId}`}
                                                         className="block truncate font-semibold text-slate-800 hover:text-[#106A2E]"
@@ -164,7 +123,7 @@ export default function LfAdminReportsPage() {
                                                 </span>
                                                 <span className="mt-0.5 block truncate text-[10px] text-slate-400">
                                                     {report.category || "Uncategorized"}
-                                                    {report.location ? ` · ${report.location}` : ""}
+                                                    {report.location ? ` Â· ${report.location}` : ""}
                                                 </span>
                                                 <span className="mt-0.5 block max-w-[280px] truncate text-[10px] italic text-slate-400">
                                                     {report.description}
@@ -172,17 +131,23 @@ export default function LfAdminReportsPage() {
                                             </div>
                                         </div>
                                     </td>
+                                    <td className={lfTdClass}>{formatItemId(report.reportId)}</td>
                                     <td className={lfTdClass}>
                                         <LfTypeTag type={report.reportType} />
                                     </td>
+                                    <td className={lfTdClass}>{report.reporterName}</td>
                                     <td className={`${lfTdClass} whitespace-nowrap text-slate-500`}>
-                                        {formatDate(report.dateLostFound)}
-                                        <span className="block text-[10px] text-slate-400">
-                                            {formatDateTime(report.createdAt)}
-                                        </span>
+                                        {formatDateTime(report.createdAt)}
+                                        {report.dateLostFound && <span className="block text-[10px]">
+                                            {report.reportType} on {formatDate(report.dateLostFound)}
+                                        </span>}
                                     </td>
                                     <td className={lfTdClass}>
-                                        <LfStatusChip status={report.status} />
+                                        <MissingDuration item={report} />
+                                        <div className="flex flex-wrap gap-1">
+                                            <LfStatusChip status={report.lifecycleStatus || report.reportType} />
+                                            <LfStatusChip status={report.status} />
+                                        </div>
                                         {report.reviewedByName && (
                                             <span className="mt-1 block max-w-[220px] text-[10px] leading-4 text-slate-500">
                                                 {lfAttribution(
@@ -210,6 +175,7 @@ export default function LfAdminReportsPage() {
                     </tbody>
                 </LfTableShell>
             )}
+            <RecordPagination {...table.pagination} />
         </div>
     );
 }

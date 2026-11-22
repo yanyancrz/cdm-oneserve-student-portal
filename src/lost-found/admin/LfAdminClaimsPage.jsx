@@ -1,3 +1,6 @@
+import { usePhilippineDay } from "../components/usePhilippineDay.js";
+import { MissingDuration, RecordPagination, SortHeader, TableFilters } from "../components/LfRecords";
+import { useRecordTable } from "../components/useRecordTable.js";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Eye, HandHelping } from "lucide-react";
@@ -6,13 +9,10 @@ import { lfAdminApi } from "../services/lfApi";
 import {
     formatDateTime,
     formatItemId,
-    isExactItemIdMatch,
     lfAttribution,
 } from "../config/lfTheme";
 import {
     LfEmpty,
-    LfItemIdEmpty,
-    LfItemIdSearch,
     LfNotice,
     LfSkeleton,
     LfStatusChip,
@@ -23,25 +23,11 @@ import {
     lfTrClass,
 } from "../components/lfUi";
 
-// =====================================================
-// Every claim. The row only opens the item's detail view -
-// approving or rejecting happens there, after the admin
-// has seen the item, the evidence and the other claims.
-//
-// SEARCH: exact Item ID only, and it matches the ITEM's
-// id (claim.reportId), never the claim id. Several claims
-// on the same item all show up for that Item ID.
-// =====================================================
-
 export default function LfAdminClaimsPage() {
+    const philippineDay = usePhilippineDay();
     const [claims, setClaims] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
-    // Draft = what is typed. Applied = what the table filters on, set by
-    // Enter / Search / Clear.
-    const [draft, setDraft] = useState("");
-    const [applied, setApplied] = useState("");
-
     const load = async () => {
         try {
             const response = await lfAdminApi.claims();
@@ -63,19 +49,19 @@ export default function LfAdminClaimsPage() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [philippineDay]);
 
-    const searching = applied.trim().length > 0;
-
-    // EXACT match on the claimed item's Item ID - not the Claim ID.
-    const visible = searching
-        ? claims.filter((claim) => isExactItemIdMatch(claim.reportId, applied))
-        : claims;
-
-    const clearSearch = () => {
-        setDraft("");
-        setApplied("");
+    const statuses = [...new Set(["Rejected", "Returned", "Cancelled", ...claims.map((claim) => claim.status)])];
+    const categories = {
+        Pending: (claim) => ["Processing", "Pending"].includes(claim.status),
+        Approved: (claim) => ["Approved", "Scheduled", "Awaiting Pickup"].includes(claim.status),
+        ...Object.fromEntries(statuses.filter((status) => !["Pending", "Approved", "Processing"].includes(status))
+            .map((status) => [status, (claim) => claim.status === status])),
     };
+    const table = useRecordTable(claims,
+        ["itemName", "claimantName", "claimantEmail", "finderName", "finderEmail", "status"],
+        categories, "claimDate");
+    const visible = table.rows;
 
     if (loading) return <LfSkeleton rows={5} />;
 
@@ -89,48 +75,26 @@ export default function LfAdminClaimsPage() {
 
     return (
         <div className="space-y-4">
-            {/* ---------- toolbar: counts + exact Item ID search ---------- */}
-            <div className="flex flex-wrap items-end justify-between gap-3">
-                <div>
-                    <h2 className="text-sm font-semibold text-slate-700">Claims</h2>
-                    <p className="mt-0.5 text-xs text-slate-500">
-                        {claims.length} total ·{" "}
-                        {claims.filter((c) => c.status === "Processing").length} awaiting a
-                        decision · {claims.filter((c) => c.status === "Awaiting Pickup").length}{" "}
-                        awaiting pickup
-                    </p>
-                </div>
-
-                <div className="w-full sm:w-96">
-                    <LfItemIdSearch
-                        value={draft}
-                        onChange={setDraft}
-                        onSubmit={setApplied}
-                        onClear={clearSearch}
-                        loading={loading}
-                    />
-                </div>
-            </div>
-
-            {/* ---------- table ---------- */}
+            <TableFilters table={table} />
             {claims.length === 0 ? (
                 <LfEmpty
                     icon={HandHelping}
                     title="No claims yet"
-                    message="When a student claims a found item, it appears here for the finder's decision."
+                    message="Claims submitted by students appear here for review."
                 />
             ) : visible.length === 0 ? (
-                <LfItemIdEmpty icon={HandHelping} recordNoun="claim" onClear={clearSearch} />
+                <p className="text-sm text-slate-500">No matching records.</p>
             ) : (
                 <LfTableShell>
                     <thead>
                         <tr className="border-b border-slate-100">
-                            <th className={lfThClass}>Item</th>
-                            <th className={lfThClass}>Claimant</th>
-                            <th className={lfThClass}>Finder</th>
-                            <th className={lfThClass}>Evidence</th>
-                            <th className={lfThClass}>Claim date</th>
-                            <th className={lfThClass}>Status</th>
+                            <SortHeader table={table} field="itemName" className={lfThClass}>Item name</SortHeader>
+                            <SortHeader table={table} field="reportId" className={lfThClass}>Item ID</SortHeader>
+                            <SortHeader table={table} field="claimantName" className={lfThClass}>Claimant</SortHeader>
+                            <SortHeader table={table} field="finderName" className={lfThClass}>Finder</SortHeader>
+                            <SortHeader table={table} field="verificationNotes" className={lfThClass}>Evidence</SortHeader>
+                            <SortHeader table={table} field="claimDate" className={lfThClass}>Claim date</SortHeader>
+                            <SortHeader table={table} field="status" className={lfThClass}>Status</SortHeader>
                             <th className={`${lfThClass} text-right`}>Detail</th>
                         </tr>
                     </thead>
@@ -139,9 +103,6 @@ export default function LfAdminClaimsPage() {
                             <tr key={claim.claimId} className={lfTrClass}>
                                 <td className={lfTdClass}>
                                     <span className="flex flex-wrap items-center gap-1.5 font-semibold text-slate-800">
-                                        <span className="rounded-md bg-[#10231B] px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-white ring-1 ring-white/30">
-                                            {formatItemId(claim.reportId)}
-                                        </span>
                                         <Link
                                             to={`/lost-found/admin/reports/${claim.reportId}`}
                                             className="hover:text-[#106A2E]"
@@ -157,6 +118,7 @@ export default function LfAdminClaimsPage() {
                                         <LfTypeTag type={claim.reportType} />
                                     </span>
                                 </td>
+                                <td className={lfTdClass}>{formatItemId(claim.reportId)}</td>
                                 <td className={lfTdClass}>
                                     <span className="block font-medium text-slate-700">
                                         {claim.claimantName || "—"}
@@ -186,6 +148,7 @@ export default function LfAdminClaimsPage() {
                                     {formatDateTime(claim.claimDate)}
                                 </td>
                                 <td className={lfTdClass}>
+                                    <MissingDuration item={claim} />
                                     <LfStatusChip status={claim.status} />
                                     {claim.decisionByName && (
                                         <span className="mt-1 block max-w-[200px] text-[10px] leading-4 text-slate-500">
@@ -216,6 +179,7 @@ export default function LfAdminClaimsPage() {
                     </tbody>
                 </LfTableShell>
             )}
+            <RecordPagination {...table.pagination} />
         </div>
     );
 }

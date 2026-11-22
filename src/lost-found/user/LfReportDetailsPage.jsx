@@ -1,3 +1,5 @@
+import { usePhilippineDay } from "../components/usePhilippineDay.js";
+import { MissingDuration } from "../components/LfRecords";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -38,6 +40,7 @@ import {
 // =====================================================
 
 export default function LfReportDetailsPage() {
+    const philippineDay = usePhilippineDay();
     const { reportId } = useParams();
     const navigate = useNavigate();
 
@@ -80,7 +83,7 @@ export default function LfReportDetailsPage() {
 
     useEffect(() => {
         load();
-    }, [load]);
+    }, [philippineDay, load]);
 
     const isOwner = report && userId && report.userId === userId;
     const isPending = report?.status === "Pending";
@@ -89,7 +92,7 @@ export default function LfReportDetailsPage() {
     const isReturned = Boolean(report?.isReturned);
     // A handed-over item stays visible but can no longer be claimed.
     const canClaim = isFound && report?.status === "Published" && !isOwner && !isReturned;
-    const canRecover = isLost && report?.status === "Published" && !isOwner;
+    const canRecover = isLost && report?.status === "Published" && !isOwner && !isReturned;
 
     const onDelete = async () => {
         if (!window.confirm("Delete this report? This cannot be undone.")) return;
@@ -145,6 +148,7 @@ export default function LfReportDetailsPage() {
                             <h2 className="text-xl font-semibold text-slate-800">
                                 {report.itemName}
                             </h2>
+                        <MissingDuration item={report} />
                             <LfTypeTag type={report.reportType} />
                             <LfStatusChip status={report.status} />
                         </div>

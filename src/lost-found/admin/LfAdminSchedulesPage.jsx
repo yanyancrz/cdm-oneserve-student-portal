@@ -1,14 +1,15 @@
+import { usePhilippineDay } from "../components/usePhilippineDay.js";
+import { MissingDuration, RecordPagination, SortHeader, TableFilters } from "../components/LfRecords";
+import { useRecordTable } from "../components/useRecordTable.js";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
     CalendarClock,
     CheckCircle2,
     Clock,
-    Eye,
     MapPin,
     Plus,
     Trash2,
-    UserRoundCheck,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -16,14 +17,11 @@ import { lfAdminApi } from "../services/lfApi";
 import {
     formatDateTime,
     formatItemId,
-    isExactItemIdMatch,
     lfAttribution,
 } from "../config/lfTheme";
 import {
     LfButton,
     LfEmpty,
-    LfItemIdEmpty,
-    LfItemIdSearch,
     lfField,
     LfNotice,
     LfPanel,
@@ -45,17 +43,24 @@ import {
 // =====================================================
 
 export default function LfAdminSchedulesPage() {
+    const philippineDay = usePhilippineDay();
     const [schedules, setSchedules] = useState([]);
     const [availability, setAvailability] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     // "queue" = awaiting pickup / scheduled (handover lives here),
     // "completed" = recorded handovers, read-only history.
-    const [tab, setTab] = useState("queue");
     const [inspecting, setInspecting] = useState(null);
     // Queue search: exact Item ID, same algorithm as completed pickups.
-    const [queueDraft, setQueueDraft] = useState("");
-    const [queueApplied, setQueueApplied] = useState("");
+    const table = useRecordTable(schedules.map((row) => ({ ...row, pickupDate: row.completedAt || row.scheduledDateTime })),
+        ["itemName", "claimantName", "claimantEmail", "accountStudentId", "receivedByName", "receivedByStudentId", "status"],
+        {
+            "Pending pickup": (row) => ["Scheduled", "Awaiting Pickup"].includes(row.status),
+            "Completed / Returned": (row) => row.status === "Completed",
+            ...Object.fromEntries([...new Set(schedules.map((row) => row.status))]
+                .filter((status) => !["Scheduled", "Awaiting Pickup", "Completed"].includes(status))
+                .map((status) => [status, (row) => row.status === status])),
+        });
 
     const load = async () => {
         try {
@@ -84,162 +89,44 @@ export default function LfAdminSchedulesPage() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [philippineDay]);
 
     if (loading) return <LfSkeleton rows={5} />;
 
     if (error) return <LfNotice tone="bad">{error}</LfNotice>;
 
-    // The queue holds work; completed rows are a record, so they are
-    // switched to with a tab instead of mixed into the live table.
-    const queue = schedules.filter(
-        (schedule) =>
-            schedule.status === "Scheduled" ||
-            schedule.status === "Awaiting Pickup"
-    );
-    const completed = schedules.filter(
-        (schedule) => schedule.status === "Completed"
-    );
-    const otherStatuses = schedules.filter(
-        (schedule) =>
-            schedule.status !== "Completed" &&
-            schedule.status !== "Scheduled" &&
-            schedule.status !== "Awaiting Pickup"
-    );
-
-    const queueSearching = queueApplied.trim().length > 0;
-    const visibleQueue = queueSearching
-        ? queue.filter((schedule) =>
-              isExactItemIdMatch(schedule.reportId, queueApplied)
-          )
-        : queue;
-
-    const clearQueueSearch = () => {
-        setQueueDraft("");
-        setQueueApplied("");
-    };
-
     return (
         <div className="space-y-5">
-            <AvailabilityManager
-                availability={availability}
-                onChanged={load}
-            />
-
-            {/* ---------- tabs: queue vs recorded handovers ---------- */}
-            <div className="flex flex-wrap items-center gap-2">
-                <button
-                    type="button"
-                    onClick={() => setTab("queue")}
-                    aria-pressed={tab === "queue"}
-                    className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-                        tab === "queue"
-                            ? "bg-[#106A2E] text-white"
-                            : "bg-white text-slate-500 hover:bg-slate-100"
-                    }`}
-                >
-                    Pickup queue ({queue.length})
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setTab("completed")}
-                    aria-pressed={tab === "completed"}
-                    className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-                        tab === "completed"
-                            ? "bg-[#106A2E] text-white"
-                            : "bg-white text-slate-500 hover:bg-slate-100"
-                    }`}
-                >
-                    Completed pickups ({completed.length})
-                </button>
-                {otherStatuses.length > 0 && (
-                    <span className="ml-auto text-[11px] text-slate-400">
-                        {otherStatuses.length} cancelled
-                    </span>
+            <AvailabilityManager availability={availability} onChanged={load} />
+            <LfPanel title="Pickups">
+                <TableFilters table={table} />
+                {table.rows.length === 0 ? (
+                    <LfEmpty icon={CalendarClock} title="No matching pickups"
+                        message="Approved claims appear here when they are ready for pickup." />
+                ) : (
+                    <div className="mt-3 overflow-x-auto rounded-2xl border border-slate-200">
+                        <table className="w-full min-w-[960px] text-left text-xs">
+                            <thead>
+                                <tr className="border-b border-slate-100 text-[10px] uppercase tracking-wide text-slate-500">
+                                    <SortHeader table={table} field="itemName" className="px-4 py-3">Item name</SortHeader>
+                                    <SortHeader table={table} field="reportId" className="px-4 py-3">Item ID</SortHeader>
+                                    <SortHeader table={table} field="claimantName" className="px-4 py-3">Claimant</SortHeader>
+                                    <SortHeader table={table} field="pickupDate" className="px-4 py-3">Pickup date</SortHeader>
+                                    <SortHeader table={table} field="status" className="px-4 py-3">Status</SortHeader>
+                                    <th scope="col" className="px-4 py-3 text-right">Handover</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100">
+                                {table.rows.map((schedule) => (
+                                    <ScheduleRow key={schedule.scheduleId} schedule={schedule}
+                                        onHandover={load} onInspect={setInspecting} />
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 )}
-            </div>
-
-            {tab === "queue" ? (
-                <LfPanel
-                    title="Pickup queue"
-                    subtitle="Awaiting pickup first, then scheduled - record the handover here"
-                >
-                    {queue.length === 0 ? (
-                        <LfEmpty
-                            icon={CalendarClock}
-                            title="No pickups in the queue"
-                            message="When a claim is approved for pickup, its schedule appears here."
-                        />
-                    ) : (
-                        <>
-                            {/* ---------- toolbar: exact Item ID search ---------- */}
-                            <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-                                <p className="text-xs text-slate-500">
-                                    {queue.length} total
-                                    {queueSearching
-                                        ? ` · ${visibleQueue.length} matching`
-                                        : ""}
-                                </p>
-                                <div className="w-full sm:w-96">
-                                    <LfItemIdSearch
-                                        value={queueDraft}
-                                        onChange={setQueueDraft}
-                                        onSubmit={setQueueApplied}
-                                        onClear={clearQueueSearch}
-                                        loading={false}
-                                    />
-                                </div>
-                            </div>
-
-                            {visibleQueue.length === 0 ? (
-                                <LfItemIdEmpty
-                                    icon={CalendarClock}
-                                    recordNoun="pickup"
-                                    onClear={clearQueueSearch}
-                                />
-                            ) : (
-                                <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                                    <table className="w-full min-w-[960px] text-left text-xs">
-                                        <thead>
-                                            <tr className="border-b border-slate-100 text-[10px] uppercase tracking-wide text-slate-400">
-                                                <th className="px-4 py-3 font-semibold">
-                                                    Item
-                                                </th>
-                                                <th className="px-4 py-3 font-semibold">
-                                                    Claimant
-                                                </th>
-                                                <th className="px-4 py-3 font-semibold">
-                                                    Slot
-                                                </th>
-                                                <th className="px-4 py-3 font-semibold">
-                                                    Status
-                                                </th>
-                                                <th className="px-4 py-3 text-right font-semibold">
-                                                    Handover
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100">
-                                            {visibleQueue.map((schedule) => (
-                                                <ScheduleRow
-                                                    key={schedule.scheduleId}
-                                                    schedule={schedule}
-                                                    onHandover={load}
-                                                />
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            )}
-                        </>
-                    )}
-                </LfPanel>
-            ) : (
-                <CompletedPickups
-                    completed={completed}
-                    onInspect={setInspecting}
-                />
-            )}
+                <RecordPagination {...table.pagination} />
+            </LfPanel>
 
             {inspecting && (
                 <PickupDetailsModal
@@ -626,7 +513,7 @@ function AvailabilityManager({ availability, onChanged }) {
 // One pickup row + the handover form
 // =====================================================
 
-function ScheduleRow({ schedule, onHandover }) {
+function ScheduleRow({ schedule, onHandover, onInspect }) {
     const [completing, setCompleting] = useState(false);
     const [receivedByName, setReceivedByName] = useState("");
     const [receivedByStudentId, setReceivedByStudentId] = useState("");
@@ -681,9 +568,6 @@ function ScheduleRow({ schedule, onHandover }) {
         <tr className="transition hover:bg-slate-50/70">
             <td className="px-4 py-3">
                 <span className="flex flex-wrap items-center gap-1.5 font-semibold text-slate-800">
-                    <span className="rounded-md bg-[#10231B] px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-white ring-1 ring-white/30">
-                        {formatItemId(schedule.reportId)}
-                    </span>
                     <Link
                         to={`/lost-found/admin/reports/${schedule.reportId}`}
                         className="hover:text-[#106A2E]"
@@ -692,6 +576,7 @@ function ScheduleRow({ schedule, onHandover }) {
                     </Link>
                 </span>
             </td>
+            <td className="px-4 py-3 font-mono">{formatItemId(schedule.reportId)}</td>
             <td className="px-4 py-3">
                 <span className="block font-medium text-slate-700">
                     {schedule.claimantName || "—"}
@@ -709,7 +594,7 @@ function ScheduleRow({ schedule, onHandover }) {
                 ) : (
                     <>
                         <span className="block font-medium text-slate-700">
-                            {formatDateTime(schedule.scheduledDateTime)}
+                            {formatDateTime(schedule.pickupDate)}
                         </span>
                         <span className="mt-0.5 flex items-center gap-1 text-[10px] text-slate-400">
                             <MapPin size={10} aria-hidden="true" />
@@ -720,6 +605,7 @@ function ScheduleRow({ schedule, onHandover }) {
             </td>
             <td className="px-4 py-3">
                 <LfStatusChip status={schedule.status} />
+                <MissingDuration item={schedule} />
                 {schedule.completedAt && (
                     <span className="mt-1 block text-[10px] text-slate-400">
                         {formatDateTime(schedule.completedAt)}
@@ -769,199 +655,15 @@ function ScheduleRow({ schedule, onHandover }) {
                             Complete
                         </LfButton>
                     </form>
-                ) : (
-                    <span className="block text-right text-[10px] text-slate-400">
-                        {schedule.status === "Completed"
-                            ? "Handover recorded"
-                            : "—"}
-                    </span>
-                )}
+                ) : schedule.status === "Completed" ? (
+                    <div className="text-right">
+                        <LfButton variant="secondary" onClick={() => onInspect(schedule)}>View details</LfButton>
+                    </div>
+                ) : null}
             </td>
         </tr>
     );
 }
-
-// =====================================================
-// RECORDED HANDOVERS
-//
-// The claimant and the person who physically received
-// the item are two different facts, so they are always
-// shown in their own columns: the admin books who the
-// claim belongs to AND who actually took it. They can
-// be the same person, but the UI never assumes it.
-// =====================================================
-
-function CompletedPickups({ completed, onInspect }) {
-    // Draft = what is typed. Applied = what the table filters on, set by
-    // Enter / Search / Clear - same exact Item ID algorithm as the admin
-    // reports and claims lists.
-    const [draft, setDraft] = useState("");
-    const [applied, setApplied] = useState("");
-
-    if (completed.length === 0) {
-        return (
-            <LfPanel
-                title="Completed pickups"
-                subtitle="Every recorded handover, newest first"
-            >
-                <LfEmpty
-                    icon={UserRoundCheck}
-                    title="No completed pickups yet"
-                    message="Once you record a handover in the queue, the full record appears here."
-                />
-            </LfPanel>
-        );
-    }
-
-    const rows = [...completed].sort((a, b) =>
-        String(b.completedAt ?? "").localeCompare(String(a.completedAt ?? ""))
-    );
-
-    const searching = applied.trim().length > 0;
-
-    // Exact match only: "1", "001" and "#001" are the same item;
-    // "10", "0012" or "LF-2026-001" match nothing.
-    const visible = searching
-        ? rows.filter((schedule) => isExactItemIdMatch(schedule.reportId, applied))
-        : rows;
-
-    const clearSearch = () => {
-        setDraft("");
-        setApplied("");
-    };
-
-    return (
-        <LfPanel
-            title="Completed pickups"
-            subtitle="Every recorded handover, newest first"
-        >
-            {/* ---------- toolbar: exact Item ID search ---------- */}
-            <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
-                <p className="text-xs text-slate-500">
-                    {completed.length} total
-                    {searching ? ` · ${visible.length} matching` : ""}
-                </p>
-                <div className="w-full sm:w-96">
-                    <LfItemIdSearch
-                        value={draft}
-                        onChange={setDraft}
-                        onSubmit={setApplied}
-                        onClear={clearSearch}
-                        loading={false}
-                    />
-                </div>
-            </div>
-
-            {visible.length === 0 ? (
-                <LfItemIdEmpty
-                    icon={UserRoundCheck}
-                    recordNoun="pickup"
-                    onClear={clearSearch}
-                />
-            ) : (
-            <div className="overflow-x-auto rounded-2xl border border-slate-200">
-                <table className="w-full min-w-[1020px] text-left text-xs">
-                    <thead>
-                        <tr className="border-b border-slate-100 text-[10px] uppercase tracking-wide text-slate-400">
-                            <th className="px-4 py-3 font-semibold">Item</th>
-                            <th className="px-4 py-3 font-semibold">
-                                Claimant (name · ID)
-                            </th>
-                            <th className="px-4 py-3 font-semibold">
-                                Received by (name · ID)
-                            </th>
-                            <th className="px-4 py-3 font-semibold">Completed</th>
-                            <th className="px-4 py-3 font-semibold">Status</th>
-                            <th className="px-4 py-3 text-right font-semibold">
-                                Details
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                        {visible.map((schedule) => (
-                            <tr
-                                key={schedule.scheduleId}
-                                className="transition hover:bg-slate-50/70"
-                            >
-                                <td className="px-4 py-3">
-                                    <span className="flex flex-wrap items-center gap-1.5 font-semibold text-slate-800">
-                                        <span className="rounded-md bg-[#10231B] px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wide text-white ring-1 ring-white/30">
-                                            {formatItemId(schedule.reportId)}
-                                        </span>
-                                        <Link
-                                            to={`/lost-found/admin/reports/${schedule.reportId}`}
-                                            className="hover:text-[#106A2E]"
-                                        >
-                                            {schedule.itemName}
-                                        </Link>
-                                    </span>
-                                </td>
-
-                                {/* ---- claimant: the account that claimed - */}
-                                <td className="px-4 py-3">
-                                    <span className="block font-medium text-slate-700">
-                                        {schedule.claimantName || "—"}
-                                    </span>
-                                    <span className="block text-[10px] text-slate-400">
-                                        {schedule.accountStudentId || "No ID on file"}
-                                    </span>
-                                </td>
-
-                                {/* ---- receiver: who actually took it ---- */}
-                                <td className="px-4 py-3">
-                                    <span className="flex items-center gap-1.5 font-medium text-slate-700">
-                                        <UserRoundCheck
-                                            size={12}
-                                            className="text-[#106A2E]"
-                                            aria-hidden="true"
-                                        />
-                                        {schedule.receivedByName || "—"}
-                                    </span>
-                                    <span className="block text-[10px] text-slate-400">
-                                        {schedule.receivedByStudentId || "No ID recorded"}
-                                    </span>
-                                </td>
-
-                                <td className="px-4 py-3 whitespace-nowrap text-slate-500">
-                                    {formatDateTime(schedule.completedAt)}
-                                </td>
-                                <td className="px-4 py-3">
-                                    <LfStatusChip status="Returned" />
-                                    {schedule.verifiedByName && (
-                                        <span className="mt-1 block text-[10px] leading-4 text-slate-500">
-                                            {lfAttribution(
-                                                schedule.verifiedByName,
-                                                schedule.verifiedByRole,
-                                                "Completed"
-                                            )}
-                                        </span>
-                                    )}
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                    <button
-                                        type="button"
-                                        onClick={() => onInspect(schedule)}
-                                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-1.5 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50"
-                                    >
-                                        <Eye size={12} aria-hidden="true" />
-                                        View details
-                                    </button>
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            )}
-        </LfPanel>
-    );
-}
-
-// =====================================================
-// The full record of one recorded handover.
-// Read-only: nothing here can be edited after the
-// fact, so a completed record can never be rewritten.
-// =====================================================
 
 function PickupDetailsModal({ schedule, onClose }) {
     const samePerson =

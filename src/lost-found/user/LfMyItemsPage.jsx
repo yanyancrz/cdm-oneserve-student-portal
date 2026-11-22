@@ -1,3 +1,5 @@
+import { usePhilippineDay } from "../components/usePhilippineDay.js";
+import { MissingDuration } from "../components/LfRecords";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ClipboardList, Plus } from "lucide-react";
@@ -23,6 +25,7 @@ import {
 // =====================================================
 
 export default function LfMyItemsPage() {
+    const philippineDay = usePhilippineDay();
     const navigate = useNavigate();
 
     const [reports, setReports] = useState([]);
@@ -49,7 +52,7 @@ export default function LfMyItemsPage() {
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [philippineDay]);
 
     return (
         <div className="space-y-4">
@@ -109,6 +112,7 @@ export default function LfMyItemsPage() {
                                             <span className="truncate text-sm font-semibold text-slate-800">
                                                 {report.itemName}
                                             </span>
+                                            <MissingDuration item={report} />
                                             <LfTypeTag type={report.reportType} />
                                         </span>
                                         <span className="mt-1 block truncate text-xs text-slate-500">
