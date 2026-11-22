@@ -25,7 +25,7 @@ import ModuleBottomNav from "../../../components/BottomNavigation/ModuleBottomNa
 const TABS = [
     { to: "/guidance/counselor", label: "Dashboard", icon: LayoutDashboard, end: true },
     { to: "/guidance/counselor/appointments", label: "Appointments", icon: CalendarCheck2 },
-    { to: "/guidance/counselor/narrative-reports", label: "Narrative Report", icon: FileText },
+    { to: "/guidance/counselor/narrative-reports", label: "Narrative Report", mobileLabel: "Narrative", icon: FileText },
 ];
 
 // Where a tapped alert goes: new / cancelled requests are all handled in Appointments.
@@ -74,6 +74,7 @@ export default function CounselorLayout() {
     const items = [
         ...TABS.map((tab) => ({
             label: tab.label,
+            mobileLabel: tab.mobileLabel,
             path: tab.to,
             icon: tab.icon,
             end: tab.end,

@@ -16,7 +16,7 @@ import { portalHomeForRole } from "../PortalLink/BackToPortal";
 // =====================================================
 
 /**
- * @param {Array} props.items       route items: `{ label, path, icon, end?, badge? }`
+ * @param {Array} props.items       route items: `{ label, mobileLabel?, path, icon, end?, badge? }`
  *   action items: `{ label, icon, onClick, active?, badge? }` - for tabs that
  *   open an in-page sheet instead of navigating (the counselor's Alerts). The
  *   caller owns what `active` means; for a route item the URL decides.
@@ -437,7 +437,7 @@ export default function ModuleBottomNav({
                                         <Icon size={18} />
 
                                         <span className="text-[10px] font-semibold">
-                                            {item.label}
+                                            {item.mobileLabel ?? item.label}
                                         </span>
 
                                         {item.badge > 0 && (
