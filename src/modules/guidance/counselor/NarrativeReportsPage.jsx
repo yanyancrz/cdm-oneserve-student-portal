@@ -144,11 +144,13 @@ export default function NarrativeReportsPage() {
 
     const refresh = () => setReloadKey((n) => n + 1);
 
-    const [handwrittenFile, setHandwrittenFile] = useState(null);
+    const [attachmentFile, setAttachmentFile] = useState(null);
+    const [reportMode, setReportMode] = useState("typing");
 
     const openCreate = () => {
         resetEditor();
-        setHandwrittenFile(null);
+        setAttachmentFile(null);
+        setReportMode("typing");
         setSelected(null);
         setView("editor");
     };
@@ -167,12 +169,13 @@ export default function NarrativeReportsPage() {
     };
 
     const openEdit = async (id) => {
-        setHandwrittenFile(null);
+        setAttachmentFile(null);
         setDetailLoading(true);
         setView("editor");
         try {
             const report = await guidanceApi.getNarrativeReport(id);
             setEditingId(report.id);
+            setReportMode(!report.sessionSummary?.trim() && report.attachments?.length ? "handwritten" : "typing");
             setSelected(report);
             setSubjects((prev) => {
                 if (prev.some((s) => s.userId === report.subjectId)) return prev;
@@ -220,8 +223,8 @@ export default function NarrativeReportsPage() {
             return;
         }
 
-        if (handwrittenFile?.size > 10 * 1024 * 1024) {
-            setError("The handwritten attachment must be 10 MB or smaller.");
+        if (attachmentFile?.size > 10 * 1024 * 1024) {
+            setError("The attachment must be 10 MB or smaller.");
             return;
         }
 
@@ -235,15 +238,15 @@ export default function NarrativeReportsPage() {
             const report = result.data || result;
             setEditingId(report.id);
             setSelected(report);
-            if (handwrittenFile) {
+            if (attachmentFile) {
                 try {
-                    await guidanceApi.uploadNarrativeAttachment(report.id, handwrittenFile);
+                    await guidanceApi.uploadNarrativeAttachment(report.id, attachmentFile);
                 } catch (error) {
-                    setError(`Draft saved. Could not attach the handwritten report. ${error.message}`);
+                    setError(`Draft saved. Could not upload the attachment. ${error.message}`);
                     refresh();
                     return;
                 }
-                setHandwrittenFile(null);
+                setAttachmentFile(null);
                 await openDetail(report.id);
                 refresh();
                 return;
@@ -375,7 +378,7 @@ export default function NarrativeReportsPage() {
                         <p className="text-xs text-slate-500">
                             {editingId
                                 ? "Only a draft can be edited."
-                                : "Save a draft and optionally attach a handwritten report."}
+                                : "Choose how you want to write the report, then save a draft."}
                         </p>
                     </div>
                 </div>
@@ -383,8 +386,32 @@ export default function NarrativeReportsPage() {
                 {error && <ErrorBox message={error} />}
 
                 <section className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                    <h2 className="text-sm font-bold text-slate-800">Handwritten report <span className="font-normal text-slate-600">(optional)</span></h2>
-                    <p className="text-xs text-slate-600">Take a photo or attach a scan, PDF or Word file up to 10 MB. It uploads when you save the draft.</p>
+                    <fieldset>
+                        <legend className="text-sm font-bold text-slate-800">Report format</legend>
+                        <div className="mt-2 grid grid-cols-2 gap-2">
+                            {[["typing", "Typing"], ["handwritten", "Handwritten"]].map(([value, label]) => (
+                                <label key={value}>
+                                    <input type="radio" name="narrative-format" value={value} checked={reportMode === value}
+                                        disabled={busy === "save"} onChange={() => setReportMode(value)} className="peer sr-only" />
+                                    <span className="flex min-h-11 cursor-pointer items-center justify-center rounded-xl border border-emerald-200 bg-white px-2 py-2 text-sm font-semibold text-emerald-900 transition hover:border-emerald-600 peer-checked:border-[#106A2E] peer-checked:bg-[#106A2E] peer-checked:text-white peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-600 peer-focus-visible:ring-offset-2 peer-disabled:opacity-50">
+                                        {label}
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
+                    </fieldset>
+                    <h2 className="text-sm font-bold text-slate-800">
+                        {reportMode === "handwritten" ? "Handwritten report attachment" : "Optional attachment"}
+                    </h2>
+                    <p className="text-xs text-slate-600">
+                        {reportMode === "handwritten"
+                            ? "Take a photo of your handwritten report or attach a scan, PDF or Word file."
+                            : "You can attach a photo, scan, PDF or Word file with your typed report."}
+                        {" "}Files up to 10 MB upload when you save the draft.
+                    </p>
+                    {reportMode === "handwritten" && form.sessionSummary.trim() && (
+                        <p className="text-xs text-slate-600">Your typed narrative is kept when you switch formats.</p>
+                    )}
                     <div className="grid gap-2 sm:flex">
                         {[
                             { label: "Choose File", icon: UploadCloud, accept: ".pdf,.doc,.docx,.jpg,.jpeg,.png" },
@@ -398,7 +425,7 @@ export default function NarrativeReportsPage() {
                                     disabled={busy === "save"}
                                     onChange={(event) => {
                                         const file = event.currentTarget.files?.[0];
-                                        if (file) setHandwrittenFile(file);
+                                        if (file) setAttachmentFile(file);
                                         event.currentTarget.value = "";
                                     }}
                                     className="peer sr-only"
@@ -409,10 +436,10 @@ export default function NarrativeReportsPage() {
                             </label>
                         ))}
                     </div>
-                    {handwrittenFile && (
+                    {attachmentFile && (
                         <div className="flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-white px-3 py-2 text-xs">
-                            <span className="min-w-0 break-all text-slate-700" role="status">{handwrittenFile.name}</span>
-                            <button type="button" onClick={() => setHandwrittenFile(null)} disabled={busy === "save"}
+                            <span className="min-w-0 break-all text-slate-700" role="status">{attachmentFile.name}</span>
+                            <button type="button" onClick={() => setAttachmentFile(null)} disabled={busy === "save"}
                                 className="shrink-0 rounded px-2 py-1 font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50">
                                 Remove
                             </button>
@@ -525,7 +552,7 @@ export default function NarrativeReportsPage() {
                     </label>
 
                     {[
-                        ["sessionSummary", "Narrative report"],
+                        ...(reportMode === "typing" ? [["sessionSummary", "Narrative report"]] : []),
                         ["sessionObjectives", "Session objectives"],
                         ["observations", "Observations"],
                         ["interventions", "Interventions / actions taken"],
