@@ -4,6 +4,26 @@ import { Toaster } from "react-hot-toast";
 import App from "./App";
 import "./index.css";
 
+if (import.meta.env.PROD) {
+    document.addEventListener("contextmenu", (event) => {
+        const target = event.target;
+        if (target instanceof HTMLElement &&
+            (target.isContentEditable || target.closest("input, textarea"))) return;
+
+        event.preventDefault();
+    });
+
+    document.addEventListener("keydown", (event) => {
+        const key = event.key.toLowerCase();
+        const developerShortcut = ["i", "j", "c"].includes(key) &&
+            ((event.ctrlKey && event.shiftKey) || (event.metaKey && event.altKey));
+        const viewSourceShortcut = key === "u" &&
+            ((event.ctrlKey && !event.altKey && !event.shiftKey) || (event.metaKey && event.altKey));
+
+        if (key === "f12" || developerShortcut || viewSourceShortcut) event.preventDefault();
+    });
+}
+
 ReactDOM.createRoot(
     document.getElementById("root")
 ).render(
