@@ -2,21 +2,18 @@ import "../authPages.css";
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
-    BookOpen,
     Eye,
     EyeOff,
     Lock,
     LogIn,
     Mail,
-    MessageCircleHeart,
-    SearchCheck,
-    Stethoscope,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import LoadingModal from "../../components/LoadingModal/LoadingModal";
 import BackgroundLayout from "../../layouts/BackgroundLayout";
 import AuthCardHeader from "../AuthCardHeader";
+import AuthServicePanel from "../AuthServicePanel";
 import { API_URL } from "../../config/api";
 import { loadGoogleIdentity, bindGoogleIdentity } from "../../services/googleIdentity";
 import { isPWAInstalled } from "../../utils/pwa";
@@ -24,17 +21,6 @@ import { LIBRARY_HOME_ROUTE, clearSession } from "../../library-admin/utils/sess
 import { rememberSessionKey } from "../../session/deviceSession";
 import { GUIDANCE_HEAD_HOME_ROUTE } from "../../guidance-admin/utils/session";
 import { LOST_FOUND_ADMIN_HOME_ROUTE } from "../../lost-found/session";
-
-// =====================================================
-// CAMPUS SERVICES SHOWN ON THE LOGIN PAGE
-// =====================================================
-
-const SERVICES = [
-    { name: "Clinic", description: "Health records", icon: Stethoscope },
-    { name: "Library", description: "Books, reservations, and e-resources", icon: BookOpen },
-    { name: "Guidance", description: "Counseling and student support", icon: MessageCircleHeart },
-    { name: "Lost & Found", description: "Report and claim lost items", icon: SearchCheck },
-];
 
 export default function Login() {
     const [email, setEmail] = useState("");
@@ -480,38 +466,7 @@ export default function Login() {
                 <div className="auth-page">
                     <div className="auth-frame mx-auto grid min-h-dvh w-full max-w-6xl items-center gap-8 px-4 py-8 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:px-12 lg:py-12">
                         {/* ================= BRAND PANEL (desktop) ================= */}
-                        <section className="auth-enter auth-brand-enter order-1 hidden lg:order-none lg:block">
-                            <h2 className="text-5xl font-bold tracking-tight text-emerald-950">
-                                CDM OneServe
-                            </h2>
-
-                            <p className="mt-2 text-lg font-medium text-[#106A2E]">
-                                An Integrated Campus Service Management
-                            </p>
-
-                            <p className="mt-3 max-w-md text-sm leading-relaxed text-slate-600">
-                                One account for every service at Colegio de Montalban,
-                                from the clinic to the library and everything in between.
-                            </p>
-
-                            <ul className="mt-8 grid max-w-md gap-2.5">
-                                {SERVICES.map(({ name, description, icon: Icon }) => (
-                                    <li
-                                        key={name}
-                                        className="flex items-center gap-3 rounded-2xl border border-emerald-900/10 bg-white/75 p-3"
-                                    >
-                                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-[#106A2E]">
-                                            <Icon size={18} />
-                                        </div>
-
-                                        <div className="min-w-0">
-                                            <p className="text-sm font-semibold text-slate-800">{name}</p>
-                                            <p className="text-xs leading-5 text-slate-600">{description}</p>
-                                        </div>
-                                    </li>
-                                ))}
-                            </ul>
-                        </section>
+                        <AuthServicePanel />
 
                         {/* ================= LOGIN CARD ================= */}
                         <section className="flex flex-col items-center">
@@ -633,17 +588,7 @@ export default function Login() {
                             </div>
 
                             {/* ================= SERVICE CHIPS (mobile / tablet) ================= */}
-                            <div className="auth-service-list mt-6 flex max-w-sm flex-wrap justify-center gap-2 lg:hidden">
-                                {SERVICES.map(({ name, icon: Icon }) => (
-                                    <span
-                                        key={name}
-                                        className="inline-flex items-center gap-1.5 rounded-full border border-emerald-900/10 bg-white/75 px-3 py-1.5 text-xs font-medium text-slate-700"
-                                    >
-                                        <Icon size={13} className="text-[#106A2E]" />
-                                        {name}
-                                    </span>
-                                ))}
-                            </div>
+                            <AuthServicePanel compact />
 
                             <p className="mt-6 text-center text-xs text-slate-600">
                                 Colegio de Montalban &middot; CDM OneServe

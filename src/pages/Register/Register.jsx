@@ -1,5 +1,6 @@
 import "../authPages.css";
 import AuthCardHeader from "../AuthCardHeader";
+import AuthServicePanel from "../AuthServicePanel";
 import { GraduationCap, UsersRound } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -214,206 +215,209 @@ export default function Register() {
             )}
 
             <BackgroundLayout>
-                <div className="auth-page auth-frame grid place-items-center px-4 py-8 sm:px-8 sm:py-12">
-                    <main className="auth-card auth-enter w-full max-w-xl p-5 sm:p-8 lg:p-10">
-                        <AuthCardHeader page="register" />
+                <div className="auth-page">
+                    <div className="auth-frame mx-auto grid min-h-dvh w-full max-w-6xl items-center justify-items-center gap-8 px-4 py-8 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:px-12 lg:py-12">
+                        <main className="auth-card auth-enter w-full max-w-xl p-5 sm:p-8 lg:p-10">
+                            <AuthCardHeader page="register" />
 
-                        <p className="mb-6 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs leading-5 text-emerald-900">
-                            After you register, your login credentials
-                            will be sent to your email. Use them to log
-                            in, then complete your profile.
-                        </p>
-
-                        {/* =================================================
-                            ACCOUNT TYPE
-                        ================================================= */}
-
-                        <div className="auth-step mb-3.5">
-                            <label
-                                className="
-                                    block
-                                    text-xs
-                                    font-medium
-                                    text-slate-500
-                                    mb-1.5
-                                "
-                            >
-                                I am a
-
-                                <span className="text-red-500 ml-1">
-                                    *
-                                </span>
-                            </label>
-
-                            <div className="grid grid-cols-2 gap-2" role="group" aria-label="Account type">
-                                {[
-                                    { value: "Student", icon: GraduationCap },
-                                    { value: "Faculty", icon: UsersRound },
-                                ].map(({ value, icon: Icon }) => (
-                                    <button key={value} type="button" onClick={() => setRole(value)}
-                                        aria-pressed={role === value} className="auth-role">
-                                        <Icon size={17} aria-hidden="true" />
-                                        {value}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* =================================================
-                            ID NUMBER (dynamic label, from Registration)
-                        ================================================= */}
-
-                        <div className="mb-3.5">
-                            <label
-                                className="
-                                    block
-                                    text-xs
-                                    font-medium
-                                    text-slate-500
-                                    mb-1.5
-                                "
-                            >
-                                {idLabel}
-
-                                <span className="text-red-500 ml-1">
-                                    *
-                                </span>
-                            </label>
-
-                            <input
-                                type="text"
-                                placeholder={idPlaceholder}
-                                className="
-                                    auth-field
-                                    w-full
-                                    px-4
-                                    py-3
-                                    rounded-xl
-                                    border
-                                    border-slate-200
-                                    bg-slate-50
-                                    text-sm
-                                    text-slate-700
-                                    outline-none
-                                    focus:border-[#106A2E]
-                                    focus:bg-white
-                                "
-                                value={idNumber}
-                                onChange={(e) =>
-                                    setIdNumber(
-                                        e.target.value
-                                    )
-                                }
-                            />
-                        </div>
-
-                        {/* =================================================
-                            EMAIL
-                        ================================================= */}
-
-                        <div className="mb-6">
-                            <label
-                                className="
-                                    block
-                                    text-xs
-                                    font-medium
-                                    text-slate-500
-                                    mb-1.5
-                                "
-                            >
-                                Email Address
-
-                                <span className="text-red-500 ml-1">
-                                    *
-                                </span>
-                            </label>
-
-                            <input
-                                type="email"
-                                placeholder="you@example.com"
-                                className="
-                                    auth-field
-                                    w-full
-                                    px-4
-                                    py-3
-                                    rounded-xl
-                                    border
-                                    border-slate-200
-                                    bg-slate-50
-                                    text-sm
-                                    text-slate-700
-                                    outline-none
-                                    focus:border-[#106A2E]
-                                    focus:bg-white
-                                "
-                                value={email}
-                                onChange={(e) =>
-                                    setEmail(
-                                        e.target.value
-                                    )
-                                }
-                            />
-                        </div>
-
-                        {/* =================================================
-                            REGISTER BUTTON
-                        ================================================= */}
-
-                        <div className="auth-step auth-step-next mb-6">
-                            <label htmlFor="supporting-document" className="mb-1.5 block text-xs font-medium text-slate-500">
-                                Supporting Document <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                id="supporting-document"
-                                type="file"
-                                accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                                onChange={handleDocumentChange}
-                                disabled={loading}
-                                required
-                                aria-describedby="supporting-document-help"
-                                className="auth-field w-full cursor-pointer rounded-xl border border-dashed border-emerald-300 bg-emerald-50/60 p-2 text-xs text-slate-700 file:mr-2 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[#106A2E] file:px-3 file:py-2.5 file:font-semibold file:text-white hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-emerald-700"
-                            />
-                            <p id="supporting-document-help" className="mt-2 text-xs leading-5 text-slate-500">
-                                Upload a clear copy of your ID, registration form, or OVRF. PDF, JPG, or PNG; maximum 5 MB.
+                            <p className="mb-6 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs leading-5 text-emerald-900">
+                                After you register, your login credentials
+                                will be sent to your email. Use them to log
+                                in, then complete your profile.
                             </p>
-                        </div>
 
-                        <button
-                            onClick={handleRegisterClick}
-                            disabled={
-                                !isFormValid ||
-                                loading
-                            }
-                            className="
-                                w-full
-                                bg-gradient-to-br
-                                from-[#106A2E]
-                                to-[#0E3B22]
-                                hover:opacity-90
-                                active:scale-[0.98]
-                                text-white
-                                p-3
-                                rounded-xl
-                                font-semibold
-                                transition
-                                focus-visible:ring-2
-                                focus-visible:ring-emerald-600
-                                focus-visible:ring-offset-2
-                                shadow-lg
-                                shadow-emerald-900/20
-                                disabled:from-slate-300
-                                disabled:to-slate-300
-                                disabled:shadow-none
-                                disabled:cursor-not-allowed
-                            "
-                        >
-                            {loading
-                                ? "Submitting..."
-                                : "Register"
-                            }
-                        </button>
+                            {/* =================================================
+                                ACCOUNT TYPE
+                            ================================================= */}
 
-                    </main>
+                            <div className="auth-step mb-3.5">
+                                <label
+                                    className="
+                                        block
+                                        text-xs
+                                        font-medium
+                                        text-slate-500
+                                        mb-1.5
+                                    "
+                                >
+                                    I am a
+
+                                    <span className="text-red-500 ml-1">
+                                        *
+                                    </span>
+                                </label>
+
+                                <div className="grid grid-cols-2 gap-2" role="group" aria-label="Account type">
+                                    {[
+                                        { value: "Student", icon: GraduationCap },
+                                        { value: "Faculty", icon: UsersRound },
+                                    ].map(({ value, icon: Icon }) => (
+                                        <button key={value} type="button" onClick={() => setRole(value)}
+                                            aria-pressed={role === value} className="auth-role">
+                                            <Icon size={17} aria-hidden="true" />
+                                            {value}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* =================================================
+                                ID NUMBER (dynamic label, from Registration)
+                            ================================================= */}
+
+                            <div className="mb-3.5">
+                                <label
+                                    className="
+                                        block
+                                        text-xs
+                                        font-medium
+                                        text-slate-500
+                                        mb-1.5
+                                    "
+                                >
+                                    {idLabel}
+
+                                    <span className="text-red-500 ml-1">
+                                        *
+                                    </span>
+                                </label>
+
+                                <input
+                                    type="text"
+                                    placeholder={idPlaceholder}
+                                    className="
+                                        auth-field
+                                        w-full
+                                        px-4
+                                        py-3
+                                        rounded-xl
+                                        border
+                                        border-slate-200
+                                        bg-slate-50
+                                        text-sm
+                                        text-slate-700
+                                        outline-none
+                                        focus:border-[#106A2E]
+                                        focus:bg-white
+                                    "
+                                    value={idNumber}
+                                    onChange={(e) =>
+                                        setIdNumber(
+                                            e.target.value
+                                        )
+                                    }
+                                />
+                            </div>
+
+                            {/* =================================================
+                                EMAIL
+                            ================================================= */}
+
+                            <div className="mb-6">
+                                <label
+                                    className="
+                                        block
+                                        text-xs
+                                        font-medium
+                                        text-slate-500
+                                        mb-1.5
+                                    "
+                                >
+                                    Email Address
+
+                                    <span className="text-red-500 ml-1">
+                                        *
+                                    </span>
+                                </label>
+
+                                <input
+                                    type="email"
+                                    placeholder="you@example.com"
+                                    className="
+                                        auth-field
+                                        w-full
+                                        px-4
+                                        py-3
+                                        rounded-xl
+                                        border
+                                        border-slate-200
+                                        bg-slate-50
+                                        text-sm
+                                        text-slate-700
+                                        outline-none
+                                        focus:border-[#106A2E]
+                                        focus:bg-white
+                                    "
+                                    value={email}
+                                    onChange={(e) =>
+                                        setEmail(
+                                            e.target.value
+                                        )
+                                    }
+                                />
+                            </div>
+
+                            {/* =================================================
+                                REGISTER BUTTON
+                            ================================================= */}
+
+                            <div className="auth-step auth-step-next mb-6">
+                                <label htmlFor="supporting-document" className="mb-1.5 block text-xs font-medium text-slate-500">
+                                    Supporting Document <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    id="supporting-document"
+                                    type="file"
+                                    accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                                    onChange={handleDocumentChange}
+                                    disabled={loading}
+                                    required
+                                    aria-describedby="supporting-document-help"
+                                    className="auth-field w-full cursor-pointer rounded-xl border border-dashed border-emerald-300 bg-emerald-50/60 p-2 text-xs text-slate-700 file:mr-2 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[#106A2E] file:px-3 file:py-2.5 file:font-semibold file:text-white hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-emerald-700"
+                                />
+                                <p id="supporting-document-help" className="mt-2 text-xs leading-5 text-slate-500">
+                                    Upload a clear copy of your ID, registration form, or OVRF. PDF, JPG, or PNG; maximum 5 MB.
+                                </p>
+                            </div>
+
+                            <button
+                                onClick={handleRegisterClick}
+                                disabled={
+                                    !isFormValid ||
+                                    loading
+                                }
+                                className="
+                                    w-full
+                                    bg-gradient-to-br
+                                    from-[#106A2E]
+                                    to-[#0E3B22]
+                                    hover:opacity-90
+                                    active:scale-[0.98]
+                                    text-white
+                                    p-3
+                                    rounded-xl
+                                    font-semibold
+                                    transition
+                                    focus-visible:ring-2
+                                    focus-visible:ring-emerald-600
+                                    focus-visible:ring-offset-2
+                                    shadow-lg
+                                    shadow-emerald-900/20
+                                    disabled:from-slate-300
+                                    disabled:to-slate-300
+                                    disabled:shadow-none
+                                    disabled:cursor-not-allowed
+                                "
+                            >
+                                {loading
+                                    ? "Submitting..."
+                                    : "Register"
+                                }
+                            </button>
+
+                        </main>
+                        <AuthServicePanel className="w-full" />
+                    </div>
                 </div>
             </BackgroundLayout>
 
