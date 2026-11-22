@@ -37,15 +37,19 @@
     box-shadow: 0 0 0 3px rgb(16 106 46 / .12);
 }
 
+.auth-envelope {
+    margin-bottom: 1.5rem;
+    border: 1px solid #dbeadf;
+    border-radius: 1.25rem;
+    background: linear-gradient(115deg, #eaf5ec, #f8faf3);
+    box-shadow: inset 0 3px #c9e4d0;
+}
+
 .auth-masthead {
     display: flex;
     align-items: center;
     gap: 1rem;
-    margin-bottom: 1.5rem;
     padding: .875rem;
-    border: 1px solid #dbeadf;
-    border-radius: 1.25rem;
-    background: linear-gradient(115deg, #eaf5ec, #f8faf3);
 }
 
 .auth-logo {
@@ -58,10 +62,63 @@
     object-fit: contain;
 }
 
-.auth-switch {
-    padding: .75rem;
+.auth-tabs {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: .25rem;
+    padding: .25rem;
+    border-top: 1px solid #dbeadf;
+    border-radius: 0 0 1.2rem 1.2rem;
+    background: #edf3eb;
+}
+
+.auth-tabs::before {
+    position: absolute;
+    z-index: -1;
+    inset: .25rem auto .25rem .25rem;
+    width: calc(50% - .375rem);
+    content: "";
+    border: 1px solid #bfdeca;
     border-radius: .875rem;
-    background: #f4f7f3;
+    background: #fff;
+    box-shadow: 0 2px 5px rgb(23 61 41 / .08);
+    transform: translateX(var(--auth-tab-end, 0));
+    animation: auth-tab-slide 260ms cubic-bezier(.2,.75,.3,1);
+}
+
+.auth-tabs[data-page="register"] {
+    --auth-tab-start: 0;
+    --auth-tab-end: calc(100% + .25rem);
+}
+
+.auth-tabs[data-page="login"] {
+    --auth-tab-start: calc(100% + .25rem);
+}
+
+.auth-tabs a {
+    display: grid;
+    min-height: 44px;
+    place-items: center;
+    border-radius: .875rem;
+    color: #475569;
+    font-size: .875rem;
+    font-weight: 600;
+}
+
+.auth-tabs a[aria-current="page"], .auth-tabs a:hover {
+    color: #105530;
+}
+
+.auth-tabs a:focus-visible {
+    outline: 2px solid #19733b;
+    outline-offset: -2px;
+}
+
+@keyframes auth-tab-slide {
+    from { transform: translateX(var(--auth-tab-start)); }
+    to { transform: translateX(var(--auth-tab-end, 0)); }
 }
 
 .auth-role {
@@ -158,7 +215,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .auth-enter, .auth-dialog, .auth-masthead, .auth-step, .auth-page .animate-pulse { animation: none; }
+    .auth-enter, .auth-dialog, .auth-masthead, .auth-step, .auth-tabs::before, .auth-page .animate-pulse { animation: none; }
     .auth-page *, .auth-dialog * { transition: none; }
     .auth-page button:active, .auth-dialog button:active { scale: none; transform: none; }
 }

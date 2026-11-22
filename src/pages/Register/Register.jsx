@@ -1,8 +1,8 @@
 import "../authPages.css";
-import CdmLogo from "../../assets/images/cdm-logo.png";
+import AuthCardHeader from "../AuthCardHeader";
 import { GraduationCap, UsersRound } from "lucide-react";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import LoadingModal from "../../components/LoadingModal/LoadingModal";
 import { API_URL } from "../../config/api";
@@ -216,13 +216,7 @@ export default function Register() {
             <BackgroundLayout>
                 <div className="auth-page auth-frame grid place-items-center px-4 py-8 sm:px-8 sm:py-12">
                     <main className="auth-card auth-enter w-full max-w-xl p-5 sm:p-8 lg:p-10">
-                        <div className="auth-masthead">
-                            <img src={CdmLogo} alt="" className="auth-logo" />
-                            <div>
-                                <p className="text-xs font-semibold text-[#106A2E]">CDM OneServe</p>
-                                <h1 className="text-2xl font-bold tracking-tight text-slate-900">Create account</h1>
-                            </div>
-                        </div>
+                        <AuthCardHeader page="register" />
 
                         <p className="mb-6 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-xs leading-5 text-emerald-900">
                             After you register, your login credentials
@@ -419,71 +413,6 @@ export default function Register() {
                             }
                         </button>
 
-                        {/* =================================================
-                            DIVIDER
-                        ================================================= */}
-
-                        <div
-                            className="
-                                flex
-                                items-center
-                                gap-2.5
-                                my-5
-                            "
-                        >
-                            <span
-                                className="
-                                    flex-1
-                                    h-px
-                                    bg-slate-200
-                                "
-                            />
-
-                            <span
-                                className="
-                                    text-[11px]
-                                    uppercase
-                                    tracking-wider
-                                    text-slate-400
-                                "
-                            >
-                                Already a member
-                            </span>
-
-                            <span
-                                className="
-                                    flex-1
-                                    h-px
-                                    bg-slate-200
-                                "
-                            />
-                        </div>
-
-                        {/* =================================================
-                            LOGIN
-                        ================================================= */}
-
-                        <p
-                            className="
-                                auth-switch
-                                text-center
-                                text-sm
-                                text-slate-600
-                            "
-                        >
-                            Already have an account?{" "}
-
-                            <Link
-                                to="/"
-                                className="
-                                    text-[#106A2E]
-                                    font-semibold
-                                    hover:underline
-                                "
-                            >
-                                Login
-                            </Link>
-                        </p>
                     </main>
                 </div>
             </BackgroundLayout>

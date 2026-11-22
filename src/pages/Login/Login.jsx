@@ -16,7 +16,7 @@ import toast from "react-hot-toast";
 
 import LoadingModal from "../../components/LoadingModal/LoadingModal";
 import BackgroundLayout from "../../layouts/BackgroundLayout";
-import CdmLogo from "../../assets/images/cdm-logo.png";
+import AuthCardHeader from "../AuthCardHeader";
 import { API_URL } from "../../config/api";
 import { loadGoogleIdentity, bindGoogleIdentity } from "../../services/googleIdentity";
 import { isPWAInstalled } from "../../utils/pwa";
@@ -516,18 +516,7 @@ export default function Login() {
                         {/* ================= LOGIN CARD ================= */}
                         <section className="flex flex-col items-center">
                             <div className="auth-card auth-enter w-full max-w-md p-5 sm:p-8 lg:p-9">
-                                {/* Brand (same on mobile and desktop) */}
-                                <div className="auth-masthead">
-                                    <img
-                                        src={CdmLogo}
-                                        alt=""
-                                        className="auth-logo"
-                                    />
-                                    <div>
-                                        <p className="text-xs font-semibold text-[#106A2E]">CDM OneServe</p>
-                                        <h1 className="text-2xl font-bold tracking-tight text-slate-900">Sign in</h1>
-                                    </div>
-                                </div>
+                                <AuthCardHeader page="login" />
 
                                 {/* ---------- EMAIL ---------- */}
                                 <div className="auth-step mb-3.5">
@@ -641,20 +630,6 @@ export default function Login() {
                                     </>
                                 )}
 
-                                {/* ---------- REGISTER ---------- */}
-                                <p
-                                    className={`auth-switch text-center text-sm text-slate-600 ${
-                                        googleClientId ? "mt-6" : "mt-5"
-                                    }`}
-                                >
-                                    Don't have an account?{" "}
-                                    <Link
-                                        to="/register"
-                                        className="font-semibold text-[#106A2E] hover:underline"
-                                    >
-                                        Register
-                                    </Link>
-                                </p>
                             </div>
 
                             {/* ================= SERVICE CHIPS (mobile / tablet) ================= */}
