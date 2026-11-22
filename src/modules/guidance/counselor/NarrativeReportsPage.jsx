@@ -143,8 +143,11 @@ export default function NarrativeReportsPage() {
 
     const refresh = () => setReloadKey((n) => n + 1);
 
+    const [handwrittenFile, setHandwrittenFile] = useState(null);
+
     const openCreate = () => {
         resetEditor();
+        setHandwrittenFile(null);
         setSelected(null);
         setView("editor");
     };
@@ -163,6 +166,7 @@ export default function NarrativeReportsPage() {
     };
 
     const openEdit = async (id) => {
+        setHandwrittenFile(null);
         setDetailLoading(true);
         setView("editor");
         try {
@@ -215,6 +219,11 @@ export default function NarrativeReportsPage() {
             return;
         }
 
+        if (handwrittenFile?.size > 10 * 1024 * 1024) {
+            setError("The handwritten attachment must be 10 MB or smaller.");
+            return;
+        }
+
         setBusy("save");
         setError("");
         try {
@@ -225,6 +234,19 @@ export default function NarrativeReportsPage() {
             const report = result.data || result;
             setEditingId(report.id);
             setSelected(report);
+            if (handwrittenFile) {
+                try {
+                    await guidanceApi.uploadNarrativeAttachment(report.id, handwrittenFile);
+                } catch (error) {
+                    setError(`Draft saved. Could not attach the handwritten report. ${error.message}`);
+                    refresh();
+                    return;
+                }
+                setHandwrittenFile(null);
+                await openDetail(report.id);
+                refresh();
+                return;
+            }
             setView("detail");
             refresh();
         } catch (e) {
@@ -339,6 +361,7 @@ export default function NarrativeReportsPage() {
                             setView(selected ? "detail" : "list");
                             setError("");
                         }}
+                        disabled={busy === "save"}
                         className="grid h-9 w-9 place-items-center rounded-xl border border-slate-200 bg-white text-slate-500"
                         aria-label="Back"
                     >
@@ -351,7 +374,7 @@ export default function NarrativeReportsPage() {
                         <p className="text-xs text-slate-500">
                             {editingId
                                 ? "Only a draft can be edited."
-                                : "Save a draft first, then upload handwritten pages and export PDF or Word from the report."}
+                                : "Save a draft and optionally attach a handwritten report."}
                         </p>
                     </div>
                 </div>
@@ -509,6 +532,20 @@ export default function NarrativeReportsPage() {
                         </span>
                     </label>
                 </section>
+
+                <label className="block rounded-2xl border border-slate-200 bg-white p-4 text-xs font-semibold text-slate-600">
+                    Handwritten report upload (optional)
+                    <input
+                        type="file"
+                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                        disabled={busy === "save"}
+                        onChange={(event) => setHandwrittenFile(event.target.files?.[0] ?? null)}
+                        className="mt-2 block w-full"
+                    />
+                    <span className="mt-2 block font-normal">
+                        Attach a scan, photo, PDF or Word file when you save the draft. Up to 10 MB.
+                    </span>
+                </label>
 
                 <button
                     type="button"
