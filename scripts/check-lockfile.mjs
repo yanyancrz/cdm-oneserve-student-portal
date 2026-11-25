@@ -15,8 +15,8 @@
  * That is exactly what broke the Vercel deploy. Run this before committing
  * a lockfile change:
  *
- *   node push-service/scripts/check-lockfile.mjs        # report only
- *   node push-service/scripts/check-lockfile.mjs --fix  # regenerate with npm 11
+ *   node scripts/check-lockfile.mjs        # report only
+ *   node scripts/check-lockfile.mjs --fix  # regenerate with npm 11
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
@@ -24,7 +24,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const rootDir = join(here, "..", "..");
+const rootDir = join(here, "..");
 const lockPath = join(rootDir, "package-lock.json");
 
 const fix = process.argv.includes("--fix");
@@ -75,7 +75,7 @@ problems.slice(0, 20).forEach((p) => console.log("   -", p));
 if (problems.length > 20) console.log(`   ... and ${problems.length - 20} more`);
 
 if (!fix) {
-    console.log("\nFix with:  node push-service/scripts/check-lockfile.mjs --fix");
+    console.log("\nFix with:  node scripts/check-lockfile.mjs --fix");
     process.exit(1);
 }
 

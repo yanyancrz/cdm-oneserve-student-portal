@@ -22,9 +22,6 @@ dist-ssr
 
 # Web Push secrets - the Node notification service holds the VAPID
 # PRIVATE key. It must never reach git.
-push-service/.env
-push-service/node_modules
-push-service/dist
 *.pem
 vapid-keys.json
 vapid-*.json

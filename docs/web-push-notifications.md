@@ -140,12 +140,12 @@ Run it:
 ```powershell
 # Preferred: the Node runner is case-safe and skips the carry-over when the
 # legacy table does not exist.
-cd push-service
+cd ../CDM-OneServe-API/push-service
 node scripts/apply-schema.mjs            # apply
 node scripts/apply-schema.mjs --dry-run  # preview
 
 # Equivalent raw SQL, if you prefer running it by hand:
-mysql -u root -p cdm_oneserve < CDM-OneServe-API\Database\Notifications\001_web_push_schema.sql
+mysql -u root -p cdm_oneserve < ..\Database\Notifications\001_web_push_schema.sql
 ```
 
 > **`lower_case_table_names`** — many hosts (Windows, cPanel shared hosting) run `lower_case_table_names=1`, so MySQL stores `pushsubscriptions` instead of `PushSubscriptions`. Queries still work because MySQL resolves names case-insensitively on those servers; the only thing that must be case-insensitive is the *comparison code*, which is why `apply-schema.mjs` and `db.js` lower-case both sides before checking. The raw `.sql`'s carry-over step requires the legacy `LostFoundPushSubscriptions` table to exist, so use the runner when it may not.
@@ -230,8 +230,7 @@ LOG_LEVEL=info
 | `src/pages/Profile/Profile.jsx` | modified | inserts the card |
 | `src/components/BottomNavigation/BottomNavigation.jsx` | modified | notification routing |
 | `public/icons/icon-512.png` | new | the manifest already referenced it |
-| `push-service/**` | new | Node delivery service |
-| `eslint.config.js` | modified | ignore `push-service` |
+| `CDM-OneServe-API/push-service/**` | new | Node delivery service |
 | `.gitignore` | modified | ignore `.env`, VAPID private material |
 
 ---
@@ -275,12 +274,12 @@ cd CDM-OneServe-API
 dotnet run
 
 # 2. Frontend  (production needed: vite-plugin-pwa has no SW in `npm run dev`)
-cd cdm-oneserve-mobile
+cd ../cdm-oneserve-mobile
 npm run build
 npm run preview -- --port 5173 --host
 
 # 3. Notification service
-cd push-service
+cd ../CDM-OneServe-API/push-service
 npm install
 copy .env.example .env     # paste the private key
 npm start
@@ -317,7 +316,7 @@ SELECT DedupeKey, COUNT(*) FROM PushOutbox GROUP BY DedupeKey HAVING COUNT(*) > 
 ### Manual send via web-push (smoke test)
 
 ```javascript
-// node -e "…" or: npm run send --prefix push-service -- "Title" "Body" "/dashboard"
+// node -e "…" or: npm run send --prefix ../CDM-OneServe-API/push-service -- "Title" "Body" "/dashboard"
 import webpush from "web-push";
 import mysql from "mysql2/promise";
 
@@ -343,7 +342,7 @@ await webpush.sendNotification(
 );
 ```
 
-Or use the ready-made helper: `npm run send --prefix push-service -- "Title" "Body" "/dashboard"`.
+Or use the ready-made helper: `npm run send --prefix ../CDM-OneServe-API/push-service -- "Title" "Body" "/dashboard"`.
 
 ---
 
@@ -359,7 +358,7 @@ running, tests queue forever and the tray stays empty - so a green
 curl http://127.0.0.1:4100/health        # cycles must climb; database "connected"
 
 # 2. One-shot diagnosis of the whole chain (subscriptions, outbox, logs)
-node push-service/scripts/diagnose.mjs
+node ../CDM-OneServe-API/push-service/scripts/diagnose.mjs
 ```
 
 Reading the results:
@@ -429,8 +428,8 @@ npm --prefix cdm-oneserve-mobile run build
 xcopy /E /I /Y cdm-oneserve-mobile\dist C:\inetpub\cdm-app\*
 
 # Notification service
-npm --prefix push-service ci --omit=dev
-cd push-service
+npm --prefix CDM-OneServe-API/push-service ci --omit=dev
+cd CDM-OneServe-API/push-service
 npx pm2 start ecosystem.config.cjs
 npx pm2 startup
 npx pm2 save
@@ -442,6 +441,6 @@ npx pm2 save
 
 ## 9. Rotating VAPID keys
 
-Generate a new pair (`npm run keys --prefix push-service`), update `push-service/.env`, `appsettings.json` and `.env` together, then rebuild the frontend. **Every existing subscription stops working** and users get re-prompted — do it only when the private key leaks.
+Generate a new pair (`npm run keys --prefix ../CDM-OneServe-API/push-service`), update `push-service/.env`, `appsettings.json` and `.env` together, then rebuild the frontend. **Every existing subscription stops working** and users get re-prompted — do it only when the private key leaks.
 
 > The link in the request was `https://github.com/wenro-cmd/CODEOWNERS`, which is a 404 (the repository `wenro-cmd` doesn't exist). The correct official library is **web-push-libs/web-push** (`npm i web-push`), which is what's implemented here.

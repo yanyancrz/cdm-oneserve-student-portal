@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lockfile:check": "node scripts/check-lockfile.mjs",
+    "lockfile:fix": "node scripts/check-lockfile.mjs --fix"
   },
   "dependencies": {
     "@babel/helper-define-polyfill-provider": "^1.0.0",

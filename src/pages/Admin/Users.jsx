@@ -31,6 +31,7 @@ import {
     LoadingSkeleton,
     Modal,
     PasswordFields,
+    ProfilePill,
     RolePill,
     RowMenu,
     SelectField,
@@ -1179,6 +1180,8 @@ export default function Users() {
                                             onSort={toggleSort}
                                         />
 
+                                        <th className={thClass}>Profile</th>
+
                                         <SortHeader
                                             label="Last login"
                                             sortKey="lastActive"
@@ -1225,6 +1228,10 @@ export default function Users() {
                                                 <StatusPill status={u.status} />
                                             </td>
 
+                                            <td className="px-5 py-3.5">
+                                                <ProfilePill complete={u.isProfileComplete} />
+                                            </td>
+
                                             <td
                                                 className="whitespace-nowrap px-5 py-3.5 text-gray-500"
                                                 title={formatDate(u.lastActive)}
@@ -1256,6 +1263,7 @@ export default function Users() {
                                             <div className="mt-2 flex flex-wrap items-center gap-2">
                                                 <RolePill role={u.role} />
                                                 <StatusPill status={u.status} />
+                                                <ProfilePill complete={u.isProfileComplete} />
                                             </div>
 
                                             <p className="mt-2 text-xs text-gray-400">
@@ -1377,6 +1385,7 @@ export default function Users() {
                             <div className="mt-2 flex flex-wrap items-center gap-2">
                                 <RolePill role={activeUser.role} />
                                 <StatusPill status={activeUser.status} />
+                                <ProfilePill complete={activeUser.isProfileComplete} />
                             </div>
                         </div>
                     </div>

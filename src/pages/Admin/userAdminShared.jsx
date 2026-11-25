@@ -108,6 +108,30 @@ export function VerificationPill({ method }) {
     return <span className="text-xs text-gray-300">—</span>;
 }
 
+// Profile completeness (Users table). "complete" may be undefined
+// while the API predates the field - show "—" instead of a wrong
+// "Incomplete".
+export function ProfilePill({ complete }) {
+    if (complete === undefined || complete === null) {
+        return <span className="text-xs text-gray-300">—</span>;
+    }
+
+    return (
+        <span
+            className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full ring-1 ${
+                complete
+                    ? "bg-emerald-50 text-emerald-700 ring-emerald-200"
+                    : "bg-amber-50 text-amber-700 ring-amber-200"
+            }`}
+        >
+            <span
+                className={`w-1.5 h-1.5 rounded-full ${complete ? "bg-emerald-500" : "bg-amber-500"}`}
+            />
+            {complete ? "Complete" : "Incomplete"}
+        </span>
+    );
+}
+
 export function StatusPill({ status }) {
     return (
         <span

@@ -18,7 +18,8 @@ Validation:
 npm.cmd run build
 dotnet build ..\CDM-OneServe-API --no-restore
 dotnet run --project tests/GuidanceRouteSmoke/GuidanceRouteSmoke.csproj --no-restore -- --rescheduling
-node --test tests/handwrittenDocument.test.mjs tests/guidanceNotificationPolicy.test.mjs
+node --test tests/handwrittenDocument.test.mjs
+node --test ../CDM-OneServe-API/push-service/tests/guidanceNotificationPolicy.test.mjs
 ```
 
 The optional `--rescheduling` integration test requires local MySQL at `127.0.0.1`, user `root`, with `GUIDANCE_TEST_MYSQL_PASSWORD` if needed. It creates and removes only a randomly named `oneserve_reschedule_test_*` database. It uses fake holiday/push services and never accesses an application database or sends real notifications. It covers mutual consent, ownership, stale and duplicate responses, repeated counterproposals, schedule conflicts, notifications, history, cancellation, and negotiation-aware lifecycle processing.
