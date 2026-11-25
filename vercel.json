@@ -7,12 +7,18 @@
 
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!assets/|sw\\.js$|registerSW\\.js$|manifest\\.webmanifest$).*)",
       "destination": "/index.html"
     }
   ],
 
   "headers": [
+    {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, must-revalidate" }
+      ]
+    },
     {
       "source": "/sw.js",
       "headers": [

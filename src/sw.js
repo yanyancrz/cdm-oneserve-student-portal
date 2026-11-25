@@ -17,8 +17,8 @@
 
 /// <reference lib="webworker" />
 
-const PRECACHE = "oneserve-precache-v1";
-const RUNTIME = "oneserve-runtime-v1";
+const PRECACHE = "oneserve-precache-v2";
+const RUNTIME = "oneserve-runtime-v2";
 
 // Only same-origin, app-owned paths are ever cached.
 const APP_SHELL = "./index.html";
@@ -35,13 +35,15 @@ self.addEventListener("install", (event) => {
         (async () => {
             const cache = await caches.open(PRECACHE);
 
-            // addAll() aborts on the first failure, and a single missing
-            // icon must not break the whole app shell, so each entry is
-            // cached on its own.
+            // Cache entries independently so a missing icon cannot prevent
+            // the app shell from installing.
             await Promise.all(
                 PRECACHE_MANIFEST.map(async (entry) => {
                     try {
-                        await cache.add(entry.url);
+                        const response = await fetch(entry.url, { cache: "reload" });
+                        if (response.ok && !isHtmlAsset(entry.url, response)) {
+                            await cache.put(entry.url, response);
+                        }
                     } catch {
                         // A missing asset is not worth a broken worker.
                     }
@@ -60,7 +62,7 @@ self.addEventListener("activate", (event) => {
 
             await Promise.all(
                 names
-                    .filter((name) => name !== PRECACHE && name !== RUNTIME)
+                    .filter((name) => /^oneserve-(precache|runtime)-/.test(name) && name !== PRECACHE && name !== RUNTIME)
                     .map((name) => caches.delete(name))
             );
 
@@ -116,10 +118,13 @@ async function handleNavigation(request) {
 
 async function handleAsset(request) {
     const cached = await caches.match(request);
-    if (cached) return cached;
+    if (cached && !isHtmlAsset(request.url, cached)) return cached;
 
     try {
         const response = await fetch(request);
+        if (isHtmlAsset(request.url, response)) {
+            return new Response(null, { status: 502, statusText: "Invalid asset response" });
+        }
         if (response.ok && response.type === "basic") {
             const cache = await caches.open(RUNTIME);
             cache.put(request, response.clone());
@@ -128,6 +133,12 @@ async function handleAsset(request) {
     } catch {
         return new Response("", { status: 504, statusText: "Offline" });
     }
+}
+
+function isHtmlAsset(url, response) {
+    const path = new URL(url, self.location.origin).pathname;
+    return path.startsWith("/assets/") &&
+        /^text\/html\b/i.test(response.headers.get("content-type") || "");
 }
 
 // ---------------------------------------------------------------------
