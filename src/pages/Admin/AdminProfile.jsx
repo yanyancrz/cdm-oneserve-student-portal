@@ -31,7 +31,6 @@ const ICON_PATHS = {
     phone: "M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z",
     shield: "M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z",
     calendar: "M3 5h18v16H3z M16 3v4 M8 3v4 M3 11h18",
-    briefcase: "M3 7h18v13H3z M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2",
     eye: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z",
     eyeOff: "M17.9 17.9A10.9 10.9 0 0 1 12 20C5 20 1 12 1 12a18.5 18.5 0 0 1 5.1-5.9 M9.9 4.2A9.1 9.1 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.2 3.2 M1 1l22 22",
     copy: "M9 9h11v11H9z M5 15H4V4h11v1",
@@ -204,7 +203,6 @@ export default function AdminProfile() {
         email: "",
         contactNumber: "",
         role: "",
-        position: "",
         dateJoined: "",
         photoUrl: ""
     });
@@ -609,7 +607,6 @@ export default function AdminProfile() {
         { label: "Email", value: profile.email || "—", icon: "mail", copyable: true },
         { label: "Contact Number", value: profile.contactNumber || "—", icon: "phone" },
         { label: "Role", value: profile.role || "Admin", icon: "shield" },
-        { label: "Position", value: profile.position || "—", icon: "briefcase" },
         { label: "Date Joined", value: formatDate(profile.dateJoined), icon: "calendar" }
     ];
 
@@ -663,11 +660,6 @@ export default function AdminProfile() {
                                 <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200">
                                     {profile.role || "Admin"}
                                 </span>
-                                {profile.position && (
-                                    <span className="inline-block px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
-                                        {profile.position}
-                                    </span>
-                                )}
                             </div>
                         </div>
 
