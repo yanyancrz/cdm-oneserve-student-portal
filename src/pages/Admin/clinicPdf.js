@@ -17,7 +17,7 @@ export function createClinicPdf(rows, { title, subtitle, individual = false }) {
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
         doc.setTextColor(70);
-        const lines = doc.splitTextToSize(subtitle || "Student medical records", width - margin * 2);
+        const lines = doc.splitTextToSize(subtitle || "Patient medical records", width - margin * 2);
         doc.text(lines, margin, 34);
         doc.setDrawColor(14, 59, 34);
         doc.line(margin, 37 + (lines.length - 1) * 4, width - margin, 37 + (lines.length - 1) * 4);

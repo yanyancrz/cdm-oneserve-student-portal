@@ -49,7 +49,7 @@ export default function ClinicMedicalRecords() {
         setStudentExporting(true);
         setStudentExportError("");
         try {
-            await exportReport({ csv: medicalRecordsCsv(student, records), filename: `clinic-records-${filename}`, title: "Student medical records", subtitle: `${student.fullName} | ${student.idNumber}`, format: studentFormat, clinicPdf: "student" });
+            await exportReport({ csv: medicalRecordsCsv(student, records), filename: `clinic-records-${filename}`, title: "Patient medical records", subtitle: `${student.fullName} | ${student.idNumber}`, format: studentFormat, clinicPdf: "student" });
         } catch (e) { setStudentExportError(`Export failed. ${e.message}`); }
         finally { setStudentExporting(false); }
     };
@@ -69,7 +69,7 @@ export default function ClinicMedicalRecords() {
         try {
             const results = await collectClinicVisits(load, {
                 signal: controller.signal,
-                onProgress: ({ checked, total }) => setExportMessage(`Checking clinic visits: ${checked} of ${total} students`),
+                onProgress: ({ checked, total }) => setExportMessage(`Checking clinic visits: ${checked} of ${total} patients`),
             });
             controller.signal.throwIfAborted();
             const report = studentVisitsCsv(results, { from, to });
@@ -137,8 +137,8 @@ export default function ClinicMedicalRecords() {
         <div className="flex items-start gap-3">
             <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-[#0E3B22] text-white"><Stethoscope size={20} aria-hidden="true" /></span>
             <div>
-                <h2 id="clinic-medical-records-heading" className="text-xl font-semibold text-gray-900">Student medical records</h2>
-                <p className="mt-0.5 text-sm text-gray-500">Select a student to view and export their medical records and consultation history.</p>
+                <h2 id="clinic-medical-records-heading" className="text-xl font-semibold text-gray-900">Patient medical records</h2>
+                <p className="mt-0.5 text-sm text-gray-500">Select a patient to view and export their medical records and consultation history.</p>
             </div>
         </div>
 
@@ -148,7 +148,7 @@ export default function ClinicMedicalRecords() {
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-[#0E3B22]"><ClipboardList size={18} aria-hidden="true" /></span>
                     <div className="min-w-0">
                         <h3 className="text-sm font-semibold text-gray-900">Export clinic visit history</h3>
-                        <p className="mt-0.5 text-xs text-gray-500">Includes only students with clinic visits, one row per visit. Filter by visit date; leave dates blank for all history.</p>
+                        <p className="mt-0.5 text-xs text-gray-500">Includes patients with clinic visits, one row per visit. Filter by visit date; leave dates blank for all history.</p>
                     </div>
                 </div>
                 <button type="button" disabled={exporting} onClick={() => setShowExport(v => !v)} aria-expanded={exportPanelOpen} aria-controls="clinic-export-panel" className="inline-flex items-center gap-1.5 rounded-xl border border-gray-200 px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-40">
@@ -172,10 +172,10 @@ export default function ClinicMedicalRecords() {
         <div className="grid items-start gap-5 lg:grid-cols-[300px_1fr]">
             <aside className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm lg:sticky lg:top-4">
                 <div className="space-y-2 border-b border-gray-100 p-3">
-                    <label htmlFor="clinic-student-search" className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500"><Users size={14} aria-hidden="true" />Find a student</label>
+                    <label htmlFor="clinic-student-search" className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500"><Users size={14} aria-hidden="true" />Find a patient</label>
                     <div className="relative">
                         <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input id="clinic-student-search" value={search} onChange={e => changeSearch(e.target.value)} placeholder="Name or student number" className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pl-9 pr-9 text-sm transition focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20" />
+                        <input id="clinic-student-search" value={search} onChange={e => changeSearch(e.target.value)} placeholder="Search by patient name or ID number" className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2 pl-9 pr-9 text-sm transition focus:border-emerald-600 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600/20" />
                         {search && <button type="button" onClick={() => changeSearch("")} aria-label="Clear search" className="absolute right-2 top-1/2 grid h-6 w-6 -translate-y-1/2 place-items-center rounded-full text-gray-400 transition hover:bg-gray-200 hover:text-gray-700"><X size={14} /></button>}
                     </div>
                 </div>
@@ -183,7 +183,7 @@ export default function ClinicMedicalRecords() {
                 {error && <div role="alert" className="border-b border-red-100 bg-red-50 px-3 py-2 text-xs text-red-800">{error} <button onClick={() => setStudentsRetry(v => v + 1)} className="font-medium underline">Retry</button></div>}
 
                 <div className="max-h-[22rem] min-h-[12rem] overflow-y-auto p-2 lg:max-h-[calc(100vh-20rem)]">
-                    {loading ? <div role="status" aria-label="Loading students" className="space-y-1.5">
+                    {loading ? <div role="status" aria-label="Loading patients" className="space-y-1.5">
                         {Array.from({ length: 6 }).map((_, i) => <div key={i} className="flex animate-pulse items-center gap-2.5 rounded-xl p-2">
                             <div className="h-8 w-8 shrink-0 rounded-full bg-gray-200" />
                             <div className="flex-1 space-y-1.5"><div className="h-3 w-3/4 rounded bg-gray-200" /><div className="h-2.5 w-1/2 rounded bg-gray-100" /></div>
@@ -201,7 +201,7 @@ export default function ClinicMedicalRecords() {
                         })}
                         {!students.length && !error && <div className="px-3 py-8 text-center">
                             <Search size={20} aria-hidden="true" className="mx-auto text-gray-300" />
-                            <p className="mt-2 text-sm text-gray-500">No students found.</p>
+                            <p className="mt-2 text-sm text-gray-500">No patients found.</p>
                         </div>}
                     </div>}
                 </div>
@@ -216,8 +216,8 @@ export default function ClinicMedicalRecords() {
             <div className="min-w-0 space-y-3">
                 {!student ? <div className="flex flex-col items-center rounded-2xl border border-dashed border-gray-300 bg-white px-6 py-16 text-center">
                     <span className="grid h-12 w-12 place-items-center rounded-2xl bg-emerald-50 text-[#0E3B22]"><Stethoscope size={22} aria-hidden="true" /></span>
-                    <p className="mt-3 text-sm font-medium text-gray-800">No student selected</p>
-                    <p className="mt-1 text-sm text-gray-500">Choose a student to view medical records.</p>
+                    <p className="mt-3 text-sm font-medium text-gray-800">No patient selected</p>
+                    <p className="mt-1 text-sm text-gray-500">Choose a patient to view medical records.</p>
                 </div> : <>
                     <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                         <div className="flex min-w-0 items-center gap-3">
@@ -237,7 +237,7 @@ export default function ClinicMedicalRecords() {
                     {studentExportError && <p role="alert" className="text-sm text-red-700">{studentExportError}</p>}
                     {recordsLoading && <div role="status" className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white p-6 text-sm text-gray-500"><Loader2 size={16} className="animate-spin" />Loading medical records...</div>}
                     {recordsError && <div role="alert" className="rounded-xl border border-red-100 bg-red-50 p-4 text-sm text-red-800">{recordsError} <button onClick={() => setRecordsRetry(v => v + 1)} className="font-medium underline">Retry</button></div>}
-                    {!recordsLoading && !recordsError && !records.length && <div role="status" className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900"><p className="font-semibold">No medical records found.</p><p className="mt-1">The student hasn't been in clinic.</p></div>}
+                    {!recordsLoading && !recordsError && !records.length && <div role="status" className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-900"><p className="font-semibold">No medical records found.</p><p className="mt-1">No clinic visits are on file for this patient.</p></div>}
                     {!recordsLoading && records.map((record, index) => <details key={record.medicalRecordId ?? index} className="group overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition open:ring-1 open:ring-emerald-600/30" open={records.length === 1 ? true : undefined}>
                         <summary className="flex cursor-pointer list-none items-center gap-3 p-4 transition hover:bg-gray-50 [&::-webkit-details-marker]:hidden">
                             <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-50 text-[#0E3B22]"><Stethoscope size={16} aria-hidden="true" /></span>

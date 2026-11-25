@@ -13,7 +13,7 @@ function csv(headers, rows) {
 
 export function medicalRecordsCsv(student, records) {
     return csv([
-        "Student number", "Student name", "Medical record ID", "Visit date",
+        "Patient ID number", "Patient name", "Medical record ID", "Visit date",
         "Chief complaint", "Pain scale", "Diagnosis", "Medications", "Allergies",
         "Clinical notes", "Created", "Last updated",
     ], records.map(record => [
@@ -38,7 +38,7 @@ export function studentVisitsCsv(results, { from = "", to = "" } = {}) {
     ]));
     return {
         visitCount: rows.length,
-        csv: csv(["Student number", "Student name", "Course", "Year level", "Medical record ID", "Visit date"], rows),
+        csv: csv(["Patient ID number", "Patient name", "Course", "Year level", "Medical record ID", "Visit date"], rows),
     };
 }
 
