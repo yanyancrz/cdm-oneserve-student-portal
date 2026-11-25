@@ -194,7 +194,7 @@ export default function AdminDashboard() {
 
             <div className="w-full">
 
-                <AdminPageHeader icon="dashboard" title={`Welcome, ${adminName}`} description="Monitor campus services, accounts, and recent activity in one place.">
+                <AdminPageHeader icon="dashboard" title={`Welcome, ${adminName}`} description="Monitor campus service usage and registered accounts.">
                     <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-800">
                         <span className="h-2 w-2 rounded-full bg-emerald-600" />
                         {dashboard.activeUsers == null ? "Account status unavailable" : `${dashboard.activeUsers} active users`}
@@ -225,75 +225,16 @@ export default function AdminDashboard() {
                         </div>
                     </section>
 
-                    <div className="mb-8 grid gap-5">
-                        <section aria-labelledby="registration-trends-heading" className="admin-surface rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                                <div>
-                                    <h2 id="registration-trends-heading" className="font-semibold text-lg text-[#1F1F1F]">User registrations</h2>
-                                    <p className="mt-1 text-xs text-gray-500">Counts grouped from account creation dates.</p>
-                                </div>
-                                <label className="text-xs font-medium text-gray-600">
-                                    Period{" "}
-                                    <select value={period} onChange={(event) => setPeriod(event.target.value)} className="ml-2 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs">
-                                        <option value="daily">Daily</option>
-                                        <option value="weekly">Weekly</option>
-                                        <option value="monthly">Monthly</option>
-                                    </select>
-                                </label>
-                            </div>
-                            {Array.isArray(dashboard.registrationTrends) && dashboard.registrationTrends.length ? (
-                                <div className="flex h-44 items-end gap-1.5 overflow-x-auto border-b border-slate-100 pb-1">
-                                    {dashboard.registrationTrends.map((point) => {
-                                        const max = Math.max(1, ...dashboard.registrationTrends.map((entry) => entry.registrations || 0));
-                                        const height = Math.max(4, ((point.registrations || 0) / max) * 132);
-                                        return (
-                                            <div key={point.label} title={`${point.label}: ${point.registrations} registrations`} className="flex h-full min-w-5 flex-1 flex-col items-center justify-end gap-1">
-                                                <div className="w-full max-w-8 rounded-t-md bg-[#0E3B22]" style={{ height }} />
-                                                <span className="text-[9px] text-gray-400">{point.label}</span>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            ) : (
-                                <p className="py-12 text-center text-sm text-gray-400">Registration trend data is unavailable.</p>
-                            )}
-                        </section>
-
-
-                    </div>
-
-                    <section aria-labelledby="recent-activity-heading" className="admin-surface mb-8 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-                        <div className="mb-4">
-                            <h2 id="recent-activity-heading" className="font-semibold text-lg text-[#1F1F1F]">Recent administrator activities</h2>
-                            <p className="mt-1 text-xs text-gray-500">Recent actions from the central audit log.</p>
-                        </div>
-                        {dashboard.recentActivities?.length ? (
-                            <div className="divide-y divide-slate-100">
-                                {dashboard.recentActivities.map((activity) => (
-                                    <article key={activity.id} className="flex flex-wrap items-center justify-between gap-2 py-3 first:pt-0 last:pb-0">
-                                        <div>
-                                            <p className="text-sm font-medium text-slate-800">{activity.action}</p>
-                                            <p className="mt-1 text-xs text-slate-500">{activity.actorName || "Administrator"}{activity.actorRole ? ` · ${activity.actorRole}` : ""}{activity.module ? ` · ${activity.module}` : ""}</p>
-                                        </div>
-                                        <time className="text-xs text-slate-400">{activity.timestamp ? new Date(activity.timestamp).toLocaleString() : ""}</time>
-                                    </article>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="py-6 text-center text-sm text-gray-400">No administrator activity is available.</p>
-                        )}
-                    </section>
-
                     {/* ==================================================
                         MODULE MONITORING
                     ================================================== */}
 
-                    <section>
+                    <section aria-labelledby="service-usage-heading" className="mb-8">
 
                         <div className="mb-4 flex items-center justify-between">
 
                             <div>
-                                <h2 className="font-semibold text-xl text-[#1F1F1F]">
+                                <h2 id="service-usage-heading" className="font-semibold text-xl text-[#1F1F1F]">
                                     Service usage
                                 </h2>
 
@@ -401,6 +342,41 @@ export default function AdminDashboard() {
                         )}
 
                     </section>
+
+                    <div className="mb-8 grid gap-5">
+                        <section aria-labelledby="registration-trends-heading" className="admin-surface rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+                            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                                <div>
+                                    <h2 id="registration-trends-heading" className="font-semibold text-lg text-[#1F1F1F]">User registrations</h2>
+                                    <p className="mt-1 text-xs text-gray-500">Counts grouped from account creation dates.</p>
+                                </div>
+                                <label className="text-xs font-medium text-gray-600">
+                                    Period{" "}
+                                    <select value={period} onChange={(event) => setPeriod(event.target.value)} className="ml-2 rounded-lg border border-slate-200 bg-white px-2.5 py-2 text-xs">
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                    </select>
+                                </label>
+                            </div>
+                            {Array.isArray(dashboard.registrationTrends) && dashboard.registrationTrends.length ? (
+                                <div className="flex h-44 items-end gap-1.5 overflow-x-auto border-b border-slate-100 pb-1">
+                                    {dashboard.registrationTrends.map((point) => {
+                                        const max = Math.max(1, ...dashboard.registrationTrends.map((entry) => entry.registrations || 0));
+                                        const height = Math.max(4, ((point.registrations || 0) / max) * 132);
+                                        return (
+                                            <div key={point.label} title={`${point.label}: ${point.registrations} registrations`} className="flex h-full min-w-5 flex-1 flex-col items-center justify-end gap-1">
+                                                <div className="w-full max-w-8 rounded-t-md bg-[#0E3B22]" style={{ height }} />
+                                                <span className="text-[9px] text-gray-400">{point.label}</span>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : (
+                                <p className="py-12 text-center text-sm text-gray-400">Registration trend data is unavailable.</p>
+                            )}
+                        </section>
+                    </div>
 
                 </div>
 
