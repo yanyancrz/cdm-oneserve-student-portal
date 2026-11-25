@@ -1,5 +1,6 @@
 import AdminPageHeader from "./AdminPageHeader";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
 import {
@@ -16,6 +17,7 @@ import {
     Loader2,
     Mail,
     MapPin,
+    Megaphone,
     Pencil,
     Plus,
     Trash2,
@@ -1797,6 +1799,10 @@ function CalendarWidget({ view, setView, selectedKey, setSelectedKey, eventsByDa
 }
 
 export default function Events() {
+    const navigate = useNavigate();
+    const role = localStorage.getItem("role") || localStorage.getItem("userRole") || "";
+    const isSuperAdmin = role.trim().toLowerCase() === "superadmin";
+    const [announcementDraft, setAnnouncementDraft] = useState(null);
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -1947,6 +1953,19 @@ export default function Events() {
                 const date = keyToDate(sorted[0]);
                 setView({ y: date.getFullYear(), m: date.getMonth() });
                 setSelectedKey(sorted[0]);
+                if (isSuperAdmin) {
+                    const time = timeRange(form);
+                    setAnnouncementDraft({
+                        title: body.title,
+                        message: [
+                            `Dates: ${sorted.map(formatShort).join(", ")}`,
+                            time && `Time: ${time}`,
+                            form.location.trim() && `Location: ${form.location.trim()}`,
+                            form.description.trim(),
+                        ].filter(Boolean).join("\n\n"),
+                        accent: form.accent,
+                    });
+                }
             }
             toast.success(editingId ? "Event updated." : "Event created.");
             resetForm();
@@ -2052,6 +2071,26 @@ export default function Events() {
                         </button>
                     </div>
                 </AdminPageHeader>
+
+                {isSuperAdmin && announcementDraft && (
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                        <p className="min-w-0 break-words text-sm text-slate-700">
+                            <strong>{announcementDraft.title}</strong> was saved. Would you like to share it as an announcement?
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            <button type="button" onClick={() => setAnnouncementDraft(null)} className="rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-emerald-100">
+                                Skip
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => navigate("/admin/announcements", { state: { eventAnnouncement: announcementDraft } })}
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-[#0E3B22] px-3 py-2 text-xs font-semibold text-white hover:opacity-90"
+                            >
+                                <Megaphone size={14} /> Review Announcement
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {loading ? (
                     <div className="py-16 text-center text-slate-400">Loading events...</div>

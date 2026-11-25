@@ -1,6 +1,7 @@
 import AdminPageHeader from "./AdminPageHeader";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
     Megaphone,
@@ -380,15 +381,26 @@ function AnnouncementCard({ announcement, pending, onEdit, onToggle, onDelete })
 // Page
 // ─────────────────────────────────────────────────────────────
 export default function Announcements() {
+    const { pathname, state } = useLocation();
+    const navigate = useNavigate();
     const adminEmail = localStorage.getItem("userEmail") || "";
     const role = localStorage.getItem("role") || localStorage.getItem("userRole") || "";
     const canManageAnnouncements = ["admin", "superadmin"].includes(role.trim().toLowerCase());
+    const eventDraft = role.trim().toLowerCase() === "superadmin" ? state?.eventAnnouncement : null;
+    const initialForm = eventDraft ? {
+        ...EMPTY_FORM,
+        title: eventDraft.title,
+        message: eventDraft.message,
+        tag: "EVENT",
+        accent: safeAccent(eventDraft.accent),
+        notifyUsers: false,
+    } : EMPTY_FORM;
 
     const formRef = useRef(null);
 
     const [announcements, setAnnouncements] = useState([]);
-    const [form, setForm] = useState(EMPTY_FORM);
-    const [formBaseline, setFormBaseline] = useState(EMPTY_FORM);
+    const [form, setForm] = useState(initialForm);
+    const [formBaseline, setFormBaseline] = useState(initialForm);
     const [errors, setErrors] = useState({});
     const [editingId, setEditingId] = useState(null);
 
@@ -399,7 +411,14 @@ export default function Announcements() {
 
     const [search, setSearch] = useState("");
     const [filter, setFilter] = useState("all");
-    const [showForm, setShowForm] = useState(false);
+    const [showForm, setShowForm] = useState(Boolean(eventDraft));
+
+    useEffect(() => {
+        if (eventDraft) {
+            formRef.current?.scrollIntoView({ block: "start" });
+            navigate(pathname, { replace: true, state: null });
+        }
+    }, [eventDraft, navigate, pathname]);
 
     // ── Load ────────────────────────────────────────────────
     const loadAnnouncements = useCallback(
@@ -556,6 +575,8 @@ export default function Announcements() {
         const next = {};
 
         if (!form.title.trim()) next.title = "Announcement title is required.";
+        else if (form.title.trim().length > TITLE_MAX)
+            next.title = `Title must be ${TITLE_MAX} characters or fewer.`;
         if (!form.message.trim()) next.message = "Announcement message is required.";
         else if (form.message.length > MESSAGE_MAX)
             next.message = `Message must be ${MESSAGE_MAX} characters or fewer.`;
