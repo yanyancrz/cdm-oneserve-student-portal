@@ -6,7 +6,6 @@ import {
     Plus,
     Search,
     Eye,
-    Pencil,
     X,
     RefreshCw,
     Users as UsersIcon,
@@ -31,7 +30,6 @@ import {
     RowMenu,
     SortHeader,
     StatusPill,
-    UserForm,
 } from "./userAdminShared";
 import {
     AUTH_BASE,
@@ -83,8 +81,6 @@ export default function ServiceHeads() {
 
     const [adding, setAdding] = useState(false);
     const [addError, setAddError] = useState("");
-    const [editing, setEditing] = useState(false);
-    const [editError, setEditError] = useState("");
 
     const [confirm, setConfirm] = useState(null);
     const [credentials, setCredentials] = useState(null);
@@ -295,20 +291,13 @@ export default function ServiceHeads() {
         setModal("view");
     };
 
-    const openEdit = (user) => {
-        setActiveUser(user);
-        setEditError("");
-        setModal("edit");
-    };
-
     const closeModal = useCallback(() => {
-        if (adding || editing) return;
+        if (adding) return;
 
         setModal(null);
         setActiveUser(null);
         setAddError("");
-        setEditError("");
-    }, [adding, editing]);
+    }, [adding]);
 
     const closeConfirm = useCallback(() => setConfirm(null), []);
     const closeCredentials = useCallback(() => setCredentials(null), []);
@@ -350,72 +339,6 @@ export default function ServiceHeads() {
         } finally {
             setAdding(false);
         }
-    };
-
-    // ── Edit user ───────────────────────────────────────────
-    const saveEdit = async (form) => {
-        if (!activeUser) return;
-
-        setEditing(true);
-        setEditError("");
-
-        try {
-            const data = await request(`${API_BASE}/${activeUser.id}`, {
-                method: "PUT",
-                fallback: "Failed to update user.",
-                messages: { 403: "You don't have permission to edit this user." },
-                body: {
-                    email: form.email,
-                    role: form.role,
-                    adminModule: form.adminModule || null,
-                    institute: form.role === "Faculty" ? form.institute || null : null,
-                    course: form.role === "Student" ? form.course || null : null,
-                    yearLevel: form.role === "Student" ? form.yearLevel || null : null,
-                },
-            });
-
-            const updated = data?.user || data;
-
-            setUsers((prev) =>
-                prev.map((u) =>
-                    u.id === activeUser.id
-                        ? {
-                              ...u,
-                              ...(updated && typeof updated === "object" ? updated : {}),
-                              id: activeUser.id,
-                              fullName: activeUser.fullName,
-                              idNumber: activeUser.idNumber,
-                          }
-                        : u
-                )
-            );
-
-            setModal(null);
-            setActiveUser(null);
-            toast.success("User updated successfully.");
-        } catch (err) {
-            console.error("Failed to update user:", err);
-            setEditError(err.message || "Couldn't save changes. Please try again.");
-        } finally {
-            setEditing(false);
-        }
-    };
-
-    const handleEditSubmit = (form) => {
-        const escalating = isAdminRole(form.role) && !isAdminRole(activeUser.role);
-
-        if (!escalating) {
-            saveEdit(form);
-            return;
-        }
-
-        setConfirm({
-            title: "Grant admin access?",
-            description: `${activeUser.fullName} will become ${roleLabel(form.role)} and will be able to manage parts of the system. Make sure this is intended.`,
-            confirmLabel: "Grant access",
-            tone: "primary",
-            onConfirm: () => saveEdit(form),
-        });
     };
 
     // ── Suspend / reinstate ─────────────────────────────────
@@ -540,18 +463,7 @@ export default function ServiceHeads() {
                     </button>
 
                     {isHeadRole(u.role) && (
-                        <>
-                            <button
-                                type="button"
-                                onClick={() => openEdit(u)}
-                                aria-label={`Edit ${u.fullName}`}
-                                className={iconButton}
-                            >
-                                <Pencil size={15} />
-                            </button>
-
-                            <RowMenu items={menuItems(u)} label={`More actions for ${u.fullName}`} />
-                        </>
+                        <RowMenu items={menuItems(u)} label={`More actions for ${u.fullName}`} />
                     )}
                 </>
             )}
@@ -944,20 +856,6 @@ export default function ServiceHeads() {
                 </Modal>
             )}
 
-            {/* Edit user */}
-            {modal === "edit" && activeUser && (
-                <Modal title="Edit user" onClose={closeModal} locked={editing}>
-                    <UserForm
-                        initial={activeUser}
-                        onCancel={closeModal}
-                        onSubmit={handleEditSubmit}
-                        submitting={editing}
-                        serverError={editError}
-                        submitLabel="Save changes"
-                    />
-                </Modal>
-            )}
-
             {/* View user */}
             {modal === "view" && activeUser && (
                 <Modal title="User details" onClose={closeModal}>
@@ -989,21 +887,6 @@ export default function ServiceHeads() {
                     </div>
 
                     <div className="flex justify-end gap-2 pt-4">
-                        {isHeadRole(activeUser.role) && (
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const user = activeUser;
-                                    setModal(null);
-                                    openEdit(user);
-                                }}
-                                className={`inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50 ${focusRing}`}
-                            >
-                                <Pencil size={13} />
-                                Edit
-                            </button>
-                        )}
-
                         <button
                             type="button"
                             onClick={closeModal}
