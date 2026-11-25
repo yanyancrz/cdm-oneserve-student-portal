@@ -1,6 +1,7 @@
-import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import { Link, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Megaphone, CalendarDays, BarChart3, ScrollText, ChevronDown, LayoutGrid, BookOpen, Stethoscope, Compass, SearchCheck } from "lucide-react";
+import { API_URL } from "../config/api";
 import Logo from "../assets/images/cdm-white.png";
 import BackgroundImage from "../assets/images/admin-bg.png";
 import "../styles/admin-service-print.css";
@@ -29,6 +30,8 @@ const SESSION_KEYS = [
 export default function AdminLayout() {
     const navigate = useNavigate();
     const location = useLocation();
+    const [profilePicture, setProfilePicture] = useState(() => localStorage.getItem("profilePicture"));
+    const adminName = localStorage.getItem("userName") || "Admin";
     const serviceGroups = [
         {
             id: "library", label: "Library", icon: <BookOpen size={16} />, path: "/admin/services/library",
@@ -132,23 +135,15 @@ export default function AdminLayout() {
         },
 
         {
-            label: "User Management",
-            path: "/admin/users",
-            icon: (
-                <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                >
-                    <circle cx="12" cy="8" r="4" />
-                    <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
-                </svg>
-            ),
+            label: "Announcements",
+            path: "/admin/announcements",
+            icon: <Megaphone size={18} />,
+        },
+
+        {
+            label: "Events",
+            path: "/admin/events",
+            icon: <CalendarDays size={18} />,
         },
 
         {
@@ -172,27 +167,29 @@ export default function AdminLayout() {
         },
 
         {
-            label: "Audit Logs",
-            path: "/admin/audit-logs",
-            icon: <ScrollText size={18} />,
+            label: "Users",
+            path: "/admin/users",
+            icon: (
+                <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                >
+                    <circle cx="12" cy="8" r="4" />
+                    <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
+                </svg>
+            ),
         },
 
         {
             label: "Reports",
             path: "/admin/reports",
             icon: <BarChart3 size={18} />,
-        },
-
-        {
-            label: "Announcements",
-            path: "/admin/announcements",
-            icon: <Megaphone size={18} />,
-        },
-
-        {
-            label: "Events",
-            path: "/admin/events",
-            icon: <CalendarDays size={18} />,
         },
 
         {
@@ -213,6 +210,12 @@ export default function AdminLayout() {
                     <path d="M4 21c0-4 4-6 8-6s8 2 8 6" />
                 </svg>
             ),
+        },
+
+        {
+            label: "Audit Logs",
+            path: "/admin/audit-logs",
+            icon: <ScrollText size={18} />,
         },
     ];
 
@@ -573,41 +576,20 @@ export default function AdminLayout() {
                             {today}
                         </span>
 
-                        <div className="flex items-center gap-2">
-
-                            <div
-                                className="
-                                    flex
-                                    h-9
-                                    w-9
-                                    items-center
-                                    justify-center
-                                    rounded-full
-                                    text-sm
-                                    font-semibold
-                                    text-white
-                                    sm:h-10
-                                    sm:w-10
-                                "
-                                style={{
-                                    background: "#0E3B22",
-                                }}
-                            >
-                                A
-                            </div>
-
-                            <span
-                                className="
-                                    hidden
-                                    text-sm
-                                    text-gray-700
-                                    sm:block
-                                "
-                            >
-                                Admin
+                        <Link
+                            to="/admin/profile"
+                            aria-label="Open my profile"
+                            className="flex min-w-0 items-center gap-2 rounded-xl p-1 hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-[#106A2E]"
+                        >
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#0E3B22] text-sm font-semibold text-white sm:h-10 sm:w-10">
+                                {profilePicture ? (
+                                    <img src={profilePicture.startsWith("/") ? API_URL + profilePicture : profilePicture} alt="" className="h-full w-full object-cover" />
+                                ) : adminName.slice(0, 1).toUpperCase()}
                             </span>
-
-                        </div>
+                            <span className="hidden max-w-36 truncate text-sm text-gray-700 sm:block">
+                                {adminName}
+                            </span>
+                        </Link>
 
                     </div>
 
@@ -663,7 +645,7 @@ export default function AdminLayout() {
 
                     <div className="super-admin-content relative z-10">
 
-                        <Outlet />
+                        <Outlet context={{ setProfilePicture }} />
 
                     </div>
 

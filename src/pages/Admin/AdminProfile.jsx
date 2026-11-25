@@ -1,5 +1,6 @@
 import AdminPageHeader from "./AdminPageHeader";
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { useOutletContext } from "react-router-dom";
 import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
 import ChangeEmailModal from "../../modules/guidance/counselor/ChangeEmailModal";
@@ -190,6 +191,7 @@ function ProfileSkeleton() {
 // Component
 // ─────────────────────────────────────────────────────────────
 export default function AdminProfile() {
+    const { setProfilePicture: setHeaderPicture } = useOutletContext() || {};
     // State Management
     const [activeTab, setActiveTab] = useState("overview");
     const [loading, setLoading] = useState(true);
@@ -197,6 +199,7 @@ export default function AdminProfile() {
     const [errors, setErrors] = useState({});
     const [copied, setCopied] = useState(false);
     const [showEmailChange, setShowEmailChange] = useState(false);
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
 
     const [profile, setProfile] = useState({
         fullName: "",
@@ -204,7 +207,7 @@ export default function AdminProfile() {
         contactNumber: "",
         role: "",
         dateJoined: "",
-        photoUrl: ""
+        profilePicture: ""
     });
 
     const [editForm, setEditForm] = useState({
@@ -238,6 +241,8 @@ export default function AdminProfile() {
     // Derived values
     const [adminEmail, setAdminEmail] = useState(() => localStorage.getItem("userEmail"));
     const isSuperAdmin = profile.role?.toLowerCase() === "superadmin";
+    const picture = profile.profilePicture;
+    const photoUrl = picture?.startsWith("/") ? API_URL + picture : picture;
     const encodedAdminEmail = useMemo(
         () => (adminEmail ? encodeURIComponent(adminEmail) : ""),
         [adminEmail]
@@ -346,6 +351,8 @@ export default function AdminProfile() {
             const data = await response.json();
 
             setProfile(data);
+            localStorage.setItem("profilePicture", data.profilePicture || "");
+            setHeaderPicture?.(data.profilePicture || "");
             setEditForm({
                 fullName: data.fullName || "",
                 contactNumber: data.contactNumber || ""
@@ -356,7 +363,7 @@ export default function AdminProfile() {
         } finally {
             setLoading(false);
         }
-    }, [encodedAdminEmail]);
+    }, [encodedAdminEmail, setHeaderPicture]);
 
     const fetchActivityLog = useCallback(async () => {
         setIsActivityLoading(true);
@@ -445,6 +452,43 @@ export default function AdminProfile() {
             contactNumber: profile.contactNumber || ""
         });
         setErrors({});
+    };
+
+    const uploadPhoto = async (event) => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("Profile picture must be 5 MB or smaller.");
+            return;
+        }
+
+        setUploadingPhoto(true);
+        try {
+            const form = new FormData();
+            form.append("file", file);
+            const response = await fetch(`${API_URL}/api/profile/upload-photo`, {
+                method: "POST",
+                headers: authHeaders(),
+                body: form
+            });
+            if (!response.ok) {
+                const message = response.headers.get("content-type")?.includes("text/plain")
+                    ? await response.text()
+                    : "";
+                throw new Error(message || "Could not upload your profile picture.");
+            }
+            const { imageUrl } = await response.json();
+            if (!imageUrl) throw new Error("The upload returned no profile picture.");
+            setProfile((previous) => ({ ...previous, profilePicture: imageUrl }));
+            localStorage.setItem("profilePicture", imageUrl);
+            setHeaderPicture?.(imageUrl);
+            toast.success("Profile picture updated.");
+        } catch (error) {
+            toast.error(error.message || "Could not upload your profile picture.");
+        } finally {
+            setUploadingPhoto(false);
+        }
     };
 
     const handleEditSave = async () => {
@@ -640,9 +684,9 @@ export default function AdminProfile() {
 
                     <div className="relative p-6 sm:p-7 flex flex-col sm:flex-row sm:items-center gap-5">
                         <div className="w-20 h-20 rounded-full bg-[#0E3B22] text-white ring-2 ring-emerald-100 flex items-center justify-center text-2xl font-semibold font-medium flex-shrink-0 overflow-hidden">
-                            {profile.photoUrl ? (
+                            {photoUrl ? (
                                 <img
-                                    src={profile.photoUrl}
+                                    src={photoUrl}
                                     alt={profile.fullName}
                                     className="w-20 h-20 rounded-full object-cover"
                                 />
@@ -749,6 +793,25 @@ export default function AdminProfile() {
                             <h3 className="font-semibold text-lg text-[#1F1F1F] mb-5">Edit Profile</h3>
 
                             <div className="space-y-5 max-w-md">
+                                {isSuperAdmin && (
+                                    <div>
+                                        <label htmlFor="admin-profile-picture" className="mb-1.5 block text-sm font-medium text-gray-700">
+                                            Profile picture
+                                        </label>
+                                        <input
+                                            id="admin-profile-picture"
+                                            type="file"
+                                            accept=".jpg,.jpeg,.png,.gif,.webp"
+                                            onChange={uploadPhoto}
+                                            disabled={uploadingPhoto}
+                                            aria-describedby="admin-profile-picture-help"
+                                            className={`${inputBase} border-gray-200`}
+                                        />
+                                        <p id="admin-profile-picture-help" className="mt-1.5 text-xs text-gray-500" role="status">
+                                            {uploadingPhoto ? "Uploading profile picture…" : "Choose a JPG, PNG, GIF, or WebP image up to 5 MB."}
+                                        </p>
+                                    </div>
+                                )}
                                 <div>
                                     <div className="flex items-center justify-between mb-1.5">
                                         <label htmlFor="edit-fullName" className="block text-sm font-medium text-gray-700">
