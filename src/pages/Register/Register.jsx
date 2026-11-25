@@ -1,7 +1,7 @@
 import "../authPages.css";
 import AuthCardHeader from "../AuthCardHeader";
 import AuthServicePanel from "../AuthServicePanel";
-import { GraduationCap, UsersRound } from "lucide-react";
+import { Camera, GraduationCap, Upload, UsersRound } from "lucide-react";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -28,17 +28,15 @@ export default function Register() {
 
     const handleDocumentChange = (event) => {
         const file = event.target.files?.[0];
-        setSupportingDocument(null);
+        event.target.value = "";
         if (!file) return;
         if (!/\.(pdf|jpe?g|png)$/i.test(file.name) ||
             !["application/pdf", "image/jpeg", "image/png"].includes(file.type)) {
             toast.error("Please upload a PDF, JPG, or PNG file.");
-            event.target.value = "";
             return;
         }
         if (file.size === 0 || file.size > 5 * 1024 * 1024) {
             toast.error("Please upload a non-empty file up to 5 MB.");
-            event.target.value = "";
             return;
         }
         setSupportingDocument(file);
@@ -361,24 +359,39 @@ export default function Register() {
                                 REGISTER BUTTON
                             ================================================= */}
 
-                            <div className="auth-step auth-step-next mb-6">
-                                <label htmlFor="supporting-document" className="mb-1.5 block text-xs font-medium text-slate-500">
+                            <fieldset className="auth-step auth-step-next mb-6" aria-describedby="supporting-document-help">
+                                <legend className="mb-1.5 text-xs font-medium text-slate-500">
                                     Supporting Document <span className="text-red-500">*</span>
-                                </label>
-                                <input
-                                    id="supporting-document"
-                                    type="file"
-                                    accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                                    onChange={handleDocumentChange}
-                                    disabled={loading}
-                                    required
-                                    aria-describedby="supporting-document-help"
-                                    className="auth-field w-full cursor-pointer rounded-xl border border-dashed border-emerald-300 bg-emerald-50/60 p-2 text-xs text-slate-700 file:mr-2 file:cursor-pointer file:rounded-lg file:border-0 file:bg-[#106A2E] file:px-3 file:py-2.5 file:font-semibold file:text-white hover:bg-emerald-50 focus-visible:outline-2 focus-visible:outline-emerald-700"
-                                />
+                                </legend>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {[
+                                        { label: "Choose file", icon: Upload, accept: ".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" },
+                                        { label: "Take photo", icon: Camera, accept: "image/jpeg,image/png", capture: "environment" },
+                                    ].map(({ label, icon: Icon, accept, capture }) => (
+                                        <label key={label}>
+                                            <input
+                                                type="file"
+                                                accept={accept}
+                                                capture={capture}
+                                                onChange={handleDocumentChange}
+                                                disabled={loading}
+                                                className="peer sr-only"
+                                            />
+                                            <span className="flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 peer-focus-visible:ring-2 peer-focus-visible:ring-emerald-700 peer-disabled:opacity-50">
+                                                <Icon size={16} aria-hidden="true" /> {label}
+                                            </span>
+                                        </label>
+                                    ))}
+                                </div>
+                                {supportingDocument && (
+                                    <p role="status" className="mt-2 break-all text-xs font-semibold text-slate-700">
+                                        Selected file: {supportingDocument.name}
+                                    </p>
+                                )}
                                 <p id="supporting-document-help" className="mt-2 text-xs leading-5 text-slate-500">
                                     Upload a clear copy of your ID, registration form, or OVRF. PDF, JPG, or PNG; maximum 5 MB.
                                 </p>
-                            </div>
+                            </fieldset>
 
                             <button
                                 onClick={handleRegisterClick}
