@@ -317,6 +317,7 @@ export default function Users() {
     const [credentials, setCredentials] = useState(null);
 
     const currentEmail = (localStorage.getItem("userEmail") || "").toLowerCase();
+    const isSuperAdmin = (localStorage.getItem("userRole") || "").toLowerCase() === "superadmin";
     const isSelf = (user) => Boolean(currentEmail) && user.email?.toLowerCase() === currentEmail;
 
     // ── Fonts (same as AdminProfile / Announcements) ────────
@@ -816,17 +817,20 @@ export default function Users() {
     };
 
     // ── Delete (soft delete) ────────────────────────────────
-    const performDelete = async (user) => {
+    const performDelete = async (user, clearActivity) => {
         setBusyId(user.id);
 
         try {
-            const data = await request(`${API_BASE}/${user.id}`, {
+            const path = `${API_BASE}/${user.id}${clearActivity ? "/account-and-activity" : ""}`;
+            const data = await request(path, {
                 method: "DELETE",
                 fallback: "Failed to delete the account.",
                 messages: { 403: "You don't have permission to delete this account." },
             });
 
-            setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, status: "Deleted" } : u)));
+            setUsers((prev) => prev.map((u) => (u.id === user.id
+                ? { ...u, status: "Deleted", lastActive: clearActivity ? null : u.lastActive }
+                : u)));
 
             if (activeUser?.id === user.id) {
                 setModal(null);
@@ -842,13 +846,15 @@ export default function Users() {
         }
     };
 
-    const requestDelete = (user) => {
+    const requestDelete = (user, clearActivity = false) => {
         setConfirm({
-            title: "Delete account?",
-            description: `The account of ${user.fullName} will be deactivated, but historical system records and the official School Record will be preserved.`,
-            confirmLabel: "Delete",
+            title: clearActivity ? "Delete account and activity?" : "Delete account?",
+            description: clearActivity
+                ? `${user.fullName}'s account will be disabled and its activity log entries permanently deleted. Session records and security events will be retained. The deletion will be recorded in the admin audit log.`
+                : `${user.fullName}'s account will be disabled. Its activity history will be retained.`,
+            confirmLabel: clearActivity ? "Delete account and activity" : "Delete",
             tone: "danger",
-            onConfirm: () => performDelete(user),
+            onConfirm: () => performDelete(user, clearActivity),
         });
     };
 
@@ -871,6 +877,10 @@ export default function Users() {
 
         if (canDelete(u)) {
             items.push({ label: "Delete", icon: Trash2, danger: true, onClick: () => requestDelete(u) });
+        }
+
+        if (isSuperAdmin && u.role !== "SuperAdmin" && !isSelf(u) && (u.status !== "Deleted" || u.lastActive)) {
+            items.push({ label: "Delete account and activity", icon: Trash2, danger: true, onClick: () => requestDelete(u, true) });
         }
 
         return items;
