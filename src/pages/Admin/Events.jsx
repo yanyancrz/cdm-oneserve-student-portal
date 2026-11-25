@@ -17,6 +17,7 @@ import {
     Mail,
     MapPin,
     Pencil,
+    Plus,
     Trash2,
     UploadCloud,
     X,
@@ -135,6 +136,16 @@ const downloadBlob = (blob, filename) => {
 // events is kept in this browser. Deleting a batch removes every event it
 // created, which is the "undo import" the admin needs.
 const IMPORTED_FILES_KEY = "cdm.importedCalendarFiles";
+const MANUAL_EVENT_IDS_KEY = "cdm.manualEventIds";
+
+const readManualEventIds = () => {
+    try {
+        const ids = JSON.parse(localStorage.getItem(MANUAL_EVENT_IDS_KEY) || "[]");
+        return Array.isArray(ids) ? ids : [];
+    } catch {
+        return [];
+    }
+};
 
 const readImportedFiles = () => {
     try {
@@ -179,8 +190,8 @@ const eventSignature = (ev) =>
 // Events that no tracked file owns — i.e. imports made before file tracking
 // existed. They are grouped again (by creation minute, when the API provides
 // `createdAt`) so they still show up in the list and can be deleted.
-const recoverUntrackedGroups = (allEvents, batches) => {
-    const owned = new Set();
+const recoverUntrackedGroups = (allEvents, batches, manualEventIds) => {
+    const owned = new Set(manualEventIds);
     batches.forEach((b) => (b.eventIds || []).forEach((id) => owned.add(String(id))));
 
     const untracked = (allEvents || []).filter((ev) => !owned.has(String(ev.id)));
@@ -1794,12 +1805,13 @@ export default function Events() {
     const [saving, setSaving] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
     const [importedFiles, setImportedFiles] = useState(() => readImportedFiles());
+    const [manualEventIds, setManualEventIds] = useState(readManualEventIds);
 
     // Imported files recorded since tracking existed, plus groups recovered
     // from imports made before that (so they can still be deleted).
     const importGroups = useMemo(
-        () => [...importedFiles, ...recoverUntrackedGroups(events, importedFiles)],
-        [events, importedFiles]
+        () => [...importedFiles, ...recoverUntrackedGroups(events, importedFiles, manualEventIds)],
+        [events, importedFiles, manualEventIds]
     );
     // Opens the registrar email draft (whole academic year by default).
     const [registrarOpen, setRegistrarOpen] = useState(false);
@@ -1860,6 +1872,12 @@ export default function Events() {
         setShowForm(false);
     };
 
+    const openCreate = () => {
+        setEditingId(null);
+        setForm({ ...EMPTY_FORM, dates: [selectedKey] });
+        setShowForm(true);
+    };
+
     const openEdit = (ev) => {
         setForm({
             title: ev.title || "",
@@ -1877,6 +1895,7 @@ export default function Events() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (saving) return;
         if (!form.title.trim() || form.dates.length === 0) {
             toast.error("Title and at least one event date are required.");
             return;
@@ -1913,6 +1932,21 @@ export default function Events() {
             if (!res.ok) {
                 const d = await res.json().catch(() => ({}));
                 throw new Error(d.message || "Failed to save event");
+            }
+            if (!editingId) {
+                const created = await res.json().catch(() => null);
+                if (created?.id != null) {
+                    const ids = [...new Set([...manualEventIds, ...readManualEventIds(), String(created.id)])];
+                    setManualEventIds(ids);
+                    try {
+                        localStorage.setItem(MANUAL_EVENT_IDS_KEY, JSON.stringify(ids));
+                    } catch {
+                        // The current page still knows which events were added manually.
+                    }
+                }
+                const date = keyToDate(sorted[0]);
+                setView({ y: date.getFullYear(), m: date.getMonth() });
+                setSelectedKey(sorted[0]);
             }
             toast.success(editingId ? "Event updated." : "Event created.");
             resetForm();
@@ -1993,7 +2027,7 @@ export default function Events() {
         <div className="admin-page">
             <div className="w-full">
                 <AdminPageHeader icon="events" title="Event Calendar" description="Manage school events and academic dates.">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                         <button
                             type="button"
                             onClick={() => setRegistrarOpen(true)}
@@ -2003,10 +2037,18 @@ export default function Events() {
                         </button>
 
                         <button
+                            type="button"
                             onClick={() => setImportOpen(true)}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#0E3B22] px-3.5 py-2 text-xs font-semibold text-white shadow-md shadow-emerald-900/20 transition hover:opacity-90"
+                            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
                         >
                             <UploadCloud size={14} /> Import
+                        </button>
+                        <button
+                            type="button"
+                            onClick={openCreate}
+                            className="inline-flex items-center gap-1.5 rounded-xl bg-[#0E3B22] px-3.5 py-2 text-xs font-semibold text-white shadow-md shadow-emerald-900/20 transition hover:opacity-90"
+                        >
+                            <Plus size={14} /> Add Event
                         </button>
                     </div>
                 </AdminPageHeader>
@@ -2095,7 +2137,7 @@ export default function Events() {
 
                                 {upcoming.length === 0 ? (
                                     <p className="mt-3 text-sm text-slate-400">
-                                        No upcoming events. Use Import to add the school calendar.
+                                        No upcoming events. Add an event or import the school calendar.
                                     </p>
                                 ) : (
                                     <ul className="mt-2 divide-y divide-slate-100">
@@ -2199,13 +2241,12 @@ export default function Events() {
                     </div>
                 )}
 
-                {/* Edit form (events are edited from the selected day panel) */}
                 {showForm && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div role="dialog" aria-modal="true" aria-labelledby="event-form-title" className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                         <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
                             <div className="flex items-center justify-between mb-4">
-                                <h2 className="text-lg font-semibold text-slate-900">{editingId ? "Edit Event" : "New Event"}</h2>
-                                <button onClick={resetForm} className="p-1.5 rounded-lg hover:bg-slate-100">
+                                <h2 id="event-form-title" className="text-lg font-semibold text-slate-900">{editingId ? "Edit Event" : "Add Event"}</h2>
+                                <button type="button" aria-label="Close event form" onClick={resetForm} disabled={saving} className="p-1.5 rounded-lg hover:bg-slate-100 disabled:opacity-60">
                                     <X size={18} className="text-slate-500" />
                                 </button>
                             </div>
@@ -2260,7 +2301,7 @@ export default function Events() {
                                     </div>
                                 </div>
                                 <div className="flex gap-2 pt-2">
-                                    <button type="button" onClick={resetForm} className="flex-1 rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">Cancel</button>
+                                    <button type="button" onClick={resetForm} disabled={saving} className="flex-1 rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-60">Cancel</button>
                                     <button type="submit" disabled={saving} className="flex-1 rounded-xl bg-[#0E3B22] p-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 hover:opacity-90 disabled:opacity-60">
                                         {saving ? "Saving..." : (editingId ? "Update" : "Create")}
                                     </button>
