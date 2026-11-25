@@ -1,4 +1,5 @@
 import AdminPageHeader from "./AdminPageHeader";
+import { ConfirmDialog } from "./userAdminShared";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -1803,6 +1804,7 @@ export default function Events() {
     const role = localStorage.getItem("role") || localStorage.getItem("userRole") || "";
     const isSuperAdmin = role.trim().toLowerCase() === "superadmin";
     const [announcementDraft, setAnnouncementDraft] = useState(null);
+    const [deleteConfirmation, setDeleteConfirmation] = useState(null);
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
@@ -1986,7 +1988,6 @@ export default function Events() {
     };
 
     const handleDelete = async (id) => {
-        if (!confirm("Delete this event?")) return;
         try {
             const res = await fetch(`${API_BASE}/${id}`, { method: "DELETE", headers: authHeaders() });
             if (!res.ok) throw new Error("Failed to delete");
@@ -2008,7 +2009,7 @@ export default function Events() {
     };
 
     // Delete every event that came from one imported file ("undo import").
-    const handleDeleteImportedFile = async (batch) => {
+    const requestDeleteImportedFile = (batch) => {
         const alive = (batch.eventIds || []).filter((id) =>
             events.some((ev) => String(ev.id) === String(id))
         );
@@ -2020,8 +2021,16 @@ export default function Events() {
             return;
         }
 
-        if (!confirm(`Delete the ${alive.length} event(s) imported from "${batch.fileName}"?`)) return;
+        setDeleteConfirmation({
+            title: "Delete imported events?",
+            description: `This will delete ${alive.length} event${alive.length === 1 ? "" : "s"} imported from "${batch.fileName}".`,
+            confirmLabel: "Delete",
+            tone: "danger",
+            onConfirm: () => deleteImportedEvents(batch, alive),
+        });
+    };
 
+    const deleteImportedEvents = async (batch, alive) => {
         const failedIds = [];
         for (const id of alive) {
             try {
@@ -2164,7 +2173,13 @@ export default function Events() {
                                                         <Pencil size={14} />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleDelete(ev.id)}
+                                                        onClick={() => setDeleteConfirmation({
+                                                            title: "Delete event?",
+                                                            description: `"${ev.title}" will be permanently deleted.`,
+                                                            confirmLabel: "Delete",
+                                                            tone: "danger",
+                                                            onConfirm: () => handleDelete(ev.id),
+                                                        })}
                                                         className="rounded-lg p-1.5 text-red-500 hover:bg-red-50"
                                                         aria-label={`Delete ${ev.title}`}
                                                     >
@@ -2288,7 +2303,7 @@ export default function Events() {
                                                     </div>
                                                     <button
                                                         type="button"
-                                                        onClick={() => handleDeleteImportedFile(batch)}
+                                                        onClick={() => requestDeleteImportedFile(batch)}
                                                         title={`Delete all events from ${batch.fileName}`}
                                                         aria-label={`Delete imported file ${batch.fileName}`}
                                                         className="rounded-lg p-1.5 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
@@ -2391,6 +2406,10 @@ export default function Events() {
 
                 {registrarOpen && (
                     <RegistrarEmailModal onClose={() => setRegistrarOpen(false)} />
+                )}
+
+                {deleteConfirmation && (
+                    <ConfirmDialog config={deleteConfirmation} onClose={() => setDeleteConfirmation(null)} />
                 )}
             </div>
         </div>

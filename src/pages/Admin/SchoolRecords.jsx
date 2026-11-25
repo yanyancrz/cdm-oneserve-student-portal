@@ -1,4 +1,5 @@
 import AdminPageHeader from "./AdminPageHeader";
+import { ConfirmDialog } from "./userAdminShared";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
@@ -62,6 +63,7 @@ export default function SchoolRecords() {
     const [role, setRole] = useState("Student");
     const [adding, setAdding] = useState(false);
     const [deletingId, setDeletingId] = useState(null);
+    const [deleteTarget, setDeleteTarget] = useState(null);
 
     // -----------------------------------------------------
     // LOAD
@@ -154,7 +156,7 @@ export default function SchoolRecords() {
     // -----------------------------------------------------
     // DELETE
     // -----------------------------------------------------
-    const handleDelete = async (record) => {
+    const requestDelete = (record) => {
         if (usingFallback || record._seed) {
             toast.error(
                 "Backend not connected — IDs can only be removed in the database."
@@ -162,10 +164,10 @@ export default function SchoolRecords() {
             return;
         }
 
-        if (!window.confirm(`Remove ${record.idNumber} from School Records?`)) {
-            return;
-        }
+        setDeleteTarget(record);
+    };
 
+    const handleDelete = async (record) => {
         setDeletingId(record.id);
 
         try {
@@ -289,7 +291,7 @@ export default function SchoolRecords() {
                                         </p>
                                     </div>
                                     <button
-                                        onClick={() => handleDelete(r)}
+                                        onClick={() => requestDelete(r)}
                                         disabled={deletingId === r.id}
                                         className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
                                     >
@@ -300,6 +302,18 @@ export default function SchoolRecords() {
                         </ul>
                     )}
                 </div>
+                {deleteTarget && (
+                    <ConfirmDialog
+                        config={{
+                            title: "Remove school record?",
+                            description: `ID ${deleteTarget.idNumber} will be removed from School Records.`,
+                            confirmLabel: "Remove",
+                            tone: "danger",
+                            onConfirm: () => handleDelete(deleteTarget),
+                        }}
+                        onClose={() => setDeleteTarget(null)}
+                    />
+                )}
             </main>
         </div>
     );

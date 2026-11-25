@@ -1,6 +1,6 @@
 import AdminPageHeader from "./AdminPageHeader";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { ConfirmDialog } from "./userAdminShared";
 import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import {
@@ -149,74 +149,6 @@ function Switch({ checked, onChange, disabled, label }) {
                 }`}
             />
         </button>
-    );
-}
-
-// Portaled to document.body: AdminLayout renders pages inside a
-// <div class="relative z-10"> stacking context, so a plain fixed z-50
-// dialog loses to the layout's fixed z-50 sidebar. z-[60] clears it.
-function ConfirmDialog({ title, description, confirmLabel, busy, onConfirm, onCancel }) {
-    const cancelRef = useRef(null);
-
-    useEffect(() => {
-        cancelRef.current?.focus();
-    }, []);
-
-    useEffect(() => {
-        const onKey = (event) => {
-            if (event.key === "Escape" && !busy) onCancel();
-        };
-        document.addEventListener("keydown", onKey);
-        return () => document.removeEventListener("keydown", onKey);
-    }, [busy, onCancel]);
-
-    return createPortal(
-        <div
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4"
-            onMouseDown={(event) => {
-                if (event.target === event.currentTarget && !busy) onCancel();
-            }}
-        >
-            <div
-                role="alertdialog"
-                aria-modal="true"
-                aria-labelledby="confirm-title"
-                aria-describedby="confirm-desc"
-                className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl"
-            >
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-red-50 text-red-500">
-                    <Trash2 size={20} />
-                </div>
-
-                <h2 id="confirm-title" className="mt-4 text-base font-semibold text-gray-900">
-                    {title}
-                </h2>
-                <p id="confirm-desc" className="mt-1.5 text-sm leading-6 text-gray-500">
-                    {description}
-                </p>
-
-                <div className="mt-6 flex justify-end gap-2">
-                    <button
-                        ref={cancelRef}
-                        type="button"
-                        onClick={onCancel}
-                        disabled={busy}
-                        className={`rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-60 ${focusRing}`}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        onClick={onConfirm}
-                        disabled={busy}
-                        className={`inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60 ${focusRing}`}
-                    >
-                        {busy && <RefreshCw size={14} className="animate-spin" />}
-                        {confirmLabel}
-                    </button>
-                </div>
-            </div>
-        </div>, document.body
     );
 }
 
@@ -1348,12 +1280,14 @@ export default function Announcements() {
 
             {deleteTarget && (
                 <ConfirmDialog
-                    title="Delete announcement?"
-                    description={`"${deleteTarget.title}" will be permanently removed and users will no longer see it. This can't be undone.`}
-                    confirmLabel="Delete"
-                    busy={Boolean(pendingIds[deleteTarget.id])}
-                    onConfirm={confirmDelete}
-                    onCancel={cancelDelete}
+                    config={{
+                        title: "Delete announcement?",
+                        description: `"${deleteTarget.title}" will be permanently deleted.`,
+                        confirmLabel: "Delete",
+                        tone: "danger",
+                        onConfirm: confirmDelete,
+                    }}
+                    onClose={cancelDelete}
                 />
             )}
         </main>
