@@ -396,7 +396,7 @@ export default function Announcements() {
         notifyUsers: false,
     } : EMPTY_FORM;
 
-    const formRef = useRef(null);
+    const formDialogRef = useRef(null);
 
     const [announcements, setAnnouncements] = useState([]);
     const [form, setForm] = useState(initialForm);
@@ -415,10 +415,16 @@ export default function Announcements() {
 
     useEffect(() => {
         if (eventDraft) {
-            formRef.current?.scrollIntoView({ block: "start" });
             navigate(pathname, { replace: true, state: null });
         }
     }, [eventDraft, navigate, pathname]);
+
+    useEffect(() => {
+        const dialog = formDialogRef.current;
+        if (!showForm || !dialog) return;
+        dialog.showModal();
+        return () => dialog.close();
+    }, [showForm]);
 
     // ── Load ────────────────────────────────────────────────
     const loadAnnouncements = useCallback(
@@ -517,12 +523,6 @@ export default function Announcements() {
     const previewText = getReadableText(previewAccent);
 
     // ── Form helpers ────────────────────────────────────────
-    const scrollToForm = () => {
-        requestAnimationFrame(() => {
-            formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-        });
-    };
-
     const closeForm = useCallback(() => {
         setForm(EMPTY_FORM);
         setFormBaseline(EMPTY_FORM);
@@ -537,7 +537,6 @@ export default function Announcements() {
         setEditingId(null);
         setErrors({});
         setShowForm(true);
-        scrollToForm();
     };
 
     const openEditForm = (announcement) => {
@@ -557,7 +556,6 @@ export default function Announcements() {
         setFormBaseline(next);
         setErrors({});
         setShowForm(true);
-        scrollToForm();
     };
 
     const updateField = (field, value) => {
@@ -865,14 +863,19 @@ export default function Announcements() {
 
                 {/* Create / edit form */}
                 {showForm && (
-                    <section
-                        ref={formRef}
-                        className="admin-surface mb-6 scroll-mt-6 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm"
+                    <dialog
+                        ref={formDialogRef}
+                        aria-labelledby="announcement-form-title"
+                        onCancel={(event) => {
+                            event.preventDefault();
+                            if (!saving) closeForm();
+                        }}
+                        className="admin-surface m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-5xl overflow-y-auto overscroll-contain rounded-2xl border border-gray-200 bg-white p-0 shadow-xl backdrop:bg-black/40"
                     >
-                        <div className="border-b border-gray-100 px-5 py-5 sm:px-6">
+                        <div className="sticky top-0 z-10 border-b border-gray-100 bg-white px-5 py-5 sm:px-6">
                             <div className="flex items-center justify-between gap-4">
                                 <div>
-                                    <h2 className="font-semibold text-xl text-[#1F1F1F]">
+                                    <h2 id="announcement-form-title" className="font-semibold text-xl text-[#1F1F1F]">
                                         {editingId ? "Edit Announcement" : "New Announcement"}
                                     </h2>
                                     <p className="mt-1 text-xs text-gray-500">
@@ -885,7 +888,8 @@ export default function Announcements() {
                                 <button
                                     type="button"
                                     onClick={closeForm}
-                                    className={`flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition hover:bg-gray-200 ${focusRing}`}
+                                    disabled={saving}
+                                    className={`flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition hover:bg-gray-200 disabled:opacity-50 ${focusRing}`}
                                     aria-label="Close form"
                                 >
                                     <X size={17} />
@@ -1246,7 +1250,7 @@ export default function Announcements() {
                                 </div>
                             </div>
                         </form>
-                    </section>
+                    </dialog>
                 )}
 
                 {/* List */}
