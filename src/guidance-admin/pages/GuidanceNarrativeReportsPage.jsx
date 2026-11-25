@@ -41,6 +41,16 @@ function StatusBadge({ status }) {
     );
 }
 
+function ReportFormatBadge({ format }) {
+    if (!format) return null;
+
+    const tone = format === "Handwritten"
+        ? "bg-violet-50 text-violet-700"
+        : "bg-sky-50 text-sky-700";
+
+    return <span className={`inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold ${tone}`}>{format}</span>;
+}
+
 function ReportDetailModal({ report, loading, error, onClose, onExport, onDownload, onPreview, preview, onClosePreview, busy, embedded }) {
     useEffect(() => {
         if (!report && !loading) return undefined;
@@ -131,6 +141,12 @@ function ReportDetailModal({ report, loading, error, onClose, onExport, onDownlo
                                     <span className="text-gray-400">Version: </span>
                                     <b className="text-gray-800">{report.version}</b>
                                 </p>
+                                {report.reportFormat && (
+                                    <p>
+                                        <span className="text-gray-400">Format </span>
+                                        <ReportFormatBadge format={report.reportFormat} />
+                                    </p>
+                                )}
                             </div>
 
                             {report.isConfidential && (
@@ -139,7 +155,7 @@ function ReportDetailModal({ report, loading, error, onClose, onExport, onDownlo
                                 </p>
                             )}
 
-                            {[
+                            {report.reportFormat !== "Handwritten" && [
                                 ["Narrative report", report.sessionSummary],
                                 ["Session objectives", report.sessionObjectives],
                                 ["Observations", report.observations],
@@ -171,7 +187,7 @@ function ReportDetailModal({ report, loading, error, onClose, onExport, onDownlo
                             {report.attachments?.length > 0 && (
                                 <section>
                                     <h3 className="text-[11px] font-bold uppercase tracking-wider text-[#106A2E]">
-                                        Supporting files
+                                        {report.reportFormat === "Handwritten" ? "Handwritten uploads" : "Supporting files"}
                                     </h3>
                                     <ul className="mt-2 divide-y divide-gray-100">
                                         {report.attachments.map((attachment) => (
@@ -603,6 +619,11 @@ export default function GuidanceNarrativeReportsPage({ readOnly = false }) {
                                             <p className="max-w-[240px] truncate text-sm font-medium text-gray-800">
                                                 {report.reportTitle || "Narrative report"}
                                             </p>
+                                            {report.reportFormat && (
+                                                <div className="my-1">
+                                                    <ReportFormatBadge format={report.reportFormat} />
+                                                </div>
+                                            )}
                                             <p className="text-[11px] text-gray-400">
                                                 {report.reportNumber || `Draft #${report.id}`}
                                                 {report.attachmentCount > 0 ? ` · ${report.attachmentCount} file(s)` : ""}
