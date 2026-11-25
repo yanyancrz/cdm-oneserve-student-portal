@@ -40,6 +40,7 @@ export default function AuditLogs() {
     const [totalItems, setTotalItems] = useState(0);
     const [selected, setSelected] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [refreshKey, setRefreshKey] = useState(0);
     const [error, setError] = useState("");
 
     useEffect(() => { setPage(1); setSelected(null); }, [activeModule]);
@@ -53,7 +54,8 @@ export default function AuditLogs() {
         setLoading(true); setError("");
         try {
             const [logs, options, userRows] = await Promise.all([
-                get(`?${queryString(query, page)}`, signal), get("/facets", signal),
+                get(`?${queryString(query, page)}`, signal),
+                get(activeModule ? `/facets?module=${encodeURIComponent(activeModule)}` : "/facets", signal),
                 fetch(`${API_URL}/api/auth/users`, { headers: authHeaders(), signal }).then(async response => { const body = await response.json().catch(() => []); if (!response.ok) throw new Error(body.message || "User filter could not be loaded."); return body; }),
             ]);
             if (signal?.aborted) return;
@@ -66,7 +68,7 @@ export default function AuditLogs() {
         const controller = new AbortController();
         load(controller.signal);
         return () => controller.abort();
-    }, [load]);
+    }, [load, refreshKey]);
 
     const exportLogs = async () => {
         setExporting(true);
@@ -84,15 +86,18 @@ export default function AuditLogs() {
     };
     const clear = () => { const empty = { category: "", userId: "", action: "", search: "", from: "", to: "" }; setFilters(empty); setQuery(empty); setPage(1); };
     const selectModule = module => {
-        setPage(1);
+        if (module === activeModule) return;
+        clear();
         setSelected(null);
         setItems([]);
+        setTotalItems(0);
+        setTotalPages(0);
         setSearchParams(module ? { module } : {});
     };
 
     return <main className="admin-page space-y-5">
         <AdminPageHeader icon="audit" title="Central Audit Logs" description="Review changes and activity across Lost & Found, Library, Guidance, and Clinic.">
-            <div className="flex flex-wrap gap-2"><button onClick={() => load()} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm"><RefreshCw size={15} className={loading ? "animate-spin" : ""} />Refresh</button><ExportFormatSelect value={exportFormat} onChange={setExportFormat} disabled={exporting} /><button disabled={exporting} onClick={exportLogs} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-3 py-2 text-sm font-semibold text-white"><Download size={15} />Export logs</button></div>
+            <div className="flex flex-wrap gap-2"><button onClick={() => setRefreshKey(key => key + 1)} disabled={loading} className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm"><RefreshCw size={15} className={loading ? "animate-spin" : ""} />Refresh</button><ExportFormatSelect value={exportFormat} onChange={setExportFormat} disabled={exporting} /><button disabled={exporting} onClick={exportLogs} className="inline-flex items-center gap-2 rounded-xl bg-[#0E3B22] px-3 py-2 text-sm font-semibold text-white"><Download size={15} />Export logs</button></div>
         </AdminPageHeader>
         {error && <div role="alert" className="rounded-xl bg-red-50 p-3 text-sm text-red-800">{error}</div>}
         <nav aria-label="Audit log modules" className="flex flex-wrap gap-2">
