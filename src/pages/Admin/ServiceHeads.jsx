@@ -56,7 +56,7 @@ import {
 } from "./userAdminUtils";
 
 // ─────────────────────────────────────────────────────────────
-// Service Heads - module heads + admins only. Students and
+// Service Heads lists module heads, admins, and Guidance counselors. Students and
 // faculty live on the Users page; shared table chrome, modals
 // and forms live in userAdminShared.jsx.
 // ─────────────────────────────────────────────────────────────
@@ -90,6 +90,11 @@ export default function ServiceHeads() {
     const [credentials, setCredentials] = useState(null);
 
     const currentEmail = (localStorage.getItem("userEmail") || "").toLowerCase();
+    const isSuperAdmin = (localStorage.getItem("userRole") || "").toLowerCase() === "superadmin";
+    const accounts = useMemo(() => users
+        .filter((user) => isHeadRole(user.role) || (isSuperAdmin && user.role === "Counselor"))
+        .map((user) => user.role === "Counselor" ? { ...user, adminModule: "Guidance" } : user),
+    [users, isSuperAdmin]);
     const isSelf = (user) => Boolean(currentEmail) && user.email?.toLowerCase() === currentEmail;
 
     // ── Fonts (same as the other admin pages) ───────────────
@@ -134,9 +139,7 @@ export default function ServiceHeads() {
     const [pictures, setPictures] = useState({});
 
     useEffect(() => {
-        const heads = users.filter((u) => isHeadRole(u.role));
-
-        if (!heads.length) {
+        if (!accounts.length) {
             setPictures({});
             return;
         }
@@ -148,7 +151,7 @@ export default function ServiceHeads() {
             localStorage.getItem("authToken");
 
         Promise.all(
-            heads.map((u) =>
+            accounts.map((u) =>
                 fetch(`${API_URL}/api/profile/${encodeURIComponent(u.email)}`, {
                     headers: token
                         ? { Authorization: `Bearer ${token}` }
@@ -176,7 +179,7 @@ export default function ServiceHeads() {
         return () => {
             cancelled = true;
         };
-    }, [users]);
+    }, [accounts]);
 
     // ── Filters ─────────────────────────────────────────────
     const clearAllFilters = () => {
@@ -188,10 +191,7 @@ export default function ServiceHeads() {
     const filtered = useMemo(() => {
         const query = search.trim().toLowerCase();
 
-        return users.filter((u) => {
-            // This page is heads + admins only.
-            if (!isHeadRole(u.role)) return false;
-
+        return accounts.filter((u) => {
             const matchesSearch =
                 !query ||
                 [
@@ -212,7 +212,7 @@ export default function ServiceHeads() {
 
             return matchesSearch && matchesRole && matchesStatus;
         });
-    }, [users, search, roleFilter, statusFilter]);
+    }, [accounts, search, roleFilter, statusFilter]);
 
     const activeChips = [];
     if (search.trim()) {
@@ -539,16 +539,20 @@ export default function ServiceHeads() {
                         <Eye size={16} />
                     </button>
 
-                    <button
-                        type="button"
-                        onClick={() => openEdit(u)}
-                        aria-label={`Edit ${u.fullName}`}
-                        className={iconButton}
-                    >
-                        <Pencil size={15} />
-                    </button>
+                    {isHeadRole(u.role) && (
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => openEdit(u)}
+                                aria-label={`Edit ${u.fullName}`}
+                                className={iconButton}
+                            >
+                                <Pencil size={15} />
+                            </button>
 
-                    <RowMenu items={menuItems(u)} label={`More actions for ${u.fullName}`} />
+                            <RowMenu items={menuItems(u)} label={`More actions for ${u.fullName}`} />
+                        </>
+                    )}
                 </>
             )}
         </div>
@@ -569,7 +573,7 @@ export default function ServiceHeads() {
             `}</style>
 
             {/* Header */}
-            <AdminPageHeader icon="heads" title="Service Heads" description="Manage module head and administrator accounts.">
+            <AdminPageHeader icon="heads" title="Service Heads" description={isSuperAdmin ? "Manage service heads and view Guidance counselor accounts." : "Manage module head and administrator accounts."}>
                 <div className="flex flex-wrap items-center gap-2">
                     <button
                         type="button"
@@ -647,7 +651,7 @@ export default function ServiceHeads() {
                         aria-label="Filter by role"
                         className={selectClass}
                     >
-                        {HEAD_ROLE_FILTERS.map((role) => (
+                        {(isSuperAdmin ? [...HEAD_ROLE_FILTERS, "Counselor"] : HEAD_ROLE_FILTERS).map((role) => (
                             <option key={role} value={role}>
                                 {role === "All" ? "All roles" : roleLabel(role)}
                             </option>
@@ -727,7 +731,7 @@ export default function ServiceHeads() {
                         </div>
 
                         <p className="mt-4 font-medium text-gray-700">
-                            {hasFilters ? "No heads match your filters" : "No service heads yet"}
+                            {hasFilters ? "No accounts match your filters" : "No service accounts yet"}
                         </p>
 
                         <p className="mt-1 text-sm text-gray-400">
@@ -876,9 +880,9 @@ export default function ServiceHeads() {
             {!loading && sorted.length > 0 && (
                 <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-xs text-gray-400">
-                        Showing {rangeStart}–{rangeEnd} of {sorted.length} heads
-                        {sorted.length !== users.filter((u) => isHeadRole(u.role)).length &&
-                            ` (${users.filter((u) => isHeadRole(u.role)).length} total)`}
+                        Showing {rangeStart}–{rangeEnd} of {sorted.length} accounts
+                        {sorted.length !== accounts.length &&
+                            ` (${accounts.length} total)`}
                     </p>
 
                     <div className="flex flex-wrap items-center gap-3">
@@ -985,18 +989,20 @@ export default function ServiceHeads() {
                     </div>
 
                     <div className="flex justify-end gap-2 pt-4">
-                        <button
-                            type="button"
-                            onClick={() => {
-                                const user = activeUser;
-                                setModal(null);
-                                openEdit(user);
-                            }}
-                            className={`inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50 ${focusRing}`}
-                        >
-                            <Pencil size={13} />
-                            Edit
-                        </button>
+                        {isHeadRole(activeUser.role) && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const user = activeUser;
+                                    setModal(null);
+                                    openEdit(user);
+                                }}
+                                className={`inline-flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg border border-gray-200 text-gray-600 transition hover:bg-gray-50 ${focusRing}`}
+                            >
+                                <Pencil size={13} />
+                                Edit
+                            </button>
+                        )}
 
                         <button
                             type="button"
