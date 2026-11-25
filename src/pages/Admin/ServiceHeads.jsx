@@ -462,9 +462,7 @@ export default function ServiceHeads() {
                         <Eye size={16} />
                     </button>
 
-                    {isHeadRole(u.role) && (
-                        <RowMenu items={menuItems(u)} label={`More actions for ${u.fullName}`} />
-                    )}
+                    <RowMenu items={menuItems(u)} label={`More actions for ${u.fullName}`} />
                 </>
             )}
         </div>
@@ -485,7 +483,7 @@ export default function ServiceHeads() {
             `}</style>
 
             {/* Header */}
-            <AdminPageHeader icon="heads" title="Service Heads" description={isSuperAdmin ? "Manage service heads and view Guidance counselor accounts." : "Manage module head and administrator accounts."}>
+            <AdminPageHeader icon="heads" title="Service Heads" description={isSuperAdmin ? "Manage service heads and Guidance counselor accounts." : "Manage module head and administrator accounts."}>
                 <div className="flex flex-wrap items-center gap-2">
                     <button
                         type="button"
