@@ -2,6 +2,7 @@ import AdminPageHeader from "./AdminPageHeader";
 import { useState, useEffect, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
 import { API_URL } from "../../config/api";
+import ChangeEmailModal from "../../modules/guidance/counselor/ChangeEmailModal";
 
 // ─────────────────────────────────────────────────────────────
 // Constants
@@ -13,6 +14,7 @@ const TABS = [
 ];
 
 const PASSWORD_MIN_LENGTH = 8;
+const SUPER_ADMIN_EMAIL = "saas@pnm.edu.ph";
 const NAME_MAX_LENGTH = 60;
 const PHONE_MAX_LENGTH = 15;
 const FONTS_LINK_ID = "admin-profile-fonts";
@@ -195,6 +197,7 @@ export default function AdminProfile() {
     const [saving, setSaving] = useState(false);
     const [errors, setErrors] = useState({});
     const [copied, setCopied] = useState(false);
+    const [showEmailChange, setShowEmailChange] = useState(false);
 
     const [profile, setProfile] = useState({
         fullName: "",
@@ -235,7 +238,8 @@ export default function AdminProfile() {
     const [isActivityLoading, setIsActivityLoading] = useState(false);
 
     // Derived values
-    const adminEmail = useMemo(() => localStorage.getItem("userEmail"), []);
+    const [adminEmail, setAdminEmail] = useState(() => localStorage.getItem("userEmail"));
+    const isSuperAdmin = profile.role?.toLowerCase() === "superadmin";
     const encodedAdminEmail = useMemo(
         () => (adminEmail ? encodeURIComponent(adminEmail) : ""),
         [adminEmail]
@@ -817,9 +821,19 @@ export default function AdminProfile() {
                                         disabled
                                         className="w-full px-4 py-2.5 rounded-xl border border-gray-200 bg-gray-100 text-sm text-gray-400 outline-none cursor-not-allowed"
                                     />
-                                    <p className="text-xs text-gray-400 mt-1.5">
-                                        Contact IT support to change your email address.
-                                    </p>
+                                    {isSuperAdmin ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowEmailChange(true)}
+                                            className="mt-2 text-sm font-semibold text-[#106A2E] hover:underline"
+                                        >
+                                            Change email
+                                        </button>
+                                    ) : (
+                                        <p className="text-xs text-gray-400 mt-1.5">
+                                            Contact IT support to change your email address.
+                                        </p>
+                                    )}
                                 </div>
 
                                 <div className="flex flex-wrap items-center gap-3">
@@ -930,6 +944,19 @@ export default function AdminProfile() {
 
                     </div>
             </main>
+            {showEmailChange && (
+                <ChangeEmailModal
+                    userId={profile.id}
+                    currentEmail={profile.email}
+                    initialEmail={profile.email?.toLowerCase() === SUPER_ADMIN_EMAIL ? "" : SUPER_ADMIN_EMAIL}
+                    onClose={() => setShowEmailChange(false)}
+                    onEmailChanged={(email) => {
+                        setProfile((previous) => ({ ...previous, email }));
+                        setAdminEmail(email);
+                        setShowEmailChange(false);
+                    }}
+                />
+            )}
         </>
     );
 }

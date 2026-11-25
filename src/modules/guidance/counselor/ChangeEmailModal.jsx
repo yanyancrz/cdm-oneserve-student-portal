@@ -16,14 +16,14 @@ const authHeaders = () => {
     return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
-// Centered modal: counselor changes their login email.
+// Centered modal for changing the signed-in user's login email.
 // Step 1 -> POST /api/profile/request-email-change  (SMTP OTP to the new email)
 // Step 2 -> POST /api/profile/verify-email-change
 // Same endpoints / OTP flow the student Edit Profile page uses.
-export default function ChangeEmailModal({ userId, currentEmail, onClose, onEmailChanged }) {
+export default function ChangeEmailModal({ userId, currentEmail, initialEmail = "", onClose, onEmailChanged }) {
     const [step, setStep] = useState(1);
 
-    const [newEmail, setNewEmail] = useState("");
+    const [newEmail, setNewEmail] = useState(initialEmail);
     const [currentPassword, setCurrentPassword] = useState("");
     const [sending, setSending] = useState(false);
 
@@ -106,7 +106,7 @@ export default function ChangeEmailModal({ userId, currentEmail, onClose, onEmai
                     "Content-Type": "application/json",
                     ...authHeaders(),
                 },
-                body: JSON.stringify({ userId, otpCode: otp }),
+                body: JSON.stringify({ userId, otpCode: otp, newEmail: newEmail.trim() }),
             });
 
             const message = await response.text();
