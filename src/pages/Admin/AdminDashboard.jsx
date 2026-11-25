@@ -172,7 +172,6 @@ export default function AdminDashboard() {
         { label: "Active Users", value: dashboard.activeUsers, description: "Active accounts" },
         { label: "Inactive Users", value: dashboard.inactiveUsers, description: "Inactive accounts" },
         { label: "Total Administrators", value: dashboard.totalAdministrators ?? dashboard.totalAdmins, description: "Administrator accounts" },
-        { label: "Pending Requests", value: dashboard.pendingRequests, description: "Accounts awaiting approval" },
     ];
 
     // --------------------------------------------------
@@ -214,7 +213,7 @@ export default function AdminDashboard() {
                             <h2 id="admin-overview-heading" className="font-semibold text-xl text-[#1F1F1F]">System overview</h2>
                             <p className="mt-1 text-xs text-gray-500">Registered accounts across OneServe.</p>
                         </div>
-                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                             {overviewStats.map((item) => (
                                 <article key={item.label} className="admin-surface rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
                                     <p className="text-xs font-medium text-gray-500">{item.label}</p>
