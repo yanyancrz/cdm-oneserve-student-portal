@@ -56,7 +56,7 @@ const ACCENT_PRESETS = [
 const FILTERS = [
     { key: "all", label: "All announcements", hint: "Total" },
     { key: "active", label: "Published", hint: "Visible to users" },
-    { key: "hidden", label: "Hidden", hint: "Not visible to users" },
+    { key: "hidden", label: "Drafts / Hidden", hint: "Not visible to users" },
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -571,13 +571,13 @@ export default function Announcements() {
         updateField("accent", value.slice(0, 7));
     };
 
-    const validate = () => {
+    const validate = (isActive) => {
         const next = {};
 
         if (!form.title.trim()) next.title = "Announcement title is required.";
         else if (form.title.trim().length > TITLE_MAX)
             next.title = `Title must be ${TITLE_MAX} characters or fewer.`;
-        if (!form.message.trim()) next.message = "Announcement message is required.";
+        if (isActive && !form.message.trim()) next.message = "Announcement message is required.";
         else if (form.message.length > MESSAGE_MAX)
             next.message = `Message must be ${MESSAGE_MAX} characters or fewer.`;
         if (!form.tag.trim()) next.tag = "Announcement tag is required.";
@@ -598,7 +598,9 @@ export default function Announcements() {
     // ── Create / update ─────────────────────────────────────
     const handleSubmit = async (event) => {
         event.preventDefault();
-        if (!validate()) return;
+        const isActive = form.isActive && event.nativeEvent.submitter?.value !== "draft";
+        if (saving || !validate(isActive)) return;
+        const notified = isActive && form.notifyUsers;
 
         try {
             setSaving(true);
@@ -616,8 +618,8 @@ export default function Announcements() {
                     message: form.message.trim(),
                     tag: form.tag.trim(),
                     accent: form.accent,
-                    isActive: form.isActive,
-                    notifyUsers: form.isActive && form.notifyUsers,
+                    isActive,
+                    notifyUsers: notified,
                 }),
             });
 
@@ -627,18 +629,16 @@ export default function Announcements() {
                 throw new Error(data.message || "Unable to save announcement.");
             }
 
-            const notified = form.isActive && form.notifyUsers;
-
             toast.success(
-                editingId
+                !isActive
+                    ? "Announcement saved as draft."
+                    : editingId
                     ? notified
                         ? "Announcement updated successfully. Push notification sent."
                         : "Announcement updated successfully."
-                    : form.isActive
-                    ? notified
+                    : notified
                         ? "Announcement published successfully. Push notification sent."
                         : "Announcement published successfully."
-                    : "Announcement saved as hidden."
             );
 
             closeForm();
@@ -1151,14 +1151,20 @@ export default function Announcements() {
                                             ) : (
                                                 <>
                                                     <Check size={15} />
-                                                    {editingId
+                                                    {!form.isActive
+                                                        ? "Save as Draft"
+                                                        : editingId && formBaseline.isActive
                                                         ? "Update Announcement"
-                                                        : form.isActive
-                                                        ? "Publish Announcement"
-                                                        : "Save as Hidden"}
+                                                        : "Publish Announcement"}
                                                 </>
                                             )}
                                         </button>
+
+                                        {form.isActive && (
+                                            <button type="submit" value="draft" disabled={saving} className={`rounded-xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 disabled:opacity-50 ${focusRing}`}>
+                                                Save as Draft
+                                            </button>
+                                        )}
 
                                         <button
                                             type="button"

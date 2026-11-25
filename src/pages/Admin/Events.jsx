@@ -196,7 +196,7 @@ const recoverUntrackedGroups = (allEvents, batches, manualEventIds) => {
     const owned = new Set(manualEventIds);
     batches.forEach((b) => (b.eventIds || []).forEach((id) => owned.add(String(id))));
 
-    const untracked = (allEvents || []).filter((ev) => !owned.has(String(ev.id)));
+    const untracked = (allEvents || []).filter((ev) => ev.isActive !== false && !owned.has(String(ev.id)));
     if (!untracked.length) return [];
 
     const groups = new Map();
@@ -1807,6 +1807,7 @@ export default function Events() {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
+    const [editingDraft, setEditingDraft] = useState(false);
     const [form, setForm] = useState(EMPTY_FORM);
     const [saving, setSaving] = useState(false);
     const [importOpen, setImportOpen] = useState(false);
@@ -1844,17 +1845,15 @@ export default function Events() {
         loadEvents();
     }, [loadEvents]);
 
-    // date key -> events on that day (active events only)
+    // Admins can reopen drafts from their scheduled dates.
     const eventsByDate = useMemo(() => {
         const map = new Map();
-        events
-            .filter((ev) => ev.isActive !== false)
-            .forEach((ev) => {
-                getEventDates(ev).forEach((k) => {
-                    if (!map.has(k)) map.set(k, []);
-                    map.get(k).push(ev);
-                });
+        events.forEach((ev) => {
+            getEventDates(ev).forEach((k) => {
+                if (!map.has(k)) map.set(k, []);
+                map.get(k).push(ev);
             });
+        });
         map.forEach((list) =>
             list.sort((a, b) => (a.startTime || "").localeCompare(b.startTime || ""))
         );
@@ -1862,24 +1861,27 @@ export default function Events() {
     }, [events]);
 
     const selectedEvents = eventsByDate.get(selectedKey) || [];
+    const drafts = events.filter((ev) => ev.isActive === false);
 
     const upcoming = useMemo(() => {
         const todayKey = dateToKey(new Date());
         return [...eventsByDate.entries()]
             .filter(([k]) => k >= todayKey)
             .sort(([a], [b]) => a.localeCompare(b))
-            .flatMap(([k, list]) => list.map((ev) => ({ k, ev })))
+            .flatMap(([k, list]) => list.filter((ev) => ev.isActive !== false).map((ev) => ({ k, ev })))
             .slice(0, 5);
     }, [eventsByDate]);
 
     const resetForm = () => {
         setForm(EMPTY_FORM);
         setEditingId(null);
+        setEditingDraft(false);
         setShowForm(false);
     };
 
     const openCreate = () => {
         setEditingId(null);
+        setEditingDraft(false);
         setForm({ ...EMPTY_FORM, dates: [selectedKey] });
         setShowForm(true);
     };
@@ -1896,12 +1898,14 @@ export default function Events() {
             accent: ev.accent || "#F4D35E",
         });
         setEditingId(ev.id);
+        setEditingDraft(ev.isActive === false);
         setShowForm(true);
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         if (saving) return;
+        const saveAsDraft = e.nativeEvent.submitter?.value === "draft";
         if (!form.title.trim() || form.dates.length === 0) {
             toast.error("Title and at least one event date are required.");
             return;
@@ -1912,24 +1916,24 @@ export default function Events() {
         }
         setSaving(true);
         try {
-            const url = editingId ? `${API_BASE}/${editingId}` : API_BASE;
+            const url = editingId ? `${API_BASE}/${editingId}` : saveAsDraft ? `${API_BASE}/drafts` : API_BASE;
             const method = editingId ? "PUT" : "POST";
             const sorted = [...form.dates].sort();
             const body = {
                 title: form.title.trim(),
-                description: form.description || null,
+                description: form.description,
                 // kept for backward compatibility with the existing backend
                 eventDate: sorted[0],
                 endDate: sorted.length > 1 ? sorted[sorted.length - 1] : null,
                 // new fields
                 eventDates: sorted,
-                startTime: form.startTime || null,
-                endTime: form.endTime || null,
-                location: form.location || null,
+                startTime: form.startTime,
+                endTime: form.endTime,
+                location: form.location,
                 tag: form.tag,
                 accent: form.accent,
             };
-            if (editingId) body.isActive = true;
+            if (editingId) body.isActive = !saveAsDraft;
             const res = await fetch(url, {
                 method,
                 headers: { "Content-Type": "application/json", ...authHeaders() },
@@ -1950,10 +1954,14 @@ export default function Events() {
                         // The current page still knows which events were added manually.
                     }
                 }
-                const date = keyToDate(sorted[0]);
-                setView({ y: date.getFullYear(), m: date.getMonth() });
-                setSelectedKey(sorted[0]);
-                if (isSuperAdmin) {
+            }
+            const date = keyToDate(sorted[0]);
+            setView({ y: date.getFullYear(), m: date.getMonth() });
+            setSelectedKey(sorted[0]);
+            if (isSuperAdmin && (!editingId || editingDraft)) {
+                if (saveAsDraft) {
+                    setAnnouncementDraft(null);
+                } else {
                     const time = timeRange(form);
                     setAnnouncementDraft({
                         title: body.title,
@@ -1967,7 +1975,7 @@ export default function Events() {
                     });
                 }
             }
-            toast.success(editingId ? "Event updated." : "Event created.");
+            toast.success(saveAsDraft ? "Event saved as draft." : editingId && !editingDraft ? "Event updated." : "Event published.");
             resetForm();
             await loadEvents();
         } catch (err) {
@@ -2126,6 +2134,7 @@ export default function Events() {
                                             >
                                                 <div className="min-w-0 flex-1">
                                                     <p className="text-sm font-semibold text-slate-800">{ev.title}</p>
+                                                    {ev.isActive === false && <span className="text-xs font-semibold text-amber-700">Draft</span>}
                                                     {ev.description && (
                                                         <p className="mt-0.5 text-xs text-slate-500">{ev.description}</p>
                                                     )}
@@ -2167,6 +2176,22 @@ export default function Events() {
                                     </ul>
                                 )}
                             </div>
+
+                            {drafts.length > 0 && (
+                                <section className="admin-surface rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                                    <h3 className="text-sm font-semibold text-slate-800">Event Drafts</h3>
+                                    <ul className="mt-2 divide-y divide-slate-100">
+                                        {drafts.map((ev) => (
+                                            <li key={ev.id}>
+                                                <button type="button" onClick={() => openEdit(ev)} className="flex w-full items-center justify-between gap-3 py-2.5 text-left text-sm text-slate-700 hover:text-[#106A2E]" aria-label={`Edit draft ${ev.title}`}>
+                                                    <span className="min-w-0 break-words">{ev.title}</span>
+                                                    <Pencil size={14} className="shrink-0" />
+                                                </button>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </section>
+                            )}
 
                             {/* Upcoming */}
                             <div className="admin-surface rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -2339,10 +2364,15 @@ export default function Events() {
                                         <input type="color" value={form.accent} onChange={(e) => setForm({ ...form, accent: e.target.value })} className="w-full h-10 rounded-xl border border-slate-200 cursor-pointer" />
                                     </div>
                                 </div>
-                                <div className="flex gap-2 pt-2">
+                                <div className="flex flex-wrap gap-2 pt-2">
                                     <button type="button" onClick={resetForm} disabled={saving} className="flex-1 rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-60">Cancel</button>
+                                    {(!editingId || editingDraft) && (
+                                        <button type="submit" value="draft" disabled={saving} className="order-last w-full rounded-xl border border-slate-200 bg-white p-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60 sm:order-none sm:w-auto">
+                                            Save as Draft
+                                        </button>
+                                    )}
                                     <button type="submit" disabled={saving} className="flex-1 rounded-xl bg-[#0E3B22] p-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-900/20 hover:opacity-90 disabled:opacity-60">
-                                        {saving ? "Saving..." : (editingId ? "Update" : "Create")}
+                                        {saving ? "Saving..." : editingId && !editingDraft ? "Update Event" : "Publish Event"}
                                     </button>
                                 </div>
                             </form>
